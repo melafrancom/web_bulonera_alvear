@@ -1,3 +1,4 @@
+from typing import Any
 from django.db import models
 from django.urls import reverse
 from django.contrib import admin
@@ -7,9 +8,41 @@ from django.utils.html import format_html
 
 # Create your models here.
 class MyAccountManager(BaseUserManager):
-    pass
+    
+    def create_user(self, first_name, last_name, username, email, password=None):
+        if not email:
+            raise ValueError('El usuario debe ingresar el email')
+        
+        if not username:
+            raise ValueError('El usuario debe ingresar el username')
+        
+        user = self.model(
+            email = self.normalize_email(email),
+            username = username,
+            first_name = first_name,
+            last_name = last_name,
+        )
+        
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
 
-
+    def create_superuser(self, first_name, last_name, username, email, password):
+        user = self.create_user(
+            email = self.normalize_email(email),
+            username = username,
+            password = password,
+            first_name = first_name,
+            last_name = last_name,
+        )
+        
+        user.is_admin = True
+        user.is_active = True
+        user.is_staff = True
+        user.is_superadmin = True
+        user.save(using=self._db)
+        return user
+                                
 class Account(AbstractBaseUser):
     first_name = models.CharField(max_length=35)
     last_name = models.CharField(max_length=55)
@@ -44,7 +77,19 @@ class Account(AbstractBaseUser):
         return True
 
 class UserProfile(models.Model):
-    pass
+    user = models.OneToOneField(Account, on_delete=models.CASCADE)
+    address_line_1 = models.CharField(max_length=100, blank=True)
+    address_line_2 = models.CharField(max_length=100, blank=True)
+    profile_picture = models.ImageField(blank=True, upload_to='userprofile')
+    city = models.CharField(max_length=50, blank=True)
+    state = models.CharField(max_length=50, blank=True)
+    country = models.CharField(max_length=50, blank=True)
+    
+    def __str__(self):
+        return self.user.first_name + ' ' + self.user.last_name
+    
+    def full_address(self):
+        return f'{self.address_line_1} {self.address_line_2}'
 
 class AccountAdmin(UserAdmin):
     list_display = ('email', 'first_name', 'last_name', 'username', 'last_login', 'date_joined', 'is_active')
@@ -57,5 +102,11 @@ class AccountAdmin(UserAdmin):
     list_filter = ()
     fieldsets = ()
 
-class UserProfileAdmin(admin.ModelAdmin): #define cómo se mostrarán los objetos UserProfile
-    pass
+class UserProfileAdmin(admin.ModelAdmin): #define cómo se mostrarán los objetos UserProfile del admin.
+    def thumbnail(self, object):
+        return format_html('<img src="{}" width="30" style="border-radius=50%;" >'.format(object.profile_picture.url))
+    
+    thumbnail.short_description = 'imagen de perfil'
+    list_display = ('thumbnail', 'profile_picture', 'user', 'city', 'state', 'country')
+    
+    
