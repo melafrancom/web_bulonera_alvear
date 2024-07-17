@@ -109,4 +109,3 @@ class UserProfileAdmin(admin.ModelAdmin): #define cómo se mostrarán los objeto
     thumbnail.short_description = 'imagen de perfil'
     list_display = ('thumbnail', 'profile_picture', 'user', 'city', 'state', 'country')
     
-    

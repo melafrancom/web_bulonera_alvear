@@ -7,7 +7,7 @@ from .models import Account, UserProfile  # Importar el modelo con el que se tra
 
 #Debemos crear los formularios a utilizar: Formularios de registros, de usuario, y de perfil del usuario.
 class RegistrationForm(forms.ModelForm):
-    password = forms.CharField(widget=form.PasswordInput(attrs={
+    password = forms.CharField(widget=forms.PasswordInput(attrs={
         'placeholder': 'Ingrese Contraseña',
         'class': 'form-control',
     }))

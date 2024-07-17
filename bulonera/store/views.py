@@ -3,7 +3,6 @@ from .models import Product
 
 # Create your views here.
 def store(request):
-    
     template_name = 'home.html'
     return render(request, template_name)
 

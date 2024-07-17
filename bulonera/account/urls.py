@@ -18,4 +18,17 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+#import LOCAL APPS
+from . import views
+
 #LOCAL APPS
+urlpatterns = [
+    path('register/', views.register, name='register'),
+    path('login/', views.login, name='login'),
+    path('logout/', views.logout, name='logout'),
+    path('', views.dashboard, name='dashboard'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('activate/<uidb64>/<token>', views.activate, name='activate'),
+    
+    
+]
