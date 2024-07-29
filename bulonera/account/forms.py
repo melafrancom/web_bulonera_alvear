@@ -3,7 +3,9 @@ from django import forms
 from django.core.files.base import File
 from django.db.models.base import Model
 from django.forms.utils import ErrorList
-from .models import Account, UserProfile  # Importar el modelo con el que se trabaja
+
+# LOCAL APPS:
+from .models import Account, UserProfile  
 
 #Debemos crear los formularios a utilizar: Formularios de registros, de usuario, y de perfil del usuario.
 class RegistrationForm(forms.ModelForm):

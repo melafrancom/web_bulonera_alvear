@@ -26,11 +26,11 @@ def _cart_id(request):
 
 
 #### Tercero: podemos ir agregando o eliminando productos/items del carrito #####
-def cart_add(request):
+def add_cart(request):
     pass
     #return redirect('cart')
 
-def cart_remove(request):
+def remove_cart(request):
     pass
     #return redirect('cart')
 

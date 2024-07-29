@@ -28,7 +28,9 @@ urlpatterns = [
     path('logout/', views.logout, name='logout'),
     path('', views.dashboard, name='dashboard'),
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('activate/<uidb64>/<token>', views.activate, name='activate'),
-    
+    path('activate/<uidb64>/<token>/', views.activate, name='activate'),
+    path('my_orders/', views.my_orders, name='my_orders'),
+    path('edit_profile/', views.edit_profile, name='edit_profile'),
+    #Todo lo relacionado con las passwords
     
 ]

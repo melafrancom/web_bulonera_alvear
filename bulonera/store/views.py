@@ -15,3 +15,5 @@ def search(request):
     template_name = 'home.html'
     return render(request, template_name)
 
+def submit_review(request, product_id):
+    pass

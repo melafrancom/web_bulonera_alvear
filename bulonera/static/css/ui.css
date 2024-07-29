@@ -75,7 +75,7 @@ a:hover {
 
 .img-xs, .img-sm, .img-md, .img-lg {
   -o-object-fit: cover;
-     object-fit: cover;
+  object-fit: cover;
   flex-shrink: 0;
   flex-grow: 0;
 }
