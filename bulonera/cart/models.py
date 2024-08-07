@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.db import models
-from store.models import Product
+from store.models import Product, Variation
 from account.models import Account
 
 
@@ -22,7 +22,7 @@ class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, null=True)
     quantity = models.IntegerField()
     is_active = models.BooleanField(default=True)
-    #variation = models.ManyToManyField(Variation, blank=True)
+    variation = models.ManyToManyField(Variation, blank=True)
     
     def subtotal(self):
         return self.product.price * self.quantity

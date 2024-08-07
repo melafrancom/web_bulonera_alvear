@@ -1,6 +1,6 @@
 from django.db import models
 from account.models import Account
-from store.models import Product
+from store.models import Product, Variation
 
 # Create your models here.
 
@@ -15,7 +15,6 @@ class Payment(models.Model):
     def __str__(self):
         return self.payment_id
     
-
 
 class Order(models.Model):
     STATUS = (
@@ -43,7 +42,7 @@ class Order(models.Model):
     state = models.CharField(max_length=10) # Codigo postal en checkout.html
     
     ip = models.CharField(max_length=25, blank=True)
-    id_ordered = models.BooleanField(default=False)
+    is_ordered = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -52,7 +51,7 @@ class Order(models.Model):
         return f'{self.first_name} {self.last_name}'
 
     def full_address(self):
-        return f'´{self.addres_line_1} {self.addres_line_2}'
+        return f'{self.addres_line_1} {self.addres_line_2}'
     
     def __str__(self):
         return self.first_name
@@ -63,6 +62,14 @@ class OrderProduct(models.Model):
     payment = models.ForeignKey(Payment, on_delete=models.CASCADE, blank=True, null=True)
     user = models.ForeignKey(Account, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    variation = models.ManyToManyField(Variation, blank=True)
+    quantity = models.IntegerField()
+    product_price = models.FloatField()
+    ordered = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return self.product.name
+    
+
