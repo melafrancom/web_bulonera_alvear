@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 import json
+import datetime
 from django.http import JsonResponse
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
@@ -70,10 +71,71 @@ def payments(request):
         
     return JsonResponse(data)
 
-def place_orders(request):
-    template_name = 'orders.html'
-    return render(request, template_name)
+def place_orders(request, total=0, quantity=0):
+    current_user = request.user
+    cart_items = CartItem.objects.filter(user=current_user)
+    cart_count = cart_items.count()
+    
+    if cart_count <= 0:
+        return redirect('store')
+    
+    for cart_item in cart_items:
+        total += (cart_item.product.price * cart_item.quantity)
+        quantity += cart_item.quantity
+        
+    if request.method == 'POST':
+        form = OrderForm(request.POST)
+        if form.is_valid():
+            data = Order()
+            data.user = current_user
+            data.first_name = form.cleaned_data['first_name']
+            data.last_name = form.cleaned_data['last_name']
+            data.phone_number = form.cleaned_data['phone_number']
+            data.email = form.cleaned_data['email']
+            data.addres_line_1 = form.cleaned_data['addres_line_1']
+            data.addres_line_2 = form.cleaned_data['addres_line_2']
+            data.city = form.cleaned_data['city']
+            data.state = form.cleaned_data['state']
+            data.order_note = form.cleaned_data['order_note']
+            data.order_total = total
+            data.ip = request.META.get('REMOTE_ADDR')
+            data.save()
+            
+            order = Order.objects.get(user=current_user, is_ordered=False, order_number=order_number)
+            context = {
+                'order' : order,
+                'cart_items' : cart_items,
+                'total' : total
+            }
+            template_name = 'orders/payment.html'
+            return render(request, template_name, context)
+            
+    else:        
+        template_name = 'checkout'
+        return render(request, template_name)
 
 def order_complete(request):
-    template_name = 'order_complete.html'
-    return render(request, template_name)
+    order_number = request.GET.get('order_number')
+    transID = request.GET.get('payment_id')
+    try:
+        order = Order.objects.get(order_number=order_number, is_ordered=True)
+        ordered_products = OrderProduct.objects.filter(order_id=order.id)
+        
+        subtotal = 0
+        for i in ordered_products:
+            subtotal += i.product_price * i.quantity
+        
+        payment = Payment.objects.get(payment_id=transID)
+        
+        context = {
+            'order' : order,
+            'ordered_products' : ordered_products,
+            'order_number' : order.order_number,
+            'transID' : payment.payment_id,
+            'payment' : payment,
+            'subtotal' : subtotal,
+        }
+        template_name = 'orders/order_complete.html'
+        return render(request, template_name, context)
+    except (Payment.DoesNotExist, Order.DoesNotExist):
+        return redirect('home')

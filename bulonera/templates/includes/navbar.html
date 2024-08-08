@@ -32,7 +32,7 @@
                 <div class="container">
                     <div class="row align-items-center">
                         <div class="col-lg-2 col-md-3 col-6">
-                            <a href="{% url 'store' %}" class="brand-wrap">
+                            <a href="{% url 'home' %}" class="brand-wrap">
                                 <img class="logo" src="{% static './images/logo02.png' %}">
                             </a> <!-- brand-wrap.// -->
                         </div>
@@ -51,7 +51,7 @@
                         </div>
                         <a href="{% url 'store' %}" class="btn btn-outline-primary">Tienda</a>
                         <div class="col-lg  col-md-6 col-sm-12 col">
-                            <form action="{% url 'store' %}" class="search"> <!-- CREAR LA FUNCION SEARCH Y REEMPLAZAR LA REEDIRECCION 'STORE' POR 'SEARCH'-->
+                            <form action="{% url 'search' %}" class="search"> <!-- CREAR LA FUNCION SEARCH Y REEMPLAZAR LA REEDIRECCION 'STORE' POR 'SEARCH'-->
                                 <div class="input-group w-100">
                                     <input type="text" class="form-control" style="width:60%;" placeholder="Buscar Productos" name="keyword">
                                     <div class="input-group-append">
@@ -78,7 +78,7 @@
                                     <small class="title text-muted">Bienvenido/a {{ user.first_name }}</small>
                                     <div>
                                         <a href="{% url 'cart' %}">Mi cuenta</a> <span class="dark-transp"> | </span><!-- CREAR LA FUNCION CART Y REEMPLAZAR LA REEDIRECCION STORE POR dashboard-->
-                                        <a href="{% url 'register' %}"> Cerrar sesión </a><!-- CREAR LA FUNCION logout Y REEMPLAZAR LA REEDIRECCION STORE POR REGISTER-->
+                                        <a href="{% url 'logout' %}"> Cerrar sesión </a><!-- CREAR LA FUNCION logout Y REEMPLAZAR LA REEDIRECCION STORE POR REGISTER-->
                                     </div>
                                 </div>
                                 {% endif%}

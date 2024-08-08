@@ -1,8 +1,10 @@
 from django.db import models
 from django.contrib import admin
-from category.models import Category
 from django.urls import reverse
+from django.db.models import Avg, Count
+#Local:
 from account.models import Account
+from category.models import Category
 # Create your models here.
 # Modelo relacionado a todo sobre el producto. Con respecto a agregar/quitar productos al carrito está en 'cart'.
 
@@ -41,10 +43,29 @@ class Product(models.Model):
 #Deberíamos agregar imagenes, variaciones, reviews, etc...
 
 class VariationManager(models.Manager):
-    pass
+    def color(self):
+        return super(VariationManager, self).filter(variation_category='color', is_active=True)
+    
+    def tallas(self):
+        return super(VariationManager, self).filter(variation_category='talla', is_active=True)
+    
+variation_category_choise = (
+    ('color', 'color'),
+    ('talla', 'talla'),
+)
 
 class Variation(models.Model):
-    pass
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    variation_category = models.CharField(max_length=100, choices=variation_category_choise)
+    variation_value = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    created_date = models.DateTimeField(auto_now=True)
+    
+    objects = VariationManager()
+    
+    def __str__(self):
+        return self.variation_category + ' : ' + self.variation_value
+
 
 class ReviewRating(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -66,13 +87,3 @@ class ProductGallery(models.Model):
 
     def __str__(self):
         return self.product.name
-
-class ProductGalleryInLine(admin.TabularInline):
-    pass
-
-class ProductAdmin(admin.ModelAdmin):
-    pass
-
-class VariationAdmin(admin.ModelAdmin):
-    pass
-

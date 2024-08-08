@@ -4,5 +4,5 @@
 </p>
 <h5 align="center">Bulonera Alvear: la bulonera que usted necesita!</h5>
 
-Bulonera Alvear es un proyecto de e-commerce desarrollado en Django, que ofrece una experiencia de compra en línea dinámica y completa. Descubre una amplia variedad de productos, gestiona tus compras y maneja tu cuenta a tu gusto, todo en un sitio web intuitivo y fácil de usar.
+Bulonera Alvear es un proyecto de e-commerce desarrollado en Django para mi empresa familiar, que ofrece una experiencia de compra en línea dinámica y completa. Descubre una amplia variedad de productos, gestiona tus compras y maneja tu cuenta a tu gusto, todo en un sitio web intuitivo y fácil de usar.
 
