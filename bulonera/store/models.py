@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib import admin
 from django.urls import reverse
 from django.db.models import Avg, Count
 #Local:
@@ -21,7 +20,7 @@ class Product(models.Model):
     modified_date = models.DateTimeField(auto_now=True)
     
     def get_url(self):
-        return reverse('product_detail', args=(self.category.slug, self.slug))
+        return reverse('product_detail', args=[self.category.slug, self.slug])
     
     def __str__(self):
         return self.name

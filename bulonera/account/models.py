@@ -11,7 +11,7 @@ class MyAccountManager(BaseUserManager):
     
     def create_user(self, first_name, last_name, username, email, password=None):
         if not email:
-            raise ValueError('El usuario debe ingresar el email')
+            raise ValueError('El usuario debe tener el email')
         
         if not username:
             raise ValueError('El usuario debe ingresar el username')
@@ -47,8 +47,8 @@ class Account(AbstractBaseUser):
     first_name = models.CharField(max_length=35)
     last_name = models.CharField(max_length=55)
     username = models.CharField(max_length=100)
-    email = models.EmailField(max_length=100, unique=True)
-    phone = models.CharField(max_length=50)
+    email = models.CharField(max_length=100, unique=True, default='default@example.com')
+    phone = models.CharField(max_length=50, default='000-000-0000')
     
     # Campos atributos
     date_joined = models.DateTimeField(auto_now_add=True)
