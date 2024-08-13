@@ -39,16 +39,18 @@
     </head>
     
     <body>
-        <header> <!-- Se carga desde el navbar.html -->
-            {% include 'includes/navbar.html '%}
-        </header>
-        <main> <!-- Se carga desde el home.html -->
-            {% block content %}
+        <!--
+        <header>  Se carga desde el navbar.html </header>
+        -->
+        {% include 'includes/navbar.html '%}
+    
+        <!-- <main> Se carga desde el home.html </main> -->
+        {% block content %}
 
-            {% endblock%}
-        </main>
-        <footer> <!-- Se carga desde el footer.html -->
-            {% include 'includes/footer.html '%}
-        </footer>
+        {% endblock%}
+        
+        <!-- <footer> Se carga desde el footer.html </footer> -->
+        {% include 'includes/footer.html '%}
+        
     </body>
 </html>

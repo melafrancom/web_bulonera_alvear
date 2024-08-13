@@ -414,6 +414,7 @@ p:last-child {
 
 /* ================== SECTIONS =================== */
 /* ================== header main ==================  */
+
 .header-top-light .nav-link {
   color: #969696;
 }
@@ -423,13 +424,14 @@ p:last-child {
 
 .header-main {
   position: relative;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  background-color: #1c00a1;
 }
 
 .brand-wrap .logo, .navbar-brand .logo {
   margin-right: 7px;
-  max-height: 42px;
+  max-height: 75px;
   display: inline-block;
 }
 
@@ -447,10 +449,10 @@ p:last-child {
   position: relative;
 }
 .widget-header a {
-  color: #343a40;
+  color: #969696;
 }
 .widget-header a:hover {
-  color: #3167eb;
+  color: #EB171E;
 }
 .widget-header i {
   color: #969696;
@@ -467,7 +469,7 @@ p:last-child {
   right: -10px;
 }
 .widget-header:hover i {
-  color: #3167eb;
+  color: #EB171E;
 }
 
 /* desktop only */
@@ -521,7 +523,7 @@ p:last-child {
 .slider-banner-owl .item-slide img {
   width: 100%;
   -o-object-fit: cover;
-     object-fit: cover;
+    object-fit: cover;
 }
 
 .slider-banner-slick .slick-prev, .slider-banner-slick .slick-next {
