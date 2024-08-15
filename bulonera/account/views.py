@@ -8,13 +8,15 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.core.mail import EmailMessage
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 #IMPORT FROM LOCAL APPS
 from .forms import RegistrationForm, UserForm, UserProfileForm
 from .models import Account, UserProfile
 from cart.models import Cart, CartItem
 from cart.views import _cart_id
-from orders.models import Order
+from orders.models import Order, OrderProduct
 
 # Create your views here.
 def register(request):
@@ -28,29 +30,35 @@ def register(request):
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
             username = email.split('@')[0]
+            
+            # Crear usuario y perfil
             user = Account.objects.create_user(first_name=first_name, last_name=last_name, email=email, username=username, password=password)
             user.phone = phone
             user.save()
 
-        profile = UserProfile()
-        profile.user_id = user.id
-        profile.profile_picture = 'default/default-user.png' #Ver a donde va está imagen.
-        profile.save()
-        
-        current_site = get_current_site(request)
-        mail_subject = 'Activa tu cuenta en Bulonera Alvear para continuar'
-        body = render_to_string('account/account_verification_email.html', {
-            'user' : user,
-            'domain' : current_site,
-            'uid' : urlsafe_base64_encode(force_bytes(user.pk)),
-            'token' : default_token_generator.make_token(user),
-        })
-        to_email = email
-        send_mail = email.send_mail(mail_subject, body, to = [to_email])
-        send_mail.send()
-        
-        # messages.success(request, 'Te has registrado exitosamente')
-        return redirect('/accounts/login/?command=verification&email='+email)
+            profile = UserProfile()
+            profile.user_id = user.id
+            profile.profile_picture = 'default/default-user.png' #Ver a donde va está imagen.
+            profile.save()
+            
+            """
+            current_site = get_current_site(request)
+            
+            mail_subject = 'Activa tu cuenta en Bulonera Alvear para continuar'
+            body = render_to_string('account/account_verification_email.html', {
+                'user' : user,
+                'domain' : current_site,
+                'uid' : urlsafe_base64_encode(force_bytes(user.pk)),
+                'token' : default_token_generator.make_token(user),
+            })
+            
+            to_email = email
+            send_mail = EmailMessage(mail_subject, body, to = [to_email])
+            send_mail.send()
+            """
+            
+            messages.success(request, 'Te has registrado exitosamente')
+            return redirect('/account/login/?command=verification&email='+email)
         
     context = {
         'form' : form
@@ -61,12 +69,16 @@ def register(request):
 
 def login(request):
     if request.method == 'POST':
-        email = request.POST[email]
-        password = request.POST[password]
+        email = request.POST['email']
+        password = request.POST['password']
         
         user = auth.authenticate(email=email, password=password)
         
         if user is not None:
+            auth.login(request, user)
+            messages.success(request, 'Has iniciado sesion exitosamente.')
+            
+            # Lógica de actualización del carrito
             try:
                 cart = Cart.objects.get(cart_id = _cart_id(request))
                 is_cart_item_exists = CartItem.objects.filter(cart = cart).exists()
@@ -103,9 +115,6 @@ def login(request):
                                 
             except:
                 pass
-            
-            auth.login(request, user)
-            messages.success(request, 'Has iniciado sesion exitosamente.')
             
             url = request.META.get('HTTP_REFERER')
             try:
@@ -153,15 +162,17 @@ def activate(request, uidb64, token):
 def dashboard(request):
     orders = Order.objects.order_by('-created_at').filter(user_id=request.user.id, is_ordered=True)
     orders_count = orders.count()
-    
-    userprofile = UserProfile.objects.get(user_id=request.user.id)
-    
+    try:
+        userprofile = UserProfile.objects.get(user_id=request.user.id)
+    except UserProfile.DoesNotExist:
+        # Puedes crear un perfil por defecto aquí o manejar el caso de ausencia de perfil
+        userprofile = None
     context = {
         'orders_count': orders_count, 
         'userprofile': userprofile
     }
     
-    template_name = 'account/prueba.html'
+    template_name = 'account/dashboard.html'
     return render(request, template_name, context)
 
 
@@ -172,39 +183,43 @@ def forgotPassword(request):
 def resetPassword_validate():
     pass
 
-def reserPassword():
+def resetPassword():
     pass
 
 def my_orders(request):
     orders = Order.objects.filter(user=request.user, is_ordered=True).order_by('-created_at')
     context = {
-        'orders' : orders
+        'orders': orders,
     }
-    template_name = 'account/prueba.html'
+    template_name = 'account/my_orders.html'
     return render(request, template_name, context)
+
+
 
 @login_required(login_url='login')
 def edit_profile(request):
     userprofile = get_object_or_404(UserProfile, user=request.user)
     if request.method == 'POST':
         user_form = UserForm(request.POST, instance=request.user)
-        profile_form = UserProfileForm(request.POST, request.FILE, instance=userprofile)
+        profile_form = UserProfileForm(request.POST, request.FILES, instance=userprofile)
         
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
             messages.success(request, 'Su información fue guardada con exito.')
-            return redirect('edit_profile')
+            return redirect('dashboard')
         else:
-            user_form = UserForm(instance = request.user)
-            profile_form = UserProfileForm(instance = userprofile)
+            pass
+    else:
+        user_form = UserForm(instance = request.user)
+        profile_form = UserProfileForm(instance = userprofile)
             
-        context = {
-            'user_form': user_form,
-            'profile_form' : profile_form,
-            'userprofile' : userprofile
-        }
-    template_name = 'account/prueba.html'
+    context = {
+        'user_form': user_form,
+        'profile_form' : profile_form,
+        'userprofile' : userprofile,
+    }
+    template_name = 'account/edit_profile.html'
     return render(request, template_name, context)
 
 @login_required(login_url='login')

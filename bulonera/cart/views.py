@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 
-from .models import Cart, CartItem, CartAdmin, CartItemAdmin
+from .models import Cart, CartItem
 from store.models import Product, Variation
 
 # Create your views here.

@@ -1,10 +1,6 @@
-from typing import Any
 from django.db import models
-from django.urls import reverse
-from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from django.utils.html import format_html
+
 
 # Create your models here.
 class MyAccountManager(BaseUserManager):
@@ -46,9 +42,9 @@ class MyAccountManager(BaseUserManager):
 class Account(AbstractBaseUser):
     first_name = models.CharField(max_length=35)
     last_name = models.CharField(max_length=55)
-    username = models.CharField(max_length=100)
-    email = models.CharField(max_length=100, unique=True, default='default@example.com')
-    phone = models.CharField(max_length=50, default='000-000-0000')
+    username = models.CharField(max_length=100, unique=True)
+    email = models.EmailField(max_length=100, unique=True, default='default@example.com')
+    phone = models.IntegerField(blank=True, null=True)
     
     # Campos atributos
     date_joined = models.DateTimeField(auto_now_add=True)
@@ -91,21 +87,4 @@ class UserProfile(models.Model):
     def full_address(self):
         return f'{self.address_line_1} {self.address_line_2}'
 
-class AccountAdmin(UserAdmin):
-    list_display = ('email', 'first_name', 'last_name', 'username', 'last_login', 'date_joined', 'is_active')
-    list_display_links = ('email', 'first_name', 'last_name')
-    readonly_fields = ('last_login', 'date_joined')
-    ordering = ('-date_joined',)
-    
-    #Necesario para el UserAdmin.
-    filter_horizontal = ()
-    list_filter = ()
-    fieldsets = ()
 
-class UserProfileAdmin(admin.ModelAdmin): #define cómo se mostrarán los objetos UserProfile del admin.
-    def thumbnail(self, object):
-        return format_html('<img src="{}" width="30" style="border-radius=50%;" >'.format(object.profile_picture.url))
-    
-    thumbnail.short_description = 'imagen de perfil'
-    list_display = ('thumbnail', 'profile_picture', 'user', 'city', 'state', 'country')
-    

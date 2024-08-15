@@ -1,5 +1,5 @@
 from django.db import models
-from account.models import Account
+from account.models import UserProfile, Account
 from store.models import Product, Variation
 
 # Create your models here.
@@ -24,7 +24,7 @@ class Order(models.Model):
         ('Cancelled', 'Cancelado'),
     )
     #### Datos de order ####
-    user = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True)
+    user = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     order_number = models.CharField(max_length=30)
     order_note = models.CharField(max_length=100, blank=True)
     order_total = models.FloatField(null=True, blank=True)
@@ -33,10 +33,10 @@ class Order(models.Model):
     
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    phone_number = models.IntegerField(null=True, blank=True)
+    phone = models.IntegerField(null=True, blank=True)
     email = models.CharField(max_length=50)
-    addres_line_1 = models.CharField(max_length=100)
-    addres_line_2 = models.CharField(max_length=100)
+    address_line_1 = models.CharField(max_length=100)
+    address_line_2 = models.CharField(max_length=100)
     country = models.CharField(max_length=100) # Agregado mío.
     city = models.CharField(max_length=100) # Agregado mío.
     state = models.CharField(max_length=10) # Codigo postal en checkout.html

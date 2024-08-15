@@ -22,7 +22,7 @@ from . import views
 
 #LOCAL APPS
 urlpatterns = [
-    path('place_order/', views.place_order, name='place_order'),
+    path('place_order/', views.place_orders, name='place_orders'),
     path('payments/', views.payments, name='payments'),
     path('order_complete/', views.order_complete, name='order_complete'),
 ]

@@ -85,20 +85,31 @@ def place_orders(request, total=0, quantity=0):
         
     if request.method == 'POST':
         form = OrderForm(request.POST)
+        
         if form.is_valid():
             data = Order()
             data.user = current_user
             data.first_name = form.cleaned_data['first_name']
             data.last_name = form.cleaned_data['last_name']
-            data.phone_number = form.cleaned_data['phone_number']
+            data.phone = form.cleaned_data['phone']
             data.email = form.cleaned_data['email']
-            data.addres_line_1 = form.cleaned_data['addres_line_1']
-            data.addres_line_2 = form.cleaned_data['addres_line_2']
+            data.address_line_1 = form.cleaned_data['address_line_1']
+            data.address_line_2 = form.cleaned_data['address_line_2']
+            data.country = form.cleaned_data['country']
             data.city = form.cleaned_data['city']
             data.state = form.cleaned_data['state']
             data.order_note = form.cleaned_data['order_note']
             data.order_total = total
             data.ip = request.META.get('REMOTE_ADDR')
+            data.save()
+            
+            yr=int(datetime.date.today().strftime('%Y'))
+            mt=int(datetime.date.today().strftime('%m'))
+            dt=int(datetime.date.today().strftime('%d'))
+            d = datetime.date(yr,mt,dt)
+            current_date = d.strftime("%Y%m%d")
+            order_number = current_date + str(data.id)
+            data.order_number = order_number
             data.save()
             
             order = Order.objects.get(user=current_user, is_ordered=False, order_number=order_number)
@@ -137,5 +148,6 @@ def order_complete(request):
         }
         template_name = 'orders/order_complete.html'
         return render(request, template_name, context)
+    
     except (Payment.DoesNotExist, Order.DoesNotExist):
         return redirect('home')
