@@ -67,7 +67,7 @@ def product_detail(request, category_slug, product_slug):
         'product_gallery' : product_gallery,
     }
     
-    template_name = 'store/product_detail.html'
+    template_name = 'store/product_detail_original.html'
     return render(request, template_name, context)
 
 def search(request):

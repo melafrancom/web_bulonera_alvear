@@ -177,14 +177,64 @@ def dashboard(request):
 
 
 def forgotPassword(request):
-    template_name = 'account/prueba.html'
+    if request.method == 'POST':
+        email = request.POST['email']
+        if Account.objects.filter(email=email).exists():
+            user = Account.objects.get(email__exact=email)
+            
+            current_site = get_current_site(request)
+            mail_subject = 'Recupera tu Contraseña.'
+            body = render_to_string('account/reset_password_email.html',{
+                'user' : user,
+                'domain' : current_site,
+                'uid' : urlsafe_base64_encode(force_bytes(user.pk)),
+                'token' : default_token_generator.make_token(user),
+            })
+            to_email = email
+            send_email = EmailMessage(mail_subject, body, to=['to_email'])
+            send_email.send()
+            
+            messages.success(request, 'Un email fue enviado a tu bandeja de entrada para recuperar tu contraseña')
+            return redirect('login')
+        else:
+            messages.error(request, 'La cuenta no existe o surgio un problema')
+            return redirect('forgotPassword')
+        
+    template_name = 'account/forgotPassword.html'
     return render(request, template_name)
 
-def resetPassword_validate():
-    pass
+def resetpassword_validate(request, uidb64, token):
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = Account._default_manager.get(pk=uid)
+    except(TypeError, ValueError, OverflowError, Account.DoesNotExist):
+        user=None
 
-def resetPassword():
-    pass
+    if user is not None and default_token_generator.check_token(user, token):
+        request.session['uid'] = uid
+        messages.success(request, 'Por favor escribe tu nueva contraseña')
+        return redirect('resetPassword')
+    else:
+        messages.error(request, 'El link ha caducado')
+        return redirect('login')
+
+def resetPassword(request):
+    if request.method == 'POST':
+        password = request.POST['password']
+        confirm_password = request.POST['confirm_password']
+
+        if password == confirm_password:
+            uid = request.session.get('uid')
+            user = Account.objects.get(pk=uid)
+            user.set_password(password)
+            user.save()
+            messages.success(request, 'La contraseña se actualizó correctamente')
+            return redirect('login')
+        else:
+            messages.error(request, 'La contraseña de confirmación no concuerda')
+            return redirect('resetPassword')
+    else:
+        return render(request, 'accounts/resetPassword.html')
 
 def my_orders(request):
     orders = Order.objects.filter(user=request.user, is_ordered=True).order_by('-created_at')
@@ -224,5 +274,27 @@ def edit_profile(request):
 
 @login_required(login_url='login')
 def change_password(request):
-    template_name = 'account/prueba.html'
+    if request.method == 'POST':
+        current_password = request.POST['current_password']
+        new_password = request.POST['new_password']
+        confirm_password = request.POST['confirm_password']
+        
+        user = Account.objects.get(username__exact=request.user.username)
+        
+        if new_password == confirm_password:
+            success = user.check_password(current_password)
+            if success:
+                user.set_password(new_password)
+                user.save()
+                
+                messages.success(request, 'La contraseña se actualizo correctamente')
+                return redirect('dashboard')
+            else:
+                messages.error(request, 'Los datos no son válidos, ingrese una contraseña correcta.')
+                return redirect('change_password')
+        else:
+            messages.error(request, 'La contraseña no coincide con la confirmación.')
+            return redirect('change_password')
+        
+    template_name = 'account/change_password.html'
     return render(request, template_name)
