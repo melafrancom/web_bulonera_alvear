@@ -47,7 +47,7 @@ def product_detail(request, category_slug, product_slug):
     except Exception as e:
         raise e
     
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         try:
             orderproduct = OrderProduct.objects.filter(user=request.user, product__id=single_product.id).exists()
             
@@ -67,7 +67,7 @@ def product_detail(request, category_slug, product_slug):
         'product_gallery' : product_gallery,
     }
     
-    template_name = 'store/product_detail_original.html'
+    template_name = 'store/product_detail.html'
     return render(request, template_name, context)
 
 def search(request):
