@@ -16,12 +16,12 @@ from store.models import Product
 def payments(request):
     body = json.loads(request.body)
     order = Order.objects.get(user=request.user, is_ordered=False, order_number=body['orderID'])
-    
+
     payment = Payment(
         user = request.user,
         payment_id = body['transID'],
         payment_method = body['payment_method'],
-        amountID = order.order_total.amount,
+        amount_id = order.order_total,
         status = body['status'],
     )
     payment.save()
@@ -52,12 +52,12 @@ def payments(request):
         product.stock -= item.quantity
         product.save()
         
-    cart_items = CartItem.objects.filter(user=request.user).delete()
+    CartItem.objects.filter(user=request.user).delete()
     
     mail_subject = 'Tu compra fue realizada!'
-    body = render_to_string('orders/order_received_email.html', {
+    body = render_to_string('orders/order_recieved_email.html', {
         'user': request.user,
-        'order' : order,
+        'order': order,
     })
     
     to_email = request.user.email
@@ -65,8 +65,8 @@ def payments(request):
     send_email.send()
     
     data = {
-        'order_number' : order.order_number,
-        'transID' : payment.payment_id,
+        'order_number': order.order_number,
+        'transID': payment.payment_id,
     }
         
     return JsonResponse(data)
@@ -114,16 +114,17 @@ def place_orders(request, total=0, quantity=0):
             
             order = Order.objects.get(user=current_user, is_ordered=False, order_number=order_number)
             context = {
-                'order' : order,
-                'cart_items' : cart_items,
-                'total' : total
+                'order': order,
+                'cart_items': cart_items,
+                'total': total,
             }
             template_name = 'orders/payment.html'
             return render(request, template_name, context)
+        
             
-    else:        
-        template_name = 'checkout'
-        return render(request, template_name)
+        else:        
+            template_name = 'checkout'
+            return redirect(template_name)
 
 def order_complete(request):
     order_number = request.GET.get('order_number')
@@ -131,7 +132,7 @@ def order_complete(request):
     try:
         order = Order.objects.get(order_number=order_number, is_ordered=True)
         ordered_products = OrderProduct.objects.filter(order_id=order.id)
-        
+
         subtotal = 0
         for i in ordered_products:
             subtotal += i.product_price * i.quantity
@@ -139,12 +140,12 @@ def order_complete(request):
         payment = Payment.objects.get(payment_id=transID)
         
         context = {
-            'order' : order,
-            'ordered_products' : ordered_products,
-            'order_number' : order.order_number,
-            'transID' : payment.payment_id,
-            'payment' : payment,
-            'subtotal' : subtotal,
+            'order': order,
+            'ordered_products': ordered_products,
+            'order_number': order.order_number,
+            'transID': payment.payment_id,
+            'payment': payment,
+            'subtotal': subtotal,
         }
         template_name = 'orders/order_complete.html'
         return render(request, template_name, context)

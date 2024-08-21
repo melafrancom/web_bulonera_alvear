@@ -1,6 +1,9 @@
 from django.db import models
+from django.utils import timezone
+
 from account.models import UserProfile, Account
 from store.models import Product, Variation
+
 
 # Create your models here.
 
@@ -19,12 +22,12 @@ class Payment(models.Model):
 class Order(models.Model):
     STATUS = (
         ('New', 'Nuevo'),
-        ('Pending', 'Pendiente'),
+        ('Accepted', 'Aceptado'),
         ('Completed', 'Completado'),
         ('Cancelled', 'Cancelado'),
     )
     #### Datos de order ####
-    user = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True)
     order_number = models.CharField(max_length=30)
     order_note = models.CharField(max_length=100, blank=True)
     order_total = models.FloatField(null=True, blank=True)
@@ -34,12 +37,12 @@ class Order(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     phone = models.IntegerField(null=True, blank=True)
-    email = models.CharField(max_length=50)
+    email = models.EmailField(max_length=50)
     address_line_1 = models.CharField(max_length=100)
     address_line_2 = models.CharField(max_length=100)
-    country = models.CharField(max_length=100) # Agregado mío.
-    city = models.CharField(max_length=100) # Agregado mío.
-    state = models.CharField(max_length=10) # Codigo postal en checkout.html
+    country = models.CharField(max_length=50)  # Agregado mio
+    city = models.CharField(max_length=50)  # Agregado mio
+    state = models.CharField(max_length=5)  # QUE ES CODIGO POSTAL EN CHECKOUT.HTML
     
     ip = models.CharField(max_length=25, blank=True)
     is_ordered = models.BooleanField(default=False)
@@ -51,7 +54,7 @@ class Order(models.Model):
         return f'{self.first_name} {self.last_name}'
 
     def full_address(self):
-        return f'{self.addres_line_1} {self.addres_line_2}'
+        return f'{self.address_line_1} {self.address_line_2}'
     
     def __str__(self):
         return self.first_name
@@ -68,7 +71,7 @@ class OrderProduct(models.Model):
     ordered = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return self.product.name
     

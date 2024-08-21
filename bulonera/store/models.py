@@ -21,11 +21,11 @@ class Product(models.Model):
     
     def get_url(self):
         return reverse('product_detail', args=[self.category.slug, self.slug])
-    
+
     def __str__(self):
         return self.name
     
-    def averageReviews(self):
+    def averageReview(self):
         reviews = ReviewRating.objects.filter(product=self, status=True).aggregate(average=Avg('rating'))
         avg = 0
         if reviews['average'] is not None:

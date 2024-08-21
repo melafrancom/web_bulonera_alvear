@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.contrib import messages
 
 from .models import Product, ReviewRating, ProductGallery
+from account.models import Account
 from category.models import Category
 from cart.models import CartItem
 from cart.views import _cart_id
@@ -17,6 +18,7 @@ from .forms import ReviewForm
 def store(request, category_slug=None):
     categories = None
     products = None
+    
     if category_slug != None:
         categories = get_object_or_404(Category, slug=category_slug)
         products = Product.objects.filter(category=categories, is_available=True).order_by('id')
@@ -46,7 +48,6 @@ def product_detail(request, category_slug, product_slug):
         
     except Exception as e:
         raise e
-    
     if request.user.is_authenticated:
         try:
             orderproduct = OrderProduct.objects.filter(user=request.user, product__id=single_product.id).exists()
@@ -60,11 +61,11 @@ def product_detail(request, category_slug, product_slug):
     product_gallery = ProductGallery.objects.filter(product_id=single_product.id)
     
     context = {
-        'single_product' : single_product,
-        'in_cart' : in_cart,
-        'orderproduct' : orderproduct,
-        'reviews' : reviews,
-        'product_gallery' : product_gallery,
+        'single_product': single_product,
+        'in_cart': in_cart,
+        'orderproduct': orderproduct,
+        'reviews': reviews,
+        'product_gallery': product_gallery,
     }
     
     template_name = 'store/product_detail.html'
@@ -73,7 +74,7 @@ def product_detail(request, category_slug, product_slug):
 def search(request):
     keyword = request.GET['keyword']
     if keyword:
-        products = Product.objects.order_by('-created_date').filter(Q(description__icontains=keyword) | Q(name__icontains=keyword))
+        products = Product.objects.order_by('-created_date').filter(Q(description__icontains=keyword) | Q(product_name__icontains=keyword))
     else:
         # Muestra todos los productos si no hay búsqueda
         products = Product.objects.all().filter(is_available=True)
@@ -95,7 +96,7 @@ def submit_review(request, product_id):
             reviews = ReviewRating.objects.get(user__id=request.user.id, product__id=product_id)
             form = ReviewForm(request.POST, instance=reviews)
             form.save()
-            messages.success(request, 'Muchas gracias, tu comentario ha sido actualizado')
+            messages.success(request, 'Muchas gracias!, tu comentario ha sido actualizado.')
             return redirect(url)
             
         except ReviewRating.DoesNotExist:
@@ -110,5 +111,5 @@ def submit_review(request, product_id):
                 data.user_id = request.user.id
                 data.save()
                 
-                messages.success(request, 'Muchas gracias, tu comentario ha sido actualizado')
+                messages.success(request, 'Muchas gracias!, tu comentario ha sido publicado.')
                 return redirect(url)
