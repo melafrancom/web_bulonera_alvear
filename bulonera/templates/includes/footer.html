@@ -2,26 +2,68 @@
 <html lang="en">
 
 				<!-- ========================= FOOTER ========================= -->
-		<footer class="section-footer border-top">
-			<div class="container">
-				<section class="footer-bottom border-top row">
-					<div class="col-md-2">
-						<p class="text-muted"> &copy Bulonera Alvear </p>
+				<footer class="bg-white bulonera-footer">
+					<div class="container py-5">
+						<div class="row py-3">
+				
+							<div class="col-lg-2 col-md-6 mb-4 mb-lg-0 h6_about">
+								<h6 class="text-uppercase font-weight-bold mb-4">About</h6>
+								<ul class="list-unstyled mb-0">
+									<li class="mb-2"><a href="#" class="text-muted">Contact Us</a></li>
+									<li class="mb-2"><a href="#" class="text-muted">About Us</a></li>
+									<li class="mb-2"><a href="#" class="text-muted">Stories</a></li>
+									<li class="mb-2"><a href="#" class="text-muted">Press</a></li>
+								</ul>
+							</div>
+
+							<div class="col-lg-2 col-md-6 mb-4 mb-lg-0"> <!-- ###### Policy ######-->
+								<h6 class="text-uppercase font-weight-bold mb-4 h6_about">Policy</h6>
+								<ul class="list-unstyled mb-0">
+									<li class="mb-2"><a href="#" class="text-muted">Return Policy</a></li>
+									<li class="mb-2"><a href="#" class="text-muted">Terms Of Use</a></li>
+									<li class="mb-2"><a href="#" class="text-muted">Security</a></li>
+									<li class="mb-2"><a href="#" class="text-muted">Privacy</a></li>
+								</ul>
+							</div>
+							<div class="col-lg-2 col-md-6 mb-4 mb-lg-0"><!-- ###### Company ###### -->
+								<h6 class="text-uppercase font-weight-bold mb-4 h6_about">Company</h6>
+								<ul class="list-unstyled mb-0">
+									<li class="mb-2"><a href="{% url 'login' %}" class="text-muted">Login</a></li>
+									<li class="mb-2"><a href="{% url 'register' %}" class="text-muted">Register</a></li>
+									<li class="mb-2"><a href="#" class="text-muted">Sitemap</a></li>
+									<li class="mb-2"><a href="{% url 'store' %}" class="text-muted">Our Products</a></li>
+								</ul>
+							</div>
+							<div class="col-lg-4 col-md-6 mb-lg-0 h6_about"> <!--  ##### Social media ##### -->
+								<h6 class="text-uppercase font-weight-bold mb-4">Nos encontras en:</h6>
+								<p class="text-muted mb-4">Casa central: Av. Alvear 1301, Resistencia, CHACO, ARGENTINA - CP: 3500</p>
+								<p class="text-muted mb-4">Sucursal 1: Av. Alvear 2975, Fontana, CHACO, ARGENTINA - CP: 3500</p>
+								<ul class="list-inline mt-4">
+									<li class="list-inline-item"><a href="https://www.facebook.com/buloneraalveaar" target="_blank" title="facebook"><i class="fab fa-2x fa-facebook-f"></i></a></li>
+									<li class="list-inline-item"><a href="https://www.instagram.com/buloneraalvear/" target="_blank" title="instagram"><i class="fab fa-2x fa-instagram"></i></a></li>
+									<li class="list-inline-item"><a href="https://www.google.com/maps/place/Bulonera+Alvear/@-27.4472508,-59.0054195,19.31z/data=!4m6!3m5!1s0x94450c7c12df062d:0x4d6cb5878c377427!8m2!3d-27.4471279!4d-59.0055408!16s%2Fg%2F11bwh5sp77?entry=ttu" target="_blank" title="google-maps"><i class="fab fa-2x fas fa-map-marker-alt"></i></a></li>
+									<li class="list-inline-item"><a href="https://ar.linkedin.com/company/buloneraalvear" target="_blank" title="linkedin"><i class="fab fa-2x fa-linkedin"></i></a></li>
+									<li class="list-inline-item"><a href="https://wa.me/5493624733431" target="_blank" title="whatsapp"><i class="fab fa-2x fa-whatsapp social_whatsapp"></i></a></li>
+								</ul>
+							</div>
+						</div>
 					</div>
-					<div class="col-md-8 text-md-center">
-						<span  class="px-2">buloneraalvear@hotmail.com</span>
-						<span  class="px-2">+5493624266763</span>
-						<span  class="px-2">Av. Alvear 1301, Resistencia, CHACO, ARGENTINA</span>
+					<hr class="p-0 m-0 b-0">
+			
+				
+					<div class="bg-light py-2">
+						<div class="container text-center about_me">
+							<p class="text-muted mb-0 py-2">&copy; 2024 Bulonera Alvear - All risghts reserved by Mela Franco Maximiliano</p>
+							<li class="list-inline-item"><a href="https://github.com/melafrancom" target="_blank" title="github"><i class="fab fa-2x fa-github social_github"></i></a></li>
+						
+						</div>
 					</div>
-					<div class="col-md-2 text-md-right text-muted">
-						<i class="fab fa-lg fa-cc-visa"></i>
-						<i class="fab fa-lg fa-cc-paypal"></i>
-						<i class="fab fa-lg fa-cc-mastercard"></i>
-					</div>
-				</section>
-			</div><!-- //container -->
-		</footer>
+				
+				</footer>
 		<!-- ========================= FOOTER END // ========================= -->
+
+
+
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
 		<script type="text/javascript">
 			$(document).ready(function(){

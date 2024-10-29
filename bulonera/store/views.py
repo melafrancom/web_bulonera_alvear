@@ -74,7 +74,7 @@ def product_detail(request, category_slug, product_slug):
 def search(request):
     keyword = request.GET['keyword']
     if keyword:
-        products = Product.objects.order_by('-created_date').filter(Q(description__icontains=keyword) | Q(product_name__icontains=keyword))
+        products = Product.objects.order_by('-created_date').filter(Q(description__icontains=keyword) | Q(name__icontains=keyword))
     else:
         # Muestra todos los productos si no hay búsqueda
         products = Product.objects.all().filter(is_available=True)

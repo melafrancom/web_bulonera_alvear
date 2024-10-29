@@ -244,7 +244,7 @@ article:after,
 }
 
 .bg-white {
-  background-color: #fff;
+  background-color: #ffffff;
 }
 
 .bg-orange {
@@ -475,34 +475,23 @@ p:last-child {
 /* desktop only */
 /* desktop only .end */
 /* ================ SECTION-FOOTER ==================  */
-.section-footer ul li {
-  margin-bottom: 5px;
-}
-.section-footer ul a {
-  color: inherit;
-}
-.section-footer ul a:hover {
-  color: #3167eb;
-}
-.section-footer .logo-footer {
-  height: 40px;
-}
-.section-footer .title {
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: #212529;
+.bulonera-footer{
+  background-color: #1c00a1;
 }
 
-.footer-bottom {
-  padding-top: 20px;
-  padding-bottom: 20px;
+.h6_about {
+  color: #969696;
 }
 
-.footer-copyright {
-  padding-top: 20px;
-  padding-bottom: 20px;
+.about_me {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
+.social_github {
+  color: #000;
+}
 /* ================== COMPONENTS =================== */
 /* ================ OWL SLIDER BANNER ================ */
 .slider-banner-owl .owl-nav .owl-prev, .slider-banner-owl .owl-nav .owl-next {
@@ -548,7 +537,7 @@ p:last-child {
   min-width: 100%;
   min-height: 100%;
   -o-object-fit: cover;
-     object-fit: cover;
+      object-fit: cover;
 }
 
 .btn-facebook {

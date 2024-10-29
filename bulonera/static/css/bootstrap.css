@@ -157,7 +157,7 @@ a {
   background-color: transparent;
 }
 a:hover {
-  color: #1244bd;
+  color: #EB171E;
   text-decoration: underline;
 }
 
@@ -575,8 +575,7 @@ pre code {
 .row {
   display: flex;
   flex-wrap: wrap;
-  margin-right: -10px;
-  margin-left: -10px;
+  justify-content: space-between;
 }
 
 .no-gutters {
@@ -6290,7 +6289,7 @@ button.bg-gray-light:focus {
 }
 
 .bg-white {
-  background-color: #fff !important;
+  background-color: #fff;
 }
 
 .bg-transparent {
