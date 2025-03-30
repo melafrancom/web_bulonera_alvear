@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <!-- ========================= SECTION CONTENT ========================= -->
     <section class="section-conten padding-y bg">
         {% include 'includes/alerts.html' %}
         <div class="container">
@@ -15,7 +14,7 @@
                         </header>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-6"><!-- ========================= TOTAL DE ORDENES ========================= -->
                                     <div class="card" style="text-align:center">
                                         <div class="card-body">
                                             <h5 class="card-tittle">Total de ordenes realizadas:</h5>
@@ -23,16 +22,44 @@
                                             <a href="{% url 'my_orders' %}">Ver mis ordenes</a>
                                         </div>
                                     </div>
+
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-6"><!-- ========================= DATOS ========================= -->
                                     <div class="card" style="text-align:center">
                                         <div class="card-body">
                                             <img src="{{ userprofile.profile_picture.url }}" alt="imagen de perfil" width="50" height="50" style="border-radius:50%">
-                                            <br>
-                                            <br>
+                                            <br><br>
                                             <p class="mb-0">{{ user.email }}</p>
                                             <p class="mb-0">{{ user.phone }}</p>
                                         </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6" style="text-align:center"><!-- ========================= ORDENES NUEVAS ========================= -->
+                                    <div class="card-body">
+                                        <h5 class="card-tittle">Total de ordenes nuevas:</h5>
+                                        <h4>{{ new_orders_count }}</h4>
+                                        <a href="{% url 'my_orders' %}">Ver mis ordenes</a>
+                                    </div>
+                                </div>
+                                <div class="col-md-6" style="text-align:center"><!-- ========================= ORDENES ACEPTADAS ========================= -->
+                                    <div class="card-body">
+                                        <h5 class="card-tittle">Total de ordenes aceptadas:</h5>
+                                        <h4>{{ accepted_orders_count }}</h4>
+                                        <a href="{% url 'my_orders' %}">Ver mis ordenes</a>
+                                    </div>
+                                </div>
+                                <div class="col-md-6" style="text-align:center"><!-- ========================= ORDENES COMPLETADAS ========================= -->
+                                    <div class="card-body">
+                                        <h5 class="card-tittle">Total de ordenes completadas:</h5>
+                                        <h4>{{ completed_orders_count }}</h4>
+                                        <a href="{% url 'my_orders' %}">Ver mis ordenes</a>
+                                    </div>
+                                </div>
+                                <div class="col-md-6" style="text-align:center"><!-- ========================= ORDENES CANCELADAS ========================= -->
+                                    <div class="card-body">
+                                        <h5 class="card-tittle">Total de ordenes canceladas:</h5>
+                                        <h4>{{ cancelled_orders_count }}</h4>
+                                        <a href="{% url 'my_orders' %}">Ver mis ordenes</a>
                                     </div>
                                 </div>
                             </div>
@@ -42,5 +69,4 @@
             </div>
         </div>
     </section>
-    <!-- ========================= SECTION CONTENT END// ========================= -->
-{% endblock %}
+    {% endblock %}

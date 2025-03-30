@@ -9,8 +9,6 @@ def home(request):
         reviews = ReviewRating.objects.filter(product_id=product.id, status=True)
         #Creamos un diccionario contexto para almacenar los datos que pasaremos (productos y reseñas).
 
-    
-    
     context = {
         'products': products,
         'reviews': reviews,
@@ -18,3 +16,17 @@ def home(request):
     
     template_name = 'home.html'
     return render(request, template_name, context)
+
+
+#-------------------- OTRAS VISTAS que no hacen a la funcionalidad. NO NECESARIOS. ------------------------
+def location(request):
+    template_name = 'others/location.html'
+    return render(request, template_name)
+
+def contactUs(request):
+    template_name = 'others/contactUs.html'
+    return render(request, template_name)
+
+def history(request):
+    template_name = 'others/history.html'
+    return render(request, template_name)

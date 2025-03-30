@@ -2,16 +2,18 @@
 {% load static %}
 
 {% block content %}
-<div class="container" style="margin-top: 50px;">
-    <center><i class="fas fa-check-circle" style="font-size: 72px;margin-bottom: 20px;color: #28A745;"></i></center>
-    <h2 class="text-center">El pago se realizó con exito</h2>
+<div class="text-center" style="margin-top: 50px;">
+    <centre><i class="fas fa-check-circle" style="font-size: 72px;margin-bottom: 20px;color: #1c00a1;">
+        <h2 class="text-center">La orden se realizó con exito!</h2>
+    </i></centre>
+
 	<br>
 	<div class="text-center">
-		<a href="{% url 'store' %}" class="btn btn-success">Seguir comprando</a>
+		<a href="{% url 'store' %}" class="btn btn-sm btn-primary" style="max-height: 75px;">Seguir comprando</a>
 	</div>
 </div>
 
-<div class="container" style="margin: 0 auto;width: 50%;padding: 50px;background: #f1f1f1;margin-top: 50px;margin-bottom: 50px;">
+<div class="container" style="margin: 0 auto;width: 50%;padding: 50px;background: #a4c3f1;margin-top: 50px;margin-bottom: 50px;">
     <div class="row invoice row-printable">
         <div class="col-md-12">
             <!-- col-lg-12 start here -->
@@ -22,7 +24,7 @@
                         <!-- Start .row -->
                         <div class="col-lg-6">
                             <!-- col-lg-6 start here -->
-                            <div class="invoice-logo"><img src="{% static './images/bitito.png' %}" alt="Invoice logo" style="max-height: 40px;"></div>
+                            <div class="invoice-logo"><img src="{% static './images/logo02.png' %}" alt="Invoice logo" style="max-height: 75px;"></div>
                         </div>
                         <!-- col-lg-6 end here -->
                         <div class="col-lg-6">
@@ -46,7 +48,8 @@
                                         <li><strong>Orden:</strong> #{{ order_number }}</li>
                                         <li><strong>Transacción:</strong> {{ transID }} </li>
                                         <li><strong>Fecha de orden:</strong> {{ order.created_at}} </li>
-                                        <li><strong>Estatus:</strong> {{ payment.status }} </li>
+                                        <li><strong>Estado: </strong> {% if order.is_ordered %}{{ order.status }}{% else %}Nuevo{% endif %}</li>
+                                        <li><strong>Estado del Pago:</strong> {{ payment.status }} </li>
                                     </ul>
                                 </div>
                             </div>
@@ -66,35 +69,38 @@
                                             {% for item in ordered_products %}
                                             <tr>
                                                 <td>
-                                                  {{ item.product.product_name }}
-                                                  <p class="text-muted small">
-                                                    {% if item.variation.all %}
-                                                      {% for i in item.variation.all %}
-                                                        {{ i.variation_category | capfirst }} : {{ i.variation_value | capfirst }} <br>
-                                                      {% endfor %}
-                                                    {% endif %}
-                                                  </p>
+                                                    {{ item.product.name }}
+                                                    <p class="text-muted small">
+                                                        {% if item.variation.all %}
+                                                        {% for i in item.variation.all %}
+                                                            {{ i.variation_category | capfirst }} : {{ i.variation_value | capfirst }} <br>
+                                                        {% endfor %}
+                                                        {% endif %}
+                                                    </p>
                                                 </td>
                                                 <td class="text-center">{{ item.quantity }}</td>
                                                 <td class="text-center">{{ item.product_price }} USD</td>
                                             </tr>
                                             {% endfor %}
                                         </tbody>
+                                        
                                         <tfoot>
+                                            <!--
                                             <tr>
                                                 <th colspan="2" class="text-right">Subtotal:</th>
-                                                <th class="text-center">${{ subtotal }} USD</th>
+                                                <th class="text-center">${{ subtotal }} AR$</th>
                                             </tr>
                                             <tr>
                                                 <th colspan="2" class="text-right">Impuestos:</th>
                                                 <th class="text-center">${{ order.tax }} USD</th>
                                             </tr>
-
+                                            -->
                                             <tr>
                                                 <th colspan="2" class="text-right">Total:</th>
                                                 <th class="text-center">${{ order.order_total }} USD</th>
                                             </tr>
                                         </tfoot>
+                                        
                                     </table>
                                 </div>
                             </div>

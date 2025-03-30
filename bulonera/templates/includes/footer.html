@@ -5,24 +5,14 @@
 				<footer class="bg-white bulonera-footer">
 					<div class="container py-5">
 						<div class="row py-3">
-				
-							<div class="col-lg-2 col-md-6 mb-4 mb-lg-0 h6_about">
-								<h6 class="text-uppercase font-weight-bold mb-4">About</h6>
-								<ul class="list-unstyled mb-0">
-									<li class="mb-2"><a href="#" class="text-muted">Contact Us</a></li>
-									<li class="mb-2"><a href="#" class="text-muted">About Us</a></li>
-									<li class="mb-2"><a href="#" class="text-muted">Stories</a></li>
-									<li class="mb-2"><a href="#" class="text-muted">Press</a></li>
-								</ul>
-							</div>
 
-							<div class="col-lg-2 col-md-6 mb-4 mb-lg-0"> <!-- ###### Policy ######-->
-								<h6 class="text-uppercase font-weight-bold mb-4 h6_about">Policy</h6>
+							<div class="col-lg-2 col-md-6 mb-4 mb-lg-0"> <!-- ###### About Us ######-->
+								<h6 class="text-uppercase font-weight-bold mb-4 h6_about">Nosotros</h6>
 								<ul class="list-unstyled mb-0">
-									<li class="mb-2"><a href="#" class="text-muted">Return Policy</a></li>
-									<li class="mb-2"><a href="#" class="text-muted">Terms Of Use</a></li>
-									<li class="mb-2"><a href="#" class="text-muted">Security</a></li>
-									<li class="mb-2"><a href="#" class="text-muted">Privacy</a></li>
+									<li class="mb-2"><a href="{% url 'history' %}" class="text-muted">Historia</a></li>
+									<li class="mb-2"><a href="{% url 'history' %}" class="text-muted">Vision</a></li>
+									<li class="mb-2"><a href="{% url 'history' %}" class="text-muted">Mision</a></li>
+									<li class="mb-2"><a href="{% url 'history' %}" class="text-muted">Valores</a></li>
 								</ul>
 							</div>
 							<div class="col-lg-2 col-md-6 mb-4 mb-lg-0"><!-- ###### Company ###### -->
@@ -30,10 +20,18 @@
 								<ul class="list-unstyled mb-0">
 									<li class="mb-2"><a href="{% url 'login' %}" class="text-muted">Login</a></li>
 									<li class="mb-2"><a href="{% url 'register' %}" class="text-muted">Register</a></li>
-									<li class="mb-2"><a href="#" class="text-muted">Sitemap</a></li>
 									<li class="mb-2"><a href="{% url 'store' %}" class="text-muted">Our Products</a></li>
 								</ul>
 							</div>
+				
+							<div class="col-lg-2 col-md-6 mb-4 mb-lg-0 h6_about"> <!-- ###### Contact Us ######-->
+								<h6 class="text-uppercase font-weight-bold mb-4">Contactanos:</h6>
+								<ul class="list-unstyled mb-0">
+									<li class="mb-2"><a href="{% url 'contactUs' %}" class="text-muted">Contactanos</a></li>
+									<li class="mb-2"><a href="{% url 'location' %}" class="text-muted">Donde encontrarnos</a></li>
+								</ul>
+							</div>
+
 							<div class="col-lg-4 col-md-6 mb-lg-0 h6_about"> <!--  ##### Social media ##### -->
 								<h6 class="text-uppercase font-weight-bold mb-4">Nos encontras en:</h6>
 								<p class="text-muted mb-4">Casa central: Av. Alvear 1301, Resistencia, CHACO, ARGENTINA - CP: 3500</p>
@@ -51,7 +49,7 @@
 					<hr class="p-0 m-0 b-0">
 			
 				
-					<div class="bg-light py-2">
+					<div class="bg-light py-2"><!--  ##### Derechos de creación: ##### -->
 						<div class="container text-center about_me">
 							<p class="text-muted mb-0 py-2">&copy; 2024 Bulonera Alvear - All risghts reserved by Mela Franco Maximiliano</p>
 							<li class="list-inline-item"><a href="https://github.com/melafrancom" target="_blank" title="github"><i class="fab fa-2x fa-github social_github"></i></a></li>

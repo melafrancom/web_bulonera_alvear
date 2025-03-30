@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-        <title>Bulonera Alvear - La Bulonera que usted necesita!</title>
+        <title>Bulonera Alvear | Bulonería y Ferretería.</title>
         
         <link href="{% static '/images/Bulonera.ico' %}" rel="shortcut icon" type="image/x-icon">
         
@@ -26,9 +26,7 @@
 
         <!-- custom javascript -->
         <script src="{% static 'js/script.js' %}" type="text/javascript"></script>
-        <!--
-        <script src="https://www.paypal.com/sdk/js?client-id=AcR7zkdXWRgqllj3uJaMWfNl3hsmA0dOkpP-nu2I7cFtKxaeTJFFfV2IeadmHtCkwSNwQwt3xwZzJ2jQ&currency=USD"></script>
-        -->
+
         <script type="text/javascript">
         $(document).ready(function() {
             setTimeout(function() {
@@ -39,14 +37,12 @@
     </head>
     
     <body>
-        <!--
-        <header>  Se carga desde el navbar.html </header>
-        -->
+        <!-- <header>  Se carga desde el navbar.html </header> -->
         {% include 'includes/navbar.html '%}
-    
+
         <!-- <main> Se carga desde el home.html </main> -->
         {% block content %}
-
+            
         {% endblock%}
         
         <!-- <footer> Se carga desde el footer.html </footer> -->

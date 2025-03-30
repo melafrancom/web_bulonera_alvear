@@ -20,6 +20,7 @@
                                         <thead>
                                             <tr>
                                                 <th scope="col">Número de orden: </th>
+                                                <th scope="col">Estado: </th>
                                                 <th scope="col">Nombre de facturación: </th>
                                                 <th scope="col">Teléfono: </th>
                                                 <th scope="col">Total de la orden: </th>
@@ -29,7 +30,8 @@
                                             <tbody>
                                                 {% for order in orders %}
                                                     <tr>
-                                                        <th scope="row">{{ order.order_number }}</th>
+                                                        <th scope="row"><a href="{% url 'order_complete' order.order_number %}" class="btn btn-sm btn-primary">{{ order.order_number }}</a></th>
+                                                        <td>{% if order.is_ordered %}{{ order.status }}{% else %}Nuevo{% endif %}</td>
                                                         <td>{{ order.full_name }}</td>
                                                         <td>{{ order.phone }}</td>
                                                         <td>${{ order.order_total }}</td>

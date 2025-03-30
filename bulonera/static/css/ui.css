@@ -429,6 +429,18 @@ p:last-child {
   background-color: #1c00a1;
 }
 
+.bulonera-titulo {
+  text-align: center;
+  background-color: #3167eb;
+}
+
+.titulo-bulonera {
+  font-size: 1.1rem;
+  font-family: emoji;
+  color: #ffffff;
+  border-bottom: 1px solid #000000 !important;
+}
+
 .brand-wrap .logo, .navbar-brand .logo {
   margin-right: 7px;
   max-height: 75px;

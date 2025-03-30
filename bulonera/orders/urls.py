@@ -24,5 +24,8 @@ from . import views
 urlpatterns = [
     path('place_order/', views.place_orders, name='place_orders'),
     path('payments/', views.payments, name='payments'),
-    path('order_complete/', views.order_complete, name='order_complete'),
+    path('order_complete/<str:order_number>/', views.order_complete, name='order_complete'),
+    path('whatsapp_redirect/', views.whatsapp_redirect, name='whatsapp_redirect'),
+    
+
 ]

@@ -1,5 +1,6 @@
 import requests
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites.shortcuts import get_current_site
@@ -160,16 +161,25 @@ def activate(request, uidb64, token):
 
 @login_required(login_url='login')
 def dashboard(request):
-    orders = Order.objects.order_by('-created_at').filter(user_id=request.user.id, is_ordered=True)
+    user = request.user
+    orders = Order.objects.order_by('-created_at').filter(user_id=request.user.id)
     orders_count = orders.count()
+    new_orders_count = Order.objects.filter(user=user, status='New').count()
+    accepted_orders_count = Order.objects.filter(user=user, status='Accepted').count()
+    completed_orders_count = Order.objects.filter(user=user, status='Completed').count()
+    cancelled_orders_count = Order.objects.filter(user=user, status='Cancelled').count()
     try:
         userprofile = UserProfile.objects.get(user_id=request.user.id)
     except UserProfile.DoesNotExist:
         # Puedes crear un perfil por defecto aquí o manejar el caso de ausencia de perfil
         userprofile = None
-    context = {
+    context = {     
         'orders_count': orders_count, 
-        'userprofile': userprofile
+        'userprofile': userprofile,
+        'new_orders_count': new_orders_count,
+        'accepted_orders_count': accepted_orders_count,
+        'completed_orders_count': completed_orders_count,
+        'cancelled_orders_count': cancelled_orders_count,
     }
     
     template_name = 'account/dashboard.html'
@@ -237,7 +247,7 @@ def resetPassword(request):
         return render(request, 'accounts/resetPassword.html')
 
 def my_orders(request):
-    orders = Order.objects.filter(user=request.user, is_ordered=True).order_by('-created_at')
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
     context = {
         'orders': orders,
     }
@@ -298,3 +308,4 @@ def change_password(request):
         
     template_name = 'account/change_password.html'
     return render(request, template_name)
+
