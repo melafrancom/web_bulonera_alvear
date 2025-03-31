@@ -3,7 +3,11 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Q
 from django.contrib import messages
+from django.http import JsonResponse
+from django.views.generic import DetailView, ListView
+#from django.conf import settings
 
+from bulonera.settings import SITE_URL, CURRENCY
 from .models import Product, ReviewRating, ProductGallery
 from account.models import Account
 from category.models import Category
@@ -60,12 +64,37 @@ def product_detail(request, category_slug, product_slug):
     reviews = ReviewRating.objects.filter(product__id=single_product.id, status=True)
     product_gallery = ProductGallery.objects.filter(product_id=single_product.id)
     
+    # Obtener los datos para META PIXEL
+    try:
+        meta_pixel_data = single_product.get_meta_pixel_data()
+    except AttributeError:
+        # Fallback si el método no existe o hay error
+        site_url = getattr(SITE_URL, '')
+        
+        meta_pixel_data = {
+            'id': str(single_product.id),
+            'title': single_product.name,
+            'description': single_product.description if single_product.description else "",
+            'availability': 'in stock' if single_product.is_available and single_product.stock > 0 else 'out of stock',
+            'condition': getattr(single_product, 'condition', 'new'),
+            'price': f"{single_product.price:.2f}",
+            'link': f"{site_url}{request.path}",
+            'image_link': f"{site_url}{single_product.images.url}" if single_product.images else "",
+            'brand': getattr(single_product, 'brand', ""),
+        }
+    
+    # Obtener la moneda desde settings para el script del META PIXEL
+    currency = CURRENCY
+    
     context = {
         'single_product': single_product,
+        'price': f"{single_product.price:.2f}",
         'in_cart': in_cart,
         'orderproduct': orderproduct,
         'reviews': reviews,
         'product_gallery': product_gallery,
+        'meta_pixel_data': meta_pixel_data,
+        'CURRENCY': currency,
     }
     
     template_name = 'store/product_detail.html'
@@ -113,3 +142,33 @@ def submit_review(request, product_id):
                 
                 messages.success(request, 'Muchas gracias!, tu comentario ha sido publicado.')
                 return redirect(url)
+            
+####### Vistas para META de Facebook y Google Merchant #######
+
+class ProductDetailView(DetailView):# Traemos el detailview de django.views.generic
+    model = Product
+    template_name = 'store/product_detail.html'
+    context_object_name = 'product'
+    
+    def get_object(self):
+        category_slug = self.kwargs['category_slug']
+        product_slug = self.kwargs['product_slug']
+        product = Product.objects.get(slug=product_slug, category__slug=category_slug)
+        return product
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Agregar datos para META PIXEL
+        context['meta_pixel_data'] = self.object.get_meta_pixel_data()
+        return context
+
+# Feeds para META PIXEL y Google Merchant
+def meta_pixel_product_feed(request):
+    products = Product.objects.filter(is_available=True)
+    products_data = [product.get_meta_pixel_data() for product in products]
+    return JsonResponse({'products': products_data})
+
+def google_merchant_feed(request):
+    products = Product.objects.filter(is_available=True)
+    products_data = [product.get_merchant_data() for product in products]
+    return JsonResponse({'products': products_data})

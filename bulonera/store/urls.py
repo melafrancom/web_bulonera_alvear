@@ -27,4 +27,7 @@ urlpatterns = [
     path('category/<slug:category_slug>/<slug:product_slug>/', views.product_detail, name="product_detail"),
     path('search/', views.search, name='search'),
     path('submit_review/<int:product_id>/', views.submit_review, name='submit_review'),
+    # URLs para feeds de META faccebook Y DE MERCHANT GOOGLE.
+    path('feeds/meta-pixel/', views.meta_pixel_product_feed, name='meta_pixel_feed'),
+    path('feeds/google-merchant/', views.google_merchant_feed, name='google_merchant_feed'),
 ]
