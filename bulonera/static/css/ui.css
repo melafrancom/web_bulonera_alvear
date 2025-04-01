@@ -484,6 +484,35 @@ p:last-child {
   color: #EB171E;
 }
 
+/* Estilos para el carrusel de productos */
+.carousel-products-container {
+  height: 300px;
+  overflow: hidden;
+}
+
+.product-card {
+  transition: transform 0.3s;
+  height: 100%;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.product-card img {
+  height: 150px;
+  object-fit: contain;
+}
+
+.carousel-item {
+  height: 300px;
+}
+
+.carousel-item img {
+  object-fit: cover;
+  height: 100%;
+}
 /* desktop only */
 /* desktop only .end */
 /* ================ SECTION-FOOTER ==================  */

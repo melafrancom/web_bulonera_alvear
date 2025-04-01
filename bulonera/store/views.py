@@ -8,7 +8,7 @@ from django.views.generic import DetailView, ListView
 #from django.conf import settings
 
 from bulonera.settings import SITE_URL, CURRENCY
-from .models import Product, ReviewRating, ProductGallery
+from .models import Product, ReviewRating, ProductGallery, ProductSearch, CarouselImage
 from account.models import Account
 from category.models import Category
 from cart.models import CartItem
@@ -104,17 +104,44 @@ def search(request):
     keyword = request.GET['keyword']
     if keyword:
         products = Product.objects.order_by('-created_date').filter(Q(description__icontains=keyword) | Q(name__icontains=keyword))
+        
+        # Registrar búsquedas de productos encontrados
+        if products.exists() and len(keyword) > 2:  # Solo registrar búsquedas con más de 2 caracteres
+            for product in products[:8]:  # Limitar a los primeros 8 resultados
+                # Obtener sesión o usuario
+                if request.user.is_authenticated:
+                    product_search, created = ProductSearch.objects.get_or_create(
+                        product=product, 
+                        user=request.user,
+                        defaults={'search_count': 1}
+                    )
+                    if not created:
+                        product_search.search_count += 1
+                        product_search.save()
+                else:
+                    session_key = request.session.session_key
+                    if not session_key:
+                        request.session.create()
+                        session_key = request.session.session_key
+                    
+                        product_search, created = ProductSearch.objects.get_or_create(
+                            product=product, 
+                            session_key=session_key,
+                            defaults={'search_count': 1}
+                        )
+                        if not created:
+                            product_search.search_count += 1
+                            product_search.save()
     else:
         # Muestra todos los productos si no hay búsqueda
         products = Product.objects.all().filter(is_available=True)
-        
-        
+    
     product_count = products.count()
     context = {
-        'products' : products,
-        'product_count' : product_count,
+        'products': products,
+        'product_count': product_count,
     }
-    
+
     template_name = 'store/store.html'
     return render(request, template_name, context)
 
@@ -172,3 +199,4 @@ def google_merchant_feed(request):
     products = Product.objects.filter(is_available=True)
     products_data = [product.get_merchant_data() for product in products]
     return JsonResponse({'products': products_data})
+

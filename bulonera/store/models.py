@@ -6,6 +6,7 @@ from bulonera.settings import SITE_URL, CURRENCY
 #Local:
 from account.models import Account
 from category.models import Category
+
 # Create your models here.
 # Modelo relacionado a todo sobre el producto. Con respecto a agregar/quitar productos al carrito está en 'cart'.
 
@@ -136,3 +137,44 @@ class ProductGallery(models.Model):
 
     def __str__(self):
         return self.product.name
+
+
+#NO HACE A LAS FUNCIONALIDADES PRINCIPALES DE LA PÁGINA:
+
+#CARRUSEL DE IMAGENES en la página 'home':
+class CarouselImage(models.Model):
+    title = models.CharField(max_length=100)
+    image = models.ImageField(upload_to='photos/carousel')
+    description = models.TextField(blank=True, help_text="Descripción de la imagen (opcional)")
+    url = models.CharField(max_length=255, blank=True, null=True, help_text="URL a la que redirige al hacer clic")
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, blank=True, null=True, 
+                            help_text="Asociar con un producto (opcional)")
+    position = models.PositiveIntegerField(default=0, help_text="Orden de aparición")
+    is_active = models.BooleanField(default=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['position']
+        verbose_name = "Imagen del Carrusel"
+        verbose_name_plural = "Imágenes del Carrusel"
+    
+    def __str__(self):
+        return self.title if self.title else str(self.image)
+
+#NO HACE A LAS FUNCIONALIDADES PRINCIPALES DE LA PÁGINA:
+#CREAMOS UN MODELO PARA RASTREAR LAS BUSQUEDAS MÁS BUSCADAS POR TODOS LOS USUARIOS
+class ProductSearch(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    user = models.ForeignKey(Account, on_delete=models.SET_NULL, blank=True, null=True)
+    search_count = models.PositiveIntegerField(default=1)
+    session_key = models.CharField(max_length=40, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Búsqueda de Producto"
+        verbose_name_plural = "Búsquedas de Productos"
+        unique_together = [['product', 'user'], ['product', 'session_key']]
+    
+    def __str__(self):
+        return f"{self.product.name} - {self.search_count} búsquedas"

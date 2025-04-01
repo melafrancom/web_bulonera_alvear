@@ -4,15 +4,118 @@
 
         {% block content %}
             <main>
-                <!-- ========================= SECTION MAIN ... imagen black friday ========================= -->
+                <!-- ========================= SECTION MAIN ... CARRUSEL ========================= -->
                 <section class="section-intro padding-y-sm">
                     <div class="container">
                         <div class="intro-banner-wrap">
-                            <img src="{% static 'images/banners/blackfriday.png' %}" class="img-fluid rounded">
+                            <!-- Carrusel principal -->
+                            <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
+                                <div class="carousel-indicators">
+                                    {% for image in carousel_images %}
+                                        <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="{{ forloop.counter0 }}" 
+                                            {% if forloop.first %}class="active"{% endif %} aria-current="true" aria-label="Slide {{ forloop.counter }}"></button>
+                                    {% endfor %}
+                                    
+                                    {% if most_searched_products %}
+                                        {% for product in most_searched_products %}
+                                            <button type="button" data-bs-target="#mainCarousel" 
+                                                data-bs-slide-to="{{ carousel_images|length|add:forloop.counter0 }}" 
+                                                aria-label="Slide {{ carousel_images|length|add:forloop.counter }}"></button>
+                                        {% endfor %}
+                                    {% endif %}
+                                    
+                                    {% if user_searched_products %}
+                                        {% for product in user_searched_products %}
+                                            <button type="button" data-bs-target="#mainCarousel" 
+                                                data-bs-slide-to="{{ carousel_images|length|add:most_searched_products|length|add:forloop.counter0 }}" 
+                                                aria-label="Slide {{ carousel_images|length|add:most_searched_products|length|add:forloop.counter }}"></button>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="carousel-inner rounded">
+                                    <!-- Imágenes configuradas por el administrador -->
+                                    {% for image in carousel_images %}
+                                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                            {% if image.url %}
+                                                <a href="{{ image.url }}">
+                                                    <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.title }}">
+                                                </a>
+                                            {% elif image.product %}
+                                                <a href="{{ image.product.get_url }}">
+                                                    <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.title }}">
+                                                </a>
+                                            {% else %}
+                                                <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.title }}">
+                                            {% endif %}
+                                            <div class="carousel-caption d-none d-md-block">
+                                                <h5>{{ image.title }}</h5>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                    
+                                    <!-- Productos más buscados globalmente -->
+                                    {% if most_searched_products %}
+                                        <div class="carousel-item {% if not carousel_images %}active{% endif %}">
+                                            <div class="carousel-products-container bg-light p-3 rounded">
+                                                <h3 class="text-center mb-3">Productos más populares</h3>
+                                                <div class="row">
+                                                    {% for product in most_searched_products %}
+                                                        <div class="col">
+                                                            <div class="card product-card">
+                                                                <a href="{{ product.get_url }}">
+                                                                    <img src="{{ product.images.url }}" class="card-img-top" alt="{{ product.name }}">
+                                                                    <div class="card-body">
+                                                                        <h5 class="card-title text-truncate">{{ product.name }}</h5>
+                                                                        <p class="card-text">${{ product.price|floatformat:2 }}</p>
+                                                                    </div>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Productos más buscados por el usuario -->
+                                    {% if user_searched_products %}
+                                        <div class="carousel-item">
+                                            <div class="carousel-products-container bg-light p-3 rounded">
+                                                <h3 class="text-center mb-3">Basado en tus búsquedas</h3>
+                                                <div class="row">
+                                                    {% for product in user_searched_products %}
+                                                        <div class="col">
+                                                            <div class="card product-card">
+                                                                <a href="{{ product.get_url }}">
+                                                                    <img src="{{ product.images.url }}" class="card-img-top" alt="{{ product.name }}">
+                                                                    <div class="card-body">
+                                                                        <h5 class="card-title text-truncate">{{ product.name }}</h5>
+                                                                        <p class="card-text">${{ product.price|floatformat:2 }}</p>
+                                                                    </div>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            </div>
                         </div>
                     </div> <!-- container //  -->
                 </section>
-                    <!-- ========================= SECTION MAIN END//  ... imagen black friday ========================= -->
+                    <!-- ========================= SECTION MAIN END//  ... CARRUSEL ========================= -->
                     
                 <!-- ========================= SECTION  ... Lo más vendido ========================= -->
                 <section class="section-name padding-y-sm">
