@@ -33,8 +33,8 @@
                                     {% endif %}
                                 </div>
                                 
-                                <div class="carousel-inner rounded">
-                                    <!-- Imágenes configuradas por el administrador -->
+                                <div class="carousel-inner rounded"><!-- Imágenes configuradas por el administrador -->
+                                    <!-- Imágenes AGREGADAS por el administrador -->
                                     {% for image in carousel_images %}
                                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
                                             {% if image.url %}
@@ -154,4 +154,4 @@
                     <!-- ========================= SECTION  END// Lo más vendido.. ========================= -->
             </main>
         {% endblock %}
-</html>
+</html> 
