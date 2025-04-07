@@ -9,25 +9,25 @@
                     <div class="container">
                         <div class="intro-banner-wrap">
                             <!-- Carrusel principal -->
-                            <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div id="mainCarousel" class="carousel slide" data-ride="carousel">
                                 <div class="carousel-indicators">
                                     {% for image in carousel_images %}
-                                        <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="{{ forloop.counter0 }}" 
-                                            {% if forloop.first %}class="active"{% endif %} aria-current="true" aria-label="Slide {{ forloop.counter }}"></button>
+                                        <button type="button" data-target="#mainCarousel" data-slide-to="{{ forloop.counter0 }}" 
+                                            {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>
                                     {% endfor %}
                                     
                                     {% if most_searched_products %}
                                         {% for product in most_searched_products %}
-                                            <button type="button" data-bs-target="#mainCarousel" 
-                                                data-bs-slide-to="{{ carousel_images|length|add:forloop.counter0 }}" 
+                                            <button type="button" data-target="#mainCarousel" 
+                                                data-slide-to="{{ carousel_images|length|add:forloop.counter0 }}" 
                                                 aria-label="Slide {{ carousel_images|length|add:forloop.counter }}"></button>
                                         {% endfor %}
                                     {% endif %}
                                     
                                     {% if user_searched_products %}
                                         {% for product in user_searched_products %}
-                                            <button type="button" data-bs-target="#mainCarousel" 
-                                                data-bs-slide-to="{{ carousel_images|length|add:most_searched_products|length|add:forloop.counter0 }}" 
+                                            <button type="button" data-target="#mainCarousel" 
+                                                data-slide-to="{{ carousel_images|length|add:most_searched_products|length|add:forloop.counter0 }}" 
                                                 aria-label="Slide {{ carousel_images|length|add:most_searched_products|length|add:forloop.counter }}"></button>
                                         {% endfor %}
                                     {% endif %}
@@ -103,11 +103,11 @@
                                     {% endif %}
                                 </div>
                                 
-                                <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+                                <button class="carousel-control-prev" type="button" data-target="#mainCarousel" data-slide="prev">
                                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                                     <span class="visually-hidden">Previous</span>
                                 </button>
-                                <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+                                <button class="carousel-control-next" type="button" data-target="#mainCarousel" data-slide="next">
                                     <span class="carousel-control-next-icon" aria-hidden="true"></span>
                                     <span class="visually-hidden">Next</span>
                                 </button>
@@ -153,5 +153,17 @@
                 </section>
                     <!-- ========================= SECTION  END// Lo más vendido.. ========================= -->
             </main>
+            <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    // Inicializa el carrusel manualmente
+                    var carouselElement = document.getElementById('mainCarousel');
+                    if (carouselElement) {
+                        var carousel = new bootstrap.Carousel(carouselElement, {
+                            interval: 3000,  // Cambia cada 3 segundos
+                            wrap: true       // Vuelve al principio después de la última diapositiva
+                        });
+                    }
+                });
+            </script>
         {% endblock %}
 </html> 

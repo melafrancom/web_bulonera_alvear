@@ -19,11 +19,13 @@ def _cart_id(request):
 def add_cart(request, product_id):
     product = Product.objects.get(id=product_id)
     
+    # Obtener la cantidad del request, por defecto 1
+    quantity = int(request.GET.get('qty', 1))
+    
     current_user = request.user
     
-    # User identificado
+    # Usuario identificado
     if current_user.is_authenticated:
-
         product_variation = []
         
         if request.method == 'POST':
@@ -31,11 +33,11 @@ def add_cart(request, product_id):
                 key = item
                 value = request.POST[key]
                 
-            try:
-                variation = Variation.objects.get(product=product, variation_category__iexact=key, variation_value__iexact=value)
-                product_variation.append(variation)
-            except:
-                pass
+                try:
+                    variation = Variation.objects.get(product=product, variation_category__iexact=key, variation_value__iexact=value)
+                    product_variation.append(variation)
+                except:
+                    pass
             
         is_cart_item_exists = CartItem.objects.filter(product=product, user=current_user).exists()
         if is_cart_item_exists:
@@ -52,12 +54,12 @@ def add_cart(request, product_id):
                 index = ex_var_list.index(product_variation)
                 item_id = id[index]
                 item = CartItem.objects.get(product=product, id=item_id)
-                item.quantity += 1
+                item.quantity += quantity  # Usar quantity en lugar de 1
                 item.save()
             else:
                 item = CartItem.objects.create(
                     product=product, 
-                    quantity=1, 
+                    quantity=quantity,  # Usar quantity en lugar de 1
                     user=current_user,
                 )
                 if len(product_variation) > 0:
@@ -67,7 +69,7 @@ def add_cart(request, product_id):
         else:
             cart_item = CartItem.objects.create(
                 product = product,
-                quantity = 1,
+                quantity = quantity,  # Usar quantity en lugar de 1
                 user = current_user,
             )
             if len(product_variation) > 0:
@@ -77,7 +79,7 @@ def add_cart(request, product_id):
             
         return redirect('cart')
     
-    #Usuarios no identificados:
+    # Usuarios no identificados:
     else:
         product_variation = []
         
@@ -115,23 +117,22 @@ def add_cart(request, product_id):
                 index = ex_var_list.index(product_variation)
                 item_id = id[index]
                 item = CartItem.objects.get(product=product, id=item_id)
-                item.quantity += 1
+                item.quantity += quantity  # Usar quantity en lugar de 1
                 item.save()
             else:
                 item = CartItem.objects.create(
                     product=product,
-                    quantity = 1,
+                    quantity = quantity,  # Usar quantity en lugar de 1
                     cart = cart,
                 )
                 if len(product_variation) > 0:
                     item.variation.clear()
                     item.variation.add(*product_variation)
-                item.save()
-        #Normal nota:        
+                item.save()     
         else:
             cart_item = CartItem.objects.create(
                 product = product,
-                quantity = 1,
+                quantity = quantity,  # Usar quantity en lugar de 1
                 cart = cart,
             )
             if len(product_variation) > 0:
@@ -140,8 +141,6 @@ def add_cart(request, product_id):
             cart_item.save()
             
         return redirect('cart')
-
-
 def remove_cart(request, product_id, cart_item_id):
     product = get_object_or_404(Product, id=product_id)
     try:

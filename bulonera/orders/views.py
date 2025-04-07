@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.conf import settings
 
 #Local
 from .models import Payment, Order, OrderProduct
@@ -355,7 +356,7 @@ def whatsapp_redirect(request):
         encoded_message = urllib.parse.quote(message)
         
         # Número de WhatsApp de la empresa
-        phone_number = 5493624733431
+        phone_number = settings.WHATSAPP_NUMBER  # Definido esto en settings.py
         
         # Generar enlace de WhatsApp
         whatsapp_link = f"https://wa.me/{phone_number}?text={encoded_message}"

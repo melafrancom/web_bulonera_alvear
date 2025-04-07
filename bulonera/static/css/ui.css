@@ -1443,3 +1443,24 @@ a[class*=card]:hover .title {
   margin-right: 5px;
   display: block;
 }
+
+/* ================ PAGE CONTACT ================== */
+.contact-option {
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.contact-option:hover {
+  transform: translateY(-5px);
+}
+
+.contact-option .card {
+  transition: all 0.3s ease;
+}
+
+.contact-option:hover .card {
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}

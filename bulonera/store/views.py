@@ -1,5 +1,4 @@
-from django.shortcuts import render, HttpResponse
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, HttpResponse, get_object_or_404, redirect
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Q
 from django.contrib import messages
@@ -23,25 +22,67 @@ def store(request, category_slug=None):
     categories = None
     products = None
     
+    # Obtener los valores de precio min y max del request
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+    
+    # Filtrar por categoría si existe
     if category_slug != None:
         categories = get_object_or_404(Category, slug=category_slug)
-        products = Product.objects.filter(category=categories, is_available=True).order_by('id')
-        paginator = Paginator(products, 6)
-        page = request.GET.get('page')
-        paged_products = paginator.get_page(page)
-        product_count = products.count()
+        products = Product.objects.filter(category=categories, is_available=True)
     else:
-        products = Product.objects.all().filter(is_available=True).order_by('id')
-        paginator = Paginator(products, 6)
-        page = request.GET.get('page')
-        paged_products = paginator.get_page(page)
-        product_count = products.count()
-        
+        products = Product.objects.filter(is_available=True)
+    
+    # Aplicar filtro de precio si se especificó
+    if min_price and max_price:
+        try:
+            min_price = float(min_price)
+            max_price = float(max_price)
+            products = products.filter(price__gte=min_price, price__lte=max_price)
+        except ValueError:
+            pass  # Si hay un error de conversión, ignoramos el filtro
+    
+    # Filtrado por marca
+    brand = request.GET.get('brand')
+    if brand:
+        if brand == 'sin_marca':
+            products = products.filter(brand__isnull=True)  # Filtra productos sin marca
+        else:
+            products = products.filter(brand=brand)
+    
+    # Ordenar productos
+    sort_by = request.GET.get('sort_by', 'id')  # Por defecto ordenamos por id
+    if sort_by == 'price_asc':
+        products = products.order_by('price')
+    elif sort_by == 'price_desc':
+        products = products.order_by('-price')
+    else:
+        products = products.order_by('id')
+    
+    # Paginación
+    paginator = Paginator(products, 6)
+    page = request.GET.get('page')
+    paged_products = paginator.get_page(page)
+    product_count = products.count()
+    
+    # Obtener todas las categorías principales para el menú
+    main_categories = Category.objects.filter(parent=None)
+    
+    # Obtener marcas únicas
+    brands = Product.objects.values_list('brand', flat=True).distinct()
+    brands = [brand for brand in brands if brand]  # Eliminar valores nulos o vacíos
+    brands.append('sin_marca')  # Agregar la opción "Sin marca"
+    
     context = {
-        'products' : paged_products,
-        'product_count' : product_count,
+        'products': paged_products,
+        'product_count': product_count,
+        'min_price': min_price,
+        'max_price': max_price,
+        'sort_by': sort_by,
+        'main_categories': main_categories,
+        'brands': brands,  # Pasar las marcas al contexto
     }
-        
+    
     template_name = 'store/store.html'
     return render(request, template_name, context)
 

@@ -13,11 +13,7 @@ def home(request):
     carousel_images = CarouselImage.objects.filter(is_active=True).order_by('position')
     
     # Obtener productos más buscados globalmente
-    most_searched_products = Product.objects.filter(
-        productsearch__isnull=False
-    ).annotate(
-        total_searches=Sum('productsearch__search_count')
-    ).order_by('-total_searches')[:5]
+    most_searched_products = Product.objects.filter(is_available=True).order_by('-productsearch__search_count')[:5]
     
     # Obtener productos más buscados por el usuario actual
     user_searched_products = []
@@ -56,10 +52,6 @@ def home(request):
 #-------------------- OTRAS VISTAS que no hacen a la funcionalidad. NO NECESARIOS. ------------------------
 def location(request):
     template_name = 'others/location.html'
-    return render(request, template_name)
-
-def contactUs(request):
-    template_name = 'others/contactUs.html'
     return render(request, template_name)
 
 def history(request):
