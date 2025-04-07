@@ -119,7 +119,7 @@ def payments(request):
             encoded_message = urllib.parse.quote(message)
             
             # Número de WhatsApp de la empresa (REEMPLAZAR)
-            phone_number = 5493624733431
+            phone_number = settings.WHATSAPP_NUMBER
             
             # Generar enlace de WhatsApp
             whatsapp_link = f"https://wa.me/{phone_number}?text={encoded_message}"

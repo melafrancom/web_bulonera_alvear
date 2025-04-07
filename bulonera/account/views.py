@@ -42,7 +42,7 @@ def register(request):
             profile.profile_picture = 'default/default-user.png' #Ver a donde va está imagen.
             profile.save()
             
-            """
+            
             current_site = get_current_site(request)
             
             mail_subject = 'Activa tu cuenta en Bulonera Alvear para continuar'
@@ -56,7 +56,7 @@ def register(request):
             to_email = email
             send_mail = EmailMessage(mail_subject, body, to = [to_email])
             send_mail.send()
-            """
+            
             
             messages.success(request, 'Te has registrado exitosamente')
             return redirect('/account/login/?command=verification&email='+email)

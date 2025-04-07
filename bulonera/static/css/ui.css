@@ -1464,3 +1464,9 @@ a[class*=card]:hover .title {
 .contact-option:hover .card {
   box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
+
+/* ================ PAGE Location ================== */
+.iframe1 {
+  width: 70rem;
+  height: 25rem;
+}
