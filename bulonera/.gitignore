@@ -164,5 +164,3 @@ cython_debug/
 
 # Carpetas ignoradas manualmente:
 # ejemplo:    src/HECHOS_CON_ALMA/settings/local.py
-bulonera/settings/local.py
-bulonera/settings.py
