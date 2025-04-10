@@ -157,13 +157,13 @@ a:hover {
 
 /* ============== spacing ============== */
 .padding-y {
-  padding-top: 40px;
-  padding-bottom: 40px;
+  padding-top: 2.5rem;
+  padding-bottom: 8rem;
 }
 
 .padding-top {
   padding-top: 40px;
-}
+} 
 
 .padding-bottom {
   padding-bottom: 40px;
@@ -183,8 +183,8 @@ a:hover {
 }
 
 .padding-y-sm {
-  padding-top: 20px;
-  padding-bottom: 20px;
+  padding-top: 1.5rem;
+  padding-bottom: 2rem;
 }
 
 .padding-top-sm {
@@ -518,6 +518,7 @@ p:last-child {
 /* ================ SECTION-FOOTER ==================  */
 .bulonera-footer{
   background-color: #1c00a1;
+  margin-top: auto;
 }
 
 .h6_about {
@@ -1376,7 +1377,7 @@ a[class*=card]:hover .title {
 /* ================== PAGES =================== */
 /* ================ PAGES HEADER ================== */
 .section-pagetop {
-  padding: 45px 0;
+  padding: 1.5rem;
 }
 
 /* ================== PAGE DETAILS ==================  */
