@@ -4,9 +4,6 @@ from django.db.models import Sum, Count
 from store.models import Product, ReviewRating, ProductSearch, CarouselImage
 
 # En tu archivo views.py principal (puede ser home/views.py o como lo hayas llamado)
-from django.shortcuts import render
-from store.models import Product, ProductSearch, CarouselImage
-from django.db.models import Sum, Count
 
 def home(request):
     # Obtener imágenes activas del carrusel configuradas por el administrador

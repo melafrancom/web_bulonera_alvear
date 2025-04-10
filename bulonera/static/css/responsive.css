@@ -1,82 +1,205 @@
+/* Estilos responsive mejorados */
+
 .mobile-block {
   display: none;
 }
 
+/* Dispositivos extra grandes (escritorios grandes, 1200px y superior) */
 @media (max-width: 1200px) {
-  /* tablet devices */
+  /* Ajustes para tablets grandes y portátiles */
+  .container {
+    max-width: 100%;
+    padding: 0 15px;
+  }
 }
+
+/* Dispositivos grandes (escritorios medianos, 992px y superior) */
 @media (max-width: 992px) {
-  /* small tablet devices */
+  /* Ajustes para tablets */
   .slider-main .item-slide {
     height: auto;
   }
-
+  
   .table-shopping-cart tr td:first-child {
-    width: 250px;
+    width: 200px;
   }
+  
   .table-shopping-cart .itemside .info {
     padding: 0;
   }
+  
   .table-shopping-cart .itemside .aside {
     display: none;
   }
+  
+  /* Ajustes para el carrusel */
+  .carousel-inner .carousel-item img {
+    height: 300px;
+    object-fit: cover;
+  }
+  
+  /* Ajustes para los productos */
+  .card-product-grid .img-wrap {
+    height: 180px;
+  }
 }
-@media all and (max-width: 768px) {
-  /* mobile devices */
+
+/* Dispositivos medianos (tablets, 768px y superior) */
+@media (max-width: 768px) {
+  /* Ajustes generales para móviles */
   .mobile-block {
     display: block;
   }
-
+  
   .mobile-hide {
     display: none;
   }
-
+  
+  /* Ajustes del header */
   .section-header .logo {
     max-height: 40px;
     width: auto;
   }
+  
   .section-header .header-main .brand-wrap {
     margin-bottom: 1rem;
     display: inline-block;
   }
+  
   .section-header .header-main .search {
     margin-bottom: 1rem;
   }
-
-  .item-feature {
-    margin-bottom: 20px;
+  
+  /* Ajustes para los filtros en la tienda */
+  .filter-content {
+    max-height: 200px;
+    overflow-y: auto;
   }
-
+  
+  /* Ajustes para los productos */
+  .card-product-grid {
+    margin-bottom: 1rem;
+  }
+  
+  /* Ajustes para el carrito */
+  .table-shopping-cart {
+    min-width: 700px;
+  }
+  
+  .table-shopping-cart-wrap {
+    overflow-x: auto;
+  }
+  
+  /* Ordenamiento de elementos en móvil */
   .mobile-order-first {
     order: -1;
   }
-
+  
   .mobile-order-1 {
     order: 1;
   }
-
+  
   .mobile-order-2 {
     order: 2;
   }
-
+  
   .mobile-order-3 {
     order: 3;
   }
-
+  
+  /* Espaciados para móvil */
   .mobile-py {
     padding-top: 20px;
     padding-bottom: 20px;
   }
-
+  
   .mobile-pb {
     padding-bottom: 20px;
   }
-
+  
   .mobile-pt {
     padding-top: 20px;
   }
-
+  
+  /* Ajustes para el navbar */
   .navbar-expand .navbar-collapse {
     flex-direction: column;
+  }
+  
+  /* Ajustes del carrusel */
+  .carousel-products-container .row {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 15px;
+  }
+  
+  .carousel-products-container .col {
+    min-width: 180px;
+    padding: 0 5px;
+  }
+}
+
+/* Dispositivos pequeños (teléfonos en modo paisaje, 576px y superior) */
+@media (max-width: 576px) {
+  /* Ajustes específicos para móviles pequeños */
+  .section-intro {
+    padding: 10px 0;
+  }
+  
+  .card-product-grid .img-wrap {
+    height: 160px;
+  }
+  
+  /* Ajustes para el carrusel */
+  .carousel-inner .carousel-item img {
+    height: 200px;
+  }
+  
+  /* Ajustes del footer */
+  .bulonera-footer .row > div {
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Ajustes del título */
+  .bulonera-titulo h1 {
+    font-size: 1.5rem;
+  }
+  
+  /* Ajustes para las cards de productos */
+  .card-product-grid .fix-height {
+    height: auto;
+  }
+  
+  /* Ajustes para el carrito */
+  .table-shopping-cart .product-name {
+    width: 100%;
+  }
+}
+
+/* Dispositivos muy pequeños (teléfonos en modo retrato, menos de 400px) */
+@media (max-width: 400px) {
+  .card-product-grid .img-wrap {
+    height: 140px;
+  }
+  
+  .section-header .logo {
+    max-height: 35px;
+  }
+  
+  /* Reducir padding para optimizar espacio */
+  .section-content {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  
+  .card {
+    margin-bottom: 10px;
+  }
+  
+  /* Ajustes para botones en móviles pequeños */
+  .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
   }
 }

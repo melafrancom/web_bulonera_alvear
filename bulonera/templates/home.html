@@ -154,6 +154,17 @@
                     <!-- ========================= SECTION  END// Lo más vendido.. ========================= -->
             </main>
             <script>
+                    // Ajuste responsive para el carrusel
+                function adjustCarouselHeight() {
+                    var width = window.innerWidth;
+                    var height = width < 576 ? 200 : (width < 768 ? 300 : 400);
+                    
+                    var carouselImages = document.querySelectorAll('.carousel-inner .carousel-item img');
+                    carouselImages.forEach(function(img) {
+                        img.style.height = height + 'px';
+                        img.style.objectFit = 'cover';
+                    });
+                }
                 document.addEventListener("DOMContentLoaded", function() {
                     // Inicializa el carrusel manualmente
                     var carouselElement = document.getElementById('mainCarousel');
@@ -164,6 +175,9 @@
                         });
                     }
                 });
+                        // Ajustar altura del carrusel inicialmente y al cambiar tamaño
+                adjustCarouselHeight();
+                window.addEventListener('resize', adjustCarouselHeight);
             </script>
         {% endblock %}
 </html> 

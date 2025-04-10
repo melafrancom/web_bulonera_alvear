@@ -56,3 +56,75 @@ ul.thumb li img {
   height: 80px;
   border: 1px solid grey;
 }
+
+/* Mejoras responsive para la UI */
+@media (max-width: 768px) {
+  /* Ajustar encabezado para móviles */
+  .bulonera-titulo {
+    padding: 5px 0;
+    text-align: center;
+  }
+  
+  .titulo-bulonera {
+    font-size: 1.2rem;
+    margin: 5px 0;
+  }
+  
+  /* Mejorar la visualización de productos en móvil */
+  .card-product-grid .info-wrap {
+    padding: 10px;
+  }
+  
+  .price-wrap {
+    margin-top: 5px !important;
+  }
+  
+  /* Ajustar botones de cantidad */
+  .input-group.mb-2 {
+    max-width: 120px;
+    margin: 0 auto;
+  }
+  
+  /* Mejorar visualización de footer en móvil */
+  .list-inline-item {
+    margin-right: 8px !important;
+  }
+  
+  .fab.fa-2x {
+    font-size: 1.5em;
+  }
+  
+  /* Ajustar filtros en tienda */
+  .card-header a {
+    display: block;
+    width: 100%;
+  }
+}
+
+/* Ajustes para pantallas muy pequeñas */
+@media (max-width: 400px) {
+  .section-pagetop h2 {
+    font-size: 1.2rem;
+  }
+  
+  .btn-block {
+    display: block;
+    width: 100%;
+    margin-bottom: 5px;
+  }
+}
+
+/* Mejoras generales de usabilidad */
+.card-product-grid:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  transition: all 0.3s;
+}
+
+.img-wrap img {
+  transition: transform 0.3s;
+}
+
+.img-wrap:hover img {
+  transform: scale(1.05);
+}

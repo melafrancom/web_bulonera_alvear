@@ -182,7 +182,7 @@
                     <div class="row"><!-- Boton de agregar al carrito +/- y CONTADOR -->
                         {% if products %}
                             {% for product in products %}
-                                <div class="col-md-4">
+                                <div class="col-6 col-md-4 col-lg-4">
                                     <figure class="card card-product-grid">
                                         <div class="img-wrap">
                                             <a href="{{ product.get_url }}"><img src="{{ product.images.url }}"></a>
@@ -215,7 +215,7 @@
                         {% endif %}
                     </div>
 
-                    <nav class="mt-4" aria-label="Page navigation sample">
+                    <nav class="mt-4" aria-label="Page navigation sample"><!-- Others pages -->
                         {% if products.has_other_pages %}
                             <ul class="pagination">
                                 {% if products.has_previous %}
