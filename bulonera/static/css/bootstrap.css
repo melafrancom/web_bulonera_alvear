@@ -5993,7 +5993,6 @@ a.close.disabled {
   top: 0;
   bottom: 0;
   z-index: 1;
-  display: flex;
   align-items: center;
   justify-content: center;
   width: 15%;

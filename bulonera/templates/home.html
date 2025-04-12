@@ -1,183 +1,309 @@
 {% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
 
-        {% block content %}
-            <main>
-                <!-- ========================= SECTION MAIN ... CARRUSEL ========================= -->
-                <section class="section-intro padding-y-sm">
-                    <div class="container">
-                        <div class="intro-banner-wrap">
-                            <!-- Carrusel principal -->
-                            <div id="mainCarousel" class="carousel slide" data-ride="carousel">
-                                <div class="carousel-indicators">
-                                    {% for image in carousel_images %}
-                                        <button type="button" data-target="#mainCarousel" data-slide-to="{{ forloop.counter0 }}" 
-                                            {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>
-                                    {% endfor %}
-                                    
-                                    {% if most_searched_products %}
-                                        {% for product in most_searched_products %}
-                                            <button type="button" data-target="#mainCarousel" 
-                                                data-slide-to="{{ carousel_images|length|add:forloop.counter0 }}" 
-                                                aria-label="Slide {{ carousel_images|length|add:forloop.counter }}"></button>
-                                        {% endfor %}
+{% block content %}
+<main>
+<!-- ========================= SECTION MAIN - CARRUSEL PRINCIPAL ========================= -->
+<section class="section-carousel px-0">
+    <div class="container-fluid px-0">
+        <!-- Carrusel principal -->
+        <div id="mainCarousel" class="carousel slide" data-ride="carousel">
+            <div class="carousel-indicators">
+                
+                {% for image in carousel_images %}
+                    <button type="button" data-target="#mainCarousel" data-slide-to="{{ forloop.counter0 }}" 
+                        {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>
+                {% endfor %}
+                
+                {% if most_searched_products %}
+                    {% for product in most_searched_products %}
+                        <button type="button" data-target="#mainCarousel" 
+                            data-slide-to="{{ carousel_images|length|add:forloop.counter0 }}" 
+                            aria-label="Slide {{ carousel_images|length|add:forloop.counter }}"></button>
+                    {% endfor %}
+                {% endif %}
+                
+                {% if user_searched_products %}
+                    {% for product in user_searched_products %}
+                        <button type="button" data-target="#mainCarousel" 
+                            data-slide-to="{{ carousel_images|length|add:most_searched_products|length|add:forloop.counter0 }}" 
+                            aria-label="Slide {{ carousel_images|length|add:most_searched_products|length|add:forloop.counter }}"></button>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            <div class="carousel-inner">
+                <!-- Imágenes AGREGADAS por el administrador -->
+                {% for image in carousel_images %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <div class="carousel-background-overlay">
+                            <div class="container">
+                                <div class="carousel-content">
+                                    {% if image.url %}
+                                        <a href="{{ image.url }}" class="carousel-link">
+                                            <img src="{{ image.image.url }}" class="carousel-img" alt="{{ image.title }}">
+                                        </a>
+                                    {% elif image.product %}
+                                        <a href="{{ image.product.get_url }}" class="carousel-link">
+                                            <img src="{{ image.image.url }}" class="carousel-img" alt="{{ image.title }}">
+                                        </a>
+                                    {% else %}
+                                        <img src="{{ image.image.url }}" class="carousel-img" alt="{{ image.title }}">
                                     {% endif %}
-                                    
-                                    {% if user_searched_products %}
-                                        {% for product in user_searched_products %}
-                                            <button type="button" data-target="#mainCarousel" 
-                                                data-slide-to="{{ carousel_images|length|add:most_searched_products|length|add:forloop.counter0 }}" 
-                                                aria-label="Slide {{ carousel_images|length|add:most_searched_products|length|add:forloop.counter }}"></button>
-                                        {% endfor %}
-                                    {% endif %}
-                                </div>
-                                
-                                <div class="carousel-inner rounded"><!-- Imágenes configuradas por el administrador -->
-                                    <!-- Imágenes AGREGADAS por el administrador -->
-                                    {% for image in carousel_images %}
-                                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                            {% if image.url %}
-                                                <a href="{{ image.url }}">
-                                                    <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.title }}">
-                                                </a>
-                                            {% elif image.product %}
-                                                <a href="{{ image.product.get_url }}">
-                                                    <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.title }}">
-                                                </a>
-                                            {% else %}
-                                                <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.title }}">
-                                            {% endif %}
-                                            <div class="carousel-caption d-none d-md-block">
-                                                <h5>{{ image.title }}</h5>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                    
-                                    <!-- Productos más buscados globalmente -->
-                                    {% if most_searched_products %}
-                                        <div class="carousel-item {% if not carousel_images %}active{% endif %}">
-                                            <div class="carousel-products-container bg-light p-3 rounded">
-                                                <h3 class="text-center mb-3">Productos más populares</h3>
-                                                <div class="row">
-                                                    {% for product in most_searched_products %}
-                                                        <div class="col">
-                                                            <div class="card product-card">
-                                                                <a href="{{ product.get_url }}">
-                                                                    <img src="{{ product.images.url }}" class="card-img-top" alt="{{ product.name }}">
-                                                                    <div class="card-body">
-                                                                        <h5 class="card-title text-truncate">{{ product.name }}</h5>
-                                                                        <p class="card-text">${{ product.price|floatformat:2 }}</p>
-                                                                    </div>
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    {% endfor %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {% endif %}
-                                    
-                                    <!-- Productos más buscados por el usuario -->
-                                    {% if user_searched_products %}
-                                        <div class="carousel-item">
-                                            <div class="carousel-products-container bg-light p-3 rounded">
-                                                <h3 class="text-center mb-3">Basado en tus búsquedas</h3>
-                                                <div class="row">
-                                                    {% for product in user_searched_products %}
-                                                        <div class="col">
-                                                            <div class="card product-card">
-                                                                <a href="{{ product.get_url }}">
-                                                                    <img src="{{ product.images.url }}" class="card-img-top" alt="{{ product.name }}">
-                                                                    <div class="card-body">
-                                                                        <h5 class="card-title text-truncate">{{ product.name }}</h5>
-                                                                        <p class="card-text">${{ product.price|floatformat:2 }}</p>
-                                                                    </div>
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    {% endfor %}
-                                                </div>
-                                            </div>
-                                        </div>
+    
+                                    {% if image.title %}
+                                    <div class="carousel-caption d-none d-md-block">
+                                        <h5>{{ image.title }}</h5>
+                                        {% if image.description %}
+                                        <p class="d-none d-lg-block">{{ image.description }}</p>
+                                        {% endif %}
+                                    </div>
                                     {% endif %}
                                 </div>
-                                
-                                <button class="carousel-control-prev" type="button" data-target="#mainCarousel" data-slide="prev">
-                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Previous</span>
-                                </button>
-                                <button class="carousel-control-next" type="button" data-target="#mainCarousel" data-slide="next">
-                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Next</span>
-                                </button>
                             </div>
                         </div>
-                    </div> <!-- container //  -->
-                </section>
-                    <!-- ========================= SECTION MAIN END//  ... CARRUSEL ========================= -->
-                    
-                <!-- ========================= SECTION  ... Lo más vendido ========================= -->
-                <section class="section-name padding-y-sm">
-                    <div class="container">
-                    
-                        <header class="section-heading">
-                            <a href="{% url 'store' %}" class="btn btn-outline-primary float-right">Ver Todo</a>
-                            <h3 class="section-title">Los más vendidos</h3>
-                        </header><!-- sect-heading -->
 
-                        <div class="row">
-                            {% for product in products %}
-                                <div class="col-md-3">
-                                    <div class="card card-product-grid">
-                                        <a href="{{ product.get_url }}" class="img-wrap"> <img src="{{ product.images.url }}"> </a>
-                                        <figcaption class="info-wrap">
-                                            <a href="{{ product.get_url }}" class="title">{{product.name}}</a>
-                                            <div class="price mt-1">{{ product.price }}
-                                            </div> <!-- price-wrap.// -->
-                                            <div class="rating-star">
-                                                <span>
-                                                    <i class="fa fa-star{% if product.averageReview < 0.5 %}-o{% elif product.averageReview >= 0.5 and product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                                    <i class="fa fa-star{% if product.averageReview < 1.5 %}-o{% elif product.averageReview >= 1.5 and product.averageReview < 2 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                                    <i class="fa fa-star{% if product.averageReview < 2.5 %}-o{% elif product.averageReview >= 2.5 and product.averageReview < 3 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                                    <i class="fa fa-star{% if product.averageReview < 3.5 %}-o{% elif product.averageReview >= 3.5 and product.averageReview < 4 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                                    <i class="fa fa-star{% if product.averageReview < 4.5 %}-o{% elif product.averageReview >= 4.5 and product.averageReview < 5 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                                </span>
+                    </div>
+                {% endfor %}
+                
+                <!-- Productos más buscados globalmente -->
+                {% if most_searched_products %}
+                    <div class="carousel-item {% if not carousel_images %}active{% endif %}">
+                        <div class="carousel-background-overlay">
+                            <div class="container">
+                                <div class="carousel-products-wrapper">
+                                    <h3 class="text-center mb-3">Productos más populares</h3>
+                                    <div class="row carousel-products-container">
+                                        {% for product in most_searched_products %}
+                                            <div class="col">
+                                                <div class="card product-card">
+                                                    <a href="{{ product.get_url }}">
+                                                        <img src="{{ product.images.url }}" class="card-img-top" alt="{{ product.name }}">
+                                                        <div class="card-body">
+                                                            <h5 class="card-title text-truncate">{{ product.name }}</h5>
+                                                            <p class="card-text">${{ product.price|floatformat:2 }}</p>
+                                                        </div>
+                                                    </a>
+                                                </div>
                                             </div>
-                                        </figcaption>
+                                        {% endfor %}
                                     </div>
-                                </div> <!-- col.// -->
-                            {% endfor %}
+                                </div>
+                            </div>
                         </div>
-                    </div><!-- container // -->
-                </section>
-                    <!-- ========================= SECTION  END// Lo más vendido.. ========================= -->
-            </main>
-            <script>
-                    // Ajuste responsive para el carrusel
-                function adjustCarouselHeight() {
-                    var width = window.innerWidth;
-                    var height = width < 576 ? 200 : (width < 768 ? 300 : 400);
-                    
-                    var carouselImages = document.querySelectorAll('.carousel-inner .carousel-item img');
-                    carouselImages.forEach(function(img) {
-                        img.style.height = height + 'px';
-                        img.style.objectFit = 'cover';
-                    });
-                }
-                document.addEventListener("DOMContentLoaded", function() {
-                    // Inicializa el carrusel manualmente
-                    var carouselElement = document.getElementById('mainCarousel');
-                    if (carouselElement) {
-                        var carousel = new bootstrap.Carousel(carouselElement, {
-                            interval: 3000,  // Cambia cada 3 segundos
-                            wrap: true       // Vuelve al principio después de la última diapositiva
-                        });
-                    }
-                });
-                        // Ajustar altura del carrusel inicialmente y al cambiar tamaño
-                adjustCarouselHeight();
-                window.addEventListener('resize', adjustCarouselHeight);
-            </script>
-        {% endblock %}
-</html> 
+
+                    </div>
+                {% endif %}
+                
+                <!-- Productos más buscados por el usuario -->
+                {% if user_searched_products %}
+                    <div class="carousel-item">
+                        <div class="carousel-background-overlay">
+                            <div class="container">
+                                <div class="carousel-products-wrapper">
+                                    <h3 class="text-center mb-3">Basado en tus búsquedas</h3>
+                                    <div class="row carousel-products-container">
+                                        {% for product in user_searched_products %}
+                                            <div class="col">
+                                                <div class="card product-card">
+                                                    <a href="{{ product.get_url }}">
+                                                        <img src="{{ product.images.url }}" class="card-img-top" alt="{{ product.name }}">
+                                                        <div class="card-body">
+                                                            <h5 class="card-title text-truncate">{{ product.name }}</h5>
+                                                            <p class="card-text">${{ product.price|floatformat:2 }}</p>
+                                                        </div>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                {% endif %}
+            </div>
+            
+            <button class="carousel-control-prev" type="button" data-target="#mainCarousel" data-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-target="#mainCarousel" data-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    </div>
+</section>
+<!-- ========================= SECTION MAIN END// CARRUSEL ========================= -->
+
+<!-- ========================= SECTION CATEGORÍAS RÁPIDAS ========================= -->
+<section class="section-quicklinks bg-white">
+    <div class="container">
+        <div class="row py-3">
+            <div class="col quicklink-item text-center">
+                <a href="{% url 'store' %}">
+                    <div class="icon-wrap mb-2">
+                        <i class="fa fa-eye"></i>
+                    </div>
+                    <p>Visto recientemente</p>
+                </a>
+            </div>
+            <div class="col quicklink-item text-center">
+                <a href="#">
+                    <div class="icon-wrap mb-2">
+                        <i class="fa fa-credit-card"></i>
+                    </div>
+                    <p>Medios de pago</p>
+                </a>
+            </div>
+            <div class="col quicklink-item text-center">
+                <a href="#">
+                    <div class="icon-wrap mb-2">
+                        <i class="fa fa-tag"></i>
+                    </div>
+                    <p>Ofertas</p>
+                </a>
+            </div>
+            <div class="col quicklink-item text-center">
+                <a href="#">
+                    <div class="icon-wrap mb-2">
+                        <i class="fa fa-truck"></i>
+                    </div>
+                    <p>Envíos</p>
+                </a>
+            </div>
+            <div class="col quicklink-item text-center">
+                <a href="#">
+                    <div class="icon-wrap mb-2">
+                        <i class="fa fa-shield"></i>
+                    </div>
+                    <p>Cómo COMPRAR</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- ========================= SECTION CATEGORÍAS RÁPIDAS END// ========================= -->
+
+<!-- ========================= SECTION LO MÁS VENDIDO ========================= -->
+<section class="section-bestsellers py-4">
+    <div class="container">
+        <header class="section-heading mb-3">
+            <h3 class="section-title">Los más vendidos</h3>
+            <a href="{% url 'store' %}" class="btn btn-outline-primary">Ver Todo</a>
+        </header>
+
+        <div class="row">
+            {% for product in products %}
+                <div class="col-6 col-md-3 mb-3">
+                    <div class="card card-product-grid h-100">
+                        <a href="{{ product.get_url }}" class="img-wrap"> 
+                            <img src="{{ product.images.url }}" class="card-img-top" alt="{{ product.name }}"> 
+                        </a>
+                        <div class="card-body d-flex flex-column">
+                            <a href="{{ product.get_url }}" class="title text-truncate mb-2">{{product.name}}</a>
+                            <div class="price mt-auto">${{ product.price|floatformat:2 }}</div>
+                            <div class="rating-star">
+                                <span>
+                                    <i class="fa fa-star{% if product.averageReview < 0.5 %}-o{% elif product.averageReview >= 0.5 and product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                    <i class="fa fa-star{% if product.averageReview < 1.5 %}-o{% elif product.averageReview >= 1.5 and product.averageReview < 2 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                    <i class="fa fa-star{% if product.averageReview < 2.5 %}-o{% elif product.averageReview >= 2.5 and product.averageReview < 3 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                    <i class="fa fa-star{% if product.averageReview < 3.5 %}-o{% elif product.averageReview >= 3.5 and product.averageReview < 4 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                    <i class="fa fa-star{% if product.averageReview < 4.5 %}-o{% elif product.averageReview >= 4.5 and product.averageReview < 5 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+<!-- ========================= SECTION LO MÁS VENDIDO END// ========================= -->
+
+<script>
+// Inicializar el carrusel cuando se carga el DOM
+document.addEventListener("DOMContentLoaded", function() {
+    // Inicializar carrusel
+    var carouselElement = document.getElementById('mainCarousel');
+    if (carouselElement && typeof bootstrap !== 'undefined') {
+        var carousel = new bootstrap.Carousel(carouselElement, {
+            interval: 5000,
+            wrap: true,
+            touch: true
+        });
+    } else if (carouselElement && typeof $ !== 'undefined') {
+        // Fallback para Bootstrap 4
+        $(carouselElement).carousel({
+            interval: 5000,
+            wrap: true,
+            touch: true
+        });
+    }
+    
+    // Función para ajustar la altura del carrusel responsivamente
+    function adjustCarouselHeight() {
+        const windowWidth = window.innerWidth;
+        let carouselHeight;
+        
+        // Ajustar altura según el ancho de la pantalla
+        if (windowWidth < 400) {
+            carouselHeight = 160; // Móviles muy pequeños
+        } else if (windowWidth < 576) {
+            carouselHeight = 200; // Móviles pequeños
+        } else if (windowWidth < 768) {
+            carouselHeight = 250; // Móviles grandes
+        } else if (windowWidth < 992) {
+            carouselHeight = 350; // Tablets
+        } else if (windowWidth < 1200) {
+            carouselHeight = 400; // Escritorio pequeño
+        } else {
+            carouselHeight = 450; // Escritorio grande
+        }
+        
+        // Aplicar altura a los items del carrusel
+        const carouselItems = document.querySelectorAll('#mainCarousel .carousel-item');
+        carouselItems.forEach(item => {
+            item.style.height = carouselHeight + 'px';
+        });
+    }
+    
+    // Aplicar ajustes iniciales y en cada cambio de tamaño
+    adjustCarouselHeight();
+    window.addEventListener('resize', adjustCarouselHeight);
+    
+    // Mejora para scroll horizontal en dispositivos táctiles
+    const scrollContainers = document.querySelectorAll('.carousel-products-container, .section-quicklinks .row');
+    scrollContainers.forEach(container => {
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        
+        container.addEventListener('mousedown', (e) => {
+            isDown = true;
+            startX = e.pageX - container.offsetLeft;
+            scrollLeft = container.scrollLeft;
+        });
+        
+        container.addEventListener('mouseleave', () => {
+            isDown = false;
+        });
+        
+        container.addEventListener('mouseup', () => {
+            isDown = false;
+        });
+        
+        container.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - container.offsetLeft;
+            const walk = (x - startX) * 2;
+            container.scrollLeft = scrollLeft - walk;
+        });
+    });
+});
+</script>
+</main>
+{% endblock %}
