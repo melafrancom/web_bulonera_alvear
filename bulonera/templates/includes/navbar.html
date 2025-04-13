@@ -1,83 +1,138 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-        <header>
-            <section class="header-main border-bottom">
-                <div class="container">
-                    <div class="row align-items-center">
-                        <!-- ############################## Logo ##############################-->
-                        <div class="col-lg-2 col-4">
-                            <a href="{% url 'home' %}" class="brand-wrap">
-                                <img class="logo" src="{% static './images/logo02.png' %}">
-                            </a> <!-- brand-wrap.// -->
-                        </div>
-                        <!-- ############################## Category ##############################-->
-                        <div class="col-lg col-sm col-md col-6 flex-grow-0">
-                            <div class="category-wrap dropdown d-inline-block float-right">
-                                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-                                    <i class="fa fa-bars"></i> Categorías
+    <header>
+        <!-- Header principal -->
+        <section class="header-main border-bottom">
+            <div class="container">
+                <!-- Row principal -->
+                <div class="row align-items-center">
+                    <!-- Logo -->
+                    <div class="col-12 col-lg-2 d-flex align-items-center justify-content-center justify-content-lg-start mb-3 mb-lg-0">
+                        <a href="{% url 'home' %}" class="brand-wrap">
+                            <img class="logo img-fluid" src="{% static './images/logo02.png' %}">
+                        </a>
+                    </div>
+
+                    <!-- Contenido derecho -->
+                    <div class="col-12 col-lg-10">
+                        <div class="row align-items-center g-2">
+                            <!-- Botón Hamburguesa para móvil -->
+                            <div class="col-3 col-sm-2 d-lg-none">
+                                <button class="navbar-toggler w-100" type="button" data-toggle="collapse" data-target="#mobile-menu">
+                                    <i class="fa fa-bars"></i>
                                 </button>
-                                <div class="dropdown-menu">
-                                    <a class="dropdown-item" href="{% url 'store' %}">Mostrar Todos</a>
-                                    {% for category in links %}
+                            </div>
+
+                            <!-- Botón Tienda -->
+                            <div class="col-3 col-sm-2 col-lg-2 mb-2 mb-lg-0">
+                                <a href="{% url 'store' %}" class="btn btn-outline-light w-100">Tienda</a>
+                            </div>
+
+                            <!-- Categorías -->
+                            <div class="col-lg-2 mb-2 mb-lg-0 d-none d-lg-block">
+                                <div class="category-wrap dropdown">
+                                    <button type="button" class="btn btn-primary dropdown-toggle w-100" data-toggle="dropdown">
+                                        <i class="fa fa-bars"></i> Categorías
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="{% url 'store' %}">Mostrar Todos</a>
+                                        {% for category in links %}
                                         <a class="dropdown-item" href="{{ category.get_url }}">{{ category.category_name }}</a>
-                                    {% endfor %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Búsqueda -->
+                            <div class="col-4 col-sm-6 col-lg-5 mb-2 mb-lg-0">
+                                <form action="{% url 'search' %}" class="search">
+                                    <div class="input-group w-100">
+                                        <input type="text" class="form-control" placeholder="Buscar" name="keyword">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-primary" type="submit">
+                                                <i class="fa fa-search"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Usuario + Carrito -->
+                            <div class="col-2 col-sm-2 col-lg-3 d-flex justify-content-end">
+                                <div class="d-flex align-items-center">
+                                    <!-- Usuario desktop -->
+                                    <div class="widget-header d-none d-lg-block text-right">
+                                        {% if user.id is None %}
+                                            <small class="title text-muted">Bienvenido a Bulonera Alvear!</small>
+                                            <div>
+                                                <a href="{% url 'login' %}">Iniciar Sesión</a> <span class="dark-transp"> | </span> 
+                                                <a href="{% url 'register' %}">Registrarse</a>
+                                            </div>
+                                        {% else %}
+                                            <small class="title text-muted">Bienvenido/a {{ user.first_name }}</small>
+                                            <div>
+                                                <a href="{% url 'dashboard' %}">Mi cuenta</a> <span class="dark-transp"> | </span>
+                                                <a href="{% url 'logout' %}">Cerrar sesión</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Carrito -->
+                                    <a href="{% url 'cart' %}" class="widget-header pl-lg-3 ml-lg-3">
+                                        <div class="icon icon-sm rounded-circle border"><i class="fa fa-shopping-cart"></i></div>
+                                        <span class="badge badge-pill badge-danger notify">{{ cart_count }}</span>
+                                    </a>
                                 </div>
                             </div>
                         </div>
-                            <!-- ############################## Store ##############################-->
-                        <a href="{% url 'store' %}" class="btn btn-outline-primary">Tienda</a>
-                            <!-- ############################## Search ##############################-->
-                        <div class="col-lg  col-md-6 col-sm-12 col">
-                            <form action="{% url 'search' %}" class="search">
-                                <div class="input-group w-100">
-                                    <input type="text" class="form-control" style="width:60%;" placeholder="Buscar Productos" name="keyword">
-                                    <div class="input-group-append">
-                                        <button class="btn btn-primary" type="submit">
-                                            <i class="fa fa-search"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                        <!-- ############################## Login ##############################-->
-                        <div class="col-lg-3 col-sm-6 col-8 order-2 order-lg-3">
-                            <div class="d-flex justify-content-end mb-3 mb-lg-0">
-                                <!-- ===== Unidentified user ===== -->
-                                {% if user.id is None %}
-                                <div class="widget-header">
-                                    <small class="title text-muted">Bienvenido a Bulonera Alvear!</small>
-                                    <div>
-                                        <a href="{% url 'login' %}">Iniciar Sesión</a> <span class="dark-transp"> | </span> 
-                                        <a href= "{% url 'register' %}"> Registrarse </a> 
-                                    </div>
-                                </div>
-                                <!-- ===== Identified user ===== -->
-                                {% else %}
-                                <div class="widget-header">
-                                    <small class="title text-muted">Bienvenido/a {{ user.first_name }}</small>
-                                    <div>
-                                        <a href="{% url 'dashboard' %}">Mi cuenta</a> <span class="dark-transp"> | </span>
-                                        <a href="{% url 'logout' %}"> Cerrar sesión </a>
-                                    </div>
-                                </div>
-                                {% endif%}
+                    </div>
+                </div>
 
-                                <a href="{% url 'cart' %}" class="widget-header pl-3 ml-3">
-                                    <div class="icon icon-sm rounded-circle border"><i class="fa fa-shopping-cart"></i></div>
-                                    <span class="badge badge-pill badge-danger notify">{{ cart_count }}</span>
-                                </a>
-                            </div><!-- widgets-wrap.// -->
-                        </div><!-- col.// -->
-                    </div><!-- row.// -->
-                </div><!-- container.// -->
-            </section>
-            <div class="bulonera-titulo">
+                <!-- Menú móvil colapsable -->
+                <div class="collapse navbar-collapse mt-3 d-lg-none" id="mobile-menu">
+                    <ul class="navbar-nav">
+                        <!-- Categorías en móvil -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">
+                                <i class="fa fa-bars"></i> Categorías
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{% url 'store' %}">Mostrar Todos</a>
+                                {% for category in links %}
+                                <a class="dropdown-item" href="{{ category.get_url }}">{{ category.category_name }}</a>
+                                {% endfor %}
+                            </div>
+                        </li>
+
+                        <!-- Opciones de usuario en móvil -->
+                        {% if user.id is None %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'login' %}">Iniciar Sesión</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'register' %}">Registrarse</a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'dashboard' %}">Mi cuenta</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'logout' %}">Cerrar sesión</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Título debajo -->
+        <div class="bulonera-titulo">
+            <div class="container">
                 <h1 class="titulo-bulonera">
                     Bulonería y Ferretería Online.
                 </h1>
             </div>
-
-        </header>
-
+        </div>
+    </header>
 </html>
