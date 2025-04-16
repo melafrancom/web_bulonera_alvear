@@ -4,7 +4,26 @@
     <!-- ========================= SECTION PAGETOP ========================= -->
     <section class="section-pagetop bg">
         <div class="container">
-            <h2 class="title-page">Encuentra los mejores productos de Bulonera Alvear:</h2>
+            <h2 class="title-page">
+                {% if category %}Productos en {{ category.category_name }}
+                {% elif subcategory %}Productos en {{ subcategory.subcategory_name }}
+                {% else %}Encuentra los mejores productos de Bulonera Alvear
+                {% endif %}
+            </h2>
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb bg-transparent p-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    {% if current_category %}
+                        <li class="breadcrumb-item">
+                            <a href="{{ current_category.get_url }}">{{ current_category.category_name }}</a>
+                        </li>
+                    {% endif %}
+                    {% if current_subcategory %}
+                        <li class="breadcrumb-item active" aria-current="page">{{ current_subcategory.subcategory_name }}</li>
+                    {% endif %}
+                </ol>
+            </nav>
+            
         </div>
     </section>
 
@@ -18,46 +37,50 @@
                             <header class="card-header">
                                 <a href="#" data-toggle="collapse" data-target="#collapse_1" aria-expanded="true" class="">
                                     <i class="icon-control fa fa-chevron-down"></i>
-                                    <h6 class="title">Categorias</h6>
+                                    <h6 class="title">Categorías</h6>
                                 </a>
                             </header>
-
                             <div class="filter-content collapse show" id="collapse_1" style="">
                                 <div class="card-body">
                                     <ul class="list-menu">
                                         <li><a href="{% url 'store' %}">Todas las categorías:</a></li>
                                         {% for category in links %}
-                                            <li><a href="{{ category.get_url }}">{{ category.category_name }}</a></li>
+                                            <li>
+                                                <a href="{{ category.get_url }}">{{ category.category_name }}</a>
+                                                {% if category.subcategories.all %}
+                                                    <ul class="subcategories">
+                                                        {% for subcategory in category.subcategories.all %}
+                                                            <li><a href="{{ subcategory.get_url }}">{{ subcategory.subcategory_name }}</a></li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% endif %}
+                                            </li>
                                         {% endfor %}
                                     </ul>
                                 </div>
                             </div>
                         </article>
                         
-                        <article class="filter-group"><!-- Subcategorías de:  -->
+                        
+                        {% if current_category %}
+                        <article class="filter-group"><!-- Subcategorías de la categoría actual -->
                             <header class="card-header">
                                 <a href="#" data-toggle="collapse" data-target="#collapse_subcategories" aria-expanded="true" class="">
                                     <i class="icon-control fa fa-chevron-down"></i>
-                                    <h6 class="title">Subcategorías de {{ category.category_name }}</h6>
+                                    <h6 class="title">Subcategorías de {{ current_category.category_name }}</h6>
                                 </a>
                             </header>
-                            <div class="filter-content collapse show" id="collapse_subcategories" style="">
+                            <div class="filter-content collapse show" id="collapse_subcategories">
                                 <div class="card-body">
                                     <ul class="list-menu">
-                                        {% for main_category in main_categories %}
-                                            <li><a href="{{ main_category.get_url }}">{{ main_category.category_name }}</a></li>
-                                            {% if main_category.get_subcategories %}
-                                                <ul class="list-submenu ml-3">
-                                                    {% for subcategory in main_category.get_subcategories %}
-                                                        <li><a href="{{ subcategory.get_url }}">{{ subcategory.category_name }}</a></li>
-                                                    {% endfor %}
-                                                </ul>
-                                            {% endif %}
+                                        {% for sub in current_category.subcategories.all %}
+                                            <li><a href="{{ sub.get_url }}">{{ sub.subcategory_name }}</a></li>
                                         {% endfor %}
                                     </ul>
                                 </div>
                             </div>
                         </article>
+                        {% endif %}
 
                         <article class="filter-group"> <!-- Filtro de Tamaños -->
                             <header class="card-header">

@@ -9,7 +9,7 @@ from django.views.generic import DetailView, ListView
 from bulonera.settings import SITE_URL, CURRENCY
 from .models import Product, ReviewRating, ProductGallery, ProductSearch, CarouselImage
 from account.models import Account
-from category.models import Category
+from category.models import Category, SubCategory
 from cart.models import CartItem
 from cart.views import _cart_id
 from orders.models import OrderProduct
@@ -18,20 +18,30 @@ from .forms import ReviewForm
 
 
 # Create your views here.
-def store(request, category_slug=None):
+def store(request, category_slug=None, subcategory_slug=None):
     categories = None
     products = None
+    subcategories = None
+    category = None
+    subcategory = None
+
     
     # Obtener los valores de precio min y max del request
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
     
     # Filtrar por categoría si existe
-    if category_slug != None:
-        categories = get_object_or_404(Category, slug=category_slug)
-        products = Product.objects.filter(category=categories, is_available=True)
+    if category_slug:
+        category = get_object_or_404(Category, slug=category_slug)#Obtener las categorias
+        products = Product.objects.filter(category=category, is_available=True)
+        subcategories = SubCategory.objects.filter(category=category) #Obtener las subcategorias
+
+        if subcategory_slug:
+            subcategory = get_object_or_404(SubCategory, slug=subcategory_slug, category=category)
+            products = products.filter(subcategories=subcategory)
     else:
         products = Product.objects.filter(is_available=True)
+        subcategories = SubCategory.objects.all()  # <- O todas si no hay categoría
     
     # Aplicar filtro de precio si se especificó
     if min_price and max_price:
@@ -60,13 +70,14 @@ def store(request, category_slug=None):
         products = products.order_by('id')
     
     # Paginación
-    paginator = Paginator(products, 6)
+    paginator = Paginator(products, 10)
     page = request.GET.get('page')
     paged_products = paginator.get_page(page)
     product_count = products.count()
     
     # Obtener todas las categorías principales para el menú
-    main_categories = Category.objects.filter(parent=None)
+    main_categories = Category.objects.all()
+    categories = Category.objects.prefetch_related('subcategories').all()
     
     # Obtener marcas únicas
     brands = Product.objects.values_list('brand', flat=True).distinct()
@@ -80,11 +91,36 @@ def store(request, category_slug=None):
         'max_price': max_price,
         'sort_by': sort_by,
         'main_categories': main_categories,
-        'brands': brands,  # Pasar las marcas al contexto
+        'links': categories,
+        'brands': brands,
+        'subcategories': subcategories,  # <- Asegúrate de incluir esto
+        'category_slug': category_slug,  # <- Útil si lo usás en filtros
+        'current_category': category,
+        'current_subcategory': subcategory,
+
     }
     
     template_name = 'store/store.html'
     return render(request, template_name, context)
+
+def products_by_subcategory(request, category_slug, subcategory_slug):
+    try:
+        subcategory = SubCategory.objects.get(category__slug=category_slug, slug=subcategory_slug)
+        products = Product.objects.filter(
+            subcategories=subcategory, 
+            is_available=True
+        ).order_by('id')
+        product_count = products.count()
+    except Exception as e:
+        raise e
+    
+    context = {
+        'products': products,
+        'product_count': products.count(),
+        'subcategory': subcategory,
+        'subcategories': subcategory.category.subcategories.all(),
+    }
+    return render(request, 'store/store.html', context)
 
 def product_detail(request, category_slug, product_slug):
     try:

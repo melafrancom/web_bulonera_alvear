@@ -717,3 +717,44 @@
     font-size: 11px;
   }
 }
+
+/*####### Footer #######*/
+/* Media queries para ajustes adicionales */
+@media (max-width: 400px) {
+  .bulonera-footer {
+      font-size: 13px;
+  }
+  
+  .bulonera-footer .h6_about {
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem !important;
+  }
+  
+  .bulonera-footer .social-icons .fab,
+  .bulonera-footer .social-icons .fas {
+      font-size: 1.5rem;
+  }
+  
+  .bulonera-footer .py-md-5 {
+      padding-top: 1rem !important;
+      padding-bottom: 1rem !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .bulonera-footer .social-icons {
+      margin-top: 0.5rem !important;
+  }
+  
+  .bulonera-footer p.text-muted {
+      font-size: 0.85rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .bulonera-footer .social-icons {
+      display: flex;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+  }
+}

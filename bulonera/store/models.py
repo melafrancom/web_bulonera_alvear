@@ -5,19 +5,21 @@ from django.utils.text import slugify
 from bulonera.settings import SITE_URL, CURRENCY
 #Local:
 from account.models import Account
-from category.models import Category
+from category.models import Category, SubCategory
 
 # Create your models here.
 # Modelo relacionado a todo sobre el producto. Con respecto a agregar/quitar productos al carrito está en 'cart'.
 
 class Product(models.Model):
+    code = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=200, unique=True)
     slug = models.CharField(max_length=200, unique=True)
     description = models.TextField(max_length=500, blank=True)
-    images = models.ImageField(upload_to='photos/products')
+    images = models.ImageField(blank=True, upload_to='photos/products')
     price = models.FloatField()
     stock = models.IntegerField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    subcategories = models.ManyToManyField(SubCategory, blank=True) # Relación ManyToMany con SubCategory
     is_available = models.BooleanField(default=True)
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)

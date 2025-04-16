@@ -39,7 +39,7 @@ def home(request):
         'most_searched_products': most_searched_products,
         'user_searched_products': user_searched_products,
         'products': products,
-        'reviews': reviews,
+        #'reviews': reviews,
     }
     
     return render(request, 'home.html', context)

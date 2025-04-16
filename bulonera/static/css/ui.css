@@ -764,12 +764,26 @@ p:last-child {
 .bulonera-footer{
   background-color: #1c00a1;
   margin-top: auto;
+  font-size: 14px;
 }
 
 .h6_about {
   color: #969696;
 }
+.bulonera-footer .h6_about {
+  font-size: 0.95rem;
+}
+.bulonera-footer .social-icons .list-inline-item {
+  margin-right: 0.75rem;
+}
 
+.bulonera-footer .social-icons i {
+  transition: color 0.3s ease;
+}
+
+.bulonera-footer .social-icons i:hover {
+  color: #007bff;
+}
 .about_me {
   display: flex;
   justify-content: center;
