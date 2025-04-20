@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 #local
-from .models import Category, SubCategory
+from .models import Category, SubCategory, FeaturedCategory
 
 class SubCategoryInline(admin.TabularInline):
     model = SubCategory
@@ -17,6 +17,15 @@ class SubCategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('subcategory_name',)}
     list_display = ('subcategory_name', 'category', 'slug')
     list_filter = ('category',)
+    
+
+class FeaturedCategoryAdmin(admin.ModelAdmin):
+    list_display = ('category', 'position', 'is_active')
+    list_editable = ('position', 'is_active')
+    list_filter = ('is_active',)
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(SubCategory, SubCategoryAdmin)
+admin.site.register(FeaturedCategory, FeaturedCategoryAdmin)
+
+

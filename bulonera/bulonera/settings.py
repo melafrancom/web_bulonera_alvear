@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     #LOCAL_APPS
+    'bulonera',
     'category',
     'account',
     'store',

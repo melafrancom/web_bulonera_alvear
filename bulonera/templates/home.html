@@ -1,309 +1,482 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block content %}
 <main>
-<!-- ========================= SECTION MAIN - CARRUSEL PRINCIPAL ========================= -->
-<section class="section-carousel px-0">
-    <div class="container-fluid px-0">
-        <!-- Carrusel principal -->
-        <div id="mainCarousel" class="carousel slide" data-ride="carousel">
-            <div class="carousel-indicators">
-                
-                {% for image in carousel_images %}
-                    <button type="button" data-target="#mainCarousel" data-slide-to="{{ forloop.counter0 }}" 
-                        {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>
-                {% endfor %}
-                
-                {% if most_searched_products %}
-                    {% for product in most_searched_products %}
-                        <button type="button" data-target="#mainCarousel" 
-                            data-slide-to="{{ carousel_images|length|add:forloop.counter0 }}" 
-                            aria-label="Slide {{ carousel_images|length|add:forloop.counter }}"></button>
+    <!-- ========================= SECTION MAIN - CARRUSEL ========================= -->
+    <section class="section-carousel px-0">
+        <div class="container-fluid px-0">
+            <div id="mainCarousel" class="carousel slide" data-ride="carousel">
+                <div class="carousel-indicators">
+                    {% for i in total_slides|times %}
+                    <button type="button" data-target="#mainCarousel" data-slide-to="{{ forloop.counter0 }}"
+                            {% if forloop.first %}class="active" aria-current="true"{% endif %}
+                            aria-label="Slide {{ forloop.counter }}"></button>
                     {% endfor %}
-                {% endif %}
-                
-                {% if user_searched_products %}
-                    {% for product in user_searched_products %}
-                        <button type="button" data-target="#mainCarousel" 
-                            data-slide-to="{{ carousel_images|length|add:most_searched_products|length|add:forloop.counter0 }}" 
-                            aria-label="Slide {{ carousel_images|length|add:most_searched_products|length|add:forloop.counter }}"></button>
-                    {% endfor %}
-                {% endif %}
-            </div>
-            
-            <div class="carousel-inner">
-                <!-- Imágenes AGREGADAS por el administrador -->
-                {% for image in carousel_images %}
-                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                        <div class="carousel-background-overlay">
-                            <div class="container">
-                                <div class="carousel-content">
-                                    {% if image.url %}
-                                        <a href="{{ image.url }}" class="carousel-link">
+                </div>
+
+                <div class="carousel-inner"><!-- ========================= SECTION MAIN - CARRUSEL // IMAGES ========================= -->
+
+                    <!-- Slide de imágenes administradas -->
+                    {% for image in carousel_images %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <div class="carousel-background-overlay">
+                                <div class="container">
+                                    <div class="carousel-content">
+                                        {% if image.url %}
+                                            <a href="{{ image.url }}" class="carousel-link">
+                                                <img src="{{ image.image.url }}" class="carousel-img" alt="{{ image.title }}">
+                                            </a>
+                                        {% elif image.product %}
+                                            <a href="{{ image.product.get_url }}" class="carousel-link">
+                                                <img src="{{ image.image.url }}" class="carousel-img" alt="{{ image.title }}">
+                                            </a>
+                                        {% else %}
                                             <img src="{{ image.image.url }}" class="carousel-img" alt="{{ image.title }}">
-                                        </a>
-                                    {% elif image.product %}
-                                        <a href="{{ image.product.get_url }}" class="carousel-link">
-                                            <img src="{{ image.image.url }}" class="carousel-img" alt="{{ image.title }}">
-                                        </a>
-                                    {% else %}
-                                        <img src="{{ image.image.url }}" class="carousel-img" alt="{{ image.title }}">
-                                    {% endif %}
-    
-                                    {% if image.title %}
-                                    <div class="carousel-caption d-none d-md-block">
-                                        <h5>{{ image.title }}</h5>
-                                        {% if image.description %}
-                                        <p class="d-none d-lg-block">{{ image.description }}</p>
+                                        {% endif %}
+                                        {% if image.title %}
+                                        <div class="carousel-caption d-none d-md-block">
+                                            <h5>{{ image.title }}</h5>
+                                            {% if image.description %}
+                                            <p class="d-none d-lg-block">{{ image.description }}</p>
+                                            {% endif %}
+                                        </div>
                                         {% endif %}
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <!-- Productos más buscados globalmente (agrupados de a 4) -->
+                    {% for group in most_searched_products_groups %}
+                        <div class="carousel-item {% if forloop.first and carousel_images|length == 0 %}active{% endif %}">
+                            <div class="carousel-background-overlay">
+                                <div class="container">
+                                    <div class="carousel-products-wrapper">
+                                        <h3 class="text-center mb-3">Productos más populares</h3>
+                                        <div class="row carousel-products-container">
+                                            {% for product in group %}
+                                                <div class="col-6 col-md-3">
+                                                    <div class="card product-card">
+                                                        <a href="{{ product.get_url }}">
+                                                            {% if product.images %}
+                                                                <img src="{{ product.images.url|default_if_none:'#' }}" class="card-img-top" alt="{{ product.name }}">
+                                                            {% else %}
+                                                                <img src="{% static 'img/placeholder.png' %}" class="card-img-top" alt="sin imagen">
+                                                            {% endif %}
+                                                            <div class="card-body">
+                                                                <h5 class="card-title text-truncate">{{ product.name }}</h5>
+                                                                <p class="card-text">${{ product.price|floatformat:2 }}</p>
+                                                            </div>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <!-- Productos basados en búsqueda del usuario -->
+                    {% for group in user_searched_products_groups %}
+                        <div class="carousel-item {% if forloop.first and carousel_images|length == 0 %}active{% endif %}">
+                            <div class="carousel-background-overlay">
+                                <div class="container">
+                                    <div class="carousel-products-wrapper">
+                                        <h3 class="text-center mb-3">Productos más populares</h3>
+                                        <div class="row carousel-products-container">
+                                            {% for product in group %}
+                                                <div class="col-6 col-md-3">
+                                                    <div class="card product-card">
+                                                        <a href="{{ product.get_url }}">
+                                                            {% if product.images %}
+                                                                <img src="{{ product.images.url|default_if_none:'#' }}" class="card-img-top" alt="{{ product.name }}">
+                                                            {% else %}
+                                                                <img src="{% static 'img/placeholder.png' %}" class="card-img-top" alt="sin imagen">
+                                                            {% endif %}
+                                                            <div class="card-body">
+                                                                <h5 class="card-title text-truncate">{{ product.name }}</h5>
+                                                                <p class="card-text">${{ product.price|floatformat:2 }}</p>
+                                                            </div>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                </div>
+                        <!-- ========================= SECTION MAIN - CARRUSEL INDICATORS ========================= -->
+                <button class="carousel-control-prev" type="button" data-target="#mainCarousel" data-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-target="#mainCarousel" data-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        </div>
+    </section>
+    <!-- ========================= SECTION MAIN END// CARRUSEL ========================= -->
+
+    <!-- ========================= SECTION CATEGORÍAS RÁPIDAS ========================= -->
+    <section class="section-quicklinks bg-white">
+        <div class="container">
+            <div class="row py-3">
+                <div class="col quicklink-item text-center">
+                    <a href="{% url 'store' %}">
+                        <div class="icon-wrap mb-2">
+                            <i class="fa fa-eye"></i>
+                        </div>
+                        <p>Visto recientemente</p>
+                    </a>
+                </div>
+                <div class="col quicklink-item text-center">
+                    <a href="#">
+                        <div class="icon-wrap mb-2">
+                            <i class="fa fa-credit-card"></i>
+                        </div>
+                        <p>Medios de pago</p>
+                    </a>
+                </div>
+                <div class="col quicklink-item text-center">
+                    <a href="#">
+                        <div class="icon-wrap mb-2">
+                            <i class="fa fa-tag"></i>
+                        </div>
+                        <p>Ofertas</p>
+                    </a>
+                </div>
+                <div class="col quicklink-item text-center">
+                    <a href="#">
+                        <div class="icon-wrap mb-2">
+                            <i class="fa fa-truck"></i>
+                        </div>
+                        <p>Envíos</p>
+                    </a>
+                </div>
+                <div class="col quicklink-item text-center">
+                    <a href="#como-comprar">
+                        <div class="icon-wrap mb-2">
+                            <i class="fa fa-shield"></i>
+                        </div>
+                        <p>Cómo COMPRAR</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- ========================= SECTION CATEGORÍAS RÁPIDAS END// ========================= -->
+
+    <!-- ========================= SECTION LO MÁS VENDIDO (CAROUSEL)========================= -->
+    <section class="section-bestsellers py-4">
+        <div class="container">
+            <header class="section-heading mb-3">
+                <h3 class="section-title">Los más vendidos</h3>
+                <a href="{% url 'store' %}" class="btn btn-outline-primary">Ver Todo</a>
+            </header>
+
+            <div id="bestsellersCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    {% for group in bestseller_products_groups %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <div class="row">
+                            {% for product in group %}
+                                    <div class="col-6 col-md-3">
+                                        <div class="card card-product-grid">
+                                            <a href="{{ product.get_url }}" class="img-wrap"> 
+                                                <img src="{{ product.images.url|default_if_none:'#' }}" class="card-img-top" alt="{{ product.name }}">
+                                            </a>
+                                            <div class="card-body d-flex flex-column">
+                                                <a href="{{ product.get_url }}" class="title text-truncate mb-2">{{product.name}}</a>
+                                                <div class="price mt-auto">${{ product.price|floatformat:2 }}</div>
+                                                <div class="rating-star">
+                                                    <span>
+                                                        <i class="fa fa-star{% if product.averageReview < 0.5 %}-o{% elif product.averageReview >= 0.5 and product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if product.averageReview < 1.5 %}-o{% elif product.averageReview >= 1.5 and product.averageReview < 2 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if product.averageReview < 2.5 %}-o{% elif product.averageReview >= 2.5 and product.averageReview < 3 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if product.averageReview < 3.5 %}-o{% elif product.averageReview >= 3.5 and product.averageReview < 4 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if product.averageReview < 4.5 %}-o{% elif product.averageReview >= 4.5 and product.averageReview < 5 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-target="#bestsellersCarousel" data-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Anterior</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-target="#bestsellersCarousel" data-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Siguiente</span>
+                </button>
+            </div>
+        </div>
+    </section>
+    <!-- ========================= SECTION LO MÁS VENDIDO END ========================= -->
+
+    <!-- ========================= SECTION TODAS LAS CATEGORÍAS ========================= -->
+    <section class="section-categories py-4 bg-light">
+        <div class="container">
+            <header class="section-heading mb-4">
+                <h3 class="section-title">Todas las Categorías:</h3>
+            </header>
+
+            <div class="row g-4 justify-content-center">
+                {% for category in all_categories %}
+                    <div class="col-4 col-sm-3 col-md-2">
+                        <a href="{% url 'products_by_category' category.slug %}" class="category-item">
+                            <div class="hexagon-wrapper">
+                                <div class="hexagon">
+                                    {% if category.cat_image %}
+                                        <img src="{{ category.cat_image.url }}" alt="{{ category.category_name }}">
+                                    {% else %}
+                                        <i class="fa fa-folder"></i>
                                     {% endif %}
                                 </div>
                             </div>
-                        </div>
-
+                            <div class="category-name text-center mt-2">{{ category.category_name }}</div>
+                        </a>
                     </div>
                 {% endfor %}
-                
-                <!-- Productos más buscados globalmente -->
-                {% if most_searched_products %}
-                    <div class="carousel-item {% if not carousel_images %}active{% endif %}">
-                        <div class="carousel-background-overlay">
-                            <div class="container">
-                                <div class="carousel-products-wrapper">
-                                    <h3 class="text-center mb-3">Productos más populares</h3>
-                                    <div class="row carousel-products-container">
-                                        {% for product in most_searched_products %}
-                                            <div class="col">
-                                                <div class="card product-card">
-                                                    <a href="{{ product.get_url }}">
-                                                        <img src="{{ product.images.url }}" class="card-img-top" alt="{{ product.name }}">
-                                                        <div class="card-body">
-                                                            <h5 class="card-title text-truncate">{{ product.name }}</h5>
-                                                            <p class="card-text">${{ product.price|floatformat:2 }}</p>
-                                                        </div>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        {% endfor %}
+            </div>
+        </div>
+    </section>
+    <!-- ========================= SECTION TODAS LAS CATEGORÍAS END// ========================= -->
+
+<!-- ========================= SECTION CATEGORÍAS DESTACADAS ========================= -->
+{% for category in featured_categories %}
+    <section class="section-category-products py-4">
+        <div class="container">
+            <header class="section-heading mb-3">
+                <h3 class="section-title">{{ category.category_name }}</h3>
+                <a href="{% url 'products_by_category' category.slug %}" class="btn btn-outline-primary">Ver Todo</a>
+            </header>
+
+            <div id="category{{ category.id }}Carousel" class="carousel slide" data-ride="carousel">
+                <div class="carousel-inner">
+                    {% with product_groups=category_products|get_item:category %}
+                    {% for group in product_groups %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <div class="row">
+                            {% for product in group %}
+                            <div class="col-6 col-md-3">
+                                <div class="card card-product-grid h-100">
+                                    <a href="{{ product.get_url }}" class="img-wrap"> 
+                                        <img src="{{ product.images.url|default_if_none:'#' }}" class="card-img-top" alt="{{ product.name }}">
+                                    </a>
+                                    <div class="card-body d-flex flex-column">
+                                        <a href="{{ product.get_url }}" class="title text-truncate mb-2">{{product.name}}</a>
+                                        <div class="price mt-auto">${{ product.price|floatformat:2 }}</div>
+                                        <div class="rating-star">
+                                            <span>
+                                                <i class="fa fa-star{% if product.averageReview < 0.5 %}-o{% elif product.averageReview >= 0.5 and product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                <i class="fa fa-star{% if product.averageReview < 1.5 %}-o{% elif product.averageReview >= 1.5 and product.averageReview < 2 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                <i class="fa fa-star{% if product.averageReview < 2.5 %}-o{% elif product.averageReview >= 2.5 and product.averageReview < 3 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                <i class="fa fa-star{% if product.averageReview < 3.5 %}-o{% elif product.averageReview >= 3.5 and product.averageReview < 4 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                <i class="fa fa-star{% if product.averageReview < 4.5 %}-o{% elif product.averageReview >= 4.5 and product.averageReview < 5 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            {% endfor %}
                         </div>
-
                     </div>
-                {% endif %}
-                
-                <!-- Productos más buscados por el usuario -->
-                {% if user_searched_products %}
-                    <div class="carousel-item">
-                        <div class="carousel-background-overlay">
-                            <div class="container">
-                                <div class="carousel-products-wrapper">
-                                    <h3 class="text-center mb-3">Basado en tus búsquedas</h3>
-                                    <div class="row carousel-products-container">
-                                        {% for product in user_searched_products %}
-                                            <div class="col">
-                                                <div class="card product-card">
-                                                    <a href="{{ product.get_url }}">
-                                                        <img src="{{ product.images.url }}" class="card-img-top" alt="{{ product.name }}">
-                                                        <div class="card-body">
-                                                            <h5 class="card-title text-truncate">{{ product.name }}</h5>
-                                                            <p class="card-text">${{ product.price|floatformat:2 }}</p>
-                                                        </div>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                {% endif %}
-            </div>
-            
-            <button class="carousel-control-prev" type="button" data-target="#mainCarousel" data-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Previous</span>
-            </button>
-            <button class="carousel-control-next" type="button" data-target="#mainCarousel" data-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Next</span>
-            </button>
-        </div>
-    </div>
-</section>
-<!-- ========================= SECTION MAIN END// CARRUSEL ========================= -->
-
-<!-- ========================= SECTION CATEGORÍAS RÁPIDAS ========================= -->
-<section class="section-quicklinks bg-white">
-    <div class="container">
-        <div class="row py-3">
-            <div class="col quicklink-item text-center">
-                <a href="{% url 'store' %}">
-                    <div class="icon-wrap mb-2">
-                        <i class="fa fa-eye"></i>
-                    </div>
-                    <p>Visto recientemente</p>
-                </a>
-            </div>
-            <div class="col quicklink-item text-center">
-                <a href="#">
-                    <div class="icon-wrap mb-2">
-                        <i class="fa fa-credit-card"></i>
-                    </div>
-                    <p>Medios de pago</p>
-                </a>
-            </div>
-            <div class="col quicklink-item text-center">
-                <a href="#">
-                    <div class="icon-wrap mb-2">
-                        <i class="fa fa-tag"></i>
-                    </div>
-                    <p>Ofertas</p>
-                </a>
-            </div>
-            <div class="col quicklink-item text-center">
-                <a href="#">
-                    <div class="icon-wrap mb-2">
-                        <i class="fa fa-truck"></i>
-                    </div>
-                    <p>Envíos</p>
-                </a>
-            </div>
-            <div class="col quicklink-item text-center">
-                <a href="#">
-                    <div class="icon-wrap mb-2">
-                        <i class="fa fa-shield"></i>
-                    </div>
-                    <p>Cómo COMPRAR</p>
-                </a>
+                    {% endfor %}
+                    {% endwith %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-target="#category{{ category.id }}Carousel" data-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Anterior</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-target="#category{{ category.id }}Carousel" data-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Siguiente</span>
+                </button>
             </div>
         </div>
-    </div>
-</section>
-<!-- ========================= SECTION CATEGORÍAS RÁPIDAS END// ========================= -->
+    </section>
+{% endfor %}
+<!-- ========================= SECTION CATEGORÍAS DESTACADAS END// ========================= -->
 
-<!-- ========================= SECTION LO MÁS VENDIDO ========================= -->
-<section class="section-bestsellers py-4">
+<!-- ========================= SECTION CÓMO COMPRAR ========================= -->
+<section class="section-purchase-process py-5" id="como-comprar">
     <div class="container">
-        <header class="section-heading mb-3">
-            <h3 class="section-title">Los más vendidos</h3>
-            <a href="{% url 'store' %}" class="btn btn-outline-primary">Ver Todo</a>
-        </header>
+        <!-- Encabezado con branding -->
+        <div class="row mb-5">
+            <div class="col-md-7 d-flex flex-column justify-content-center">
+                <div class="brand-container mb-3">
+                    <img src="{% static 'images/logo-bulonera-alvear.png' %}" alt="Bulonera Alvear" class="brand-logo">
+                </div>
+                <h2 class="section-title text-white mb-3">Cómo comprar:</h2>
+            </div>
+            <div class="col-md-5 d-flex justify-content-center align-items-center">
+                <div class="mobile-container">
+                    <img src="{% static 'images/mobile-shop.png' %}" alt="Mobile Shop" class="mobile-image">
+                </div>
+            </div>
+        </div>
 
-        <div class="row">
-            {% for product in products %}
-                <div class="col-6 col-md-3 mb-3">
-                    <div class="card card-product-grid h-100">
-                        <a href="{{ product.get_url }}" class="img-wrap"> 
-                            <img src="{{ product.images.url }}" class="card-img-top" alt="{{ product.name }}"> 
-                        </a>
-                        <div class="card-body d-flex flex-column">
-                            <a href="{{ product.get_url }}" class="title text-truncate mb-2">{{product.name}}</a>
-                            <div class="price mt-auto">${{ product.price|floatformat:2 }}</div>
-                            <div class="rating-star">
-                                <span>
-                                    <i class="fa fa-star{% if product.averageReview < 0.5 %}-o{% elif product.averageReview >= 0.5 and product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                    <i class="fa fa-star{% if product.averageReview < 1.5 %}-o{% elif product.averageReview >= 1.5 and product.averageReview < 2 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                    <i class="fa fa-star{% if product.averageReview < 2.5 %}-o{% elif product.averageReview >= 2.5 and product.averageReview < 3 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                    <i class="fa fa-star{% if product.averageReview < 3.5 %}-o{% elif product.averageReview >= 3.5 and product.averageReview < 4 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                    <i class="fa fa-star{% if product.averageReview < 4.5 %}-o{% elif product.averageReview >= 4.5 and product.averageReview < 5 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                </span>
-                            </div>
-                        </div>
+        <!-- Proceso de compra -->
+        <div class="row justify-content-center">
+            <!-- Paso 1 -->
+            <div class="col-6 col-md-3 mb-4">
+                <div class="card process-card bg-blue h-100">
+                    <div class="card-body text-center">
+                        <div class="step-number rounded-circle mb-3">1</div>
+                        <img src="{% static 'images/process/seleccionar_productos.png' %}" alt="Seleccionar productos" class="process-icon mb-3">
+                        <h5 class="card-title">Seleccionar los productos</h5>
+                        <p class="card-text">Se irán agregando a tu carrito de compras.</p>
                     </div>
                 </div>
-            {% endfor %}
+            </div>
+            
+            <!-- Paso 2 -->
+            <div class="col-6 col-md-3 mb-4">
+                <div class="card process-card bg-blue h-100">
+                    <div class="card-body text-center">
+                        <div class="step-number rounded-circle mb-3">2</div>
+                        <img src="{% static 'images/process/ordenarlos.png' %}" alt="Ordenarlos" class="process-icon mb-3">
+                        <h5 class="card-title">Ordenarlos</h5>
+                        <p class="card-text">Luego de ordenarlos, serás redireccionado al WhatsApp.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estado Nuevo -->
+            <div class="col-6 col-md-3 mb-4">
+                <div class="card process-card bg-dark h-100">
+                    <div class="card-body text-center">
+                        <img src="{% static 'images/process/estado_nuevo.png' %}" alt="Estado Nuevo" class="process-icon mb-3">
+                        <h5 class="card-title">ESTADO 'NUEVO'</h5>
+                        <p class="card-text">Se creará una ORDEN en estado 'NUEVO' en tu Dashboard.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Paso 3 -->
+            <div class="col-6 col-md-3 mb-4">
+                <div class="card process-card bg-blue h-100">
+                    <div class="card-body text-center">
+                        <div class="step-number rounded-circle mb-3">3</div>
+                        <img src="{% static 'images/process/coordinar.png' %}" alt="Coordinar con nosotros" class="process-icon mb-3">
+                        <h5 class="card-title">Coordinar con nosotros!</h5>
+                        <p class="card-text">Te ayudaremos a ultimar detalles de tu compra, y por último te enviaremos un link de pago o QR.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <!-- Estado Aceptada -->
+            <div class="col-6 col-md-3 mb-4">
+                <div class="card process-card bg-dark h-100">
+                    <div class="card-body text-center">
+                        <img src="{% static 'images/process/estado_aceptada.png' %}" alt="Estado Aceptada" class="process-icon mb-3">
+                        <h5 class="card-title">ESTADO 'ACEPTADA'</h5>
+                        <p class="card-text">Tu orden cambia el estado a 'ACEPTADA'.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Paso 4 -->
+            <div class="col-6 col-md-3 mb-4">
+                <div class="card process-card bg-blue h-100">
+                    <div class="card-body text-center">
+                        <div class="step-number rounded-circle mb-3">4</div>
+                        <img src="{% static 'images/process/pagar_disfrutar.png' %}" alt="Pagar y disfrutar" class="process-icon mb-3">
+                        <h5 class="card-title">Pagar y DISFRUTAR!</h5>
+                        <p class="card-text">Luego de realizado el pago, coordinamos el envío en tu transporte de confianza!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estado Completada -->
+            <div class="col-6 col-md-3 mb-4">
+                <div class="card process-card bg-dark h-100">
+                    <div class="card-body text-center">
+                        <img src="{% static 'images/process/estado_completada.png' %}" alt="Estado Completada" class="process-icon mb-3">
+                        <h5 class="card-title">ESTADO 'COMPLETADA'</h5>
+                        <p class="card-text">Tu orden cambia el estado a 'COMPLETADA'.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
-<!-- ========================= SECTION LO MÁS VENDIDO END// ========================= -->
+<!-- ========================= SECTION CÓMO COMPRAR END// ========================= -->
 
-<script>
-// Inicializar el carrusel cuando se carga el DOM
-document.addEventListener("DOMContentLoaded", function() {
-    // Inicializar carrusel
-    var carouselElement = document.getElementById('mainCarousel');
-    if (carouselElement && typeof bootstrap !== 'undefined') {
-        var carousel = new bootstrap.Carousel(carouselElement, {
-            interval: 5000,
-            wrap: true,
-            touch: true
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Inicializar todos los carruseles
+        const carousels = document.querySelectorAll('.carousel');
+        carousels.forEach(carousel => {
+            new bootstrap.Carousel(carousel, {
+                interval: 5000,
+                wrap: true,
+                touch: true
+            });
         });
-    } else if (carouselElement && typeof $ !== 'undefined') {
-        // Fallback para Bootstrap 4
-        $(carouselElement).carousel({
-            interval: 5000,
-            wrap: true,
-            touch: true
-        });
-    }
-    
-    // Función para ajustar la altura del carrusel responsivamente
-    function adjustCarouselHeight() {
-        const windowWidth = window.innerWidth;
-        let carouselHeight;
         
-        // Ajustar altura según el ancho de la pantalla
-        if (windowWidth < 400) {
-            carouselHeight = 160; // Móviles muy pequeños
-        } else if (windowWidth < 576) {
-            carouselHeight = 200; // Móviles pequeños
-        } else if (windowWidth < 768) {
-            carouselHeight = 250; // Móviles grandes
-        } else if (windowWidth < 992) {
-            carouselHeight = 350; // Tablets
-        } else if (windowWidth < 1200) {
-            carouselHeight = 400; // Escritorio pequeño
-        } else {
-            carouselHeight = 450; // Escritorio grande
+        // Función para ajustar la altura del carrusel principal responsivamente
+        function adjustMainCarouselHeight() {
+            const windowWidth = window.innerWidth;
+            let carouselHeight;
+            
+            // Ajustar altura según el ancho de la pantalla
+            if (windowWidth < 400) {
+                carouselHeight = 140; // Móviles muy pequeños
+            } else if (windowWidth < 576) {
+                carouselHeight = 180; // Móviles pequeños
+            } else if (windowWidth < 768) {
+                carouselHeight = 220; // Móviles grandes
+            } else if (windowWidth < 992) {
+                carouselHeight = 300; // Tablets
+            } else if (windowWidth < 1200) {
+                carouselHeight = 350; // Escritorio pequeño
+            } else {
+                carouselHeight = 390; // Escritorio grande
+            }
+            
+            // Aplicar altura a los items del carrusel
+            const carouselItems = document.querySelectorAll('#mainCarousel .carousel-item');
+            carouselItems.forEach(item => {
+                item.style.height = carouselHeight + 'px';
+            });
         }
         
-        // Aplicar altura a los items del carrusel
-        const carouselItems = document.querySelectorAll('#mainCarousel .carousel-item');
-        carouselItems.forEach(item => {
-            item.style.height = carouselHeight + 'px';
-        });
-    }
-    
-    // Aplicar ajustes iniciales y en cada cambio de tamaño
-    adjustCarouselHeight();
-    window.addEventListener('resize', adjustCarouselHeight);
-    
-    // Mejora para scroll horizontal en dispositivos táctiles
-    const scrollContainers = document.querySelectorAll('.carousel-products-container, .section-quicklinks .row');
-    scrollContainers.forEach(container => {
-        let isDown = false;
-        let startX;
-        let scrollLeft;
+        // Aplicar ajustes iniciales y en cada cambio de tamaño
+        adjustMainCarouselHeight();
+        window.addEventListener('resize', adjustMainCarouselHeight);
         
-        container.addEventListener('mousedown', (e) => {
-            isDown = true;
-            startX = e.pageX - container.offsetLeft;
-            scrollLeft = container.scrollLeft;
-        });
-        
-        container.addEventListener('mouseleave', () => {
-            isDown = false;
-        });
-        
-        container.addEventListener('mouseup', () => {
-            isDown = false;
-        });
-        
-        container.addEventListener('mousemove', (e) => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - container.offsetLeft;
-            const walk = (x - startX) * 2;
-            container.scrollLeft = scrollLeft - walk;
+        // Ajustar estilos para los carruseles de productos
+        const productCarousels = document.querySelectorAll('.section-bestsellers .carousel, .section-category-products .carousel');
+        productCarousels.forEach(carousel => {
+            // Personalizar controles para que sean más pequeños en carruseles de productos
+            const controls = carousel.querySelectorAll('.carousel-control-prev, .carousel-control-next');
+            controls.forEach(control => {
+                control.style.width = '8%';
+                control.style.backgroundColor = 'rgba(0,0,0,0.1)';
+                control.style.borderRadius = '4px';
+                control.style.opacity = '0.7';
+            });
         });
     });
-});
-</script>
+    </script>
 </main>
 {% endblock %}

@@ -1,5 +1,6 @@
     {% extends 'base.html' %}
     {% load static %}
+    {% load custom_filters %}
 
     {% block content %}
         <section class="section-content padding-y bg">
@@ -81,8 +82,8 @@
                         </div> <!-- card.// -->
 
                     </aside> <!-- col.// -->
-                    <aside class="col-lg-6">
 
+                    <aside class="col-lg-6"><!-- ============================ TOTAL ================================= -->
                         <div class="card">
                             <div class="card-body">
                                     <table class="table table-borderless table-shopping-cart">
@@ -122,7 +123,7 @@
                                                 <td>
                                                     <div class="price-wrap">
                                                         <var class="price">${{ cart_item.sub_total }}</var>
-                                                        <small class="text-muted"> ${{ cart_item.product.price }} cada uno </small>
+                                                        <small class="text-muted"> ${{ cart_item.product.price|floatformat:2 }} cada uno </small>
                                                     </div> <!-- price-wrap .// -->
                                                 </td>
 

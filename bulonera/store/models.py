@@ -23,6 +23,7 @@ class Product(models.Model):
     is_available = models.BooleanField(default=True)
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
+    sold_count = models.IntegerField(default=0)
     
     # Nuevos campos para META PIXEL y Google Merchant
     brand = models.CharField(max_length=100, blank=True)
