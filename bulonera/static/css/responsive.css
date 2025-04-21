@@ -718,6 +718,72 @@
   }
 }
 
+/* ================= Responsive Procces ===================== */
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .section-purchase-process .section-title {
+      font-size: 2.2rem;
+  }
+  
+  .mobile-image {
+      max-width: 80%;
+  }
+}
+
+@media (max-width: 768px) {
+  .process-icon {
+      height: 50px;
+  }
+  
+  .process-card .card-title {
+      font-size: 1rem;
+  }
+  
+  .process-card .card-text {
+      font-size: 0.85rem;
+  }
+  
+  .brand-logo {
+      max-width: 220px;
+  }
+  
+  .section-purchase-process .section-title {
+      font-size: 2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .section-purchase-process .section-title {
+      font-size: 1.7rem;
+  }
+  
+  .process-icon {
+      height: 45px;
+  }
+  
+  .step-number {
+      width: 35px;
+      height: 35px;
+      font-size: 1rem;
+  }
+  
+  .process-card .card-title {
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+  }
+  
+  .process-card .card-text {
+      font-size: 0.8rem;
+  }
+  
+  .brand-logo {
+      max-width: 180px;
+  }
+}
+/* ================= Responsive Procces END ===================== */
+
+
 /*####### Footer #######*/
 /* Media queries para ajustes adicionales */
 @media (max-width: 400px) {

@@ -141,7 +141,7 @@
                     </a>
                 </div>
                 <div class="col quicklink-item text-center">
-                    <a href="#">
+                    <a href="#" data-toggle="modal" data-target="#mediosPagoModal">
                         <div class="icon-wrap mb-2">
                             <i class="fa fa-credit-card"></i>
                         </div>
@@ -157,7 +157,7 @@
                     </a>
                 </div>
                 <div class="col quicklink-item text-center">
-                    <a href="#">
+                    <a href="#" data-toggle="modal" data-target="#enviosModal">
                         <div class="icon-wrap mb-2">
                             <i class="fa fa-truck"></i>
                         </div>
@@ -314,6 +314,7 @@
 {% endfor %}
 <!-- ========================= SECTION CATEGORÍAS DESTACADAS END// ========================= -->
 
+    <!-- ======================= Modales =============================== -->
 <!-- ========================= SECTION CÓMO COMPRAR ========================= -->
 <section class="section-purchase-process py-5" id="como-comprar">
     <div class="container">
@@ -420,6 +421,126 @@
     </div>
 </section>
 <!-- ========================= SECTION CÓMO COMPRAR END// ========================= -->
+
+    <!-- ======================= Modal de Medios de Pago =============================== -->
+    <div class="modal fade" id="mediosPagoModal" tabindex="-1" aria-labelledby="mediosPagoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 bg-indigo text-white">
+            <h5 class="modal-title w-100 text-center" id="mediosPagoModalLabel">MEDIOS DE PAGO</h5>
+            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body bg-indigo text-white py-4">
+            <div class="container">
+                <!-- Logo circular -->
+                <div class="text-center mb-4">
+                <div class="logo-circle">
+                    <img src="{% static 'images/logo-bulonera-alvear.png' %}" alt="Logo" class="img-fluid" style="max-width: 200px;">
+                </div>
+                </div>
+                
+                <!-- Opciones de pago -->
+                <div class="payment-options">
+                <!-- Efectivo -->
+                <div class="payment-option mb-3">
+                    <a href="#" class="btn btn-payment w-100 d-flex align-items-center">
+                    <div class="icon-circle bg-white text-indigo mr-3">
+                        <i class="fa fa-money"></i>
+                    </div>
+                    <span class="flex-grow-1 text-left">Efectivo</span>
+                    </a>
+                </div>
+                
+                <!-- Transferencia -->
+                <div class="payment-option mb-3">
+                    <a href="#" class="btn btn-payment w-100 d-flex align-items-center">
+                    <div class="icon-circle bg-white text-indigo mr-3">
+                        <i class="fa fa-exchange"></i>
+                    </div>
+                    <span class="flex-grow-1 text-left">Transferencia</span>
+                    </a>
+                </div>
+                
+                <!-- Débito/crédito -->
+                <div class="payment-option mb-3">
+                    <a href="#" class="btn btn-payment w-100 d-flex align-items-center">
+                    <div class="icon-circle bg-white text-indigo mr-3">
+                        <i class="fa fa-credit-card"></i>
+                    </div>
+                    <span class="flex-grow-1 text-left">Débito/crédito</span>
+                    </a>
+                </div>
+                </div>
+                
+                <!-- Mensaje final -->
+                <div class="text-center mt-4">
+                <p>COORDINA CON NOSOTROS TU MEJOR<br>FORMA DE PAGAR!</p>
+                </div>
+            </div>
+            </div>
+        </div>
+        </div>
+    </div>
+    <!-- ======================= Modal de Medios de Pago END =============================== -->
+
+        <!-- ======================= Modal de Envíos ======================= -->
+    <div class="modal fade" id="enviosModal" tabindex="-1" aria-labelledby="enviosModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 bg-indigo text-white">
+                    <h5 class="modal-title w-100 text-center" id="enviosModalLabel">ENVÍOS</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body bg-indigo text-white py-4">
+                    <div class="container">
+                        <!-- Imagen del camión -->
+                        <div class="text-center mb-4">
+                        <div class="truck-icon">
+                            <div class="logo-circle">
+                                <img src="{% static 'images/envios.png' %}" alt="Logo" class="img-fluid" style="max-width: 200px;">
+                            </div>
+                        </div>
+                        </div>
+                        
+                        <!-- Texto principal -->
+                        <div class="shipping-text text-center">
+                            <h2 class="display-4 font-weight-bold mb-4">Envíos a TODO<br>EL PAÍS!</h2>
+                        </div>
+                        
+                        <!-- Opciones de envío (puedes agregar estas si las necesitas) -->
+                        <div class="shipping-options mt-4">
+                            <div class="row justify-content-center">
+                                <div class="col-md-10">
+                                    <div class="card bg-transparent border-white mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Información de envíos</h5>
+                                            <p class="card-text">Trabajamos con múltiples transportes a todo el país. Puedes usar tu transporte de confianza o te ayudamos a coordinar el envío.</p>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="card bg-transparent border-white">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Retiro en sucursal</h5>
+                                            <p class="card-text">También puedes retirar tu pedido en nuestra sucursal sin costo adicional. Consulta por horarios de atención.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Información adicional -->
+                        <div class="shipping-info text-center mt-5">
+                            <p class="mb-0 slogan">BULONERA ALVEAR, Construyendo el futuro, tornillo a tornillo.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+            <!-- ======================= Modal de Envíos END ======================= -->
 
     <script>
     document.addEventListener("DOMContentLoaded", function() {

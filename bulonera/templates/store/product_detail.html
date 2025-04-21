@@ -56,15 +56,17 @@
                                         {% endfor %}
                                     </li>
                                 </ul>
+                                <div class="row">
+                                    <p>{{ single_product.description }}</p>
+                                </div>
                             </aside>
                             <main class="col-md-6 border-left">
-                    
                                 <form action="{% url 'add_cart' single_product.id %}" method="POST">
                                     {% csrf_token %}
-                    
                                     <article class="content-body"><!-- product-info-aside .// -->
-                        
-                                        <h2 class="title">{{ single_product.name }}</h2>
+                                        <h1 class="title">{{ single_product.name }}</h1>
+                                        <h7 class="title">{{ single_product.code }}</h7>
+                                        <h5 class="title">{{ single_product.category }} | {{ single_product.subcategory.subcategory_name }}</h5>
                                         <div class="rating-star">
                                             <span>
                                                 <i class="fa fa-star{% if single_product.averageReview < 0.5 %}-o{% elif single_product.averageReview >= 0.5 and single_product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
@@ -79,9 +81,7 @@
                                         <div class="mb-3">
                                             <var class="price h4">$ {{ single_product.price|floatformat:2 }}</var>
                                         </div>
-                        
-                                        <p>{{ single_product.description }}</p>
-
+                                        <h7 class="title">{{ single_product.brand }}</h7>
                                         <hr>
                                         <div class="row"><!-- SELECCIÓN DEL COLOR -->
                                             <div class="item-option-select">
@@ -110,10 +110,18 @@
                                         <hr>
                         
                                         {% if single_product.stock <= 0 %}
-                                        <h5>Lo lamentamos, este es un producto fuera de stock</h5>
+                                            <h5>Lo lamentamos, este es un producto fuera de stock</h5>
                                         {% else %}
-                        
-                                        <button type="submit" class="btn  btn-primary"> <span class="text">Agregar al Carrito</span> <i class="fas fa-shopping-cart"></i>  </button>
+                                            <div class="input-group mb-2">
+                                                <div class="input-group-prepend">
+                                                    <button class="btn btn-outline-secondary decrease-qty" type="button">-</button>
+                                                </div>
+                                                <input type="text" class="form-control text-center qty-input" value="1" min="1">
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-outline-secondary increase-qty" type="button">+</button>
+                                                </div>
+                                            </div>
+                                            <button type="submit" class="btn  btn-primary"> <span class="text">Agregar al Carrito</span> <i class="fas fa-shopping-cart"></i>  </button>
                         
                                         {% endif %}
                         
@@ -125,9 +133,7 @@
                         </div> <!-- row.// -->
                     </div> <!-- card.// -->
                     <!-- ============================ COMPONENT 1 END .// ================================= -->
-                
                     <br>
-                
                     <div class="row"><!-- ============================ PRODUCT REVIEW ================================= -->
                         <div class="col-md-9">
                 
@@ -224,6 +230,42 @@
 
                 </div> <!-- container .//  -->
             </section>
+                <!-- JavaScript para manejar la cantidad de productos -->
+    <script>
+        $(document).ready(function() {
+            // Manejar clic en botón de incremento
+            $('.increase-qty').on('click', function() {
+                var $input = $(this).closest('.input-group').find('.qty-input');
+                var currentVal = parseInt($input.val());
+                if (!isNaN(currentVal)) {
+                    $input.val(currentVal + 1);
+                }
+            });
+
+            // Manejar clic en botón de decremento
+            $('.decrease-qty').on('click', function() {
+                var $input = $(this).closest('.input-group').find('.qty-input');
+                var currentVal = parseInt($input.val());
+                if (!isNaN(currentVal) && currentVal > 1) {
+                    $input.val(currentVal - 1);
+                }
+            });
+
+            // Modificar el enlace de "Agregar al Carrito" para incluir la cantidad
+            $('.add-to-cart').on('click', function(e) {
+                e.preventDefault();
+                var qty = $(this).closest('figure').find('.qty-input').val();
+                var href = $(this).attr('href');
+                if (href.indexOf('?') !== -1) {
+                    window.location.href = href + '&qty=' + qty;
+                } else {
+                    window.location.href = href + '?qty=' + qty;
+                }
+            });
+        });
+    </script>
+
+
         {% endblock %}
 
 </html>

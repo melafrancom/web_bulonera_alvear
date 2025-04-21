@@ -70,7 +70,7 @@ def store(request, category_slug=None, subcategory_slug=None):
         products = products.order_by('id')
     
     # Paginación
-    paginator = Paginator(products, 10)
+    paginator = Paginator(products, 30)
     page = request.GET.get('page')
     paged_products = paginator.get_page(page)
     product_count = products.count()

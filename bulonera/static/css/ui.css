@@ -11,6 +11,7 @@ body {
   display: grid;
   min-height: 100dvh;
   grid-template-rows: auto 1fr auto;
+  background-color: #f5f5f5;
 }
 
 /* ========================
@@ -692,7 +693,10 @@ p:last-child {
 .icon-wrap i {
   font-size: 20px;
 }
+/* ==================== Section Categorías rápidas ============================== */
 
+
+/* ==================== Section Categorías rápidas ============================== */
 /* Sección de productos más vendidos */
 .section-bestsellers {
   background-color: #f5f5f5;
@@ -786,9 +790,14 @@ p:last-child {
     opacity: 0.7;
     width: 8%;
 }
+
+.row.g-4.justify-content-center {
+  text-align: center;
+}
+
 /* Estilos para la sección de proceso de compra */
 .section-purchase-process {
-  background: linear-gradient(177deg, #3167eb 0%, #3167eb 50%, #1c00a1 100%);
+  background: linear-gradient(180deg, #3167eb 0%, #3167eb 50%, #1c00a1 100%);
   padding: 50px 0;
   position: relative;
   overflow: hidden;
@@ -899,69 +908,56 @@ p:last-child {
   font-size: 0.9rem;
   line-height: 1.4;
 }
-
-/* Responsive adjustments */
-@media (max-width: 992px) {
-  .section-purchase-process .section-title {
-      font-size: 2.2rem;
-  }
-  
-  .mobile-image {
-      max-width: 80%;
-  }
+/* =================== Medios de Pago ========================= */
+.bg-indigo {
+  background-color: #2a0d8f; /* Azul indigo intenso como en la imagen */
 }
 
-@media (max-width: 768px) {
-  .process-icon {
-      height: 50px;
-  }
-  
-  .process-card .card-title {
-      font-size: 1rem;
-  }
-  
-  .process-card .card-text {
-      font-size: 0.85rem;
-  }
-  
-  .brand-logo {
-      max-width: 220px;
-  }
-  
-  .section-purchase-process .section-title {
-      font-size: 2rem;
-  }
+.text-indigo {
+  color: #2a0d8f;
 }
 
-@media (max-width: 576px) {
-  .section-purchase-process .section-title {
-      font-size: 1.7rem;
-  }
-  
-  .process-icon {
-      height: 45px;
-  }
-  
-  .step-number {
-      width: 35px;
-      height: 35px;
-      font-size: 1rem;
-  }
-  
-  .process-card .card-title {
-      font-size: 0.9rem;
-      margin-bottom: 10px;
-  }
-  
-  .process-card .card-text {
-      font-size: 0.8rem;
-  }
-  
-  .brand-logo {
-      max-width: 180px;
-  }
+.logo-circle {
+  display: inline-block;
+  padding: 15px;
+  border-radius: 50%;
+  margin-bottom: 15px;
 }
 
+.icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-payment {
+  background-color: transparent;
+  border: 2px solid white;
+  border-radius: 50px;
+  color: white;
+  padding: 10px 20px;
+  transition: all 0.3s;
+}
+
+.btn-payment:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.modal-content {
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+#mediosPagoModal .modal-header .close {
+  opacity: 1;
+}
+
+/**/
 /* desktop only */
 /* desktop only .end */
 /* ================ SECTION-FOOTER ==================  */
