@@ -30,7 +30,71 @@
         </div>
     </section>
 
-    <!-- ========================= SECTION CONTENT ========================= -->
+    <!-- ========================= SECTION CONTENT OFFERS========================= -->
+    <!-- Al principio de la sección de contenido en store.html -->
+    {% if sale_products_groups and not current_category and not current_subcategory or is_offers_page %}
+    <section class="section-offers py-4">
+        <div class="container">
+            <header class="section-heading mb-3">
+                <h3 class="section-title">¡Ofertas Especiales!</h3>
+            </header>
+
+            <div id="offersCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    {% for group in sale_products_groups %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <div class="row">
+                            {% for product in group %}
+                                <div class="col-6 col-md-3">
+                                    <div class="card card-product-grid">
+                                        <div class="discount-badge">
+                                            {% if product.discount_percentage %}
+                                                -{{ product.discount_percentage }}%
+                                            {% else %}
+                                                ¡OFERTA!
+                                            {% endif %}
+                                        </div>
+                                        <a href="{{ product.get_url }}" class="img-wrap"> 
+                                            <img src="{{ product.images.url|default_if_none:'#' }}" class="card-img-top" alt="{{ product.name }}">
+                                        </a>
+                                        <div class="card-body d-flex flex-column">
+                                            <a href="{{ product.get_url }}" class="title text-truncate mb-2">{{product.name}}</a>
+                                            <div class="price-wrap mt-auto">
+                                                <span class="price text-success">${{ product.sale_price|floatformat:2 }}</span>
+                                                <del class="price-old text-muted">${{ product.price|floatformat:2 }}</del>
+                                            </div>
+                                            <div class="rating-star">
+                                                <span>
+                                                    <i class="fa fa-star{% if product.averageReview < 0.5 %}-o{% elif product.averageReview >= 0.5 and product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                    <i class="fa fa-star{% if product.averageReview < 1.5 %}-o{% elif product.averageReview >= 1.5 and product.averageReview < 2 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                    <i class="fa fa-star{% if product.averageReview < 2.5 %}-o{% elif product.averageReview >= 2.5 and product.averageReview < 3 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                    <i class="fa fa-star{% if product.averageReview < 3.5 %}-o{% elif product.averageReview >= 3.5 and product.averageReview < 4 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                    <i class="fa fa-star{% if product.averageReview < 4.5 %}-o{% elif product.averageReview >= 4.5 and product.averageReview < 5 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-target="#offersCarousel" data-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Anterior</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-target="#offersCarousel" data-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Siguiente</span>
+                </button>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+        <!-- ========================= SECTION CONTENT OFFERS END ========================= -->
+        
+            <!-- ========================= SECTION CONTENT ========================= -->
     <section class="section-content padding-y">
         <div class="container">
             <div class="row">
@@ -210,6 +274,11 @@
                             {% for product in products %}
                                 <div class="col-6 col-md-4 col-lg-4">
                                     <figure class="card card-product-grid">
+                                        <div class="discount-badge">
+                                            {% if product.discount_percentage %}
+                                                -{{ product.discount_percentage }}%
+                                            {% endif %}
+                                        </div>
                                         <div class="img-wrap">
                                             <a href="{{ product.get_url }}"><img src="{{ product.images.url }}"></a>
                                         </div> <!-- img-wrap.// -->
@@ -217,7 +286,7 @@
                                             <div class="fix-height">
                                                 <a href="{{ product.get_url }}" class="title">{{product.name}}</a>
                                                 <div class="price-wrap mt-2">
-                                                    <span class="price">${{ product.price|floatformat:2 }}</span>
+                                                    <span class="price">{% if product.sale_price %}${{ product.sale_price|floatformat:2 }} {% else %}${{ product.price|floatformat:2 }}{% endif %}</span>
                                                 </div> <!-- price-wrap.// -->
                                             </div>
                                             <div class="input-group mb-2">
@@ -276,10 +345,151 @@
             </div>
         </div>
     </section>
-
-    <!-- JavaScript para manejar la cantidad de productos -->
+    
+        <!-- Carrito flotante -->
+        <div class="floating-cart">
+            <div class="cart-toggle">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="badge badge-pill badge-danger cart-count">0</span>
+            </div>
+            <div class="cart-content">
+            <div class="cart-header">
+                <h5>Mi Carrito</h5>
+                <button type="button" class="close cart-close">
+                <span>&times;</span>
+                </button>
+            </div>
+            <div class="cart-body">
+                <div class="cart-items">
+                <!-- Los items del carrito se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+            <div class="cart-footer">
+                <div class="cart-total">Total: $<span id="cart-total-amount">0.00</span></div>
+                <a href="{% url 'cart' %}" class="btn btn-primary btn-sm btn-block">Ver Carrito Completo</a>
+            </div>
+            </div>
+        </div>
     <script>
         $(document).ready(function() {
+            // ===== CARRITO FLOTANTE =======
+            // Cargar el carrito al inicio
+            loadFloatingCart();
+            
+            // Mostrar/ocultar el carrito al hacer clic en el icono
+            $('.cart-toggle').on('click', function() {
+                $('.floating-cart').toggleClass('active');
+            });
+            
+            // Cerrar el carrito
+            $('.cart-close').on('click', function() {
+                $('.floating-cart').removeClass('active');
+            });
+            
+            // Función para cargar el contenido del carrito
+            function loadFloatingCart() {
+                $.ajax({
+                url: '{% url "get_cart_data" %}',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    updateFloatingCart(data);
+                },
+                error: function(error) {
+                    console.log('Error al cargar el carrito:', error);
+                }
+                });
+            }
+            
+            // Actualizar la vista del carrito flotante
+            function updateFloatingCart(data) {
+                $('.cart-count').text(data.cart_count);
+                $('#cart-total-amount').text(data.cart_total.toFixed(2));
+                
+                let cartItemsHtml = '';
+                
+                if (data.cart_items.length === 0) {
+                cartItemsHtml = '<div class="empty-cart-message">Tu carrito está vacío</div>';
+                } else {
+                data.cart_items.forEach(function(item) {
+                    let itemImage = item.image ? item.image : '/static/images/no-image.jpg';
+                    
+                    cartItemsHtml += `
+                    <div class="cart-item">
+                        <img src="${itemImage}" class="cart-item-image" alt="${item.name}">
+                        <div class="cart-item-details">
+                        <div class="cart-item-name">${item.name}</div>
+                        <div class="cart-item-price">
+                            <span>${item.quantity} x $${(item.price / item.quantity).toFixed(2)}</span>
+                            <span>$${item.price.toFixed(2)}</span>
+                        </div>
+                        </div>
+                    </div>
+                    `;
+                });
+                }
+                $('.cart-items').html(cartItemsHtml);
+            }
+            // Actualizar el carrito después de agregar un producto mediante AJAX
+            $(document).on('cart:updated', function() {
+                loadFloatingCart();
+            });
+            
+            // Modificar los enlaces de "Agregar al Carrito" para usar AJAX
+            $(document).on('click', '.add-to-cart', function(e) {
+                e.preventDefault();
+                var $this = $(this);
+                var qty = $this.closest('figure').find('.qty-input').val();
+                var href = $this.attr('href');
+                
+                // Construir la URL completa
+                if (href.indexOf('?') !== -1) {
+                href = href + '&qty=' + qty;
+                } else {
+                href = href + '?qty=' + qty;
+                }
+                
+                // Mostrar indicador de carga
+                $this.html('<i class="fas fa-spinner fa-spin"></i> Agregando...');
+                $this.prop('disabled', true);
+                
+                // Hacer la solicitud AJAX
+                $.ajax({
+                url: href,
+                type: 'GET',
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                success: function(response) {
+                    // Restaurar el botón
+                    $this.html('Agregar al Carrito');
+                    $this.prop('disabled', false);
+                    
+                    // Mostrar notificación
+                    $('<div class="alert alert-success add-cart-alert">Producto agregado al carrito</div>')
+                    .appendTo('body')
+                    .fadeIn('fast')
+                    .delay(2000)
+                    .fadeOut('fast', function() { $(this).remove(); });
+                    
+                    // Actualizar el carrito flotante
+                    loadFloatingCart();
+                    
+                    // Mostrar el carrito flotante
+                    $('.floating-cart').addClass('active');
+                    
+                    // Ocultar después de 5 segundos
+                    setTimeout(function() {
+                    $('.floating-cart').removeClass('active');
+                    }, 5000);
+                },
+                error: function(error) {
+                    // Restaurar el botón en caso de error
+                    $this.html('Agregar al Carrito');
+                    $this.prop('disabled', false);
+                    console.log('Error al agregar al carrito:', error);
+                }
+                });
+            });
+            // ==============================================
             // Manejar clic en botón de incremento
             $('.increase-qty').on('click', function() {
                 var $input = $(this).closest('.input-group').find('.qty-input');
@@ -295,18 +505,6 @@
                 var currentVal = parseInt($input.val());
                 if (!isNaN(currentVal) && currentVal > 1) {
                     $input.val(currentVal - 1);
-                }
-            });
-
-            // Modificar el enlace de "Agregar al Carrito" para incluir la cantidad
-            $('.add-to-cart').on('click', function(e) {
-                e.preventDefault();
-                var qty = $(this).closest('figure').find('.qty-input').val();
-                var href = $(this).attr('href');
-                if (href.indexOf('?') !== -1) {
-                    window.location.href = href + '&qty=' + qty;
-                } else {
-                    window.location.href = href + '?qty=' + qty;
                 }
             });
         });

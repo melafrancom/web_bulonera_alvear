@@ -38,35 +38,160 @@
         {% block content %}
             <section class="section-content padding-y bg">
                 <div class="container">
-                    
-                    <!-- ============================ COMPONENT 1: PRODUCT IMG ================================= -->
-                    <div class="card">
-                        <div class="row no-gutters">
-                            <aside class="col-md-6">
-                                <article class="gallery-wrap">
-                                    <div class="img-big-wrap mainImage">
-                                        <centre> <img src="{{ single_product.images.url }}"> </centre>
-                                    </div> <!-- img-big-wrap.// -->
-                                </article> <!-- gallery-wrap .end// -->
-                                <ul class="thumb">
-                                    <li>
-                                        <a href="{{ single_product.images.url }}" target="mainImage"><img src="{{ single_product.images.url }}" alt="Imagen del Producto"></a>
-                                        {% for i in product_gallery %}
-                                        <a href="{{ i.image.url }}" target="mainImage"><img src="{{ i.image.url }}" alt="Imagen del Producto"></a>
-                                        {% endfor %}
-                                    </li>
-                                </ul>
-                                <div class="row">
-                                    <p>{{ single_product.description }}</p>
+                    <div class="row">
+                        <!-- Columna para promociones - Nuevo contenedor a la izquierda -->
+                        <aside class="col-md-2">
+                            <div class="card mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">Promociones</h6>
                                 </div>
-                            </aside>
-                            <main class="col-md-6 border-left">
-                                <form action="{% url 'add_cart' single_product.id %}" method="POST">
-                                    {% csrf_token %}
-                                    <article class="content-body"><!-- product-info-aside .// -->
-                                        <h1 class="title">{{ single_product.name }}</h1>
-                                        <h7 class="title">{{ single_product.code }}</h7>
-                                        <h5 class="title">{{ single_product.category }} | {{ single_product.subcategory.subcategory_name }}</h5>
+                                <div class="card-body p-2">
+                                    {% for product in sale_products %}
+                                    <div class="card border-0 mb-2">
+                                        <a href="{{ product.get_url }}" class="text-decoration-none">
+                                            <img src="{{ product.images.url }}" class="card-img-top" alt="{{ product.name }}" style="max-height: 120px; object-fit: contain;">
+                                            <div class="card-body p-1">
+                                                <h6 class="card-title text-truncate small mb-0">{{ product.name }}</h6>
+                                                <p class="card-text mb-0 small">
+                                                    <span class="text-danger font-weight-bold">${{ product.sale_price|floatformat:2 }}</span>
+                                                    <small class="text-muted"><del>${{ product.price|floatformat:2 }}</del></small>
+                                                </p>
+                                                <span class="badge badge-danger small">-{{ product.discount_percentage }}%</span>
+                                            </div>
+                                        </a>
+                                    </div>
+                                    {% empty %}
+                                    <p class="text-center small mb-0">No hay ofertas disponibles</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </aside>
+                        <!-- Contenedor principal del producto - Ahora con 10 columnas -->
+                        <div class="col-md-10">
+                            <!-- ============================ COMPONENT 1: PRODUCT IMG ================================= -->
+                            <div class="card">
+                                <div class="row no-gutters">
+                                    <aside class="col-md-6">
+                                        <article class="gallery-wrap">
+                                            <div class="img-big-wrap mainImage">
+                                                <centre> <img src="{{ single_product.images.url }}"> </centre>
+                                            </div>
+                                            <ul class="thumb">
+                                                <li>
+                                                    <a href="{{ single_product.images.url }}" target="mainImage"><img src="{{ single_product.images.url }}" alt="Imagen del Producto"></a>
+                                                    {% for i in product_gallery %}
+                                                    <a href="{{ i.image.url }}" target="mainImage"><img src="{{ i.image.url }}" alt="Imagen del Producto"></a>
+                                                    {% endfor %}
+                                                </li>
+                                            </ul>
+                                        </article>
+                                    </aside>
+                                    <main class="col-md-6 border-left">
+                                        <form action="{% url 'add_cart' single_product.id %}" method="POST">
+                                            {% csrf_token %}
+                                            <article class="content-body"><!-- product-info-aside .// -->
+                                                <h1 class="title">{{ single_product.name }}</h1>
+                                                <h7 class="title">{{ single_product.code }}</h7>
+                                                <h5 class="title">{{ single_product.category }} | {{ single_product.subcategories }}</h5>
+                                                <div class="rating-star">
+                                                    <span>
+                                                        <i class="fa fa-star{% if single_product.averageReview < 0.5 %}-o{% elif single_product.averageReview >= 0.5 and single_product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if single_product.averageReview < 1.5 %}-o{% elif single_product.averageReview >= 1.5 and single_product.averageReview < 2 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if single_product.averageReview < 2.5 %}-o{% elif single_product.averageReview >= 2.5 and single_product.averageReview < 3 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if single_product.averageReview < 3.5 %}-o{% elif single_product.averageReview >= 3.5 and single_product.averageReview < 4 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if single_product.averageReview < 4.5 %}-o{% elif single_product.averageReview >= 4.5 and single_product.averageReview < 5 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <span> ({{ single_product.countReview }} Comentarios realizados)</span>
+                                                    </span>
+                                                </div>
+                                                <br>
+                                                <div class="mb-3">
+                                                    {% if single_product.is_on_sale and single_product.sale_price %}
+                                                        <var class="price h4 text-success">$ {{ single_product.sale_price|floatformat:2 }}</var>
+                                                        <del class="price-old text-muted">$ {{ single_product.price|floatformat:2 }}</del>
+                                                        <span class="badge badge-danger">-{{ single_product.discount_percentage }}%</span>
+                                                    {% else %}
+                                                        <var class="price h4">$ {{ single_product.price|floatformat:2 }}</var>
+                                                    {% endif %}
+                                                </div>
+                                                <h7 class="title">{{ single_product.brand }}</h7>
+                                            {% if single_product.stock <= 0 %}
+                                                <h5>Lo lamentamos, este es un producto fuera de stock</h5>
+                                            {% else %}
+                                                <div class="form-group">
+                                                    <label for="qty">Cantidad:</label>
+                                                    <div class="input-group mb-3" style="width: 200px;">
+                                                        <div class="input-group-prepend">
+                                                            <button class="btn btn-outline-secondary decrease-qty" type="button">-</button>
+                                                        </div>
+                                                        <input type="number" name="quantity" id="qty" class="form-control text-center qty-input" value="1" min="1" max="{{ single_product.stock }}">
+                                                        <div class="input-group-append">
+                                                            <button class="btn btn-outline-secondary increase-qty" type="button">+</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button id="add_cart" type="submit" class="btn btn-primary btn-lg">
+                                                    <span class="text">Agregar al Carrito</span>
+                                                    <i class="fas fa-shopping-cart"></i>
+                                                </button>
+                                            {% endif %}
+                                            </article> <!-- product-info-aside .// -->
+                                        </form>
+                                    </main> <!-- col.// -->
+                                </div> <!-- row.// -->
+                            </div> <!-- card.// -->
+                            <!-- ============================ COMPONENT 1 END .// ================================= -->
+                            <br>
+                            <div class="row">
+                                <p>{{ single_product.description }}</p>
+                            </div>
+                            <div class="row"><!-- ============================ PRODUCT REVIEW ================================= -->
+                                <div class="col-md-12">
+                                    <form action="{% url 'submit_review' single_product.id %}" method="post">
+                                        {% csrf_token %}
+                                        <h5>Escribe tu reseña o comentario</h5>
+                                        <br>
+                                        <div class="">
+                                            <label for="">¿Cómo calificarias este producto?</label>
+                                            <br>
+                            
+                                            <div class="rate">
+                                                <input type="radio" name="rating" value="5" id="rating10"><label for="rating10" title="5"></label>
+                                                <input type="radio" name="rating" value="4.5" id="rating9"><label for="rating9" title="4.5" class="half"></label>
+                                                <input type="radio" name="rating" value="4" id="rating8"><label for="rating8" title="4"></label>
+                                                <input type="radio" name="rating" value="3.5" id="rating7"><label for="rating7" title="3.5" class="half"></label>
+                                                <input type="radio" name="rating" value="3" id="rating6"><label for="rating6" title="3"></label>
+                                                <input type="radio" name="rating" value="2.5" id="rating5"><label for="rating5" title="2.5" class="half"></label>
+                                                <input type="radio" name="rating" value="2" id="rating4"><label for="rating4" title="2"></label>
+                                                <input type="radio" name="rating" value="1.5" id="rating3"><label for="rating3" title="1.5" class="half"></label>
+                                                <input type="radio" name="rating" value="1" id="rating2"><label for="rating2" title="1"></label>
+                                                <input type="radio" name="rating" value="0.5" id="rating1"><label for="rating1" title="0.5" class="half"></label>
+                                            </div>
+                                            <br>
+                            
+                                            Titulo del comentario:
+                                            <input type="text" class="form-control" name="subject" value="">
+                                            <br>
+                            
+                                            Comentario:
+                                            <textarea name="review" rows="4" class="form-control" placeholder="Escribe aquí tu reseña"></textarea>
+                                            <br>
+                                            {% if user.is_authenticated %}
+                                
+                                                {% if orderproduct %}
+                                                    <input type="submit" name="" value="Enviar reseña" class="btn btn-primary">
+                                                {% else %}
+                                                    <p>Primero necesitas comprar el producto para escribir una reseña!</p>
+                                                {% endif %}
+                                
+                                            {% else %}
+                                                <p>Para enviar un comentario debes estar registrado <span><a href="{% url 'login' %}">Inicia Sesión</a></span></p>
+                                            {% endif %}
+                                        </div>
+                                        {% include 'includes/alerts.html' %}
+                                    </form>
+                                    <br>
+                                    <header class="section-heading">
+                                        <h3>Reseñas de compradores verificados</h3>
                                         <div class="rating-star">
                                             <span>
                                                 <i class="fa fa-star{% if single_product.averageReview < 0.5 %}-o{% elif single_product.averageReview >= 0.5 and single_product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
@@ -74,198 +199,205 @@
                                                 <i class="fa fa-star{% if single_product.averageReview < 2.5 %}-o{% elif single_product.averageReview >= 2.5 and single_product.averageReview < 3 %}-half-o {% endif %}" aria-hidden="true"></i>
                                                 <i class="fa fa-star{% if single_product.averageReview < 3.5 %}-o{% elif single_product.averageReview >= 3.5 and single_product.averageReview < 4 %}-half-o {% endif %}" aria-hidden="true"></i>
                                                 <i class="fa fa-star{% if single_product.averageReview < 4.5 %}-o{% elif single_product.averageReview >= 4.5 and single_product.averageReview < 5 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                                <span> ({{ single_product.countReview }} Comentarios realizados)</span>
                                             </span>
                                         </div>
-                                        <br>
-                                        <div class="mb-3">
-                                            <var class="price h4">$ {{ single_product.price|floatformat:2 }}</var>
-                                        </div>
-                                        <h7 class="title">{{ single_product.brand }}</h7>
-                                        <hr>
-                                        <div class="row"><!-- SELECCIÓN DEL COLOR -->
-                                            <div class="item-option-select">
-                                                <h6>Escoge el color</h6>
-                                                <select class="form-control" name="color" >
-                                                    <option value="" disabled selected>Seleccionar</option>
-                                                    {% for i in single_product.variation_set.colors %}
-                                                    <option value="{{ i.variation_value | lower }}">{{ i.variation_value | capfirst }}</option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-                                        </div> <!-- row.// -->
-                                        <div class="row"><!-- SELECCIÓN DE LA TALLA -->
-                                            <div class="item-option-select">
-                            
-                                                <h6>Escoge la tallas</h6>
-                                                <select class="form-control" name="talla" >
-                                                    <option value="" disabled selected>Seleccionar</option>
-                                                    {% for i in single_product.variation_set.tallas %}
-                                                    <option value="{{ i.variation_value | lower }}">{{ i.variation_value | capfirst }}</option>
-                                                    {% endfor %}
-                                                </select>
-                            
-                                            </div>
-                                        </div> <!-- row.// -->
-                                        <hr>
+                                    </header>
                         
-                                        {% if single_product.stock <= 0 %}
-                                            <h5>Lo lamentamos, este es un producto fuera de stock</h5>
-                                        {% else %}
-                                            <div class="input-group mb-2">
-                                                <div class="input-group-prepend">
-                                                    <button class="btn btn-outline-secondary decrease-qty" type="button">-</button>
-                                                </div>
-                                                <input type="text" class="form-control text-center qty-input" value="1" min="1">
-                                                <div class="input-group-append">
-                                                    <button class="btn btn-outline-secondary increase-qty" type="button">+</button>
+                                    {% for review in reviews %}
+                                    <article class="box mb-3">
+                                        <div class="icontext w-100">
+                                            <div class="text">
+                                                <span class="date text-muted float-md-right">{{ review.updated_at }}</span>
+                                                <h6 class="mb-1">{{ review.user.full_name }}</h6>
+                                                <div class="rating-star">
+                                                    <span>
+                                                        <i class="fa fa-star{% if review.rating == 0.5 %}-half-o{% elif review.rating < 1 %}-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if review.rating == 1.5 %}-half-o{% elif review.rating < 2 %}-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if review.rating == 2.5 %}-half-o{% elif review.rating < 3 %}-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if review.rating == 3.5 %}-half-o{% elif review.rating < 4 %}-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if review.rating == 4.5 %}-half-o{% elif review.rating < 5 %}-o {% endif %}" aria-hidden="true"></i>
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <button type="submit" class="btn  btn-primary"> <span class="text">Agregar al Carrito</span> <i class="fas fa-shopping-cart"></i>  </button>
-                        
-                                        {% endif %}
-                        
-                                    </article> <!-- product-info-aside .// -->
-                    
-                                </form>
-                    
-                            </main> <!-- col.// -->
-                        </div> <!-- row.// -->
-                    </div> <!-- card.// -->
-                    <!-- ============================ COMPONENT 1 END .// ================================= -->
-                    <br>
-                    <div class="row"><!-- ============================ PRODUCT REVIEW ================================= -->
-                        <div class="col-md-9">
-                
-                            <form action="{% url 'submit_review' single_product.id %}" method="post">
-                                {% csrf_token %}
-                                <h5>Escribe tu reseña o comentario</h5>
-                    
-                                <br>
-                                <div class="">
-                                    <label for="">¿Cómo calificarias este producto?</label>
-                                    <br>
-                    
-                                    <div class="rate">
-                                        <input type="radio" name="rating" value="5" id="rating10"><label for="rating10" title="5"></label>
-                                        <input type="radio" name="rating" value="4.5" id="rating9"><label for="rating9" title="4.5" class="half"></label>
-                                        <input type="radio" name="rating" value="4" id="rating8"><label for="rating8" title="4"></label>
-                                        <input type="radio" name="rating" value="3.5" id="rating7"><label for="rating7" title="3.5" class="half"></label>
-                                        <input type="radio" name="rating" value="3" id="rating6"><label for="rating6" title="3"></label>
-                                        <input type="radio" name="rating" value="2.5" id="rating5"><label for="rating5" title="2.5" class="half"></label>
-                                        <input type="radio" name="rating" value="2" id="rating4"><label for="rating4" title="2"></label>
-                                        <input type="radio" name="rating" value="1.5" id="rating3"><label for="rating3" title="1.5" class="half"></label>
-                                        <input type="radio" name="rating" value="1" id="rating2"><label for="rating2" title="1"></label>
-                                        <input type="radio" name="rating" value="0.5" id="rating1"><label for="rating1" title="0.5" class="half"></label>
-                                    </div>
-                                    <br>
-                    
-                                    Titulo del comentario:
-                                    <input type="text" class="form-control" name="subject" value="">
-                                    <br>
-                    
-                                    Comentario:
-                                    <textarea name="review" rows="4" class="form-control" placeholder="Escribe aquí tu reseña"></textarea>
-                                    <br>
-                                    {% if user.is_authenticated %}
-                        
-                                        {% if orderproduct %}
-                                            <input type="submit" name="" value="Enviar reseña" class="btn btn-primary">
-                                        {% else %}
-                                            <p>Primero necesitas comprar el producto para escribir una reseña!</p>
-                                        {% endif %}
-                        
-                                    {% else %}
-                                        <p>Para enviar un comentario debes estar registrado <span><a href="{% url 'login' %}">Inicia Sesión</a></span></p>
-                                    {% endif %}
-                                </div>
-                    
-                                {% include 'includes/alerts.html' %}
-                    
-                    
-                            </form>
-                            <br>
-                
-                            <header class="section-heading">
-                                <h3>Reseñas de compradores verificados</h3>
-                                <div class="rating-star">
-                                    <span>
-                                        <i class="fa fa-star{% if single_product.averageReview < 0.5 %}-o{% elif single_product.averageReview >= 0.5 and single_product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                        <i class="fa fa-star{% if single_product.averageReview < 1.5 %}-o{% elif single_product.averageReview >= 1.5 and single_product.averageReview < 2 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                        <i class="fa fa-star{% if single_product.averageReview < 2.5 %}-o{% elif single_product.averageReview >= 2.5 and single_product.averageReview < 3 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                        <i class="fa fa-star{% if single_product.averageReview < 3.5 %}-o{% elif single_product.averageReview >= 3.5 and single_product.averageReview < 4 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                        <i class="fa fa-star{% if single_product.averageReview < 4.5 %}-o{% elif single_product.averageReview >= 4.5 and single_product.averageReview < 5 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                    </span>
-                                </div>
-                            </header>
-                
-                            {% for review in reviews %}
-                            <article class="box mb-3">
-                                <div class="icontext w-100">
-                                    <div class="text">
-                                        <span class="date text-muted float-md-right">{{ review.updated_at }}</span>
-                                        <h6 class="mb-1">{{ review.user.full_name }}</h6>
-                                        <div class="rating-star">
-                                            <span>
-                                                <i class="fa fa-star{% if review.rating == 0.5 %}-half-o{% elif review.rating < 1 %}-o {% endif %}" aria-hidden="true"></i>
-                                                <i class="fa fa-star{% if review.rating == 1.5 %}-half-o{% elif review.rating < 2 %}-o {% endif %}" aria-hidden="true"></i>
-                                                <i class="fa fa-star{% if review.rating == 2.5 %}-half-o{% elif review.rating < 3 %}-o {% endif %}" aria-hidden="true"></i>
-                                                <i class="fa fa-star{% if review.rating == 3.5 %}-half-o{% elif review.rating < 4 %}-o {% endif %}" aria-hidden="true"></i>
-                                                <i class="fa fa-star{% if review.rating == 4.5 %}-half-o{% elif review.rating < 5 %}-o {% endif %}" aria-hidden="true"></i>
-                                            </span>
+                                        </div> <!-- icontext.// -->
+                                        <div class="mt-3">
+                                            <h6>{{ review.subject }}</h6>
+                                            <p>
+                                                {{ review.review }}
+                                            </p>
                                         </div>
-                                    </div>
-                                </div> <!-- icontext.// -->
-                                <div class="mt-3">
-                                    <h6>{{ review.subject }}</h6>
-                                    <p>
-                                        {{ review.review }}
-                                    </p>
-                                </div>
-                            </article>
-                            {% endfor %}
-
-                        </div> <!-- col.// -->
-                    </div> <!-- row.// -->
-
+                                    </article>
+                                    {% endfor %}
+                                </div> <!-- col.// -->
+                            </div> <!-- row.// -->
+                        </div> <!-- col-md-10 -->
+                    </div> <!-- row principal -->
                 </div> <!-- container .//  -->
             </section>
-                <!-- JavaScript para manejar la cantidad de productos -->
-    <script>
-        $(document).ready(function() {
-            // Manejar clic en botón de incremento
-            $('.increase-qty').on('click', function() {
-                var $input = $(this).closest('.input-group').find('.qty-input');
-                var currentVal = parseInt($input.val());
-                if (!isNaN(currentVal)) {
-                    $input.val(currentVal + 1);
-                }
-            });
+            <!-- Carrito flotante -->
+            <div class="floating-cart">
+                <div class="cart-toggle">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="badge badge-pill badge-danger cart-count">0</span>
+                </div>
+                <div class="cart-content">
+                <div class="cart-header">
+                    <h5>Mi Carrito</h5>
+                    <button type="button" class="close cart-close">
+                    <span>&times;</span>
+                    </button>
+                </div>
+                <div class="cart-body">
+                    <div class="cart-items">
+                    <!-- Los items del carrito se cargarán aquí dinámicamente -->
+                    </div>
+                </div>
+                <div class="cart-footer">
+                    <div class="cart-total">Total: $<span id="cart-total-amount">0.00</span></div>
+                    <a href="{% url 'cart' %}" class="btn btn-primary btn-sm btn-block">Ver Carrito Completo</a>
+                </div>
+                </div>
+            </div>
+            <!-- JavaScript para manejar la cantidad de productos -->
+            <script>
+                $(document).ready(function() {
+                    // ===== CARRITO FLOTANTE =======
+                    // Cargar el carrito al inicio
+                    loadFloatingCart();
+                    
+                    // Mostrar/ocultar el carrito al hacer clic en el icono
+                    $('.cart-toggle').on('click', function() {
+                        $('.floating-cart').toggleClass('active');
+                    });
+                    
+                    // Cerrar el carrito
+                    $('.cart-close').on('click', function() {
+                        $('.floating-cart').removeClass('active');
+                    });
+                    
+                    // Función para cargar el contenido del carrito
+                    function loadFloatingCart() {
+                        $.ajax({
+                        url: '{% url "get_cart_data" %}',
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(data) {
+                            updateFloatingCart(data);
+                        },
+                        error: function(error) {
+                            console.log('Error al cargar el carrito:', error);
+                        }
+                        });
+                    }
+                    
+                    // Actualizar la vista del carrito flotante
+                    function updateFloatingCart(data) {
+                        $('.cart-count').text(data.cart_count);
+                        $('#cart-total-amount').text(data.cart_total.toFixed(2));
+                        
+                        let cartItemsHtml = '';
+                        
+                        if (data.cart_items.length === 0) {
+                        cartItemsHtml = '<div class="empty-cart-message">Tu carrito está vacío</div>';
+                        } else {
+                        data.cart_items.forEach(function(item) {
+                            let itemImage = item.image ? item.image : '/static/images/no-image.jpg';
+                            
+                            cartItemsHtml += `
+                            <div class="cart-item">
+                                <img src="${itemImage}" class="cart-item-image" alt="${item.name}">
+                                <div class="cart-item-details">
+                                <div class="cart-item-name">${item.name}</div>
+                                <div class="cart-item-price">
+                                    <span>${item.quantity} x $${(item.price / item.quantity).toFixed(2)}</span>
+                                    <span>$${item.price.toFixed(2)}</span>
+                                </div>
+                                </div>
+                            </div>
+                            `;
+                        });
+                        }
+                        $('.cart-items').html(cartItemsHtml);
+                    }
+                    // Actualizar el carrito después de agregar un producto mediante AJAX
+                    $(document).on('cart:updated', function() {
+                        loadFloatingCart();
+                    });
+                    
+                    // Modificar los enlaces de "Agregar al Carrito" para usar AJAX
+                    $(document).on('click', '.add-to-cart', function(e) {
+                        e.preventDefault();
+                        var $this = $(this);
+                        var qty = $this.closest('figure').find('.qty-input').val();
+                        var href = $this.attr('href');
+                        
+                        // Construir la URL completa
+                        if (href.indexOf('?') !== -1) {
+                        href = href + '&qty=' + qty;
+                        } else {
+                        href = href + '?qty=' + qty;
+                        }
+                        
+                        // Mostrar indicador de carga
+                        $this.html('<i class="fas fa-spinner fa-spin"></i> Agregando...');
+                        $this.prop('disabled', true);
+                        
+                        // Hacer la solicitud AJAX
+                        $.ajax({
+                        url: href,
+                        type: 'GET',
+                        headers: {'X-Requested-With': 'XMLHttpRequest'},
+                        success: function(response) {
+                            // Restaurar el botón
+                            $this.html('Agregar al Carrito');
+                            $this.prop('disabled', false);
+                            
+                            // Mostrar notificación
+                            $('<div class="alert alert-success add-cart-alert">Producto agregado al carrito</div>')
+                            .appendTo('body')
+                            .fadeIn('fast')
+                            .delay(2000)
+                            .fadeOut('fast', function() { $(this).remove(); });
+                            
+                            // Actualizar el carrito flotante
+                            loadFloatingCart();
+                            
+                            // Mostrar el carrito flotante
+                            $('.floating-cart').addClass('active');
+                            
+                            // Ocultar después de 5 segundos
+                            setTimeout(function() {
+                            $('.floating-cart').removeClass('active');
+                            }, 5000);
+                        },
+                        error: function(error) {
+                            // Restaurar el botón en caso de error
+                            $this.html('Agregar al Carrito');
+                            $this.prop('disabled', false);
+                            console.log('Error al agregar al carrito:', error);
+                        }
+                        });
+                    });
+                    // ============================================== ===== CARRITO FLOTANTE END =======
 
-            // Manejar clic en botón de decremento
-            $('.decrease-qty').on('click', function() {
-                var $input = $(this).closest('.input-group').find('.qty-input');
-                var currentVal = parseInt($input.val());
-                if (!isNaN(currentVal) && currentVal > 1) {
-                    $input.val(currentVal - 1);
-                }
-            });
+                    // Manejar clic en botón de incremento
+                    $('.increase-qty').on('click', function() {
+                        var $input = $(this).closest('.input-group').find('.qty-input');
+                        var currentVal = parseInt($input.val());
+                        if (!isNaN(currentVal)) {
+                            $input.val(currentVal + 1);
+                        }
+                    });
 
-            // Modificar el enlace de "Agregar al Carrito" para incluir la cantidad
-            $('.add-to-cart').on('click', function(e) {
-                e.preventDefault();
-                var qty = $(this).closest('figure').find('.qty-input').val();
-                var href = $(this).attr('href');
-                if (href.indexOf('?') !== -1) {
-                    window.location.href = href + '&qty=' + qty;
-                } else {
-                    window.location.href = href + '?qty=' + qty;
-                }
-            });
-        });
-    </script>
-
-
+                    // Manejar clic en botón de decremento
+                    $('.decrease-qty').on('click', function() {
+                        var $input = $(this).closest('.input-group').find('.qty-input');
+                        var currentVal = parseInt($input.val());
+                        if (!isNaN(currentVal) && currentVal > 1) {
+                            $input.val(currentVal - 1);
+                        }
+                    });
+                });
+            </script>
         {% endblock %}
-
 </html>

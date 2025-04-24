@@ -3,6 +3,7 @@ from django.utils import timezone
 
 from account.models import UserProfile, Account
 from store.models import Product, Variation
+from cart.models import CartItem
 
 
 # Create your models here.
@@ -67,7 +68,7 @@ class OrderProduct(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     variation = models.ManyToManyField(Variation, blank=True)
     quantity = models.IntegerField()
-    product_price = models.FloatField()
+    purchase_price = models.FloatField()
     ordered = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

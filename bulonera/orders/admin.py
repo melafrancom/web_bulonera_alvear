@@ -4,7 +4,7 @@ from .models import Order, Payment, OrderProduct
 # Register your models here.
 class OrderProductInline(admin.TabularInline):
     model = OrderProduct
-    readonly_fields = ('payment', 'user', 'product', 'quantity', 'product_price', 'ordered')
+    readonly_fields = ('payment', 'user', 'product', 'quantity', 'purchase_price', 'ordered')
     extra = 0
 
 

@@ -24,7 +24,10 @@ class Product(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
     sold_count = models.IntegerField(default=0)
-    
+    #offers
+    is_on_sale = models.BooleanField(default=False, verbose_name="En oferta")
+    sale_price = models.FloatField(blank=True, null=True, verbose_name="Precio de oferta")
+    discount_percentage = models.IntegerField(blank=True, null=True, verbose_name="Porcentaje de descuento")
     # Nuevos campos para META PIXEL y Google Merchant
     brand = models.CharField(max_length=100, blank=True)
     condition = models.CharField(max_length=20, choices=[
@@ -37,6 +40,13 @@ class Product(models.Model):
     # Auto-generar slug si no se proporciona
         if not self.slug:
             self.slug = slugify(self.name)
+            
+            # Calcular el porcentaje de descuento si hay precio de oferta
+        if self.is_on_sale and self.sale_price is not None and self.price > 0:
+            self.discount_percentage = int(((self.price - self.sale_price) / self.price) * 100)
+        else:
+            self.discount_percentage = None
+            
         super(Product, self).save(*args, **kwargs)
         
     def get_url(self):

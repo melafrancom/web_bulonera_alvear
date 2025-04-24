@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponseRedirect, JsonResponse
+from django.urls import reverse
 
 from .models import Cart, CartItem
 from store.models import Product, Variation
@@ -18,11 +20,13 @@ def _cart_id(request):
 #### Segundo: podemos ir agregando o eliminando productos/items del carrito #####
 def add_cart(request, product_id):
     product = Product.objects.get(id=product_id)
-    
-    # Obtener la cantidad del request, por defecto 1
-    quantity = int(request.GET.get('qty', 1))
-    
     current_user = request.user
+    
+    # Get product price (regular or discounted)
+    if product.is_on_sale and product.sale_price:
+        price_to_use = product.sale_price
+    else:
+        price_to_use = product.price
     
     # Usuario identificado
     if current_user.is_authenticated:
@@ -38,6 +42,8 @@ def add_cart(request, product_id):
                     product_variation.append(variation)
                 except:
                     pass
+            # Get quantity from form
+            quantity = int(request.POST.get('quantity', 1))# obtener la cantidad del POST si envías cantidad ahí.  
             
         is_cart_item_exists = CartItem.objects.filter(product=product, user=current_user).exists()
         if is_cart_item_exists:
@@ -54,13 +60,14 @@ def add_cart(request, product_id):
                 index = ex_var_list.index(product_variation)
                 item_id = id[index]
                 item = CartItem.objects.get(product=product, id=item_id)
-                item.quantity += quantity  # Usar quantity en lugar de 1
+                item.quantity += quantity
                 item.save()
             else:
                 item = CartItem.objects.create(
                     product=product, 
-                    quantity=quantity,  # Usar quantity en lugar de 1
+                    quantity=quantity,
                     user=current_user,
+                    purchase_price=price_to_use  # Añadido el precio
                 )
                 if len(product_variation) > 0:
                     item.variation.clear()
@@ -68,16 +75,15 @@ def add_cart(request, product_id):
                 item.save()
         else:
             cart_item = CartItem.objects.create(
-                product = product,
-                quantity = quantity,  # Usar quantity en lugar de 1
-                user = current_user,
+                product=product,
+                quantity=quantity,
+                user=current_user,
+                purchase_price=price_to_use  # Añadido el precio
             )
             if len(product_variation) > 0:
                 cart_item.variation.clear()
                 cart_item.variation.add(*product_variation)
             cart_item.save()
-            
-        return redirect('cart')
     
     # Usuarios no identificados:
     else:
@@ -93,12 +99,16 @@ def add_cart(request, product_id):
                     product_variation.append(variation)
                 except:
                     pass
-        
+        if request.method == 'POST':
+            quantity = int(request.POST.get('quantity', 1))
+        else:
+            quantity = 1
+
         try:
             cart = Cart.objects.get(cart_id=_cart_id(request))
         except Cart.DoesNotExist:
             cart = Cart.objects.create(
-                cart_id = _cart_id(request)
+                cart_id=_cart_id(request)
             )
         cart.save()
         
@@ -117,13 +127,14 @@ def add_cart(request, product_id):
                 index = ex_var_list.index(product_variation)
                 item_id = id[index]
                 item = CartItem.objects.get(product=product, id=item_id)
-                item.quantity += quantity  # Usar quantity en lugar de 1
+                item.quantity += quantity
                 item.save()
             else:
                 item = CartItem.objects.create(
                     product=product,
-                    quantity = quantity,  # Usar quantity en lugar de 1
-                    cart = cart,
+                    quantity=quantity,
+                    cart=cart,
+                    purchase_price=price_to_use  # Añadido el precio
                 )
                 if len(product_variation) > 0:
                     item.variation.clear()
@@ -131,16 +142,28 @@ def add_cart(request, product_id):
                 item.save()     
         else:
             cart_item = CartItem.objects.create(
-                product = product,
-                quantity = quantity,  # Usar quantity en lugar de 1
-                cart = cart,
+                product=product,
+                quantity=quantity,
+                cart=cart,
+                purchase_price=price_to_use  # Añadido el precio
             )
             if len(product_variation) > 0:
                 cart_item.variation.clear()
                 cart_item.variation.add(*product_variation)
             cart_item.save()
             
-        return redirect('cart')
+    # Redirigir siempre a la página anterior al final de la función
+    # Verificar si es una solicitud AJAX
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'success'})
+    else:
+        # Redirigir a la página anterior o a la tienda
+        referer_url = request.META.get('HTTP_REFERER')
+        if referer_url:
+            return HttpResponseRedirect(referer_url)
+        else:
+            return redirect('store')
+
 def remove_cart(request, product_id, cart_item_id):
     product = get_object_or_404(Product, id=product_id)
     try:
@@ -173,7 +196,39 @@ def remove_cart_item(request, product_id, cart_item_id):
     cart_item.delete()
     return redirect('cart')
 
-
+def get_cart_data(request):
+    total = 0
+    quantity = 0
+    cart_items_data = []#para almacenar los detalles de los artículos en el carrito.
+    
+    try:
+        if request.user.is_authenticated:
+            cart_items = CartItem.objects.filter(user=request.user, is_active=True)
+        else:
+            cart = Cart.objects.get(cart_id=_cart_id(request))
+            cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+        
+        for item in cart_items:
+            total += item.sub_total
+            quantity += item.quantity
+            
+            # Construir datos de items para JSON
+            cart_items_data.append({
+                'id': item.id,
+                'name': item.product.name,
+                'price': float(item.sub_total),
+                'quantity': item.quantity,
+                'image': item.product.images.url if item.product.images else '',
+            })
+    
+    except ObjectDoesNotExist:
+        pass
+    
+    return JsonResponse({
+        'cart_count': quantity,
+        'cart_total': float(total),
+        'cart_items': cart_items_data
+    })
 
 #### Tercero: como resultado tenemos nuestro carrito. ####
 
@@ -186,7 +241,7 @@ def cart(request, total=0, quantity=0, cart_items=None):
             cart_items = CartItem.objects.filter(cart=cart, is_active=True)
             
         for cart_item in cart_items:
-            total += (cart_item.product.price * cart_item.quantity)
+            total = sum(item.sub_total for item in cart_items)
             quantity += cart_item.quantity
             
         
@@ -203,6 +258,7 @@ def cart(request, total=0, quantity=0, cart_items=None):
     return render(request, template_name, context)
 
 
+
 ##### Cuarto: realizamos los totales del carrito #####
 
 @login_required(login_url='login')
@@ -215,7 +271,7 @@ def checkout(request, total=0, quantity=0, cart_items=None):
             cart_items = CartItem.objects.filter(cart=cart, is_active=True)
         
         for cart_item in cart_items:
-            total += (cart_item.product.price * cart_item.quantity)
+            total = sum(item.sub_total for item in cart_items)
             quantity += cart_item.quantity
             
     except ObjectDoesNotExist:

@@ -28,7 +28,7 @@ class ProductGalleryInLine(admin.TabularInline):
 
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('code', 'name', 'price', 'stock', 'category', 'display_subcategories', 'modified_date', 'is_available')
+    list_display = ('code', 'name', 'price', 'stock', 'is_on_sale', 'category', 'display_subcategories', 'modified_date', 'is_available')
     prepopulated_fields = {'slug': ('name',)}
     inlines = [ProductGalleryInLine]
     search_fields = ('code', 'name')

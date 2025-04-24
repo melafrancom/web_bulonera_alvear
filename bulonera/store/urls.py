@@ -23,6 +23,7 @@ from . import views
 
 urlpatterns = [
     path('', views.store, name="store"),
+    path('offers/', views.offers, name='offers'),
     #category
     path('category/<slug:category_slug>/', views.store, name="products_by_category"),
     path('category/<slug:category_slug>/subcategory/<slug:subcategory_slug>/', views.products_by_subcategory, name='products_by_subcategory'),

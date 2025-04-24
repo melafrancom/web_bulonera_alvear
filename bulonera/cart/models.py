@@ -23,9 +23,20 @@ class CartItem(models.Model):
     quantity = models.IntegerField()
     is_active = models.BooleanField(default=True)
     variation = models.ManyToManyField(Variation, blank=True)
+    purchase_price = models.FloatField(null=True, blank=True)
     
-    def subtotal(self):
-        return self.product.price * self.quantity
+    def save(self, *args, **kwargs):
+    # Set the purchase price based on whether product is on sale
+        if not self.purchase_price:
+            if self.product.is_on_sale and self.product.sale_price:
+                self.purchase_price = self.product.sale_price
+            else:
+                self.purchase_price = self.product.price
+        super(CartItem, self).save(*args, **kwargs)
+    
+    @property
+    def sub_total(self):
+        return self.purchase_price * self.quantity
     
     def __unicode__(self):
         return self.product

@@ -218,7 +218,7 @@ def place_orders(request, total=0, quantity=0):
         return redirect('store')
     
     for cart_item in cart_items:
-        total += (cart_item.product.price * cart_item.quantity)
+        total = sum(item.sub_total for item in cart_items)
         quantity += cart_item.quantity
         
     if request.method == 'POST':
@@ -257,7 +257,7 @@ def place_orders(request, total=0, quantity=0):
                 orderproduct.user_id = current_user.id
                 orderproduct.product_id = cart_item.product_id
                 orderproduct.quantity = cart_item.quantity
-                orderproduct.product_price = cart_item.product.price
+                orderproduct.purchase_price = cart_item.purchase_price
                 orderproduct.ordered = False  # Inicialmente false hasta que el admin lo apruebe
                 orderproduct.save()
                 
@@ -284,7 +284,7 @@ def order_complete(request, order_number):
 
         subtotal = 0
         for i in ordered_products:
-            subtotal += i.product_price * i.quantity
+            subtotal += i.purchase_price * i.quantity
         
         # Obtener el payment relacionado con la orden
         try:
@@ -334,21 +334,21 @@ def whatsapp_redirect(request):
         if order.is_ordered:
             ordered_products = OrderProduct.objects.filter(order=order)
             for product_item in ordered_products:
-                message += f"- {product_item.product.name} (Cant: {product_item.quantity}) - ${product_item.product_price}\n"
+                message += f"- {product_item.product.name} (Cant: {product_item.quantity}) - ${product_item.purchase_price}\n"
         else:
             # Si aún no está ordenado, usar los elementos del carrito
             cart_items = CartItem.objects.filter(user=request.user)
             # Calcular total (por si acaso)
             total = 0
             for item in cart_items:
-                total += (item.product.price * item.quantity)
+                total += sum(item.sub_total for item in cart_items)
                 # Añadir producto al mensaje
                 variations = item.variation.all()
                 var_str = ""
                 for v in variations:
                     var_str += f"{v.variation_category}: {v.variation_value}, "
                 
-                message += f"- {item.product.name} (Cant: {item.quantity}) - ${item.product.price} {var_str}\n"
+                message += f"- {item.product.name} (Cant: {item.quantity}) - ${item.purchase_price} {var_str}\n"
             
             message += f"\nTotal: ${order.order_total}"
         

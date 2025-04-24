@@ -76,9 +76,16 @@
 
                                     <td>
                                         <div class="price-wrap">
-                                            <var class="price">${{ cart_item.name|floatformat:2 }}</var>
-                                            <small class="text-muted"> ${{ cart_item.product.price|floatformat:2 }} cada uno </small>
-                                        </div> <!-- price-wrap .// -->
+                                            <var class="price">${{ cart_item.sub_total|floatformat:2 }}</var>
+                                            <small class="text-muted"> 
+                                                {% if cart_item.product.is_on_sale and cart_item.product.sale_price %}
+                                                    ${{ cart_item.product.sale_price|floatformat:2 }} cada uno 
+                                                    <del class="text-muted">${{ cart_item.product.price|floatformat:2 }}</del>
+                                                {% else %}
+                                                    ${{ cart_item.product.price|floatformat:2 }} cada uno
+                                                {% endif %}
+                                            </small>
+                                        </div>
                                     </td>
 
                                     <td class="text-right">
