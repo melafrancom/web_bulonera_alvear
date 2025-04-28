@@ -28,6 +28,13 @@ def add_cart(request, product_id):
     else:
         price_to_use = product.price
     
+        # Obtener la cantidad desde GET o POST
+    if request.method == 'POST':
+        quantity = int(request.POST.get('quantity', 1))
+    else:
+        # Obtener desde parámetros GET
+        quantity = int(request.GET.get('qty', 1))
+        
     # Usuario identificado
     if current_user.is_authenticated:
         product_variation = []

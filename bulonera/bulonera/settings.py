@@ -95,8 +95,17 @@ AUTH_USER_MODEL = 'account.Account'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'buloneraonlinedb',  # Debes crear esta base de datos primero
+        'USER': os.getenv('USER_DB'),
+        'PASSWORD': os.getenv('PASSWORD_DB'),#'tu_contraseña_de_root',  # La contraseña que estableciste para root
+        'HOST': 'localhost',  # o 127.0.0.1
+        'PORT': '3306',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'collation': 'utf8mb4_spanish_ci',
+            'init_command': "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_spanish_ci';"
+        }
     }
 }
 
@@ -165,7 +174,7 @@ SESSION_TIMEOUT_REDIRECT = 'account/login'
 CURRENCY = 'USD'
 
 # Número de WhatsApp (formato internacional, sin +)
-WHATSAPP_NUMBER = '5493624733431'  # Ejemplo para Argentina
+WHATSAPP_NUMBER = '5493624733431'
 
 # Configuración específica según entorno
 if DEBUG: #Ahora DEBUG = true ---> Estoy en desarrollo. 
@@ -209,3 +218,5 @@ else: #Cuando cambie a DEBUG = false ----> Cambio a Producción.
 
 
 
+from django.db import connection
+print("Conexión a la base de datos:", connection.settings_dict)

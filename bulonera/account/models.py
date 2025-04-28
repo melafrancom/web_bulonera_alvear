@@ -44,7 +44,7 @@ class Account(AbstractBaseUser):
     last_name = models.CharField(max_length=55)
     username = models.CharField(max_length=100, unique=True)
     email = models.EmailField(max_length=100, unique=True, default='default@example.com')
-    phone = models.IntegerField(blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
     
     # Campos atributos
     date_joined = models.DateTimeField(auto_now_add=True)
