@@ -1,11 +1,26 @@
-<!DOCTYPE html>
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
 
-<html lang="en">
-    
-    {% block content %}
-    <p>Proximamente nuestra Historia.</p>
-    {% endblock%}
-</html>
+{% block content %}
+<div class="historia-container">
+    <div class="info-column">
+        <div class="info-item">
+            <img src="{% static 'images/vision.png' %}" alt="Visión" class="info-icon">
+            <div class="info-label">Visión</div>
+        </div>
+        <div class="info-item">
+            <img src="{% static 'images/mision.png' %}" alt="Misión" class="info-icon">
+            <div class="info-label">Misión</div>
+        </div>
+        <div class="info-item">
+            <img src="{% static 'images/objetivos.png' %}" alt="Objetivo" class="info-icon">
+            <div class="info-label">Objetivo</div>
+        </div>
+    </div>
+    <div class="logo-column">
+        <img src="{% static 'images/logo02.png' %}" alt="Bulonera Alvear Logo" class="logo-image">
+        <p class="slogan">Construyendo el futuro, tornillo a tornillo.</p>
+    </div>
+</div>
+{% endblock %}

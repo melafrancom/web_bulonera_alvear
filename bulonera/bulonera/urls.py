@@ -31,7 +31,7 @@ urlpatterns = [
     path('contact/', include('contact.urls')),
     #Others:
     path('location/', views.location, name='location'),
-
     path('history/', views.history, name='history'),
+    path("robots.txt", views.robots_txt),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

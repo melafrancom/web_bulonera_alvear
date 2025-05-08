@@ -25,16 +25,18 @@ from .forms import ProductImportForm
 class ProductGalleryInLine(admin.TabularInline):
     model = ProductGallery
     extra = 1
-
+    fields = ['image', 'alt']
+    verbose_name = "Imagen adicional"
+    verbose_name_plural = "Galería de imágenes"
 
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('code', 'name', 'price', 'stock', 'is_on_sale', 'category', 'display_subcategories', 'modified_date', 'is_available')
     prepopulated_fields = {'slug': ('name',)}
     inlines = [ProductGalleryInLine]
     search_fields = ('code', 'name')
+    readonly_fields = ['created_date', 'modified_date']  # ⬅ evitamos modificar fechas manualmente
     list_filter = ('category', 'subcategories', 'is_available', 'brand', 'condition')
     filter_horizontal = ('subcategories',)
-    
     # Agrega una url personalizada
     def get_urls(self):
         urls = super().get_urls()
@@ -194,6 +196,23 @@ class ProductAdmin(admin.ModelAdmin):
                 # Los demás campos son opcionales - manejar NaN correctamente
                 if 'description' in item and item['description'] and not pd.isna(item['description']):
                     product.description = str(item['description'])
+                
+                # Google Merchant identifiers
+                if 'gtin' in item and item['gtin'] and not pd.isna(item['gtin']):
+                    product.gtin = str(item['gtin'])
+
+                if 'mpn' in item and item['mpn'] and not pd.isna(item['mpn']):
+                    product.mpn = str(item['mpn'])
+                    
+                ################## Campos SEO ##################
+                if 'meta_title' in item and item['meta_title'] and not pd.isna(item['meta_title']):
+                    product.meta_title = str(item['meta_title'])
+
+                if 'meta_description' in item and item['meta_description'] and not pd.isna(item['meta_description']):
+                    product.meta_description = str(item['meta_description'])
+
+                if 'meta_keywords' in item and item['meta_keywords'] and not pd.isna(item['meta_keywords']):
+                    product.meta_keywords = str(item['meta_keywords'])
                 
                 # Manejar stock correctamente para evitar el error NaN
                 if 'stock' in item and item['stock'] and not pd.isna(item['stock']):
@@ -376,6 +395,7 @@ class ProductAdmin(admin.ModelAdmin):
         return ", ".join([subcategory.subcategory_name for subcategory in obj.subcategories.all()])
     display_subcategories.short_description = 'Subcategories'
 
+
 class VariationAdmin(admin.ModelAdmin):
     list_display = ('product', 'variation_category', 'variation_value', 'is_active')
     list_editable = ('is_active',)
@@ -388,9 +408,6 @@ admin.site.register(Product, ProductAdmin)
 admin.site.register(Variation, VariationAdmin)
 admin.site.register(ReviewRating)
 admin.site.register(ProductGallery)
-
-
-
 
 
 

@@ -2430,13 +2430,13 @@ fieldset:disabled a.btn {
 
 .btn-success {
   color: #fff;
-  background-color: #00b517;
-  border-color: #00b517;
+  background-color: #3167eb;
+  border-color: #3167eb;
 }
 .btn-success:hover {
   color: #fff;
-  background-color: #008f12;
-  border-color: #008211;
+  background-color: #EB171E;
+  border-color: #EB171E;
 }
 .btn-success:focus, .btn-success.focus {
   box-shadow: 0 0 0 0.2rem rgba(38, 192, 58, 0.5);

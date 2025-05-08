@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
     
     #LOCAL_APPS
     'bulonera',
@@ -192,14 +193,14 @@ if DEBUG: #Ahora DEBUG = true ---> Estoy en desarrollo.
     EMAIL_HOST_PASSWORD = os.getenv('MAILTRAP_PASSWORD')
     EMAIL_USE_TLS = True
 
-    DEFAULT_FROM_EMAIL = 'melafrancom@gmail.com'#'tu@email.com'
+    DEFAULT_FROM_EMAIL = 'contacto@buloneraalvear.online'#'tu@email.com'
 
     # Email para recibir los mensajes de contacto   
-    CONTACT_EMAIL = 'ffea05f34135ba@inbox.mailtrap.io'#'tucorreo@dominio.com'
+    CONTACT_EMAIL = 'contacto@buloneraalvear.online'#'tucorreo@dominio.com'
     
 else: #Cuando cambie a DEBUG = false ----> Cambio a Producción.
     # Entorno de producción
-    SITE_URL = 'https://buloneraalvear.com/'#SITE_URL
+    SITE_URL = 'https://buloneraalvear.online/'#SITE_URL
     META_PIXEL_ENABLED = True
     META_PIXEL_ID = '406099791293899'#Buscar tu pixel ID de facebook
     
@@ -211,10 +212,10 @@ else: #Cuando cambie a DEBUG = false ----> Cambio a Producción.
     EMAIL_HOST_PASSWORD = os.getenv('MAILTRAP_PASSWORD')
     EMAIL_USE_TLS = True
 
-    DEFAULT_FROM_EMAIL = 'melafrancom@gmail.com'#'tu@email.com'
+    DEFAULT_FROM_EMAIL = 'contacto@buloneraalvear.online'#'tu@email.com'
 
     # Email para recibir los mensajes de contacto
-    CONTACT_EMAIL = 'tucorreo@dominio.com'#'tucorreo@dominio.com'
+    CONTACT_EMAIL = 'contacto@buloneraalvear.online'#'tucorreo@dominio.com'
 
 
 

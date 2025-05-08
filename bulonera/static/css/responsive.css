@@ -873,3 +873,20 @@
       flex-wrap: wrap;
   }
 }
+
+/* ================ PAGE History ================== */
+@media screen and (max-width: 768px) {
+  .historia-container {
+      flex-direction: column;
+      padding: 1rem;
+  }
+
+  .info-label {
+      font-size: 1.2rem;
+  }
+
+  .info-icon {
+      width: 80px;
+  }
+}
+/* ================ PAGE History END ================== */

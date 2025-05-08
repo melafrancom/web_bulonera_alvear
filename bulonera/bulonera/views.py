@@ -1,8 +1,10 @@
 from django.shortcuts import render
 from django.db.models import Sum, Count, Q
 from math import ceil
+from django.http import HttpResponse
 
 #Local
+from .settings import SITE_URL
 from store.models import Product, ReviewRating, ProductSearch, CarouselImage
 from orders.models import OrderProduct, Order
 from category.models import Category, SubCategory, FeaturedCategory
@@ -98,6 +100,9 @@ def home(request):
     }
     
     return render(request, 'home.html', context)
+
+
+
 #-------------------- OTRAS VISTAS que no hacen a la funcionalidad. NO NECESARIOS. ------------------------
 def location(request):
     template_name = 'others/location.html'
@@ -106,3 +111,13 @@ def location(request):
 def history(request):
     template_name = 'others/history.html'
     return render(request, template_name)
+
+
+#-------------------- OTRAS VISTAS que no hacen a la funcionalidad. NO NECESARIOS. SITEMAPS AND ROBOTS ------------------------
+def robots_txt(request):
+    lines = [
+        "User-Agent: *",
+        "Disallow:",
+        f"Sitemap: {SITE_URL}/sitemap.xml"
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")

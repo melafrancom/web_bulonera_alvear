@@ -2,6 +2,7 @@ from django.db import models
 from django.urls import reverse
 from django.db.models import Avg, Count
 from django.utils.text import slugify
+from django.utils.text import Truncator
 from bulonera.settings import SITE_URL, CURRENCY
 #Local:
 from account.models import Account
@@ -14,15 +15,16 @@ class Product(models.Model):
     code = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=200, unique=True)
     slug = models.CharField(max_length=200, unique=True)
-    description = models.TextField(max_length=500, blank=True)
+    description = models.TextField(max_length=1500, blank=True)
     images = models.ImageField(blank=True, upload_to='photos/products')
+    image_alt = models.CharField(max_length=255, blank=True, help_text="Texto alternativo de la imagen principal (SEO)")
     price = models.FloatField()
     stock = models.IntegerField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     subcategories = models.ManyToManyField(SubCategory, blank=True) # Relación ManyToMany con SubCategory
     is_available = models.BooleanField(default=True)
-    created_date = models.DateTimeField(auto_now_add=True)
-    modified_date = models.DateTimeField(auto_now=True)
+    created_date = models.DateTimeField(auto_now_add=True)#Útil para sitemap
+    modified_date = models.DateTimeField(auto_now=True)#Útil para sitemap
     sold_count = models.IntegerField(default=0)
     #offers
     is_on_sale = models.BooleanField(default=False, verbose_name="En oferta")
@@ -35,7 +37,13 @@ class Product(models.Model):
         ('used', 'Usado'),
         ('refurbished', 'Reacondicionado')
     ], default='new')
+    gtin = models.CharField(max_length=50, blank=True, null=True)
+    mpn = models.CharField(max_length=50, blank=True, null=True)
     
+    # Funcionalidad del SEO
+    meta_title = models.CharField("Meta título", max_length=70, blank=True, null=True)
+    meta_description = models.TextField("Meta descripción", max_length=160, blank=True, null=True)
+    meta_keywords = models.CharField("Palabras clave (separadas por comas)", max_length=255, blank=True, null=True)
     def save(self, *args, **kwargs):
     # Auto-generar slug si no se proporciona
         if not self.slug:
@@ -46,6 +54,12 @@ class Product(models.Model):
             self.discount_percentage = int(((self.price - self.sale_price) / self.price) * 100)
         else:
             self.discount_percentage = None
+            
+        if not self.meta_title:
+            self.meta_title = self.name
+
+        if not self.meta_description and hasattr(self, 'description'):
+            self.meta_description = Truncator(self.description).chars(150)
             
         super(Product, self).save(*args, **kwargs)
         
@@ -98,8 +112,8 @@ class Product(models.Model):
             'price': f"{self.price:.2f} {CURRENCY}",
             'brand': self.brand,
             'condition': self.condition,
-            'gtin': '',  # Puedes agregar un campo para esto si es necesario
-            'mpn': '',   # Puedes agregar un campo para esto si es necesario
+            'gtin': '',  # Puedes agregar un campo para esto si es necesario // GTIN (Global Trade Item Number): es un código universal como el EAN, UPC o ISBN.
+            'mpn': '',   # Puedes agregar un campo para esto si es necesario // MPN (Manufacturer Part Number): es un número de parte del fabricante, usado cuando no hay GTIN.
             'google_product_category': self.category.name,
         }
     
@@ -147,9 +161,10 @@ class ReviewRating(models.Model):
 class ProductGallery(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, default=None)
     image = models.ImageField(upload_to='store/products', max_length=250)
+    alt = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
-        return self.product.name
+        return self.product.name   
 
 
 #NO HACE A LAS FUNCIONALIDADES PRINCIPALES DE LA PÁGINA:
