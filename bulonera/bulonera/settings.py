@@ -13,24 +13,28 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
-
-load_dotenv()  # Cargar variables de entorno desde .env
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv()  # Cargar variables de entorno desde .env
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Determinar si estamos en desarrollo o producción
-DEBUG = True  # Ahora en desarrollo. Cambiar a False en producción.
+DEBUG = env.bool('DEBUG', default=True)  # Ahora en desarrollo. Cambiar a False en producción.
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
+
 
 # Application definition
 
@@ -97,11 +101,11 @@ AUTH_USER_MODEL = 'account.Account'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'buloneraonlinedb',  # Debes crear esta base de datos primero
-        'USER': os.getenv('USER_DB'),
-        'PASSWORD': os.getenv('PASSWORD_DB'),#'tu_contraseña_de_root',  # La contraseña que estableciste para root
-        'HOST': 'localhost',  # o 127.0.0.1
-        'PORT': '3306',
+        'NAME': env('DB_NAME'),  # Debes crear esta base de datos primero
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),  # La contraseña que estableciste para root
+        'HOST': env('DB_HOST', default='localhost'),  # o 127.0.0.1
+        'PORT': env('DB_PORT', default='3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
             'collation': 'utf8mb4_spanish_ci',
@@ -151,8 +155,8 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR /'media'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 from django.contrib.messages import constants as messages
 MESSAGE_TAGS = {
@@ -175,22 +179,22 @@ SESSION_TIMEOUT_REDIRECT = 'account/login'
 CURRENCY = 'USD'
 
 # Número de WhatsApp (formato internacional, sin +)
-WHATSAPP_NUMBER = '5493624733431'
+WHATSAPP_NUMBER = env('WHATSAPP_NUMBER')
 
 # Configuración específica según entorno
 if DEBUG: #Ahora DEBUG = true ---> Estoy en desarrollo. 
     # Entorno de desarrollo
-    SITE_URL = 'http://127.0.0.1:8000/'#SITE_URL
+    SITE_URL = env('SITE_URL')#SITE_URL
     # Desactivar Meta Pixel en desarrollo
     META_PIXEL_ENABLED = False
-    META_PIXEL_ID = '406099791293899'  # ID real, pero no se usará en desarrollo
+    META_PIXEL_ID = env('META_PIXEL_ID')  # ID real, pero no se usará en desarrollo
     
     # Configuración para envío de emails
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = os.getenv('MAILTRAP_HOST')
-    EMAIL_PORT = os.getenv('MAILTRAP_PORT')
-    EMAIL_HOST_USER = os.getenv('MAILTRAP_USER')
-    EMAIL_HOST_PASSWORD = os.getenv('MAILTRAP_PASSWORD')
+    EMAIL_HOST = env('MAILTRAP_HOST')
+    EMAIL_PORT = env('MAILTRAP_PORT')
+    EMAIL_HOST_USER = env('MAILTRAP_USER')
+    EMAIL_HOST_PASSWORD = env('MAILTRAP_PASSWORD')
     EMAIL_USE_TLS = True
 
     DEFAULT_FROM_EMAIL = 'contacto@buloneraalvear.online'#'tu@email.com'
@@ -200,24 +204,19 @@ if DEBUG: #Ahora DEBUG = true ---> Estoy en desarrollo.
     
 else: #Cuando cambie a DEBUG = false ----> Cambio a Producción.
     # Entorno de producción
-    SITE_URL = 'https://buloneraalvear.online/'#SITE_URL
+    SITE_URL = SITE_URL = env('SITE_URL')#SITE_URL
     META_PIXEL_ENABLED = True
-    META_PIXEL_ID = '406099791293899'#Buscar tu pixel ID de facebook
+    META_PIXEL_ID = env('META_PIXEL_ID')#Buscar tu pixel ID de facebook
     
             # Configuración para envío de emails
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = os.getenv('MAILTRAP_HOST')
-    EMAIL_PORT = os.getenv('MAILTRAP_PORT')
-    EMAIL_HOST_USER = os.getenv('MAILTRAP_USER')
-    EMAIL_HOST_PASSWORD = os.getenv('MAILTRAP_PASSWORD')
+    EMAIL_HOST = env('MAILTRAP_HOST')
+    EMAIL_PORT = env('MAILTRAP_PORT')
+    EMAIL_HOST_USER = env('MAILTRAP_USER')
+    EMAIL_HOST_PASSWORD = env('MAILTRAP_PASSWORD')
     EMAIL_USE_TLS = True
 
     DEFAULT_FROM_EMAIL = 'contacto@buloneraalvear.online'#'tu@email.com'
 
     # Email para recibir los mensajes de contacto
     CONTACT_EMAIL = 'contacto@buloneraalvear.online'#'tucorreo@dominio.com'
-
-
-
-from django.db import connection
-print("Conexión a la base de datos:", connection.settings_dict)

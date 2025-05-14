@@ -982,7 +982,7 @@ pre code {
 
   .col-md-3 {
     flex: 0 0 25%;
-    max-width: 25%;
+    /*max-width: 25%;*/
   }
 
   .col-md-4 {
@@ -2430,13 +2430,13 @@ fieldset:disabled a.btn {
 
 .btn-success {
   color: #fff;
-  background-color: #00b517;
-  border-color: #00b517;
+  background-color: #3167eb;
+  border-color: #3167eb;
 }
 .btn-success:hover {
   color: #fff;
-  background-color: #008f12;
-  border-color: #008211;
+  background-color: #EB171E;
+  border-color: #EB171E;
 }
 .btn-success:focus, .btn-success.focus {
   box-shadow: 0 0 0 0.2rem rgba(38, 192, 58, 0.5);
@@ -5923,7 +5923,7 @@ a.close.disabled {
 .carousel-inner {
   position: relative;
   width: 100%;
-  overflow: hidden;
+  /*overflow: hidden;*/
 }
 .carousel-inner::after {
   display: block;
@@ -5993,7 +5993,6 @@ a.close.disabled {
   top: 0;
   bottom: 0;
   z-index: 1;
-  display: flex;
   align-items: center;
   justify-content: center;
   width: 15%;
@@ -6199,7 +6198,7 @@ button.bg-secondary:focus {
 }
 
 .bg-success {
-  background-color: #00b517 !important;
+  background-color: #3167eb !important;
 }
 
 a.bg-success:hover, a.bg-success:focus,
@@ -6239,7 +6238,7 @@ button.bg-danger:focus {
 }
 
 .bg-light {
-  background-color: #e4e4e4 !important;
+  background-color: #f5f5f5 !important;
 }
 
 a.bg-light:hover, a.bg-light:focus,
@@ -6345,7 +6344,7 @@ button.bg-gray-light:focus {
 }
 
 .border-success {
-  border-color: #00b517 !important;
+  border-color: #3167eb !important;
 }
 
 .border-info {
@@ -10143,3 +10142,4 @@ h3 {
     border-color: #dee2e6;
   }
 }
+/*# sourceMappingURL= */
