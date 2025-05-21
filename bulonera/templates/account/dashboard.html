@@ -29,7 +29,7 @@
                                 <div class="col-md-6"><!-- ========================= DATOS ========================= -->
                                     <div class="card" style="text-align:center">
                                         <div class="card-body">
-                                            <img src="{{ userprofile.profile_picture.url }}" alt="imagen de perfil" width="50" height="50" style="border-radius:50%">
+                                            <img src="{{ userprofile.get_profile_picture_url }}" alt="imagen de perfil" width="50" height="50" style="border-radius:50%">
                                             <br><br>
                                             <p class="mb-0">{{ user.email }}</p>
                                             <p class="mb-0">{{ user.phone }}</p>

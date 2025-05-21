@@ -184,7 +184,7 @@ WHATSAPP_NUMBER = env('WHATSAPP_NUMBER')
 # Configuración específica según entorno
 if DEBUG: #Ahora DEBUG = true ---> Estoy en desarrollo. 
     # Entorno de desarrollo
-    SITE_URL = env('SITE_URL')#SITE_URL
+    SITE_URL = env('SITE_URL') #SITE_URL
     # Desactivar Meta Pixel en desarrollo
     META_PIXEL_ENABLED = False
     META_PIXEL_ID = env('META_PIXEL_ID')  # ID real, pero no se usará en desarrollo
@@ -197,16 +197,16 @@ if DEBUG: #Ahora DEBUG = true ---> Estoy en desarrollo.
     EMAIL_HOST_PASSWORD = env('MAILTRAP_PASSWORD')
     EMAIL_USE_TLS = True
 
-    DEFAULT_FROM_EMAIL = 'contacto@buloneraalvear.online'#'tu@email.com'
+    DEFAULT_FROM_EMAIL = 'contacto@buloneraalvear.online' #'tu@email.com'
 
     # Email para recibir los mensajes de contacto   
-    CONTACT_EMAIL = 'contacto@buloneraalvear.online'#'tucorreo@dominio.com'
+    CONTACT_EMAIL = 'contacto@buloneraalvear.online' #'tucorreo@dominio.com'
     
 else: #Cuando cambie a DEBUG = false ----> Cambio a Producción.
     # Entorno de producción
-    SITE_URL = SITE_URL = env('SITE_URL')#SITE_URL
+    SITE_URL = SITE_URL = env('SITE_URL') #SITE_URL
     META_PIXEL_ENABLED = True
-    META_PIXEL_ID = env('META_PIXEL_ID')#Buscar tu pixel ID de facebook
+    META_PIXEL_ID = env('META_PIXEL_ID') #Buscar tu pixel ID de facebook
     
             # Configuración para envío de emails
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -216,7 +216,7 @@ else: #Cuando cambie a DEBUG = false ----> Cambio a Producción.
     EMAIL_HOST_PASSWORD = env('MAILTRAP_PASSWORD')
     EMAIL_USE_TLS = True
 
-    DEFAULT_FROM_EMAIL = 'contacto@buloneraalvear.online'#'tu@email.com'
+    DEFAULT_FROM_EMAIL = 'contacto@buloneraalvear.online' #'tu@email.com'
 
     # Email para recibir los mensajes de contacto
-    CONTACT_EMAIL = 'contacto@buloneraalvear.online'#'tucorreo@dominio.com'
+    CONTACT_EMAIL = 'contacto@buloneraalvear.online' #'tucorreo@dominio.com'

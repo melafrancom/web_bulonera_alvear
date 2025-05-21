@@ -72,6 +72,7 @@ class Account(AbstractBaseUser):
     def has_module_perms(self, add_label):
         return True
 
+
 class UserProfile(models.Model):
     user = models.OneToOneField(Account, on_delete=models.CASCADE)
     address_line_1 = models.CharField(max_length=100, blank=True)
@@ -87,4 +88,8 @@ class UserProfile(models.Model):
     def full_address(self):
         return f'{self.address_line_1} {self.address_line_2}'
 
-
+    def get_profile_picture_url(self):
+        if self.profile_picture and hasattr(self.profile_picture, 'url'):
+            return self.profile_picture.url
+        else:
+            return '/static/admin/img/placeholder.png'
