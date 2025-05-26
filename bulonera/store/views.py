@@ -10,7 +10,7 @@ from bulonera.settings import SITE_URL, CURRENCY
 from .models import Product, ReviewRating, ProductGallery, ProductSearch, CarouselImage
 from account.models import Account
 from category.models import Category, SubCategory
-from cart.models import CartItem
+from cart.models import CartItem, Cart
 from cart.views import _cart_id
 from orders.models import OrderProduct
 from .forms import ReviewForm
@@ -146,6 +146,28 @@ def product_detail(request, category_slug, product_slug):
         single_product = Product.objects.get(category__slug=category_slug, slug=product_slug)
         in_cart = CartItem.objects.filter(cart__cart_id=_cart_id(request), product=single_product).exists()
         
+        # Obtener dimensiones disponibles y variantes
+        dimensions = single_product.get_available_dimensions()
+        dimension_variants = []
+        
+        if dimensions:
+            variants = list(single_product.get_dimension_variants())
+            # Incluir el producto actual en las variantes
+            variants.append(single_product)
+            dimension_variants = [
+                {
+                    'diameter': str(v.diameter),
+                    'length': str(v.length),
+                    'url': v.get_url()
+                } for v in variants if v.diameter and v.length
+            ]
+            
+            # Convertir a JSON seguro para JavaScript
+            import json
+            dimension_variants_json = json.dumps(dimension_variants)
+        else:
+            dimension_variants_json = '[]'
+        
         # Get products on sale for carousel (excluding current product)
         sale_products = Product.objects.filter(
             is_on_sale=True, 
@@ -158,7 +180,6 @@ def product_detail(request, category_slug, product_slug):
     if request.user.is_authenticated:
         try:
             orderproduct = OrderProduct.objects.filter(user=request.user, product__id=single_product.id).exists()
-
         except OrderProduct.DoesNotExist:
             orderproduct = None
     else:
@@ -191,21 +212,22 @@ def product_detail(request, category_slug, product_slug):
     # Determine the display price (regular or sale price)
     display_price = single_product.sale_price if single_product.is_on_sale and single_product.sale_price else single_product.price
 
-        # Update meta_pixel_data price to also use sale price when applicable
+    # Update meta_pixel_data price to also use sale price when applicable
     if single_product.is_on_sale and single_product.sale_price:
         meta_pixel_data['price'] = f"{single_product.sale_price:.2f}"
         
     context = {
         'single_product': single_product,
-        'price': f"{display_price:.2f}",
-        'regular_price': f"{single_product.price:.2f}",
         'in_cart': in_cart,
         'orderproduct': orderproduct,
         'reviews': reviews,
         'product_gallery': product_gallery,
         'meta_pixel_data': meta_pixel_data,
-        'CURRENCY': currency,
-        'sale_products': sale_products,  # Add sale products to context
+        'price': single_product.sale_price if single_product.is_on_sale else single_product.price,
+        'CURRENCY': CURRENCY,
+        'dimensions': dimensions,
+        'dimension_variants_json': dimension_variants_json,
+        'sale_products': sale_products,
     }
 
     template_name = 'store/product_detail.html'

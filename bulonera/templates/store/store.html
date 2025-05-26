@@ -283,7 +283,7 @@
                                             {% if product.images %}
                                                 <img src="{{ product.images.url }}" alt="{{ product.name }}">
                                             {% else %}
-                                                <img src="{% static 'images/placeholder.png' %}" alt="No image available">
+                                                <img src="{% static '\admin\img\placeholder.png' %}" alt="No image available">
                                             {% endif %}
 
                                         </div> <!-- img-wrap.// -->
@@ -417,7 +417,7 @@
                 cartItemsHtml = '<div class="empty-cart-message">Tu carrito está vacío</div>';
                 } else {
                 data.cart_items.forEach(function(item) {
-                    let itemImage = item.image ? item.image : '/static/images/no-image.jpg';
+                    let itemImage = item.image ? item.image : '\admin\img\placeholder.png';
                     
                     cartItemsHtml += `
                     <div class="cart-item">

@@ -64,7 +64,7 @@
                                                             {% if product.images %}
                                                                 <img src="{{ product.images.url|default_if_none:'#' }}" class="card-img-top" alt="{{ product.name }}">
                                                             {% else %}
-                                                                <img src="{% static 'images/placeholder.png' %}" class="card-img-top" alt="sin imagen">
+                                                                <img src="{% static '\admin\img\placeholder.png' %}" class="card-img-top" alt="sin imagen">
                                                             {% endif %}
                                                             <div class="card-body">
                                                                 <h5 class="card-title text-truncate">{{ product.name }}</h5>
@@ -96,7 +96,7 @@
                                                             {% if product.images %}
                                                                 <img src="{{ product.images.url|default_if_none:'#' }}" class="card-img-top" alt="{{ product.name }}">
                                                             {% else %}
-                                                                <img src="{% static 'img/placeholder.png' %}" class="card-img-top" alt="sin imagen">
+                                                                <img src="{% static 'images/placeholder.png' %}" class="card-img-top" alt="sin imagen">
                                                             {% endif %}
                                                             <div class="card-body">
                                                                 <h5 class="card-title text-truncate">{{ product.name }}</h5>

@@ -14,6 +14,7 @@ def category_image_path(instance, filename):
     clean_name = unidecode.unidecode(name).replace(' ', '-')
     # Crea la ruta de destino con el nombre limpio
     return f'photos/categories/{clean_name}{ext}'
+
 class Category(models.Model):
     category_name = models.CharField(max_length=50, unique=True)
     description = models.CharField(max_length=255, blank=True)

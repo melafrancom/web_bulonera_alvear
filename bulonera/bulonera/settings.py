@@ -173,7 +173,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # session timeout settings:
 SESSION_EXPIRE_AFTER_LAST_ACTIVITY = True
 SESSION_EXPIRE_SECONDS = 3600 #session expiration is 1 hour
-SESSION_TIMEOUT_REDIRECT = 'account/login'
+SESSION_TIMEOUT_REDIRECT = ''
 
 # Moneda que usas en tu tienda
 CURRENCY = 'USD'

@@ -31,12 +31,14 @@ class ProductGalleryInLine(admin.TabularInline):
 
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('code', 'name', 'price', 'stock', 'is_on_sale', 'category', 'display_subcategories', 'modified_date', 'is_available')
+    list_editable = ('price', 'stock', 'is_available', 'is_on_sale')
     prepopulated_fields = {'slug': ('name',)}
     inlines = [ProductGalleryInLine]
-    search_fields = ('code', 'name')
+    search_fields = ('code', 'name', 'description')
     readonly_fields = ['created_date', 'modified_date']  # ⬅ evitamos modificar fechas manualmente
-    list_filter = ('category', 'subcategories', 'is_available', 'brand', 'condition')
+    list_filter = ('category', 'subcategories', 'is_available', 'is_on_sale', 'brand', 'condition')
     filter_horizontal = ('subcategories',)
+    actions = ['make_available', 'make_unavailable']
     # Agrega una url personalizada
     def get_urls(self):
         urls = super().get_urls()
@@ -149,6 +151,34 @@ class ProductAdmin(admin.ModelAdmin):
         
         return df.to_dict('records')
     
+    def find_image_in_directory(self, image_path, directory):
+        """
+        Busca una imagen en el directorio especificado, considerando la versión sanitizada del nombre.
+        Puede recibir una ruta completa o solo el nombre del archivo.
+        Retorna el nombre del archivo si lo encuentra, None si no.
+        """
+        if not os.path.exists(directory):
+            return None
+            
+        # Extraer solo el nombre del archivo si se proporciona una ruta completa
+        image_name = os.path.basename(image_path.strip())
+        
+        # Sanitizar el nombre de búsqueda
+        search_name = slugify(image_name)
+        if not search_name:
+            return None
+
+        # Buscar en el directorio y sus subdirectorios
+        for root, dirs, files in os.walk(directory):
+            for filename in files:
+                # Comparar versiones sanitizadas
+                if slugify(filename) == search_name:
+                    return filename
+                # También intentar coincidir con el nombre exacto
+                elif filename.lower() == image_name.lower():
+                    return filename
+        
+        return None
     def process_import(self, products_data):
         """Procesar e importar productos desde los datos analizados"""
         success_count = 0
@@ -156,163 +186,175 @@ class ProductAdmin(admin.ModelAdmin):
         image_errors = []
         validation_errors = []
         
-        for item in products_data:
-            try:
-                # Validar campos obligatorios: code y price
-                if 'code' not in item or not item['code'] or pd.isna(item['code']):
-                    validation_errors.append(f"Fila rechazada: Falta el código del producto")
-                    failed_count += 1
-                    continue
-                    
-                if 'price' not in item or not item['price'] or pd.isna(item['price']):
-                    validation_errors.append(f"Producto {item['code']}: Falta el precio")
-                    failed_count += 1
-                    continue
-                
-                # Verificar si el producto ya existe
-                product_exists = Product.objects.filter(code=str(item['code'])).exists()
-                
-                if product_exists:
-                    # Actualizar producto existente
-                    product = Product.objects.get(code=str(item['code']))
-                else:
-                    # Crear nuevo producto
-                    product = Product(code=str(item['code']))
-                
-                # Actualizar campos del producto solo si se proporcionan
-                if 'name' in item and item['name'] and not pd.isna(item['name']):
-                    product.name = str(item['name'])
-                    # Generar slug si aún no está establecido
-                    if not product_exists or not product.slug:
-                        product.slug = slugify(product.name)
-                elif not product_exists:
-                    # Si es un producto nuevo, necesitamos un nombre predeterminado
-                    product.name = f"Producto {item['code']}"
-                    product.slug = slugify(product.name)
-                
-                # Establecer el precio (sabemos que existe porque lo validamos arriba)
-                product.price = float(item['price'])
-                
-                # Los demás campos son opcionales - manejar NaN correctamente
-                if 'description' in item and item['description'] and not pd.isna(item['description']):
-                    product.description = str(item['description'])
-                
-                # Google Merchant identifiers
-                if 'gtin' in item and item['gtin'] and not pd.isna(item['gtin']):
-                    product.gtin = str(item['gtin'])
-
-                if 'mpn' in item and item['mpn'] and not pd.isna(item['mpn']):
-                    product.mpn = str(item['mpn'])
-                    
-                ################## Campos SEO ##################
-                if 'meta_title' in item and item['meta_title'] and not pd.isna(item['meta_title']):
-                    product.meta_title = str(item['meta_title'])
-
-                if 'meta_description' in item and item['meta_description'] and not pd.isna(item['meta_description']):
-                    product.meta_description = str(item['meta_description'])
-
-                if 'meta_keywords' in item and item['meta_keywords'] and not pd.isna(item['meta_keywords']):
-                    product.meta_keywords = str(item['meta_keywords'])
-                
-                # Manejar stock correctamente para evitar el error NaN
-                if 'stock' in item and item['stock'] and not pd.isna(item['stock']):
-                    try:
-                        product.stock = int(float(item['stock']))  # Convertir a float primero, luego a int
-                    except (ValueError, TypeError):
-                        product.stock = 0  # Valor por defecto si hay error de conversión
-                else:
-                    # Valor predeterminado para stock si no se proporciona
-                    product.stock = 0
-                
-                if 'category' in item and item['category'] and not pd.isna(item['category']):
-                    try:
-                        category = Category.objects.get(category_name=str(item['category']))
-                        product.category = category
-                    except Category.DoesNotExist:
-                        # Crear nueva categoría si no existe
-                        category = Category.objects.create(
-                            category_name=str(item['category']),
-                            slug=slugify(str(item['category']))
-                        )
-                        product.category = category
-                elif not product_exists or not product.category:
-                    # Si es un producto nuevo sin categoría, asignar una categoría predeterminada
-                    try:
-                        category = Category.objects.get(category_name="Sin categoría")
-                    except Category.DoesNotExist:
-                        category = Category.objects.create(
-                            category_name="Sin categoría",
-                            slug="sin-categoria"
-                        )
-                    product.category = category
-                
-                if 'brand' in item and item['brand'] and not pd.isna(item['brand']):
-                    product.brand = str(item['brand'])
-                
-                if 'condition' in item and item['condition'] and not pd.isna(item['condition']):
-                    product.condition = str(item['condition'])
-                
-                # Manejar imagen principal - solo si se proporciona
-                if 'images' in item and item['images'] and not pd.isna(item['images']):
-                    image_path = str(item['images']).strip()
-                    
-                    # Verificar si la imagen existe en el servidor
-                    if os.path.exists(os.path.join('media', image_path)):
-                        product.images = image_path
-                    else:
-                        # Registrar error pero continuar con la importación
-                        image_errors.append(f"Imagen principal no encontrada para producto {item['code']}: {image_path}")
-                
-                # Intentar guardar el producto (podría fallar si faltan campos obligatorios del modelo)
+        try:
+            for item in products_data:
                 try:
-                    product.save()
-                except Exception as model_error:
-                    validation_errors.append(f"Error al guardar producto {item['code']}: {str(model_error)}")
-                    failed_count += 1
-                    continue
-                
-                # Manejar galería de imágenes adicionales
-                if 'gallery' in item and item['gallery'] and not pd.isna(item['gallery']):
-                    # Eliminar imágenes existentes de la galería si se está actualizando
+                    # Validar campos obligatorios: code y price
+                    if 'code' not in item or not item['code'] or pd.isna(item['code']):
+                        validation_errors.append(f"Fila rechazada: Falta el código del producto")
+                        failed_count += 1
+                        continue
+                    
+                    if 'price' not in item or not item['price'] or pd.isna(item['price']):
+                        validation_errors.append(f"Producto {item['code']}: Falta el precio")
+                        failed_count += 1
+                        continue
+                    
+                    # Verificar si el producto ya existe
+                    product_exists = Product.objects.filter(code=str(item['code'])).exists()
                     if product_exists:
-                        ProductGallery.objects.filter(product=product).delete()
+                        # Actualizar producto existente
+                        product = Product.objects.get(code=str(item['code']))
+                    else:
+                        # Crear nuevo producto
+                        product = Product(code=str(item['code']))
                     
-                    # Procesar rutas de imágenes separadas por comas
-                    gallery_paths = [path.strip() for path in str(item['gallery']).split(',')]
+                    # Actualizar campos del producto solo si se proporcionan
+                    if 'name' in item and item['name'] and not pd.isna(item['name']):
+                        product.name = str(item['name'])
+                    elif not product_exists:
+                        # Si es un producto nuevo, necesitamos un nombre predeterminado
+                        product.name = f"Producto {item['code']}"
                     
-                    for gallery_path in gallery_paths:
-                        # Verificar si la imagen existe en el servidor
-                        if os.path.exists(os.path.join('media', gallery_path)):
-                            # Crear entrada en la galería
-                            ProductGallery.objects.create(
-                                product=product,
-                                image=gallery_path
+                        # Procesar diámetro y largo si existen
+                    if 'diameter' in item and not pd.isna(item['diameter']):
+                        product.diameter = str(item['diameter'])
+                    if 'length' in item and not pd.isna(item['length']):
+                        product.length = str(item['length'])
+                    # Establecer el precio (sabemos que existe porque lo validamos arriba)
+                    product.price = float(item['price'])
+                    
+                    # Los demás campos son opcionales - manejar NaN correctamente
+                    if 'description' in item and item['description'] and not pd.isna(item['description']):
+                        product.description = str(item['description'])
+                    
+                    # Google Merchant identifiers
+                    if 'gtin' in item and item['gtin'] and not pd.isna(item['gtin']):
+                        product.gtin = str(item['gtin'])
+
+                    if 'mpn' in item and item['mpn'] and not pd.isna(item['mpn']):
+                        product.mpn = str(item['mpn'])
+                        
+                    ################## Campos SEO ##################
+                    if 'meta_title' in item and item['meta_title'] and not pd.isna(item['meta_title']):
+                        product.meta_title = str(item['meta_title'])
+
+                    if 'meta_description' in item and item['meta_description'] and not pd.isna(item['meta_description']):
+                        product.meta_description = str(item['meta_description'])
+
+                    if 'meta_keywords' in item and item['meta_keywords'] and not pd.isna(item['meta_keywords']):
+                        product.meta_keywords = str(item['meta_keywords'])
+                    
+                    # Manejar stock correctamente para evitar el error NaN
+                    if 'stock' in item and item['stock'] and not pd.isna(item['stock']):
+                        try:
+                            product.stock = int(float(item['stock']))  # Convertir a float primero, luego a int
+                        except (ValueError, TypeError):
+                            product.stock = 0  # Valor por defecto si hay error de conversión
+                    else:
+                        # Valor predeterminado para stock si no se proporciona
+                        product.stock = 0
+                    
+                    if 'category' in item and item['category'] and not pd.isna(item['category']):
+                        try:
+                            category = Category.objects.get(category_name=str(item['category']))
+                            product.category = category
+                        except Category.DoesNotExist:
+                            # Crear nueva categoría si no existe
+                            category = Category.objects.create(
+                                category_name=str(item['category']),
+                                slug=slugify(str(item['category']))
                             )
+                            product.category = category
+                    elif not product_exists or not product.category:
+                        # Si es un producto nuevo sin categoría, asignar una categoría predeterminada
+                        try:
+                            category = Category.objects.get(category_name="Sin categoría")
+                        except Category.DoesNotExist:
+                            category = Category.objects.create(
+                                category_name="Sin categoría",
+                                slug="sin-categoria"
+                            )
+                        product.category = category
+                    
+                    if 'brand' in item and item['brand'] and not pd.isna(item['brand']):
+                        product.brand = str(item['brand'])
+                    
+                    if 'condition' in item and item['condition'] and not pd.isna(item['condition']):
+                        product.condition = str(item['condition'])
+                    
+                    # Manejar imagen principal - solo si se proporciona
+                    if 'images' in item and item['images'] and not pd.isna(item['images']):
+                        image_path = str(item['images']).strip()
+                        products_dir = os.path.join('media', 'photos', 'products')
+                        
+                        # Verificar si la imagen existe en el servidor
+                        found_image = self.find_image_in_directory(image_path, products_dir)
+                        if found_image:
+                            product.images = os.path.join('photos', 'products', found_image)
+                            if found_image != os.path.basename(image_path):
+                                print(f"Nota: Se encontró imagen similar para {item['code']}: {found_image} (original: {image_path})")
                         else:
-                            # Registrar error pero continuar
-                            image_errors.append(f"Imagen de galería no encontrada para producto {item['code']}: {gallery_path}")
-                
-                # Manejar subcategorías si se proporcionan
-                if 'subcategories' in item and item['subcategories'] and not pd.isna(item['subcategories']):
-                    subcats = str(item['subcategories']).split(',')
-                    for subcat_name in subcats:
-                        subcat_name = subcat_name.strip()
-                        if subcat_name:  # Verificar que no esté vacío
-                            try:
-                                subcat = Category.objects.get(category_name=subcat_name)
-                            except Category.DoesNotExist:
-                                subcat = Category.objects.create(
-                                    category_name=subcat_name,
-                                    slug=slugify(subcat_name),
-                                    parent=product.category
+                            # Registrar error pero continuar con la importación
+                            image_errors.append(f"Imagen principal no encontrada para producto {item['code']}: {image_path}")
+                    
+                    # Intentar guardar el producto (podría fallar si faltan campos obligatorios del modelo)
+                    try:
+                        product.save()
+                        success_count += 1
+                    except Exception as model_error:
+                        validation_errors.append(f"Error al guardar producto {item['code']}: {str(model_error)}")
+                        failed_count += 1
+                        continue
+                    
+                    # Manejar galería de imágenes adicionales
+                    if 'gallery' in item and item['gallery'] and not pd.isna(item['gallery']):
+                        # Eliminar imágenes existentes de la galería si se está actualizando
+                        if product_exists:
+                            ProductGallery.objects.filter(product=product).delete()
+                        
+                        # Procesar rutas de imágenes separadas por comas
+                        gallery_paths = [path.strip() for path in str(item['gallery']).split(',')]
+                        
+                        for gallery_path in gallery_paths:
+                            # Verificar si la imagen existe en el servidor
+                            found_gallery_image = self.find_image_in_directory(gallery_path, products_dir)
+                            if found_gallery_image:
+                                # Crear entrada en la galería
+                                ProductGallery.objects.create(
+                                    product=product,
+                                    image=os.path.join('photos', 'products', found_gallery_image)
                                 )
-                            product.subcategories.add(subcat)
-                
-                success_count += 1
-            except Exception as e:
-                print(f"Error al importar producto {item.get('code', 'desconocido')}: {str(e)}")
-                validation_errors.append(f"Error general para producto {item.get('code', 'desconocido')}: {str(e)}")
-                failed_count += 1
+                            else:
+                                # Registrar error pero continuar
+                                image_errors.append(f"Imagen de galería no encontrada para producto {item['code']}: {gallery_path}")
+                    
+                    # Manejar subcategorías si se proporcionan
+                    if 'subcategories' in item and item['subcategories'] and not pd.isna(item['subcategories']):
+                        subcats = str(item['subcategories']).split(',')
+                        for subcat_name in subcats:
+                            subcat_name = subcat_name.strip()
+                            if subcat_name:  # Verificar que no esté vacío
+                                try:
+                                    subcat = SubCategory.objects.get(subcategory_name=subcat_name)
+                                except SubCategory.DoesNotExist:
+                                    # Crear la subcategoría usando el modelo SubCategory
+                                    subcat = SubCategory.objects.create(
+                                        subcategory_name=subcat_name,
+                                        slug=slugify(subcat_name),
+                                        category=product.category  # Usar category en lugar de parent
+                                    )
+                                product.subcategories.add(subcat)
+                    
+                    success_count += 1
+                    
+                except Exception as e:
+                    print(f"Error al importar producto {item.get('code', 'desconocido')}: {str(e)}")
+                    validation_errors.append(f"Error general para producto {item.get('code', 'desconocido')}: {str(e)}")
+                    failed_count += 1
+                    
+        except Exception as e:
+            validation_errors.append(f"Error general en la importación: {str(e)}")
         
         # Registrar errores en el log
         if image_errors or validation_errors:
@@ -328,6 +370,7 @@ class ProductAdmin(admin.ModelAdmin):
             'image_errors': len(image_errors),
             'validation_errors': validation_errors
         }
+        
     def process_price_update(self, products_data):
         """Procesar y actualizar precios de productos desde los datos analizados"""
         success_count = 0
@@ -385,6 +428,7 @@ class ProductAdmin(admin.ModelAdmin):
             'failed': failed_count,
             'validation_errors': validation_errors
         }
+    
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
         extra_context['show_import_button'] = True

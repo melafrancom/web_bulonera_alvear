@@ -14,6 +14,8 @@ from category.models import Category, SubCategory
 class Product(models.Model):
     code = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=200, unique=True)
+    diameter = models.CharField(max_length=50, blank=True, null=True)
+    length = models.CharField(max_length=50, blank=True, null=True)
     slug = models.CharField(max_length=200, unique=True)
     description = models.TextField(max_length=1500, blank=True)
     images = models.ImageField(blank=True, upload_to='photos/products')
@@ -45,11 +47,16 @@ class Product(models.Model):
     meta_description = models.TextField("Meta descripción", max_length=160, blank=True, null=True)
     meta_keywords = models.CharField("Palabras clave (separadas por comas)", max_length=255, blank=True, null=True)
     def save(self, *args, **kwargs):
-    # Auto-generar slug si no se proporciona
+        # Auto-generar nombre completo y slug
+        if self.diameter and self.length:
+            # Si el nombre no incluye ya las dimensiones, agregarlas
+            if f" {self.diameter} x {self.length}" not in self.name:
+                self.name = f"{self.name} {self.diameter} x {self.length}"
+        
         if not self.slug:
             self.slug = slugify(self.name)
             
-            # Calcular el porcentaje de descuento si hay precio de oferta
+        # Calcular el porcentaje de descuento si hay precio de oferta
         if self.is_on_sale and self.sale_price is not None and self.price > 0:
             self.discount_percentage = int(((self.price - self.sale_price) / self.price) * 100)
         else:
@@ -62,7 +69,7 @@ class Product(models.Model):
             self.meta_description = Truncator(self.description).chars(150)
             
         super(Product, self).save(*args, **kwargs)
-        
+    
     def get_url(self):
         return reverse('product_detail', args=[self.category.slug, self.slug])
     
@@ -117,8 +124,62 @@ class Product(models.Model):
             'google_product_category': self.category.name,
         }
     
-#Deberíamos agregar imagenes, variaciones, reviews, etc...
+    # Deberíamos agregar imagenes, variaciones, reviews, etc...
+    def get_image_url(self):
+        if self.images:
+            return self.images.url
+        return '/static/images/placeholder.png'  # Imagen por defecto
+    
+    # Métodos para obtener las dimensiones disponibles para el producto
+    def get_dimension_variants(self):
+        """Obtiene todas las variantes de dimensiones para este producto"""
+        if not self.name:
+            return Product.objects.none()
+            
+        # Obtener el nombre base
+        base_name = self.get_base_name()
+            
+        # Buscar productos con el mismo nombre base y que compartan al menos una subcategoría
+        variants = Product.objects.filter(
+            category=self.category,
+            subcategories__in=self.subcategories.all()
+        ).distinct().exclude(id=self.id)
+        
+        # Filtrar variantes que tienen el mismo nombre base
+        return [v for v in variants if v.get_base_name() == base_name]
 
+    def get_available_dimensions(self):
+        """Obtiene las dimensiones disponibles para este producto"""
+        if not self.name:
+            return None
+            
+        # Obtener variantes
+        variants = list(self.get_dimension_variants())
+        
+        # Incluir el producto actual en la lista de variantes
+        variants.append(self)
+        
+        # Recopilar dimensiones únicas
+        diameters = sorted(list(set(v.diameter for v in variants if v.diameter)))
+        lengths = sorted(list(set(v.length for v in variants if v.length)))
+        
+        return {
+            'diameters': diameters,
+            'lengths': lengths,
+            'current_diameter': self.diameter,
+            'current_length': self.length
+        } if diameters and lengths else None
+        
+    def get_base_name(self):
+        """Obtiene el nombre base del producto sin dimensiones"""
+        if self.diameter and self.length:
+            # Remover las dimensiones del nombre
+            suffix = f" {self.diameter} x {self.length}"
+            if self.name.endswith(suffix):
+                return self.name[:-len(suffix)]
+        return self.name
+
+#Variaciones de productos:
 class VariationManager(models.Manager):
     def color(self):
         return super(VariationManager, self).filter(variation_category='color', is_active=True)

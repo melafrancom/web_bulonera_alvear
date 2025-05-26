@@ -1,12 +1,13 @@
-<!DOCTYPE html>
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
-<head>
-    {% block title %}{{ single_product.name }} | Bulonera Alvear{% endblock %}
-    {% block meta_description %}{{ product.description|truncatewords:25 }}{% endblock %}
+
+{% block title %}{{ single_product.name }} | Bulonera Alvear{% endblock %}
+
+{% block meta %}
+    <meta name="description" content="{{ product.description|truncatewords:25 }}">
     <link rel="canonical" href="{{ product.get_absolute_url }}">
-</head>
+{% endblock %}
 
 
 <html lang="en">
@@ -19,8 +20,8 @@
                             content_type: 'product',
                             content_ids: ['{{ meta_pixel_data.id }}'],
                             content_name: '{{ meta_pixel_data.title }}',
-                            content_category: '{{ product.category.name }}',
-                            value: '{{ single_product.price }}',
+                            content_category: '{{ single_product.category.name }}',
+                            value: '{{ price }}',
                             currency: '{{ CURRENCY }}'
                         });
                     }
@@ -33,8 +34,8 @@
                             content_type: 'product',
                             content_ids: ['{{ meta_pixel_data.id }}'],
                             content_name: '{{ meta_pixel_data.title }}',
-                            content_category: '{{ product.category.name }}',
-                            value: '{{ product.price }}',
+                            content_category: '{{ single_product.category.name }}',
+                            value: '{{ price }}',
                             currency: '{{ CURRENCY }}'
                         });
                     }
@@ -146,6 +147,48 @@
                                                     <span class="text">Agregar al Carrito</span>
                                                     <i class="fas fa-shopping-cart"></i>
                                                 </button>
+
+                                                {% if dimensions %}
+                                                <br>
+                                                <br>
+                                                <h4>Dimensiones disponibles:</h4>
+                                                <div class="dimension-selectors mt-3">
+                                                    <div class="row">
+                                                        {% if dimensions.diameters %}
+                                                        <div class="col-md-6">
+                                                            <div class="form-group">
+                                                                <label for="diameter">Diámetro:</label>
+                                                                <select class="form-control" id="diameter" name="diameter">
+                                                                    {% for diameter in dimensions.diameters %}
+                                                                    <option value="{{ diameter }}" {% if diameter == dimensions.current_diameter %}selected{% endif %}>
+                                                                        {{ diameter }}
+                                                                    </option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        {% endif %}
+
+                                                        {% if dimensions.lengths %}
+                                                        <div class="col-md-6">
+                                                            <div class="form-group">
+                                                                <label for="length">Largo:</label>
+                                                                <select class="form-control" id="length" name="length">
+                                                                    {% for length in dimensions.lengths %}
+                                                                    <option value="{{ length }}" {% if length == dimensions.current_length %}selected{% endif %}>
+                                                                        {{ length }}
+                                                                    </option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    <button type="button" class="btn btn-outline-primary btn-block mt-2" id="apply-dimensions">
+                                                        Aplicar Dimensiones
+                                                    </button>
+                                                </div>
+                                                {% endif %}
                                             {% endif %}
                                             </article> <!-- product-info-aside .// -->
                                         </form>
@@ -317,7 +360,7 @@
                         cartItemsHtml = '<div class="empty-cart-message">Tu carrito está vacío</div>';
                         } else {
                         data.cart_items.forEach(function(item) {
-                            let itemImage = item.image ? item.image : '/static/images/no-image.jpg';
+                            let itemImage = item.image ? item.image : '\admin\img\placeholder.png';
                             
                             cartItemsHtml += `
                             <div class="cart-item">
@@ -414,6 +457,37 @@
                         }
                     });
                 });
+            </script>
+
+            <script>
+            (function() {
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Obtener los elementos del DOM
+                    var dimensionVariants = {{ dimension_variants_json|safe }};
+                    var applyButton = document.getElementById('apply-dimensions');
+                    var diameterSelect = document.getElementById('diameter');
+                    var lengthSelect = document.getElementById('length');
+                    
+                    // Verificar que todos los elementos necesarios existan
+                    if (applyButton && diameterSelect && lengthSelect) {
+                        applyButton.addEventListener('click', function() {
+                            var selectedDiameter = diameterSelect.value;
+                            var selectedLength = lengthSelect.value;
+                            
+                            // Buscar la variante que coincida con las dimensiones seleccionadas
+                            var variant = dimensionVariants.find(function(v) {
+                                return v.diameter === selectedDiameter && v.length === selectedLength;
+                            });
+                            
+                            if (variant && variant.url) {
+                                window.location.href = variant.url;
+                            } else {
+                                alert('La combinación seleccionada no está disponible');
+                            }
+                        });
+                    }
+                });
+            })();
             </script>
         {% endblock %}
 </html>
