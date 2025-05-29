@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
+{% load store_filters %}
 
 {% block title %}{{ single_product.name }} | Bulonera Alvear{% endblock %}
 
@@ -27,18 +28,23 @@
                     }
                 });
 
-                // Para el evento AddToCart (asumiendo que tienes un botón con id="add-to-cart")
-                document.getElementById('add_cart').addEventListener('click', function() {
-                    if (typeof fbq !== 'undefined') {
-                        fbq('track', 'add_cart', {
-                            content_type: 'product',
-                            content_ids: ['{{ meta_pixel_data.id }}'],
-                            content_name: '{{ meta_pixel_data.title }}',
-                            content_category: '{{ single_product.category.name }}',
-                            value: '{{ price }}',
-                            currency: '{{ CURRENCY }}'
+                // Para el evento AddToCart
+                document.addEventListener('DOMContentLoaded', function() {
+                    const addToCartButtons = document.querySelectorAll('.add-to-cart');
+                    addToCartButtons.forEach(function(button) {
+                        button.addEventListener('click', function() {
+                            if (typeof fbq !== 'undefined') {
+                                fbq('track', 'AddToCart', {
+                                    content_type: 'product',
+                                    content_ids: ['{{ meta_pixel_data.id }}'],
+                                    content_name: '{{ meta_pixel_data.title }}',
+                                    content_category: '{{ single_product.category.name }}',
+                                    value: '{{ price }}',
+                                    currency: '{{ CURRENCY }}'
+                                });
+                            }
                         });
-                    }
+                    });
                 });
             </script>
         {% endblock %}
@@ -81,13 +87,48 @@
                                     <aside class="col-md-6">
                                         <article class="gallery-wrap">
                                             <div class="img-big-wrap mainImage">
-                                                <centre> <img src="{{ single_product.images.url }}" alt="{{ product.image_alt }}"> </centre>
+                                                <centre>
+                                                    <picture>
+                                                        <!-- WebP -->
+                                                        <source 
+                                                            srcset="{% get_media_prefix %}photos/products/webp/lg/{{ single_product.images.name|basename }}.webp"
+                                                            type="image/webp">
+                                                        <!-- Fallback JPG/PNG -->
+                                                        <img src="{{ single_product.images.url }}" 
+                                                            alt="{{ product.name }}"
+                                                            loading="lazy"
+                                                            width="600"
+                                                            height="600">
+                                                    </picture>
+                                                </centre>
                                             </div>
                                             <ul class="thumb">
                                                 <li>
-                                                    <a href="{{ single_product.images.url }}" target="mainImage"><img src="{{ single_product.images.url }}" alt="{{ product.image_alt }}"></a>
+                                                    <a href="{{ single_product.images.url }}" target="mainImage">
+                                                        <picture>
+                                                            <source 
+                                                                srcset="{% get_media_prefix %}photos/products/webp/thumb/{{ single_product.images.name|basename }}.webp"
+                                                                type="image/webp">
+                                                            <img src="{{ single_product.images.url }}" 
+                                                                alt="{{ product.name }}"
+                                                                loading="lazy"
+                                                                width="100"
+                                                                height="100">
+                                                        </picture>
+                                                    </a>
                                                     {% for i in product_gallery %}
-                                                    <a href="{{ i.image.url }}" target="mainImage"><img src="{{ i.image.url }}" alt="{{ image.alt }}"></a>
+                                                    <a href="{{ i.image.url }}" target="mainImage">
+                                                        <picture>
+                                                            <source 
+                                                                srcset="{{ i.get_image_urls.webp.thumb }}"
+                                                                type="image/webp">
+                                                            <img src="{{ i.get_image_urls.thumbnail }}" 
+                                                                alt="{{ i.image.name }}"
+                                                                loading="lazy"
+                                                                width="100"
+                                                                height="100">
+                                                        </picture>
+                                                    </a>
                                                     {% endfor %}
                                                 </li>
                                             </ul>
@@ -463,11 +504,10 @@
             (function() {
                 document.addEventListener('DOMContentLoaded', function() {
                     // Obtener los elementos del DOM
-                    var dimensionVariants = {{ dimension_variants_json|safe }};
+                    var dimensionVariants = JSON.parse('{{ dimension_variants_json|safe }}');
                     var applyButton = document.getElementById('apply-dimensions');
                     var diameterSelect = document.getElementById('diameter');
                     var lengthSelect = document.getElementById('length');
-                    
                     // Verificar que todos los elementos necesarios existan
                     if (applyButton && diameterSelect && lengthSelect) {
                         applyButton.addEventListener('click', function() {

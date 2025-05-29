@@ -7,6 +7,8 @@ from bulonera.settings import SITE_URL, CURRENCY
 #Local:
 from account.models import Account
 from category.models import Category, SubCategory
+from .utils import ImageProcessor
+import os
 
 # Create your models here.
 # Modelo relacionado a todo sobre el producto. Con respecto a agregar/quitar productos al carrito está en 'cart'.
@@ -68,7 +70,13 @@ class Product(models.Model):
         if not self.meta_description and hasattr(self, 'description'):
             self.meta_description = Truncator(self.description).chars(150)
             
-        super(Product, self).save(*args, **kwargs)
+        # Guardar primero para tener el ID si es nuevo
+        super().save(*args, **kwargs)
+        
+        # Procesar la imagen si se ha proporcionado una nueva
+        if self.images:
+            processor = ImageProcessor(self.images.path)
+            processor.process_image()
     
     def get_url(self):
         return reverse('product_detail', args=[self.category.slug, self.slug])
@@ -124,10 +132,13 @@ class Product(models.Model):
             'google_product_category': self.category.name,
         }
     
-    # Deberíamos agregar imagenes, variaciones, reviews, etc...
-    def get_image_url(self):
+    @property
+    def get_image_urls(self):
+        """Obtiene todas las URLs de las diferentes versiones de la imagen"""
         if self.images:
-            return self.images.url
+            base_name = os.path.splitext(os.path.basename(self.images.name))[0]
+            extension = os.path.splitext(self.images.name)[1]
+            return ImageProcessor.get_image_urls(base_name, extension)
         return '/static/images/placeholder.png'  # Imagen por defecto
     
     # Métodos para obtener las dimensiones disponibles para el producto

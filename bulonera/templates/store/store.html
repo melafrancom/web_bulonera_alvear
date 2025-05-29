@@ -2,6 +2,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
+{% load store_filters %}
 
 {% block content %}
     <!-- ========================= SECTION PAGETOP ========================= -->
@@ -281,11 +282,35 @@
                                         </div>
                                         <div class="img-wrap">
                                             {% if product.images %}
-                                                <img src="{{ product.images.url }}" alt="{{ product.name }}">
+                                                <picture>
+                                                    <!-- WebP -->
+                                                    <source 
+                                                        srcset="{% get_media_prefix %}photos/products/webp/lg/{{ product.images.name|basename }}.webp"
+                                                        type="image/webp"
+                                                        media="(min-width: 768px)">
+                                                    <source 
+                                                        srcset="{% get_media_prefix %}photos/products/webp/sm/{{ product.images.name|basename }}.webp"
+                                                        type="image/webp"
+                                                        media="(max-width: 767px)">
+                                                    <!-- Fallback JPG/PNG -->
+                                                    <img src="{{ product.images.url }}" 
+                                                        alt="{{ product.name }}"
+                                                        loading="lazy"
+                                                        width="300"
+                                                        height="300">
+                                                </picture>
                                             {% else %}
-                                                <img src="{% static '\admin\img\placeholder.png' %}" alt="No image available">
+                                                <picture>
+                                                    <source 
+                                                        srcset="{% static 'admin/img/placeholder.webp' %}"
+                                                        type="image/webp">
+                                                    <img src="{% static 'admin/img/placeholder.png' %}" 
+                                                        alt="sin imagen"
+                                                        loading="lazy"
+                                                        width="300"
+                                                        height="300">
+                                                </picture>
                                             {% endif %}
-
                                         </div> <!-- img-wrap.// -->
                                         <figcaption class="info-wrap">
                                             <div class="fix-height">

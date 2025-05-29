@@ -126,7 +126,7 @@ def login(request):
                     return redirect(nextPage=nextPage)
                 
             except:
-                return redirect('dashboard')
+                return redirect('home')
             
         else:
             messages.error(request, 'Los datos son incorrectos.')
@@ -140,7 +140,7 @@ def login(request):
 def logout(request):
     auth.logout(request)
     messages.success(request, 'Has cerrado sesion, muchas gracias.')
-    return redirect('login')
+    return redirect('home')
 
 def activate(request, uidb64, token):
     try:

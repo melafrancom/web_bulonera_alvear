@@ -13,11 +13,15 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 import os
 import uuid
+from django.db import transaction
+from pathlib import Path
+from django.conf import settings
 
-#Local:
+# local:
 from .models import Product, Variation, ReviewRating, ProductGallery, CarouselImage, ProductSearch
 from category.models import Category, SubCategory
 from .forms import ProductImportForm
+from .utils import ImageProcessor
 
 
 
@@ -224,7 +228,7 @@ class ProductAdmin(admin.ModelAdmin):
                     # Establecer el precio (sabemos que existe porque lo validamos arriba)
                     product.price = float(item['price'])
                     
-                    # Los demás campos son opcionales - manejar NaN correctamente
+                    # Campos opcionales
                     if 'description' in item and item['description'] and not pd.isna(item['description']):
                         product.description = str(item['description'])
                     
@@ -248,13 +252,14 @@ class ProductAdmin(admin.ModelAdmin):
                     # Manejar stock correctamente para evitar el error NaN
                     if 'stock' in item and item['stock'] and not pd.isna(item['stock']):
                         try:
-                            product.stock = int(float(item['stock']))  # Convertir a float primero, luego a int
+                            product.stock = int(float(item['stock']))
                         except (ValueError, TypeError):
                             product.stock = 0  # Valor por defecto si hay error de conversión
                     else:
                         # Valor predeterminado para stock si no se proporciona
                         product.stock = 0
                     
+                    # Manejar categoría
                     if 'category' in item and item['category'] and not pd.isna(item['category']):
                         try:
                             category = Category.objects.get(category_name=str(item['category']))
@@ -277,6 +282,7 @@ class ProductAdmin(admin.ModelAdmin):
                             )
                         product.category = category
                     
+                    # Otros campos
                     if 'brand' in item and item['brand'] and not pd.isna(item['brand']):
                         product.brand = str(item['brand'])
                     
@@ -286,14 +292,23 @@ class ProductAdmin(admin.ModelAdmin):
                     # Manejar imagen principal - solo si se proporciona
                     if 'images' in item and item['images'] and not pd.isna(item['images']):
                         image_path = str(item['images']).strip()
-                        products_dir = os.path.join('media', 'photos', 'products')
+                        products_dir = os.path.join(settings.MEDIA_ROOT, 'photos', 'products', 'original')
                         
                         # Verificar si la imagen existe en el servidor
                         found_image = self.find_image_in_directory(image_path, products_dir)
                         if found_image:
-                            product.images = os.path.join('photos', 'products', found_image)
-                            if found_image != os.path.basename(image_path):
-                                print(f"Nota: Se encontró imagen similar para {item['code']}: {found_image} (original: {image_path})")
+                            # Guardar primero el producto para tener un ID
+                            product.save()
+                            
+                            # Configurar la ruta de la imagen
+                            full_image_path = os.path.join(products_dir, found_image)
+                            relative_path = os.path.join('photos', 'products', 'original', found_image)
+                            product.images = relative_path
+                            
+                            # Procesar la imagen con ImageProcessor
+                            processor = ImageProcessor(full_image_path)
+                            if not processor.process_image():
+                                image_errors.append(f"Error procesando imagen para producto {item['code']}")
                         else:
                             # Registrar error pero continuar con la importación
                             image_errors.append(f"Imagen principal no encontrada para producto {item['code']}: {image_path}")
@@ -320,16 +335,21 @@ class ProductAdmin(admin.ModelAdmin):
                             # Verificar si la imagen existe en el servidor
                             found_gallery_image = self.find_image_in_directory(gallery_path, products_dir)
                             if found_gallery_image:
-                                # Crear entrada en la galería
-                                ProductGallery.objects.create(
+                                full_gallery_path = os.path.join(products_dir, found_gallery_image)
+                                gallery_image = ProductGallery.objects.create(
                                     product=product,
                                     image=os.path.join('photos', 'products', found_gallery_image)
                                 )
+                                
+                                # Procesar imagen de galería
+                                processor = ImageProcessor(full_gallery_path)
+                                if not processor.process_image():
+                                    image_errors.append(f"Error procesando imagen de galería para producto {item['code']}")
                             else:
                                 # Registrar error pero continuar
                                 image_errors.append(f"Imagen de galería no encontrada para producto {item['code']}: {gallery_path}")
                     
-                    # Manejar subcategorías si se proporcionan
+                    # Manejar subcategorías
                     if 'subcategories' in item and item['subcategories'] and not pd.isna(item['subcategories']):
                         subcats = str(item['subcategories']).split(',')
                         for subcat_name in subcats:

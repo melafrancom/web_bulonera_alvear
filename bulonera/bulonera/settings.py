@@ -158,6 +158,11 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# Login settings
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'home'
+
 from django.contrib.messages import constants as messages
 MESSAGE_TAGS = {
     messages.ERROR : 'danger',
@@ -173,7 +178,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # session timeout settings:
 SESSION_EXPIRE_AFTER_LAST_ACTIVITY = True
 SESSION_EXPIRE_SECONDS = 3600 #session expiration is 1 hour
-SESSION_TIMEOUT_REDIRECT = ''
+SESSION_TIMEOUT_REDIRECT = 'home'
 
 # Moneda que usas en tu tienda
 CURRENCY = 'USD'
