@@ -19,7 +19,13 @@ def _cart_id(request):
 
 #### Segundo: podemos ir agregando o eliminando productos/items del carrito #####
 def add_cart(request, product_id):
-    product = Product.objects.get(id=product_id)
+    try:
+        product = get_object_or_404(Product, id=product_id)
+    except Http404:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': 'Producto no encontrado.'}, status=404)
+        else:
+            return redirect('store')
     current_user = request.user
     
     # Get product price (regular or discounted)

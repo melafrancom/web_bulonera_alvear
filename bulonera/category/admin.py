@@ -15,7 +15,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 class SubCategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('subcategory_name',)}
-    list_display = ('subcategory_name', 'category', 'slug')
+    list_display = ('subcategory_name', 'category', 'slug', 'image')
     list_filter = ('category',)
     
 

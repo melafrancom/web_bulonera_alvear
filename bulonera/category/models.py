@@ -1,19 +1,26 @@
 from django.db import models
 from django.urls import reverse
-
+import unidecode
+import os
 
 
 def category_image_path(instance, filename):
     # Limpia el nombre del archivo para eliminar caracteres problemáticos
-    import unidecode
-    import os
-    
     # Obtiene el nombre base sin extensión
     name, ext = os.path.splitext(filename)
     # Convierte acentos a caracteres sin acentos y reemplaza espacios con guiones
     clean_name = unidecode.unidecode(name).replace(' ', '-')
     # Crea la ruta de destino con el nombre limpio
     return f'photos/categories/{clean_name}{ext}'
+
+def subcategory_image_path(instance, filename):
+    # Limpia el nombre del archivo para eliminar caracteres problemáticos
+    # Obtiene el nombre base sin extensión
+    name, ext = os.path.splitext(filename)
+    # Convierte acentos a caracteres sin acentos y reemplaza espacios con guiones
+    clean_name = unidecode.unidecode(name).replace(' ', '-')
+    # Crea la ruta de destino con el nombre limpio
+    return f'photos/categories/subcategories/{clean_name}{ext}'
 
 class Category(models.Model):
     category_name = models.CharField(max_length=50, unique=True)
@@ -36,6 +43,7 @@ class SubCategory(models.Model):
     subcategory_name = models.CharField(max_length=50, unique=True)
     slug = models.CharField(max_length=100, unique=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
+    image = models.ImageField(upload_to=subcategory_image_path, blank=True)
     
     class Meta:
         verbose_name = 'Sub Category'

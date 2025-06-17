@@ -8,6 +8,7 @@ from bulonera.settings import SITE_URL, CURRENCY
 from account.models import Account
 from category.models import Category, SubCategory
 from .utils import ImageProcessor
+from .utils import CarouselImageProcessor
 import os
 
 # Create your models here.
@@ -58,7 +59,7 @@ class Product(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
             
-        # Calcular el porcentaje de descuento si hay precio de oferta
+            # Calcular el porcentaje de descuento si hay precio de oferta
         if self.is_on_sale and self.sale_price is not None and self.price > 0:
             self.discount_percentage = int(((self.price - self.sale_price) / self.price) * 100)
         else:
@@ -77,7 +78,7 @@ class Product(models.Model):
         if self.images:
             processor = ImageProcessor(self.images.path)
             processor.process_image()
-    
+        
     def get_url(self):
         return reverse('product_detail', args=[self.category.slug, self.slug])
     
@@ -105,7 +106,7 @@ class Product(models.Model):
         # Métodos específicos para META PIXEL
     def get_meta_pixel_data(self):
         return {
-            'id': str(self.id),
+            'id': str(self.code),  # Usar el código del producto como ID
             'title': self.name,
             'description': self.description,
             'availability': 'in stock' if self.is_available and self.stock > 0 else 'out of stock',
@@ -113,7 +114,7 @@ class Product(models.Model):
             'price': f"{self.price:.2f}",
             'link': self.get_absolute_url(),
             'image_link': f"{SITE_URL}{self.images.url}" if self.images else "",
-            'brand': self.brand,
+            'brand': self.brand if self.brand else "Bulonera Alvear",
         }
     
     # Métodos específicos para Google Merchant
@@ -125,11 +126,11 @@ class Product(models.Model):
             'image_link': f"{SITE_URL}{self.images.url}" if self.images else "",
             'availability': 'in stock' if self.is_available and self.stock > 0 else 'out of stock',
             'price': f"{self.price:.2f} {CURRENCY}",
-            'brand': self.brand,
+            'brand': self.brand if self.brand else "Bulonera Alvear",
             'condition': self.condition,
-            'gtin': '',  # Puedes agregar un campo para esto si es necesario // GTIN (Global Trade Item Number): es un código universal como el EAN, UPC o ISBN.
-            'mpn': '',   # Puedes agregar un campo para esto si es necesario // MPN (Manufacturer Part Number): es un número de parte del fabricante, usado cuando no hay GTIN.
-            'google_product_category': self.category.name,
+            'gtin': self.gtin or '',  # Puedes agregar un campo para esto si es necesario // GTIN (Global Trade Item Number): es un código universal como el EAN, UPC o ISBN.
+            'mpn': self.mpn or '',   # Puedes agregar un campo para esto si es necesario // MPN (Manufacturer Part Number): es un número de parte del fabricante, usado cuando no hay GTIN.
+            'google_product_category': self.category.category_name,
         }
     
     @property
@@ -260,6 +261,23 @@ class CarouselImage(models.Model):
     
     def __str__(self):
         return self.title if self.title else str(self.image)
+
+    def save(self, *args, **kwargs):
+        # Guardar primero para tener el ID si es nuevo
+        super().save(*args, **kwargs)
+        
+        # Procesar la imagen si se ha proporcionado una nueva
+        if self.image:
+            processor = CarouselImageProcessor(self.image.path)
+            processor.process_image()
+
+    @property
+    def get_image_urls(self):
+        """Obtiene todas las URLs de las diferentes versiones de la imagen"""
+        if self.image:
+            base_name = os.path.splitext(os.path.basename(self.image.name))[0]
+            return CarouselImageProcessor.get_image_urls(base_name)
+        return None
 
 #NO HACE A LAS FUNCIONALIDADES PRINCIPALES DE LA PÁGINA:
 #CREAMOS UN MODELO PARA RASTREAR LAS BUSQUEDAS MÁS BUSCADAS POR TODOS LOS USUARIOS

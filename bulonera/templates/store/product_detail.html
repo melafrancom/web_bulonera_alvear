@@ -8,12 +8,23 @@
 {% block meta %}
     <meta name="description" content="{{ product.description|truncatewords:25 }}">
     <link rel="canonical" href="{{ product.get_absolute_url }}">
+    <!-- Etiquetas OpenGraph para Meta Pixel y catálogo -->
+    <meta property="og:title" content="{{ product.name }}">
+    <meta property="og:description" content="{{ product.description|truncatewords:25 }}">
+    <meta property="og:url" content="{{ product.get_absolute_url }}">
+    <meta property="og:image" content="{{ product.images.url }}">
+    <meta property="product:brand" content="{{ product.brand }}">
+    <meta property="product:availability" content="{% if product.is_available and product.stock > 0 %}in stock{% else %}out of stock{% endif %}">
+    <meta property="product:condition" content="{{ product.condition }}">
+    <meta property="product:price:amount" content="{{ product.price|floatformat:2 }}">
+    <meta property="product:price:currency" content="{{ CURRENCY }}">
+    <meta property="product:retailer_item_id" content="{{ product.code }}">
 {% endblock %}
 
 
 <html lang="en">
         {% block head_extra %}
-            <!-- META PIXEL código para ViewContent -->
+            <!-- META PIXEL código para ViewContent para eventos -->
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
                     if (typeof fbq !== 'undefined') {
@@ -22,27 +33,27 @@
                             content_ids: ['{{ meta_pixel_data.id }}'],
                             content_name: '{{ meta_pixel_data.title }}',
                             content_category: '{{ single_product.category.name }}',
-                            value: '{{ price }}',
+                            value: '{{ price|floatformat:2 }}',
                             currency: '{{ CURRENCY }}'
                         });
                     }
                 });
 
-                // Para el evento AddToCart
+                // Para el evento AddToCart de meta
                 document.addEventListener('DOMContentLoaded', function() {
                     const addToCartButtons = document.querySelectorAll('.add-to-cart');
                     addToCartButtons.forEach(function(button) {
                         button.addEventListener('click', function() {
-                            if (typeof fbq !== 'undefined') {
+                    if (typeof fbq !== 'undefined') {
                                 fbq('track', 'AddToCart', {
-                                    content_type: 'product',
-                                    content_ids: ['{{ meta_pixel_data.id }}'],
-                                    content_name: '{{ meta_pixel_data.title }}',
-                                    content_category: '{{ single_product.category.name }}',
-                                    value: '{{ price }}',
-                                    currency: '{{ CURRENCY }}'
-                                });
-                            }
+                            content_type: 'product',
+                            content_ids: ['{{ meta_pixel_data.id }}'],
+                            content_name: '{{ meta_pixel_data.title }}',
+                            content_category: '{{ single_product.category.name }}',
+                            value: '{{ price|floatformat:2 }}',
+                            currency: '{{ CURRENCY }}'
+                        });
+                    }
                         });
                     });
                 });

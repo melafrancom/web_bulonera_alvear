@@ -23,53 +23,51 @@
                     {% for image in carousel_images %}
                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
                             <div class="carousel-background-overlay">
-                                <div class="container">
-                                    <div class="carousel-content">
                                         {% if image.url %}
                                             <a href="{{ image.url }}" class="carousel-link">
-                                                <picture>
-                                                    <!-- WebP -->
-                                                    <source 
-                                                        srcset="{% get_media_prefix %}photos/products/webp/lg/{{ image.image.name|basename }}.webp"
-                                                        type="image/webp"
-                                                        media="(min-width: 1200px)">
-                                                    <source 
-                                                        srcset="{% get_media_prefix %}photos/products/webp/md/{{ image.image.name|basename }}.webp"
-                                                        type="image/webp"
-                                                        media="(min-width: 768px)">
-                                                    <source 
-                                                        srcset="{% get_media_prefix %}photos/products/webp/sm/{{ image.image.name|basename }}.webp"
-                                                        type="image/webp"
-                                                        media="(max-width: 767px)">
-                                                    <!-- Fallback JPG/PNG -->
-                                                    <img src="{{ image.image.url }}" 
-                                                        class="carousel-img" 
-                                                        alt="{{ image.title }}"
-                                                        loading="lazy">
-                                                </picture>
+                                        <picture>
+                                            <!-- WebP -->
+                                            <source 
+                                                srcset="{% get_media_prefix %}photos/carousel/webp/lg/{{ image.image.name|basename }}.webp"
+                                                type="image/webp"
+                                                media="(min-width: 1200px)">
+                                            <source 
+                                                srcset="{% get_media_prefix %}photos/carousel/webp/md/{{ image.image.name|basename }}.webp"
+                                                type="image/webp"
+                                                media="(min-width: 768px)">
+                                            <source 
+                                                srcset="{% get_media_prefix %}photos/carousel/webp/sm/{{ image.image.name|basename }}.webp"
+                                                type="image/webp"
+                                                media="(max-width: 767px)">
+                                            <!-- Fallback JPG/PNG -->
+                                            <img src="{{ image.image.url }}" 
+                                                class="carousel-img" 
+                                                alt="{{ image.title }}"
+                                                loading="lazy">
+                                        </picture>
                                             </a>
                                         {% elif image.product %}
                                             <a href="{{ image.product.get_url }}" class="carousel-link">
-                                                <picture>
-                                                    <!-- WebP -->
-                                                    <source 
-                                                        srcset="{% get_media_prefix %}photos/products/webp/lg/{{ image.image.name|basename }}.webp"
-                                                        type="image/webp"
-                                                        media="(min-width: 1200px)">
-                                                    <source 
-                                                        srcset="{% get_media_prefix %}photos/products/webp/md/{{ image.image.name|basename }}.webp"
-                                                        type="image/webp"
-                                                        media="(min-width: 768px)">
-                                                    <source 
-                                                        srcset="{% get_media_prefix %}photos/products/webp/sm/{{ image.image.name|basename }}.webp"
-                                                        type="image/webp"
-                                                        media="(max-width: 767px)">
-                                                    <!-- Fallback JPG/PNG -->
-                                                    <img src="{{ image.image.url }}" 
-                                                        class="carousel-img" 
-                                                        alt="{{ image.title }}"
-                                                        loading="lazy">
-                                                </picture>
+                                        <picture>
+                                            <!-- WebP -->
+                                            <source 
+                                                srcset="{% get_media_prefix %}photos/carousel/webp/lg/{{ image.image.name|basename }}.webp"
+                                                type="image/webp"
+                                                media="(min-width: 1200px)">
+                                            <source 
+                                                srcset="{% get_media_prefix %}photos/carousel/webp/md/{{ image.image.name|basename }}.webp"
+                                                type="image/webp"
+                                                media="(min-width: 768px)">
+                                            <source 
+                                                srcset="{% get_media_prefix %}photos/carousel/webp/sm/{{ image.image.name|basename }}.webp"
+                                                type="image/webp"
+                                                media="(max-width: 767px)">
+                                            <!-- Fallback JPG/PNG -->
+                                            <img src="{{ image.image.url }}" 
+                                                class="carousel-img" 
+                                                alt="{{ image.title }}"
+                                                loading="lazy">
+                                        </picture>
                                             </a>
                                         {% else %}
                                             <img src="{{ image.image.url }}" class="carousel-img" alt="{{ image.title }}">
@@ -82,8 +80,6 @@
                                             {% endif %}
                                         </div>
                                         {% endif %}
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     {% endfor %}
@@ -282,8 +278,8 @@
                                     </div>
                                 {% endfor %}
                             </div>
+                            </div>
                         </div>
-                    </div>
                     {% endfor %}
                 </div>
                 <button class="carousel-control-prev" type="button" data-target="#bestsellersCarousel" data-slide="prev">
@@ -624,14 +620,13 @@
 
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Inicializar todos los carruseles
-        const carousels = document.querySelectorAll('.carousel');
-        carousels.forEach(carousel => {
-            new bootstrap.Carousel(carousel, {
-                interval: 5000,
-                wrap: true,
-                touch: true
-            });
+        // Inicializar el carrusel principal
+        $('#mainCarousel').carousel({
+            interval: 5000,  // Tiempo entre slides en milisegundos
+            ride: 'carousel', // Inicia el carrusel automáticamente
+            pause: 'hover',  // Pausa en hover
+            wrap: true,      // Permite ciclar continuamente
+            keyboard: true   // Permite control con teclado
         });
         
         // Función para ajustar la altura del carrusel principal responsivamente
@@ -641,17 +636,17 @@
             
             // Ajustar altura según el ancho de la pantalla
             if (windowWidth < 400) {
-                carouselHeight = 140; // Móviles muy pequeños
+                carouselHeight = 150;
             } else if (windowWidth < 576) {
-                carouselHeight = 180; // Móviles pequeños
+                carouselHeight = 200;
             } else if (windowWidth < 768) {
-                carouselHeight = 220; // Móviles grandes
+                carouselHeight = 250;
             } else if (windowWidth < 992) {
-                carouselHeight = 300; // Tablets
+                carouselHeight = 300;
             } else if (windowWidth < 1200) {
-                carouselHeight = 350; // Escritorio pequeño
+                carouselHeight = 350;
             } else {
-                carouselHeight = 390; // Escritorio grande
+                carouselHeight = 390;
             }
             
             // Aplicar altura a los items del carrusel
@@ -665,16 +660,11 @@
         adjustMainCarouselHeight();
         window.addEventListener('resize', adjustMainCarouselHeight);
         
-        // Ajustar estilos para los carruseles de productos
-        const productCarousels = document.querySelectorAll('.section-bestsellers .carousel, .section-category-products .carousel');
-        productCarousels.forEach(carousel => {
-            // Personalizar controles para que sean más pequeños en carruseles de productos
-            const controls = carousel.querySelectorAll('.carousel-control-prev, .carousel-control-next');
-            controls.forEach(control => {
-                control.style.width = '8%';
-                control.style.backgroundColor = 'rgba(0,0,0,0.1)';
-                control.style.borderRadius = '4px';
-                control.style.opacity = '0.7';
+        // Inicializar los demás carruseles
+        $('.carousel').not('#mainCarousel').each(function() {
+            $(this).carousel({
+                interval: false, // Los otros carruseles no se mueven automáticamente
+                wrap: true
             });
         });
     });

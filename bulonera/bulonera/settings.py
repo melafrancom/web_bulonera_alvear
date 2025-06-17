@@ -137,9 +137,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-ar'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Argentina/Buenos_Aires'
 
 USE_I18N = True
 
@@ -150,10 +150,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') # Ruta completa a la carpeta staticfiles cuando estemos en producción.
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),  # Ruta completa a la carpeta static
 ]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -167,7 +167,20 @@ from django.contrib.messages import constants as messages
 MESSAGE_TAGS = {
     messages.ERROR : 'danger',
 }
+""" Cuando cambie a producción, descomentar las siguientes líneas para mayor seguridad.
+# Configuración de seguridad adicional
+SECURE_HSTS_SECONDS = 31536000  # 1 año
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = ['https://tu_dominio,com', 'https://www.tu_dominio,com']
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
 
+"""
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -177,19 +190,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # session timeout settings:
 SESSION_EXPIRE_AFTER_LAST_ACTIVITY = True
-SESSION_EXPIRE_SECONDS = 3600 #session expiration is 1 hour
+SESSION_EXPIRE_SECONDS = 3600 # session expiration is 1 hour
 SESSION_TIMEOUT_REDIRECT = 'home'
 
 # Moneda que usas en tu tienda
-CURRENCY = 'USD'
+CURRENCY = 'ARS'
 
 # Número de WhatsApp (formato internacional, sin +)
 WHATSAPP_NUMBER = env('WHATSAPP_NUMBER')
 
 # Configuración específica según entorno
-if DEBUG: #Ahora DEBUG = true ---> Estoy en desarrollo. 
+if DEBUG: # Ahora DEBUG = true ---> Estoy en desarrollo. 
     # Entorno de desarrollo
-    SITE_URL = env('SITE_URL') #SITE_URL
+    SITE_URL = env('SITE_URL') # SITE_URL
     # Desactivar Meta Pixel en desarrollo
     META_PIXEL_ENABLED = False
     META_PIXEL_ID = env('META_PIXEL_ID')  # ID real, pero no se usará en desarrollo
@@ -209,7 +222,7 @@ if DEBUG: #Ahora DEBUG = true ---> Estoy en desarrollo.
     
 else: #Cuando cambie a DEBUG = false ----> Cambio a Producción.
     # Entorno de producción
-    SITE_URL = SITE_URL = env('SITE_URL') #SITE_URL
+    SITE_URL = env('SITE_URL') #SITE_URL
     META_PIXEL_ENABLED = True
     META_PIXEL_ID = env('META_PIXEL_ID') #Buscar tu pixel ID de facebook
     
@@ -220,8 +233,57 @@ else: #Cuando cambie a DEBUG = false ----> Cambio a Producción.
     EMAIL_HOST_USER = env('MAILTRAP_USER')
     EMAIL_HOST_PASSWORD = env('MAILTRAP_PASSWORD')
     EMAIL_USE_TLS = True
+    EMAIL_USE_SSL = False
 
     DEFAULT_FROM_EMAIL = 'contacto@buloneraalvear.online' #'tu@email.com'
 
     # Email para recibir los mensajes de contacto
     CONTACT_EMAIL = 'contacto@buloneraalvear.online' #'tucorreo@dominio.com'
+
+""" Cuando cambie a producción, descomentar las siguientes líneas
+# Logging Configuration
+from pathlib import Path
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name} {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': '/var/www/bulonera/logs/django.log',
+            'maxBytes': 1024*1024*5,  # 5 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        'store': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+}
+# Asegurarse de que el directorio de logs existe con los permisos correctos
+LOG_DIR = '/var/www/bulonera/logs'
+try:
+    Path(LOG_DIR).mkdir(parents=True, exist_ok=True)
+    log_file = Path(LOG_DIR) / 'django.log'
+    log_file.touch(exist_ok=True)
+except Exception as e:
+    print(f"Error creating log directory or file: {e}") 
+"""

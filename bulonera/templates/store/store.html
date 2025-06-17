@@ -94,7 +94,62 @@
     </section>
     {% endif %}
         <!-- ========================= SECTION CONTENT OFFERS END ========================= -->
-        
+            <!-- ========================= SECTION TODAS LAS CATEGORÍAS ========================= -->
+    {% if not current_subcategory %}
+        <!-- ========================= SECTION TODAS LAS CATEGORÍAS ========================= -->
+        <section class="section-categories py-4 bg-light">
+            <div class="container">
+                <header class="section-heading mb-4">
+                    <h3 class="section-title">Todas las Categorías:</h3>
+                </header>
+                <div class="row g-4 justify-content-center">
+                    {% for category in links %}
+                        <div class="col-4 col-sm-3 col-md-2">
+                            <a href="{% url 'products_by_category' category.slug %}" class="category-item">
+                                <div class="hexagon-wrapper">
+                                    <div class="hexagon">
+                                        {% if category.cat_image %}
+                                            <img src="{{ category.cat_image.url }}" alt="{{ category.category_name }}" style="max-width:48px;max-height:48px;">
+                                        {% else %}
+                                            <i class="fa fa-folder"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="category-name text-center mt-2">{{ category.category_name }}</div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+        <!-- ========================= SECTION SUBCATEGORÍAS ========================= -->
+        {% if current_category and current_category.subcategories.all %}
+            <section class="section-subcategories py-3">
+                <div class="container">
+                    <header class="section-heading mb-3">
+                        <h4 class="section-title">Subcategorías de {{ current_category.category_name }}</h4>
+                    </header>
+                    <div class="row g-3 justify-content-center">
+                        {% for sub in current_category.subcategories.all %}
+                        <div class="hexagon-wrapper">
+                            <div class="hexagon">
+                                <a href="{{ sub.get_url }}" class="subcategory-item btn btn-outline-primary w-100 mb-2 d-flex flex-column align-items-center">
+                                    {% if sub.image %}
+                                        <img src="{{ sub.image.url }}" alt="{{ sub.subcategory_name }}" class="subcategory-img mb-2" style="max-width:48px;max-height:48px;">
+                                    {% else %}
+                                        <i class="fa fa-folder fa-2x mb-2"></i>
+                                    {% endif %}
+                                    {{ sub.subcategory_name }}
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+        {% endif %}
+    {% endif %}
+    <!-- ========================= SECTION TODAS LAS CATEGORÍAS END// ========================= -->
             <!-- ========================= SECTION CONTENT ========================= -->
     <section class="section-content padding-y">
         <div class="container">
@@ -108,7 +163,7 @@
                                     <h6 class="title">Categorías</h6>
                                 </a>
                             </header>
-                            <div class="filter-content collapse show" id="collapse_1" style="">
+                            <div class="filter-content collapse " id="collapse_1" style="">
                                 <div class="card-body">
                                     <ul class="list-menu">
                                         <li><a href="{% url 'store' %}">Todas las categorías:</a></li>
@@ -138,7 +193,7 @@
                                     <h6 class="title">Subcategorías de {{ current_category.category_name }}</h6>
                                 </a>
                             </header>
-                            <div class="filter-content collapse show" id="collapse_subcategories">
+                            <div class="filter-content collapse " id="collapse_subcategories">
                                 <div class="card-body">
                                     <ul class="list-menu">
                                         {% for sub in current_category.subcategories.all %}
@@ -157,7 +212,7 @@
                                     <h6 class="title">Tamaños </h6>
                                 </a>
                             </header>
-                            <div class="filter-content collapse show" id="collapse_4" style="">
+                            <div class="filter-content collapse " id="collapse_4" style="">
                                 <div class="card-body">
                                     <label class="checkbox-btn">
                                         <input type="checkbox" name="size" value="XS">
@@ -189,7 +244,7 @@
                                     <h6 class="title">Marcas</h6>
                                 </a>
                             </header>
-                            <div class="filter-content collapse show" id="collapse_5" style="">
+                            <div class="filter-content collapse " id="collapse_5" style="">
                                 <div class="card-body">
                                     <ul class="list-menu">
                                         {% for brand in brands %}
@@ -211,7 +266,7 @@
                                     <h6 class="title">Precios </h6>
                                 </a>
                             </header>
-                            <div class="filter-content collapse show" id="collapse_3" style="">
+                            <div class="filter-content collapse " id="collapse_3" style="">
                                 <div class="card-body">
                                     <form method="GET" action="{% url 'store' %}">
                                         {% if category_slug %}
@@ -537,6 +592,14 @@
                     $input.val(currentVal - 1);
                 }
             });
+        });
+        document.addEventListener("DOMContentLoaded", function() {
+            if(window.innerWidth > 768) {
+                var collapses = document.querySelectorAll('.filter-content.collapse');
+                collapses.forEach(function(el) {
+                    el.classList.add('show');
+                });
+            }
         });
     </script>
 {% endblock %}

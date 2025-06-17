@@ -1,9 +1,15 @@
+import json
+import logging
+import csv
 from django.shortcuts import render, HttpResponse, get_object_or_404, redirect
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Q
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.generic import DetailView, ListView
+from itertools import chain
+from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.dom.minidom import parseString
 #from django.conf import settings
 
 from bulonera.settings import SITE_URL, CURRENCY
@@ -14,7 +20,7 @@ from cart.models import CartItem, Cart
 from cart.views import _cart_id
 from orders.models import OrderProduct
 from .forms import ReviewForm
-from itertools import chain # Importa chain al principio
+
 
 # Create your views here.
 def store(request, category_slug=None, subcategory_slug=None):
@@ -142,97 +148,122 @@ def products_by_subcategory(request, category_slug, subcategory_slug):
     return render(request, 'store/store.html', context)
 
 def product_detail(request, category_slug, product_slug):
+    logger = logging.getLogger('django')
     try:
-        single_product = Product.objects.get(category__slug=category_slug, slug=product_slug)
-        in_cart = CartItem.objects.filter(cart__cart_id=_cart_id(request), product=single_product).exists()
-        
-        # Obtener dimensiones disponibles y variantes
-        dimensions = single_product.get_available_dimensions()
-        dimension_variants = []
-        
-        if dimensions:
-            variants = list(single_product.get_dimension_variants())
-            # Incluir el producto actual en las variantes
-            variants.append(single_product)
-            dimension_variants = [
-                {
-                    'diameter': str(v.diameter),
-                    'length': str(v.length),
-                    'url': v.get_url()
-                } for v in variants if v.diameter and v.length
-            ]
-            
-            # Convertir a JSON seguro para JavaScript
-            import json
-            dimension_variants_json = json.dumps(dimension_variants)
-        else:
-            dimension_variants_json = '[]'
-        
-        # Get products on sale for carousel (excluding current product)
-        sale_products = Product.objects.filter(
-            is_on_sale=True, 
-            is_available=True
-        ).exclude(id=single_product.id)[:5]  # Limit to 5 products
-        
-    except Exception as e:
-        raise e
-    
-    if request.user.is_authenticated:
         try:
-            orderproduct = OrderProduct.objects.filter(user=request.user, product__id=single_product.id).exists()
-        except OrderProduct.DoesNotExist:
+            # Intenta obtener el producto primero por slug y categoría
+            single_product = Product.objects.get(category__slug=category_slug, slug=product_slug)
+        except Product.DoesNotExist:
+            try:
+                # Si no se encuentra, intenta buscar el producto solo por slug
+                single_product = Product.objects.get(slug=product_slug)
+            except Product.DoesNotExist:
+                logger.error(f'Producto no encontrado - categoria: {category_slug}, producto: {product_slug}')
+                context = {
+                    'category_slug': category_slug,
+                    'product_slug': product_slug
+                }
+                return render(request, 'store/404.html', context, status=404)
+
+        # Verificar si el producto está en el carrito
+        in_cart = CartItem.objects.filter(cart__cart_id=_cart_id(request), product=single_product).exists()
+
+        # Obtener dimensiones disponibles y variantes
+        dimensions = single_product.get_available_dimensions() if hasattr(single_product, 'get_available_dimensions') else None
+        dimension_variants_json = '[]'
+        if dimensions:
+            try:
+                variants = list(single_product.get_dimension_variants())
+                variants.append(single_product)
+                dimension_variants = [
+                    {
+                        'diameter': str(v.diameter) if hasattr(v, 'diameter') and v.diameter else '',
+                        'length': str(v.length) if hasattr(v, 'length') and v.length else '',
+                        'url': v.get_url() if hasattr(v, 'get_url') else ''
+                    } for v in variants if hasattr(v, 'diameter') or hasattr(v, 'length')
+                ]
+                dimension_variants_json = json.dumps(dimension_variants)
+            except Exception as e:
+                logger.error(f'Error processing dimensions for product {single_product.id}: {str(e)}')
+                dimension_variants_json = '[]'
+
+        # Obtener productos en oferta para el carrusel
+        sale_products = Product.objects.filter(
+            is_on_sale=True,
+            is_available=True
+        ).exclude(id=single_product.id)[:5]
+
+        # Verificar si hay reviews y pedidos del usuario
+        if request.user.is_authenticated:
+            orderproduct = OrderProduct.objects.filter(
+                user=request.user,
+                product_id=single_product.id
+            ).exists()
+        else:
             orderproduct = None
-    else:
-        orderproduct = None
 
-    reviews = ReviewRating.objects.filter(product__id=single_product.id, status=True)
-    product_gallery = ProductGallery.objects.filter(product_id=single_product.id)
+        # Obtener reviews y galería
+        reviews = ReviewRating.objects.filter(
+            product_id=single_product.id,
+            status=True
+        )
+        product_gallery = ProductGallery.objects.filter(
+            product_id=single_product.id
+        )
 
-    # Obtener los datos para META PIXEL
-    try:
-        meta_pixel_data = single_product.get_meta_pixel_data()
-    except AttributeError:
-        # Fallback si el método no existe o hay error
-        site_url = getattr(SITE_URL, '')
+        # Obtener datos para META PIXEL
+        try:
+            meta_pixel_data = single_product.get_meta_pixel_data()
+        except AttributeError:
+            from django.conf import settings
+            site_url = getattr(settings, 'SITE_URL', request.build_absolute_uri('/').rstrip('/'))
+            meta_pixel_data = {
+                'id': str(single_product.id),
+                'title': single_product.name,
+                'description': single_product.description or "",
+                'availability': 'in stock' if single_product.is_available and single_product.stock > 0 else 'out of stock',
+                'condition': getattr(single_product, 'condition', 'new'),
+                'price': f"{single_product.price:.2f}",
+                'link': f"{site_url}{request.path}",
+                'image_link': f"{site_url}{single_product.images.url}" if single_product.images else "",
+                'brand': getattr(single_product, 'brand', ""),
+            }
 
-        meta_pixel_data = {
-            'id': str(single_product.id),
-            'title': single_product.name,
-            'description': single_product.description if single_product.description else "",
-            'availability': 'in stock' if single_product.is_available and single_product.stock > 0 else 'out of stock',
-            'condition': getattr(single_product, 'condition', 'new'),
-            'price': f"{single_product.price:.2f}",
-            'link': f"{site_url}{request.path}",
-            'image_link': f"{site_url}{single_product.images.url}" if single_product.images else "",
-            'brand': getattr(single_product, 'brand', ""),
+        # Determinar el precio a mostrar
+        display_price = single_product.sale_price if single_product.is_on_sale and single_product.sale_price else single_product.price
+
+        # Actualizar precio en meta_pixel_data si hay precio de oferta
+        if single_product.is_on_sale and single_product.sale_price:
+            meta_pixel_data['price'] = f"{single_product.sale_price:.2f}"
+
+        # Obtener moneda desde settings
+        from django.conf import settings
+        currency = getattr(settings, 'CURRENCY', 'ARS')
+
+        context = {
+            'single_product': single_product,
+            'in_cart': in_cart,
+            'orderproduct': orderproduct,
+            'reviews': reviews,
+            'product_gallery': product_gallery,
+            'meta_pixel_data': meta_pixel_data,
+            'price': display_price,
+            'CURRENCY': currency,
+            'dimensions': dimensions,
+            'dimension_variants_json': dimension_variants_json,
+            'sale_products': sale_products,
         }
 
-    # Obtener la moneda desde settings para el script del META PIXEL
-    currency = CURRENCY
-    # Determine the display price (regular or sale price)
-    display_price = single_product.sale_price if single_product.is_on_sale and single_product.sale_price else single_product.price
+        return render(request, 'store/product_detail.html', context)
 
-    # Update meta_pixel_data price to also use sale price when applicable
-    if single_product.is_on_sale and single_product.sale_price:
-        meta_pixel_data['price'] = f"{single_product.sale_price:.2f}"
-        
-    context = {
-        'single_product': single_product,
-        'in_cart': in_cart,
-        'orderproduct': orderproduct,
-        'reviews': reviews,
-        'product_gallery': product_gallery,
-        'meta_pixel_data': meta_pixel_data,
-        'price': single_product.sale_price if single_product.is_on_sale else single_product.price,
-        'CURRENCY': CURRENCY,
-        'dimensions': dimensions,
-        'dimension_variants_json': dimension_variants_json,
-        'sale_products': sale_products,
-    }
-
-    template_name = 'store/product_detail.html'
-    return render(request, template_name, context)
-
+    except Exception as e:
+        logger.error(f'Error en product_detail para producto {product_slug}: {str(e)}')
+        return render(
+            request,
+            'store/error.html',
+            {'error_message': 'Ha ocurrido un error al cargar el producto'},
+            status=500
+        )
 def search(request):
     keyword = request.GET['keyword']
     if keyword:
@@ -355,12 +386,63 @@ class ProductDetailView(DetailView):# Traemos el detailview de django.views.gene
         return context
 
 # Feeds para META PIXEL y Google Merchant
-def meta_pixel_product_feed(request):
-    products = Product.objects.filter(is_available=True)
-    products_data = [product.get_meta_pixel_data() for product in products]
-    return JsonResponse({'products': products_data})
+def facebook_feed(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="facebook_products.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['id', 'title', 'description', 'availability', 'condition', 'price', 'link', 'image_link', 'brand'])
+    for product in Product.objects.filter(is_available=True):
+        image_link = f"{SITE_URL}{product.images.url}" if product.images else ""
+        brand = product.brand if product.brand else "Bulonera Alvear"
+        if not image_link or not brand:
+            continue  # Omitir productos sin imagen o sin brand
+        writer.writerow([
+            product.code,
+            product.name,
+            product.description,
+            'in stock' if product.is_available and product.stock > 0 else 'out of stock',
+            product.condition,
+            f"{product.price:.2f} ARS",
+            product.get_absolute_url(),
+            image_link,
+            brand,
+        ])
+    return response
 
 def google_merchant_feed(request):
-    products = Product.objects.filter(is_available=True)
-    products_data = [product.get_merchant_data() for product in products]
-    return JsonResponse({'products': products_data})
+    try:
+        products = Product.objects.filter(is_available=True)
+        rss = Element('rss', version="2.0", attrib={
+            'xmlns:g': "http://base.google.com/ns/1.0"
+        })
+        channel = SubElement(rss, 'channel')
+        SubElement(channel, 'title').text = "Bulonera Alvear Productos"
+        SubElement(channel, 'link').text = SITE_URL
+        SubElement(channel, 'description').text = "Feed de productos para Google Merchant Center"
+
+        for product in products:
+            data = product.get_merchant_data()
+            item = SubElement(channel, 'item')
+            SubElement(item, 'g:id').text = str(product.code)
+            SubElement(item, 'title').text = data['title'] or ""
+            SubElement(item, 'description').text = data['description'] or ""
+            SubElement(item, 'link').text = data['link'] or ""
+            SubElement(item, 'g:image_link').text = data['image_link'] or ""
+            if not data['image_link']:
+                continue  # Omitir productos sin imagen
+            SubElement(item, 'g:availability').text = data['availability'] or ""
+            SubElement(item, 'g:price').text = data['price'] or ""
+            SubElement(item, 'g:brand').text = data['brand'] or ""
+            SubElement(item, 'g:condition').text = data['condition'] or ""
+            if data.get('gtin'):
+                SubElement(item, 'g:gtin').text = data['gtin']
+            if data.get('mpn'):
+                SubElement(item, 'g:mpn').text = data['mpn']
+            if data.get('google_product_category'):
+                SubElement(item, 'g:google_product_category').text = data['google_product_category']
+
+        xml_str = tostring(rss, encoding='utf-8')
+        pretty_xml = parseString(xml_str).toprettyxml(indent="  ")
+        return HttpResponse(pretty_xml, content_type='application/xml')
+    except Exception as e:
+        return HttpResponse(f"Error: {e}", content_type="text/plain", status=500)

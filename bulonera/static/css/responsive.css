@@ -305,7 +305,7 @@
 
   /* Ajustes para el carrusel en escritorios extra grandes */
   #mainCarousel .carousel-item {
-      height: 550px; /* Una altura mayor para pantallas muy grandes */
+      height: 390px; /* Una altura mayor para pantallas muy grandes */
   }
 
   .carousel-content {
@@ -350,7 +350,7 @@
 
     /* Ajustes para el carrusel en escritorios grandes */
     #mainCarousel .carousel-item {
-        height: 450px; /* Una altura adecuada para escritorios */
+        height: 350px; /* Una altura adecuada para escritorios */
     }
 
     .carousel-content {
@@ -411,7 +411,7 @@
 @media (max-width: 992px) {
   /* Ajustes para el carrusel */
   #mainCarousel .carousel-item {
-    height: 350px;
+    height: 300px;
   }
   
   .carousel-inner .carousel-item img {
@@ -424,9 +424,14 @@
   }
   
   .carousel-products-wrapper {
-    max-width: 90%;
+    max-width: 45rem;
   }
-  
+  .carousel-products-container .col,
+  .carousel-products-container .col-6,
+  .carousel-products-container .col-md-3 {
+      flex: 0 0 50%;
+      max-width: 50%;
+  }
   .carousel-caption {
     bottom: 10px;
     padding: 5px 10px;
@@ -575,7 +580,7 @@
   
   .card-product-grid .title {
     font-size: 13px;
-    height: 32px;
+    height: 4rem;
   }
   
   .card-product-grid .price {
@@ -609,6 +614,12 @@
     width: 25px;
     height: 25px;
   }
+  .carousel-products-container .col,
+  .carousel-products-container .col-6,
+  .carousel-products-container .col-md-3 {
+      flex: 0 0 55%;
+      max-width: 55%;
+  }
   
   /* Ajustes para productos */
   .card-product-grid .img-wrap {
@@ -617,7 +628,7 @@
   
   .card-product-grid .title {
     font-size: 12px;
-    height: 28px;
+    height: 4rem;
   }
   
   .card-product-grid .price {
@@ -664,7 +675,7 @@
 /* Dispositivos muy pequeños (teléfonos en modo retrato, menos de 400px) */
 @media (max-width: 400px) {
   #mainCarousel .carousel-item {
-    height: 160px;
+    height: 150px;
   }
   
   .carousel-inner .carousel-item img {
@@ -723,7 +734,7 @@
 /* Ajustes responsive */
 @media (max-width: 768px) {
   .col-md-2 {
-      margin-bottom: 20px;
+      /*margin-bottom: 20px;*/
   }
 }
 /* ================= Product detail OFFERS END================== */
@@ -792,7 +803,7 @@
 /* ================= Responsive CARRITO FLOTANTE ================ */
 @media (max-width: 768px) {
   .floating-cart {
-    top: auto;
+    /*top: auto;*/
     bottom: 20px;
     right: 10px;
   }

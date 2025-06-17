@@ -41,7 +41,7 @@ urlpatterns = [
     path('search/', views.search, name='search'),
     path('submit_review/<int:product_id>/', views.submit_review, name='submit_review'),
     # URLs para feeds de META faccebook Y DE MERCHANT GOOGLE.
-    path('feeds/meta-pixel/', views.meta_pixel_product_feed, name='meta_pixel_feed'),
+    path('feeds/facebook.csv', views.facebook_feed, name='facebook_feed'),
     path('feeds/google-merchant/', views.google_merchant_feed, name='google_merchant_feed'),
     # URLs para sitemaps
     path('sitemap.xml', sitemap, {'sitemaps': {'products': GenericSitemap(info_dict, priority=0.8)}}, name='django.contrib.sitemaps.views.sitemap'),
