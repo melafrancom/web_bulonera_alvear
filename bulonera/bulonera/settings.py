@@ -215,10 +215,10 @@ if DEBUG: # Ahora DEBUG = true ---> Estoy en desarrollo.
     EMAIL_HOST_PASSWORD = env('MAILTRAP_PASSWORD')
     EMAIL_USE_TLS = True
 
-    DEFAULT_FROM_EMAIL = 'contacto@buloneraalvear.online' #'tu@email.com'
+    DEFAULT_FROM_EMAIL = env('EMAIL_TO_SEND_MESSAGES') #'tu@email.com'
 
     # Email para recibir los mensajes de contacto   
-    CONTACT_EMAIL = 'contacto@buloneraalvear.online' #'tucorreo@dominio.com'
+    CONTACT_EMAIL = env('EMAIL_TO_RECEIVE_MESSAGES') #'tucorreo@dominio.com'
     
 else: #Cuando cambie a DEBUG = false ----> Cambio a Producción.
     # Entorno de producción
@@ -235,10 +235,10 @@ else: #Cuando cambie a DEBUG = false ----> Cambio a Producción.
     EMAIL_USE_TLS = True
     EMAIL_USE_SSL = False
 
-    DEFAULT_FROM_EMAIL = 'contacto@buloneraalvear.online' #'tu@email.com'
+    DEFAULT_FROM_EMAIL = env('EMAIL_TO_SEND_MESSAGES') #'tu@email.com'
 
     # Email para recibir los mensajes de contacto
-    CONTACT_EMAIL = 'contacto@buloneraalvear.online' #'tucorreo@dominio.com'
+    CONTACT_EMAIL = env('EMAIL_TO_RECEIVE_MESSAGES') #'tucorreo@dominio.com'
 
 """ Cuando cambie a producción, descomentar las siguientes líneas
 # Logging Configuration
