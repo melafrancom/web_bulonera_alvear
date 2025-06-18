@@ -233,12 +233,34 @@ class ReviewRating(models.Model):
 
 class ProductGallery(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, default=None)
-    image = models.ImageField(upload_to='store/products', max_length=250)
+    image = models.ImageField(upload_to='photos/products', max_length=250)
     alt = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         return self.product.name   
 
+    @property
+    def get_image_urls(self):
+        """Devuelve las URLs de las diferentes versiones de la imagen de galería"""
+        if self.image:
+            base_name = os.path.splitext(os.path.basename(self.image.name))[0]
+            extension = os.path.splitext(self.image.name)[1]
+            # Agrega el prefijo /media/ a cada URL
+            urls = ImageProcessor.get_image_urls(base_name, extension)
+            return {
+                'webp': {
+                    'lg': f"/media/{urls['webp']['lg']}",
+                    'thumb': f"/media/{urls['webp']['thumb']}",
+                },
+                'thumbnail': f"/media/{urls['thumbnail']}",
+            }
+        return {
+            'webp': {
+                'lg': '/static/images/placeholder.png',
+                'thumb': '/static/images/placeholder.png',
+            },
+            'thumbnail': '/static/images/placeholder.png',
+        }
 
 #NO HACE A LAS FUNCIONALIDADES PRINCIPALES DE LA PÁGINA:
 
