@@ -102,6 +102,9 @@ def home(request):
     return render(request, 'home.html', context)
 
 
+def returnPolicy(request):
+    template_name = 'others/return_policy.html'
+    return render(request, template_name)
 
 #-------------------- OTRAS VISTAS que no hacen a la funcionalidad. NO NECESARIOS. ------------------------
 def location(request):

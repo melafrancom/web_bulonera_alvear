@@ -30,6 +30,7 @@ urlpatterns = [
     path('orders/', include('orders.urls')),
     path('contact/', include('contact.urls')),
     #Others:
+    path('return-policy/', views.returnPolicy, name='return_policy'),
     path('location/', views.location, name='location'),
     path('history/', views.history, name='history'),
     path("robots.txt", views.robots_txt),
