@@ -17,17 +17,10 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
-from django.contrib.sitemaps.views import sitemap
-from django.contrib.sitemaps import GenericSitemap
 #LOCAL APPS
 from . import views
 from .models import Product
 
-
-info_dict = {
-    'queryset': Product.objects.all(),
-    'date_field': 'updated_at',
-}
 
 urlpatterns = [
     path('', views.store, name="store"),
@@ -43,6 +36,6 @@ urlpatterns = [
     # URLs para feeds de META faccebook Y DE MERCHANT GOOGLE.
     path('feeds/facebook.csv', views.facebook_feed, name='facebook_feed'),
     path('feeds/google-merchant/', views.google_merchant_feed, name='google_merchant_feed'),
-    # URLs para sitemaps
-    path('sitemap.xml', sitemap, {'sitemaps': {'products': GenericSitemap(info_dict, priority=0.8)}}, name='django.contrib.sitemaps.views.sitemap'),
+    #FAQ
+    path('faq/', views.faq, name='faq'),
 ]

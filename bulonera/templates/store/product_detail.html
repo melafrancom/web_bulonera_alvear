@@ -6,7 +6,8 @@
 {% block title %}{{ single_product.name }} | Bulonera Alvear{% endblock %}
 
 {% block meta %}
-    <meta name="description" content="{{ product.description|truncatewords:25 }}">
+    <meta name="description" content="{{ product.description|truncatewords:150 }}">
+    <meta name="keywords" content="{{ single_product.meta_keywords }}">
     <link rel="canonical" href="{{ product.get_absolute_url }}">
     <!-- Etiquetas OpenGraph para Meta Pixel y catálogo -->
     <meta property="og:title" content="{{ product.name }}">
@@ -104,7 +105,7 @@
                                                         srcset="{% get_media_prefix %}photos/products/webp/lg/{{ single_product.images.name|basename }}.webp"
                                                         type="image/webp">
                                                     <img id="main-product-img" src="{{ single_product.images.url }}" 
-                                                        alt="{{ product.name }}"
+                                                        alt="{{ single_product.image_alt|default:single_product.name }}"
                                                         loading="lazy"
                                                         width="600"
                                                         height="600">
@@ -123,7 +124,7 @@
                                                                     srcset="{% get_media_prefix %}photos/products/webp/thumb/{{ single_product.images.name|basename }}.webp"
                                                                     type="image/webp">
                                                                 <img src="{{ single_product.images.url }}" 
-                                                                    alt="{{ product.name }}"
+                                                                    alt="{{ single_product.image_alt|default:single_product.name }}"
                                                                     loading="lazy"
                                                                     width="100"
                                                                     height="100">
@@ -161,7 +162,7 @@
                                                 <h7 class="title">{{ single_product.code }}</h7>
                                                 <h6 class="title">
                                                     {{ single_product.category }}{% if single_product.subcategories.all %}
-                                                    |
+                                                    /
                                                         {% for subcat in single_product.subcategories.all %}
                                                             {{ subcat.subcategory_name }}{% if not forloop.last %}, {% endif %}
                                                         {% endfor %}
@@ -258,11 +259,112 @@
                             <!-- ============================ COMPONENT 1 END .// ================================= -->
                             <!-- ============================ COMPONENT 2 DESCRIPTION ================================= -->
                             <br>
-                            <div class="row">
-                                <h2>Descripcion:</h2>
-                                <p>{{ single_product.description }}</p>
+                            <!-- Características Técnicas en dos columnas -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h3 class="font-weight-bold mb-3" style="border-bottom:1px solid #e0e0e0;">Características Técnicas</h3>
+                                    <div class="table-responsive">
+                                        <table class="table table-borderless mb-0" style="font-size:1.1rem;">
+                                            <tbody>
+                                                {% if single_product.norm or single_product.grade or single_product.material or single_product.colour or single_product.type or single_product.form or single_product.thread_formats or single_product.origin %}
+                                                <tr>
+                                                    <td class="font-weight-bold" style="width:40%;">Norma</td>
+                                                    <td>{{ single_product.norm }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Grado/Dureza</td>
+                                                    <td>{{ single_product.grade }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Material</td>
+                                                    <td>{{ single_product.material }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Color</td>
+                                                    <td>{{ single_product.colour }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Tipo</td>
+                                                    <td>{{ single_product.type }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Forma</td>
+                                                    <td>{{ single_product.form }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Formatos de rosca</td>
+                                                    <td>{{ single_product.thread_formats }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Origen</td>
+                                                    <td>{{ single_product.origin }}</td>
+                                                </tr>
+                                                {% endif %}
+                                                {% if single_product.diameter or single_product.length %}
+                                                <tr>
+                                                    <td class="font-weight-bold">Diámetro</td>
+                                                    <td>
+                                                        {% if single_product.diameter %}{{ single_product.diameter }}{% endif %}
+                                                        {% if single_product.metric_diameter %} ({{ single_product.metric_diameter }} mm){% endif %}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Longitud</td>
+                                                    <td>
+                                                        {% if single_product.length %}{{ single_product.length }}{% endif %}
+                                                        {% if single_product.metric_length %} ({{ single_product.metric_length }} mm){% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Descripción -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h3 class="font-weight-bold mb-3" style="border-bottom:1px solid #e0e0e0;">Descripción</h3>
+                                    <p>{{ single_product.description|linebreaksbr }}</p>
+                                </div>
                             </div>
                             <!-- ============================ COMPONENT 2 DESCRIPTION END .// ================================= -->
+
+                            <!-- FAQs -->
+                            {% if product_faqs %}
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h3 class="font-weight-bold mb-3">Preguntas Frecuentes sobre este producto</h3>
+                                    <div class="accordion" id="productFaqAccordion">
+                                        {% for faq in product_faqs %}
+                                        <div class="card">
+                                            <div class="card-header bg-white" id="heading{{ faq.id }}">
+                                                <h2 class="mb-0">
+                                                    <button class="btn btn-link text-dark text-decoration-none w-100 text-left d-flex justify-content-between align-items-center" 
+                                                            type="button" 
+                                                            data-toggle="collapse" 
+                                                            data-target="#collapse{{ faq.id }}">
+                                                        {{ faq.question }}
+                                                        <i class="fa fa-chevron-down"></i>
+                                                    </button>
+                                                </h2>
+                                            </div>
+                                            <div id="collapse{{ faq.id }}" 
+                                                class="collapse {% if forloop.first %}show{% endif %}" 
+                                                data-parent="#productFaqAccordion">
+                                                <div class="card-body">
+                                                    {{ faq.answer|linebreaks }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            <!-- FAQs END -->
+
                             <div class="row"><!-- ============================ PRODUCT REVIEW ================================= -->
                                 <div class="col-md-12">
                                     <form action="{% url 'submit_review' single_product.id %}" method="post">

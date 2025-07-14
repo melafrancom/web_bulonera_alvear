@@ -13,7 +13,7 @@ from xml.dom.minidom import parseString
 #from django.conf import settings
 
 from bulonera.settings import SITE_URL, CURRENCY
-from .models import Product, ReviewRating, ProductGallery, ProductSearch, CarouselImage
+from .models import Product, ReviewRating, ProductGallery, ProductSearch, CarouselImage, FAQCategory, FAQ
 from account.models import Account
 from category.models import Category, SubCategory
 from cart.models import CartItem, Cart
@@ -240,6 +240,12 @@ def product_detail(request, category_slug, product_slug):
         from django.conf import settings
         currency = getattr(settings, 'CURRENCY', 'ARS')
 
+        # Obtener FAQs de todas las subcategorías del producto
+        product_faqs = FAQ.objects.filter(
+            subcategory__in=single_product.subcategories.all(),
+            is_active=True
+        ).select_related('category').distinct()
+        
         context = {
             'single_product': single_product,
             'in_cart': in_cart,
@@ -252,6 +258,7 @@ def product_detail(request, category_slug, product_slug):
             'dimensions': dimensions,
             'dimension_variants_json': dimension_variants_json,
             'sale_products': sale_products,
+            'product_faqs': product_faqs,
         }
 
         return render(request, 'store/product_detail.html', context)
@@ -264,6 +271,7 @@ def product_detail(request, category_slug, product_slug):
             {'error_message': 'Ha ocurrido un error al cargar el producto'},
             status=500
         )
+
 def search(request):
     keyword = request.GET['keyword']
     if keyword:
@@ -365,6 +373,20 @@ def offers(request):
     }
 
     return render(request, 'store/store.html', context)
+
+def faq(request):
+    # FAQ general (aquellos que no están asociados a ninguna subcategoría)
+    faq_categories = FAQCategory.objects.prefetch_related('faqs').filter(
+        faqs__is_active=True, 
+        faqs__subcategory__isnull=True
+    ).distinct()
+
+    context = {
+        'faq_categories': faq_categories,
+        'meta_title': 'Preguntas Frecuentes | Bulonera Alvear',
+        'meta_description': 'Preguntas frecuentes sobre envíos, pagos, productos y más en Bulonera Alvear'
+    }
+    return render(request, 'store/faq.html', context)
 
 ####### Vistas para META de Facebook y Google Merchant #######
 

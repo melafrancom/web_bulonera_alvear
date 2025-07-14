@@ -18,7 +18,7 @@ from pathlib import Path
 from django.conf import settings
 
 # local:
-from .models import Product, Variation, ReviewRating, ProductGallery, CarouselImage, ProductSearch
+from .models import Product, Variation, ReviewRating, ProductGallery, CarouselImage, ProductSearch, FAQCategory, FAQ
 from category.models import Category, SubCategory
 from .forms import ProductImportForm
 from .utils import ImageProcessor
@@ -189,7 +189,7 @@ class ProductAdmin(admin.ModelAdmin):
         failed_count = 0
         image_errors = []
         validation_errors = []
-        
+        processed_subcategories = set()  # Para trackear subcategorías ya procesadas
         try:
             for item in products_data:
                 try:
@@ -289,6 +289,24 @@ class ProductAdmin(admin.ModelAdmin):
                     if 'condition' in item and item['condition'] and not pd.isna(item['condition']):
                         product.condition = str(item['condition'])
                     
+                    #Especificaciones adicionales (opcionales)
+                    if 'norm' in item and item['norm'] and not pd.isna(item['norm']):
+                        product.norm = str(item['norm'])
+                    if 'grade' in item and item['grade'] and not pd.isna(item['grade']):
+                        product.grade = str(item['grade'])
+                    if 'material' in item and item['material'] and not pd.isna(item['material']):
+                        product.material = str(item['material'])
+                    if 'colour' in item and item['colour'] and not pd.isna(item['colour']):
+                        product.colour = str(item['colour'])
+                    if 'type' in item and item['type'] and not pd.isna(item['type']):
+                        product.type = str(item['type'])
+                    if 'form' in item and item['form'] and not pd.isna(item['form']):
+                        product.form = str(item['form'])
+                    if 'thread_formats' in item and item['thread_formats'] and not pd.isna(item['thread_formats']):
+                        product.thread_formats = str(item['thread_formats'])
+                    if 'origin' in item and item['origin'] and not pd.isna(item['origin']):
+                        product.origin = str(item['origin'])
+                    
                     # Manejar imagen principal - solo si se proporciona
                     if 'images' in item and item['images'] and not pd.isna(item['images']):
                         image_path = str(item['images']).strip()
@@ -365,7 +383,35 @@ class ProductAdmin(admin.ModelAdmin):
                                         category=product.category  # Usar category en lugar de parent
                                     )
                                 product.subcategories.add(subcat)
-                    
+                                # Procesar FAQs solo si esta subcategoría no ha sido procesada
+                                if subcat.id not in processed_subcategories and 'faq' in item and item['faq'] and not pd.isna(item['faq']):
+                                    # Verificar si ya existen FAQs para esta subcategoría
+                                    if not FAQ.objects.filter(subcategory=subcat).exists():
+                                        faq_category, _ = FAQCategory.objects.get_or_create(
+                                            name='Preguntas específicas de productos',
+                                            defaults={'order': 999}
+                                        )
+
+                                        # Procesar FAQs
+                                        faq_text = str(item['faq'])
+                                        import re
+                                        faq_pairs = re.findall(r'"([^"]+)"\s*([^,]+)(?:,|$)', faq_text)
+
+                                        for order, (question, answer) in enumerate(faq_pairs):
+                                            question = question.strip('¿ ?')
+                                            answer = answer.strip()
+
+                                            FAQ.objects.create(
+                                                category=faq_category,
+                                                subcategory=subcat,
+                                                question=f"¿{question}?",
+                                                answer=answer,
+                                                order=order,
+                                                is_active=True
+                                            )
+
+                                    processed_subcategories.add(subcat.id)
+
                     success_count += 1
                     
                 except Exception as e:
@@ -493,3 +539,32 @@ class ProductSearchAdmin(admin.ModelAdmin):
     readonly_fields = ('product', 'user', 'session_key', 'search_count', 'created_at', 'updated_at')
 
 admin.site.register(ProductSearch, ProductSearchAdmin)
+
+
+class FAQInline(admin.TabularInline):
+    model = FAQ
+    extra = 1
+    fields = ['question', 'answer', 'subcategory', 'order', 'is_active']
+    raw_id_fields = ['subcategory']  # Añade un selector de búsqueda para subcategorías
+
+@admin.register(FAQCategory)
+class FAQCategoryAdmin(admin.ModelAdmin):
+    list_display = ['name', 'order']
+    inlines = [FAQInline]
+    search_fields = ['name']
+    
+@admin.register(FAQ)
+class FAQAdmin(admin.ModelAdmin):
+    list_display = ['question', 'category', 'subcategory', 'is_active', 'order']
+    list_filter = ['category', 'is_active', 'subcategory__category']
+    search_fields = ['question', 'answer', 'subcategory__subcategory_name']
+    raw_id_fields = ['subcategory']
+    list_editable = ['is_active', 'order']
+    autocomplete_fields = ['subcategory']
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'category', 
+            'subcategory', 
+            'subcategory__category'
+        )

@@ -49,6 +49,17 @@ class Product(models.Model):
     meta_title = models.CharField("Meta título", max_length=70, blank=True, null=True)
     meta_description = models.TextField("Meta descripción", max_length=160, blank=True, null=True)
     meta_keywords = models.CharField("Palabras clave (separadas por comas)", max_length=255, blank=True, null=True)
+    
+    #Especificaciones del producto (opcional)
+    norm = models.CharField("Norma", max_length=100, blank=True, null=True)
+    grade = models.CharField("Grado/Dureza", max_length=100, blank=True, null=True)
+    material = models.CharField("Material", max_length=100, blank=True, null=True)
+    colour = models.CharField("Color", max_length=100, blank=True, null=True)
+    type = models.CharField("Tipo", max_length=100, blank=True, null=True)
+    form = models.CharField("Forma", max_length=100, blank=True, null=True)
+    thread_formats = models.CharField("Formatos de rosca", max_length=100, blank=True, null=True)
+    origin = models.CharField("Origen", max_length=100, blank=True, null=True)
+    
     def save(self, *args, **kwargs):
         # Auto-generar nombre completo y slug
         if self.diameter and self.length:
@@ -70,7 +81,10 @@ class Product(models.Model):
 
         if not self.meta_description and hasattr(self, 'description'):
             self.meta_description = Truncator(self.description).chars(150)
-            
+        
+        if not self.meta_keywords and self.name:
+            self.meta_keywords = ', '.join(self.name.lower().split())
+
         # Guardar primero para tener el ID si es nuevo
         super().save(*args, **kwargs)
         
@@ -84,7 +98,7 @@ class Product(models.Model):
     
     def get_absolute_url(self):
     #URL completa para META PIXEL y Google Merchant
-        return f"{SITE_URL}{self.get_url()}"
+        return self.get_url()
 
     def __str__(self):
         return self.name
@@ -112,7 +126,7 @@ class Product(models.Model):
             'availability': 'in stock' if self.is_available and self.stock > 0 else 'out of stock',
             'condition': self.condition,
             'price': f"{self.price:.2f}",
-            'link': self.get_absolute_url(),
+            'link': f"{SITE_URL}{self.get_absolute_url()}",
             'image_link': f"{SITE_URL}{self.images.url}" if self.images else "",
             'brand': self.brand if self.brand else "Bulonera Alvear",
         }
@@ -122,7 +136,7 @@ class Product(models.Model):
         return {
             'title': self.name,
             'description': self.description,
-            'link': self.get_absolute_url(),
+            'link': f"{SITE_URL}{self.get_absolute_url()}",
             'image_link': f"{SITE_URL}{self.images.url}" if self.images else "",
             'availability': 'in stock' if self.is_available and self.stock > 0 else 'out of stock',
             'price': f"{self.price:.2f} {CURRENCY}",
@@ -318,3 +332,39 @@ class ProductSearch(models.Model):
     
     def __str__(self):
         return f"{self.product.name} - {self.search_count} búsquedas"
+
+#NO HACE A LAS FUNCIONALIDADES PRINCIPALES DE LA PÁGINA:
+#Creamos un modelo para FAQ (Preguntas Frecuentes)
+
+class FAQCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    order = models.IntegerField(default=0, help_text="Orden de aparición en la lista")
+    
+    class Meta:
+        ordering = ['order']
+        verbose_name_plural = "FAQ Categories"
+    
+    def __str__(self):
+        return self.name
+    
+class FAQ(models.Model):
+    category = models.ForeignKey(FAQCategory, on_delete=models.CASCADE, related_name='faqs')
+    question = models.CharField(max_length=255)
+    answer = models.TextField()
+    subcategory = models.ForeignKey(
+        'category.SubCategory', 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True, 
+        related_name='faqs'
+    )
+    order = models.IntegerField(default=0, help_text="Orden de aparición en la categoría")
+    is_active = models.BooleanField(default=True, help_text="¿Está activa la pregunta frecuente?")
+    
+    class Meta:
+        ordering = [ 'order']
+        verbose_name = "FAQ"
+        verbose_name_plural = "FAQs"
+        
+    def __str__(self):
+        return self.question

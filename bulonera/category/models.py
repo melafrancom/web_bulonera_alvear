@@ -49,6 +49,10 @@ class SubCategory(models.Model):
         verbose_name = 'Sub Category'
         verbose_name_plural = 'Sub Categories'
     
+    def get_faqs(self):
+        """Obtener todas las FAQs activas de esta subcategoría"""
+        return self.faqs.filter(is_active=True)
+
     def get_url(self):
         return reverse('products_by_subcategory', args=[self.category.slug, self.slug])
     

@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}{{ meta_title }}{% endblock %}
+{% block meta_description %}{{ meta_description }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-transparent px-0">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Preguntas Frecuentes</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">Preguntas Frecuentes (FAQ)</h1>
+    
+    <!-- Índice rápido -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Categorías:</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for category in faq_categories %}
+                        <a href="#category-{{ category.id }}" class="btn btn-outline-primary m-1">{{ category.name }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQs por categoría -->
+    {% for category in faq_categories %}
+    <div class="mb-5" id="category-{{ category.id }}">
+        <h2 class="h3 mb-4">{{ category.name }}</h2>
+        <div class="accordion" id="accordion{{ category.id }}">
+            {% for faq in category.faqs.all %}
+            {% if faq.is_active %}
+            <div class="card">
+                <div class="card-header bg-white" id="heading{{ faq.id }}">
+                    <h3 class="mb-0">
+                        <button class="btn btn-link text-dark text-decoration-none w-100 text-left d-flex justify-content-between align-items-center" 
+                                type="button" 
+                                data-toggle="collapse" 
+                                data-target="#collapse{{ faq.id }}">
+                            {{ faq.question }}
+                            <i class="fa fa-chevron-down"></i>
+                        </button>
+                    </h3>
+                </div>
+                <div id="collapse{{ faq.id }}" 
+                        class="collapse {% if forloop.first %}show{% endif %}" 
+                        data-parent="#accordion{{ category.id }}">
+                    <div class="card-body">
+                        {{ faq.answer|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Sección de ayuda adicional -->
+    <div class="card bg-light mt-5">
+        <div class="card-body text-center">
+            <h4>¿No encontraste lo que buscabas?</h4>
+            <p>Contactanos directamente y te ayudaremos con tus consultas.</p>
+            <a href="{% url 'contact' %}" class="btn btn-primary">Contactar</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+    {% for category in faq_categories %}
+        {% for faq in category.faqs.all %}
+        {% if faq.is_active %}
+        {
+            "@type": "Question",
+            "name": "{{ faq.question }}",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{ faq.answer|linebreaks }}"
+            }
+        }{% if not forloop.last %},{% endif %}
+        {% endif %}
+        {% endfor %}
+        {% if not forloop.last %},{% endif %}
+    {% endfor %}
+    ]
+}
+</script>
+{% endblock %}

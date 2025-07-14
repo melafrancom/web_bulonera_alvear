@@ -1214,6 +1214,32 @@ p:last-child {
 .social_github {
   color: #000;
 }
+
+/* ############ FAQ section ############ */
+.accordion .card-header {
+    border-bottom: none;
+    padding: 0;
+}
+
+.accordion .btn-link {
+    padding: 1rem 1.25rem;
+    font-weight: 500;
+}
+
+.accordion .btn-link:hover,
+.accordion .btn-link:focus {
+    text-decoration: none;
+    box-shadow: none;
+}
+
+.accordion .fa-chevron-down {
+    transition: transform 0.2s;
+}
+
+.accordion .collapsed .fa-chevron-down {
+    transform: rotate(-90deg);
+}
+
 /* ================== COMPONENTS =================== */
 /* ================ OWL SLIDER BANNER ================ */
 .slider-banner-owl .owl-nav .owl-prev, .slider-banner-owl .owl-nav .owl-next {

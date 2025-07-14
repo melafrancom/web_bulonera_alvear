@@ -106,6 +106,14 @@ def returnPolicy(request):
     template_name = 'others/return_policy.html'
     return render(request, template_name)
 
+def termsAndConditions(request):
+    template_name = 'others/terms_and_conditions.html'
+    return render(request, template_name)
+
+def privacyAndwarranty(request):
+    template_name = 'others/privacy_and_warranty.html'
+    return render(request, template_name)
+
 #-------------------- OTRAS VISTAS que no hacen a la funcionalidad. NO NECESARIOS. ------------------------
 def location(request):
     template_name = 'others/location.html'
