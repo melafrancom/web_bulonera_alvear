@@ -164,3 +164,8 @@ cython_debug/
 
 # Carpetas ignoradas manualmente:
 # ejemplo:    src/HECHOS_CON_ALMA/settings/local.py
+
+/migrations
+migrations/
+.migrations
+Guias.txt
