@@ -1,0 +1,19 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block content %}
+<div>
+    <h1>Importar Productos</h1>
+    <p>Sube un archivo Excel (.xlsx) o CSV con datos de productos.</p>
+    <p>Campos requeridos: 'code' (código único de producto)</p>
+    <p>Campos opcionales: 'name', 'description', 'images', 'price', 'stock', 'category', 'subcategories', 'brand', 'condition'</p>
+    
+    <form action="." method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="submit-row">
+            <input type="submit" value="Importar Productos" class="default" name="_import">
+        </div>
+    </form>
+</div>
+{% endblock %}

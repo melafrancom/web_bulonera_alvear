@@ -1,0 +1,120 @@
+{%load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+        <title>{% block title %}Bulonera Alvear - Calidad en tornillos y herramientas!{% endblock %}</title>
+        <meta name="description" content="{% block meta_description %}Productos destacados en ferretería, tornillería y más.{% endblock %}">
+        
+        <link rel="icon" type="image/png" href="/static/images/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg" />
+        <link rel="shortcut icon" href="/static/images/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/static/images/apple-touch-icon.png" />
+        <meta name="apple-mobile-web-app-title" content="Bulonera Alvear" />
+        <link rel="manifest" href="/static/images/site.webmanifest" />
+                <!-- META facebook -->
+        <meta name="facebook-domain-verification" content="ag4tz99f8ib1e49vtfggpaohvon3v7" />
+
+        <!-- jQuery -->
+        <script src="{% static 'js/jquery-2.0.0.min.js' %}" type="text/javascript"></script>
+
+        <!-- Bootstrap4 files-->
+        <script src="{% static 'js/bootstrap.bundle.min.js' %}" type="text/javascript"></script>
+        <link href="{% static 'css/bootstrap.css' %}" rel="stylesheet" type="text/css"/>
+
+        <!-- Font awesome 5 -->
+        <link href="{% static 'fonts/fontawesome/css/all.min.css' %}" type="text/css" rel="stylesheet">
+
+        <!-- custom style -->
+        <link href="{% static 'css/ui.css' %}" rel="stylesheet" type="text/css"/>
+        <link href="{% static 'css/responsive.css' %}" rel="stylesheet" />
+        <link href="{% static 'css/custom.css' %}" rel="stylesheet" type="text/css"/>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+	<!-- Etiquetas OpenGraph para Meta Pixel y catálogo -->
+	{% block meta %}{% endblock %}
+
+        <!-- custom javascript -->
+        <script src="{% static 'js/script.js' %}" type="text/javascript"></script>
+
+        <script type="text/javascript">
+        $(document).ready(function() {
+            setTimeout(function() {
+            $('#message').fadeOut('slow');
+            }, 4000);
+        });
+        </script>
+        
+        <!-- META PIXEL Base Code -->
+        {% if META_PIXEL_ENABLED %}
+        <script>
+            !function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window, document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+            fbq('init', '{{ META_PIXEL_ID }}');
+            fbq('track', 'PageView');
+        </script>
+        <noscript>
+            <img height="1" width="1" style="display:none"
+            src="https://www.facebook.com/tr?id={{ META_PIXEL_ID }}&ev=PageView&noscript=1"/>
+        </noscript>
+        {% endif %}
+        <!-- End META PIXEL Base Code -->
+	
+	<!-- Google tag (gtag.js) -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-23Z5V711SL"></script>
+	<script>
+  	    window.dataLayer = window.dataLayer || [];
+  	    function gtag(){dataLayer.push(arguments);}
+ 	    gtag('js', new Date());
+
+  	   gtag('config', 'G-23Z5V711SL');
+	</script>
+
+	<!-- Google Tag Manager -->
+	<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+	   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+	   j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+	   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+	   })(window,document,'script','dataLayer','GTM-PV9JS873');
+	</script>
+	<!-- End Google Tag Manager -->            
+            {% block head_extra %}{% endblock %}
+            {% block extra_js %}{% endblock %}
+
+	<script type="text/javascript">
+	    (function(c,l,a,r,i,t,y){
+	        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+	        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+	        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+	    })(window, document, "clarity", "script", "sn4w0req7v");
+	</script>
+    </head>
+    
+    <body>
+	<!-- Google Tag Manager (noscript) -->
+	<noscript>
+		<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PV9JS873"
+		height="0" width="0" style="display:none;visibility:hidden"></iframe>
+	</noscript>
+	<!-- End Google Tag Manager (noscript) -->
+        <!-- <header>  Se carga desde el navbar.html </header> -->
+        {% include 'includes/navbar.html' %}
+
+        <!-- <main> Se carga desde el home.html </main> -->
+        <main class="mainBase">
+            {% block content %}
+            
+            {% endblock%}
+        </main>
+        <!-- <footer> Se carga desde el footer.html </footer> -->
+        {% include 'includes/footer.html' %}
+
+    </body>
+</html>

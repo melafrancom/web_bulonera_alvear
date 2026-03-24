@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="text-center" style="margin-top: 50px;">
+    <centre><i class="fas fa-check-circle" style="font-size: 72px;margin-bottom: 20px;color: #1c00a1;">
+        <h2 class="text-center">La orden se realizó con exito!</h2>
+    </i></centre>
+
+	<br>
+	<div class="text-center">
+		<a href="{% url 'store' %}" class="btn btn-sm btn-primary" style="max-height: 75px;">Seguir comprando</a>
+	</div>
+</div>
+
+<div class="container" style="margin: 0 auto;width: 50%;padding: 50px;background: #a4c3f1;margin-top: 50px;margin-bottom: 50px;">
+    <div class="row invoice row-printable">
+        <div class="col-md-12">
+            <!-- col-lg-12 start here -->
+            <div class="panel panel-default plain" id="dash_0">
+                <!-- Start .panel -->
+                <div class="panel-body p30">
+                    <div class="row">
+                        <!-- Start .row -->
+                        <div class="col-lg-6">
+                            <!-- col-lg-6 start here -->
+                            <div class="invoice-logo"><img src="{% static './images/logo02.png' %}" alt="Invoice logo" style="max-height: 75px;"></div>
+                        </div>
+                        <!-- col-lg-6 end here -->
+                        <div class="col-lg-6">
+                            <!-- col-lg-6 start here -->
+                            <div class="invoice-from">
+                                <ul class="list-unstyled text-right">
+                                    <li><strong>Factura a nombre de:</strong></li>
+                                    <li>{{ order.full_name }}</li>
+                                    <li>{{ order.full_address }}</li>
+                                    <li>{{ order.city }}, {{ order.state }}</li>
+                                    <li>{{ order.country }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <!-- col-lg-6 end here -->
+                        <div class="col-lg-12">
+                            <!-- col-lg-12 start here -->
+                            <div class="invoice-details mt25">
+                                <div class="well">
+                                    <ul class="list-unstyled mb0">
+                                        <li><strong>Orden:</strong> #{{ order_number }}</li>
+                                        <li><strong>Transacción:</strong> {{ transID }} </li>
+                                        <li><strong>Fecha de orden:</strong> {{ order.created_at}} </li>
+                                        <li><strong>Estado: </strong> {% if order.is_ordered %}{{ order.status }}{% else %}Nuevo{% endif %}</li>
+                                        <li><strong>Estado del Pago:</strong> {{ payment.status }} </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="invoice-items">
+                                <div class="table-responsive" style="overflow: hidden; outline: none;" tabindex="0">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th class="per70 text-center">Descripción</th>
+                                                <th class="per5 text-center">Cantidad</th>
+                                                <th class="per25 text-center">Precio</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+
+                                            {% for item in ordered_products %}
+                                            <tr>
+                                                <td>
+                                                    {{ item.product.name }}
+                                                    <p class="text-muted small">
+                                                        {% if item.variation.all %}
+                                                        {% for i in item.variation.all %}
+                                                            {{ i.variation_category | capfirst }} : {{ i.variation_value | capfirst }} <br>
+                                                        {% endfor %}
+                                                        {% endif %}
+                                                    </p>
+                                                </td>
+                                                <td class="text-center">{{ item.quantity }}</td>
+                                                <td class="text-center">{{ item.product_price|floatformat:2 }} $</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        
+                                        <tfoot>
+                                            <!--
+                                            <tr>
+                                                <th colspan="2" class="text-right">Subtotal:</th>
+                                                <th class="text-center">${{ subtotal }} AR$</th>
+                                            </tr>
+                                            <tr>
+                                                <th colspan="2" class="text-right">Impuestos:</th>
+                                                <th class="text-center">${{ order.tax }} USD</th>
+                                            </tr>
+                                            -->
+                                            <tr>
+                                                <th colspan="2" class="text-right">Total:</th>
+                                                <th class="text-center">${{ order.order_total|floatformat:2 }} $</th>
+                                            </tr>
+                                        </tfoot>
+                                        
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="invoice-footer mt25">
+                                <p class="text-center">Gracias por comprar con nosotros</p>
+                            </div>
+                        </div>
+                        <!-- col-lg-12 end here -->
+                    </div>
+                    <!-- End .row -->
+                </div>
+            </div>
+            <!-- End .panel -->
+        </div>
+        <!-- col-lg-12 end here -->
+    </div>
+    </div>
+
+{% endblock %}

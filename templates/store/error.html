@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h1>¡Ups! Algo salió mal</h1>
+            <p>{{ error_message }}</p>
+            <div class="my-4">
+                <a href="{% url 'store' %}" class="btn btn-primary">Volver a la tienda</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

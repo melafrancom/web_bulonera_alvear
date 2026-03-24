@@ -1,0 +1,36 @@
+# Python
+*.pyc
+*.pyo
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Django
+*.log
+local_settings.py
+staticfiles/
+media/
+bulonera.sock
+
+# Entorno — NUNCA al repo
+.env
+.env.*
+!.env.example
+
+# Venv (vive fuera del proyecto, pero por si acaso)
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# uWSGI
+*.pid

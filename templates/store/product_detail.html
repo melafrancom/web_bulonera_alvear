@@ -1,0 +1,701 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% load store_filters %}
+
+{% block title %}{{ single_product.name }} | Bulonera Alvear{% endblock %}
+
+{% block meta %}
+    <meta name="description" content="{{ product.description|truncatewords:150 }}">
+    <meta name="keywords" content="{{ single_product.meta_keywords }}">
+    <link rel="canonical" href="{{ product.get_absolute_url }}">
+
+    <!-- Etiquetas OpenGraph para Meta Pixel y catálogo -->
+    <meta property="og:title" content="{{ product.name }}">
+    <meta property="og:description" content="{{ product.description|truncatewords:25 }}">
+    <meta property="og:url" content="{{ product.get_absolute_url }}">
+    <meta property="og:image" content="{{ product.images.url }}">
+    <meta property="product:brand" content="{{ product.brand }}">
+    <meta property="product:availability" content="{% if product.is_available and product.stock > 0 %}in stock{% else %}out of stock{% endif %}">
+    <meta property="product:condition" content="{{ product.condition }}">
+    <meta property="product:price:amount" content="{{ product.price|floatformat:2 }}">
+    <meta property="product:price:currency" content="{{ CURRENCY }}">
+    <meta property="product:retailer_item_id" content="{{ product.code }}">
+{% endblock %}
+
+
+<html lang="en">
+        {% block head_extra %}
+            <!-- META PIXEL código para ViewContent para eventos -->
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof fbq !== 'undefined') {
+                        fbq('track', 'ViewContent', {
+                            content_type: 'product',
+                            content_ids: ['{{ meta_pixel_data.id }}'],
+                            content_name: '{{ meta_pixel_data.title }}',
+                            content_category: '{{ single_product.category.name }}',
+                            value: '{{ price|floatformat:2 }}',
+                            currency: '{{ CURRENCY }}'
+                        });
+                    }
+                });
+
+                // Para el evento AddToCart de meta
+                document.addEventListener('DOMContentLoaded', function() {
+                    const addToCartButtons = document.querySelectorAll('.add-to-cart');
+                    addToCartButtons.forEach(function(button) {
+                        button.addEventListener('click', function() {
+                    if (typeof fbq !== 'undefined') {
+                                fbq('track', 'AddToCart', {
+                            content_type: 'product',
+                            content_ids: ['{{ meta_pixel_data.id }}'],
+                            content_name: '{{ meta_pixel_data.title }}',
+                            content_category: '{{ single_product.category.name }}',
+                            value: '{{ price|floatformat:2 }}',
+                            currency: '{{ CURRENCY }}'
+                        });
+                    }
+                        });
+                    });
+                });
+            </script>
+        {% endblock %}
+        {% block content %}
+            <section class="section-content padding-y bg">
+                <div class="container">
+                    <div class="row">
+                        <!-- Columna para promociones - Nuevo contenedor a la izquierda -->
+                        <aside class="col-md-2">
+                            <div class="card mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">Promociones</h6>
+                                </div>
+                                <div class="card-body p-2">
+                                    {% for product in sale_products %}
+                                    <div class="card border-0 mb-2">
+                                        <a href="{{ product.get_url }}" class="text-decoration-none">
+                                            <img src="{{ product.images.url }}" class="card-img-top" alt="{{ product.name }}" style="max-height: 120px; object-fit: contain;">
+                                            <div class="card-body p-1">
+                                                <h6 class="card-title text-truncate small mb-0">{{ product.name }}</h6>
+                                                <p class="card-text mb-0 small">
+                                                    <span class="text-danger font-weight-bold">${{ product.sale_price|floatformat:2 }}</span>
+                                                    <small class="text-muted"><del>${{ product.price|floatformat:2 }}</del></small>
+                                                </p>
+                                                <span class="badge badge-danger small">-{{ product.discount_percentage }}%</span>
+                                            </div>
+                                        </a>
+                                    </div>
+                                    {% empty %}
+                                    <p class="text-center small mb-0">No hay ofertas disponibles</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </aside>
+                        <!-- Contenedor principal del producto - Ahora con 10 columnas -->
+                        <div class="col-md-10">
+                            <!-- ============================ COMPONENT 1: PRODUCT IMG ================================= -->
+                            <div class="card">
+                                <div class="row no-gutters">
+                                    <aside class="col-md-6">
+                                        <!-- Bloque de galería de imágenes para producto -->
+                                        <article class="gallery-wrap">
+                                            <div class="img-big-wrap mainImage">
+                                                <picture id="main-product-picture">
+                                                    <source id="main-product-source" 
+                                                        srcset="{% get_media_prefix %}photos/products/webp/lg/{{ single_product.images.name|basename }}.webp"
+                                                        type="image/webp">
+                                                    <img id="main-product-img" src="{{ single_product.images.url }}" 
+                                                        alt="{{ single_product.image_alt|default:single_product.name }}"
+                                                        loading="lazy"
+                                                        width="600"
+                                                        height="600">
+                                                </picture>
+                                            </div>
+                                            <div class="gallery-nav mt-2">
+                                                <button type="button" class="gallery-prev btn btn-light btn-sm">&lt;</button>
+                                                <ul class="thumb d-inline-block align-middle" style="vertical-align: middle; list-style: none; padding: 0; margin: 0;">
+                                                    <!-- Imagen principal -->
+                                                    <li style="display: inline-block;">
+                                                        <a href="#" class="gallery-thumb"
+                                                        data-lg-webp="{% get_media_prefix %}photos/products/webp/lg/{{ single_product.images.name|basename }}.webp"
+                                                        data-lg-img="{{ single_product.images.url }}">
+                                                            <picture>
+                                                                <source 
+                                                                    srcset="{% get_media_prefix %}photos/products/webp/thumb/{{ single_product.images.name|basename }}.webp"
+                                                                    type="image/webp">
+                                                                <img src="{{ single_product.images.url }}" 
+                                                                    alt="{{ single_product.image_alt|default:single_product.name }}"
+                                                                    loading="lazy"
+                                                                    width="100"
+                                                                    height="100">
+                                                            </picture>
+                                                        </a>
+                                                    </li>
+                                                    <!-- Imágenes de galería -->
+                                                    {% for i in product_gallery %}
+                                                    <li style="display: inline-block;">
+                                                        <a href="#" class="gallery-thumb"
+                                                        data-lg-webp="{{ i.get_image_urls.webp.lg }}"
+                                                        data-lg-img="{{ i.get_image_urls.thumbnail }}">
+                                                            <picture>
+                                                                <source srcset="{{ i.get_image_urls.webp.thumb }}" type="image/webp">
+                                                                <img src="{{ i.get_image_urls.thumbnail }}" 
+                                                                    alt="{{ i.alt|default:i.image.name }}"
+                                                                    loading="lazy"
+                                                                    width="100"
+                                                                    height="100">
+                                                            </picture>
+                                                        </a>
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                                <button type="button" class="gallery-next btn btn-light btn-sm">&gt;</button>
+                                            </div>
+                                        </article>
+                                        <!-- Fin del bloque de galería de imágenes -->
+                                    </aside>
+                                    <main class="col-md-6 border-left">
+                                        <form action="{% url 'add_cart' single_product.id %}" method="POST">
+                                            {% csrf_token %}
+                                            <article class="content-body"><!-- product-info-aside .// -->
+                                                <h1 class="title">{{ single_product.name }}</h1>
+                                                <h7 class="title">{{ single_product.code }}</h7>
+                                                <h6 class="title">
+                                                    {{ single_product.category }}{% if single_product.subcategories.all %}
+                                                    /
+                                                        {% for subcat in single_product.subcategories.all %}
+                                                            {{ subcat.subcategory_name }}{% if not forloop.last %}, {% endif %}
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                </h6>
+                                                <div class="rating-star">
+                                                    <span>
+                                                        <i class="fa fa-star{% if single_product.averageReview < 0.5 %}-o{% elif single_product.averageReview >= 0.5 and single_product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if single_product.averageReview < 1.5 %}-o{% elif single_product.averageReview >= 1.5 and single_product.averageReview < 2 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if single_product.averageReview < 2.5 %}-o{% elif single_product.averageReview >= 2.5 and single_product.averageReview < 3 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if single_product.averageReview < 3.5 %}-o{% elif single_product.averageReview >= 3.5 and single_product.averageReview < 4 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if single_product.averageReview < 4.5 %}-o{% elif single_product.averageReview >= 4.5 and single_product.averageReview < 5 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <span> ({{ single_product.countReview }} Comentarios realizados)</span>
+                                                    </span>
+                                                </div>
+                                                <br>
+                                                <div class="mb-3">
+                                                    {% if single_product.is_on_sale and single_product.sale_price %}
+                                                        <var class="price h4 text-success">$ {{ single_product.sale_price|floatformat:2 }}</var>
+                                                        <del class="price-old text-muted">$ {{ single_product.price|floatformat:2 }}</del>
+                                                        <span class="badge badge-danger">-{{ single_product.discount_percentage }}%</span>
+                                                    {% else %}
+                                                        <var class="price h4">$ {{ single_product.price|floatformat:2 }}</var>
+                                                    {% endif %}
+                                                </div>
+                                                <h4 class="title">{{ single_product.brand }}</h4>
+                                            {% if single_product.stock <= 0 %}
+                                                <h5>Lo lamentamos, este es un producto fuera de stock</h5>
+                                            {% else %}
+                                                <div class="form-group">
+                                                    <label for="qty">Cantidad:</label>
+                                                    <div class="input-group mb-3" style="width: 200px;">
+                                                        <div class="input-group-prepend">
+                                                            <button class="btn btn-outline-secondary decrease-qty" type="button">-</button>
+                                                        </div>
+                                                        <input type="number" name="quantity" id="qty" class="form-control text-center qty-input" value="1" min="1" max="{{ single_product.stock }}">
+                                                        <div class="input-group-append">
+                                                            <button class="btn btn-outline-secondary increase-qty" type="button">+</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button id="add_cart" type="submit" class="btn btn-primary btn-lg">
+                                                    <span class="text">Agregar al Carrito</span>
+                                                    <i class="fas fa-shopping-cart"></i>
+                                                </button>
+
+                                                {% if dimensions %}
+                                                <br>
+                                                <br>
+                                                <h4>Dimensiones disponibles:</h4>
+                                                <div class="dimension-selectors mt-3">
+                                                    <div class="row">
+                                                        {% if dimensions.diameters %}
+                                                        <div class="col-md-6">
+                                                            <div class="form-group">
+                                                                <label for="diameter">Diámetro:</label>
+                                                                <select class="form-control" id="diameter" name="diameter">
+                                                                    {% for diameter in dimensions.diameters %}
+                                                                    <option value="{{ diameter }}" {% if diameter == dimensions.current_diameter %}selected{% endif %}>
+                                                                        {{ diameter }}
+                                                                    </option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        {% endif %}
+
+                                                        {% if dimensions.lengths %}
+                                                        <div class="col-md-6">
+                                                            <div class="form-group">
+                                                                <label for="length">Largo:</label>
+                                                                <select class="form-control" id="length" name="length">
+                                                                    {% for length in dimensions.lengths %}
+                                                                    <option value="{{ length }}" {% if length == dimensions.current_length %}selected{% endif %}>
+                                                                        {{ length }}
+                                                                    </option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    <button type="button" class="btn btn-outline-primary btn-block mt-2" id="apply-dimensions">
+                                                        Aplicar Dimensiones
+                                                    </button>
+                                                </div>
+                                                {% endif %}
+                                            {% endif %}
+                                            </article> <!-- product-info-aside .// -->
+                                        </form>
+                                    </main> <!-- col.// -->
+                                </div> <!-- row.// -->
+                            </div> <!-- card.// -->
+                            <!-- ============================ COMPONENT 1 END .// ================================= -->
+                            <!-- ============================ COMPONENT 2 DESCRIPTION ================================= -->
+                            <br>
+                            <!-- Características Técnicas en dos columnas -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h3 class="font-weight-bold mb-3" style="border-bottom:1px solid #e0e0e0;">Características Técnicas</h3>
+                                    <div class="table-responsive">
+                                        <table class="table table-borderless mb-0" style="font-size:1.1rem;">
+                                            <tbody>
+                                                {% if single_product.norm or single_product.grade or single_product.material or single_product.colour or single_product.type or single_product.form or single_product.thread_formats or single_product.origin %}
+                                                <tr>
+                                                    <td class="font-weight-bold" style="width:40%;">Norma</td>
+                                                    <td>{{ single_product.norm }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Grado/Dureza</td>
+                                                    <td>{{ single_product.grade }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Material</td>
+                                                    <td>{{ single_product.material }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Color</td>
+                                                    <td>{{ single_product.colour }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Tipo</td>
+                                                    <td>{{ single_product.type }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Forma</td>
+                                                    <td>{{ single_product.form }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Formatos de rosca</td>
+                                                    <td>{{ single_product.thread_formats }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Origen</td>
+                                                    <td>{{ single_product.origin }}</td>
+                                                </tr>
+                                                {% endif %}
+                                                {% if single_product.diameter or single_product.length %}
+                                                <tr>
+                                                    <td class="font-weight-bold">Diámetro</td>
+                                                    <td>
+                                                        {% if single_product.diameter %}{{ single_product.diameter }}{% endif %}
+                                                        {% if single_product.metric_diameter %} ({{ single_product.metric_diameter }} mm){% endif %}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold">Longitud</td>
+                                                    <td>
+                                                        {% if single_product.length %}{{ single_product.length }}{% endif %}
+                                                        {% if single_product.metric_length %} ({{ single_product.metric_length }} mm){% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Descripción -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h3 class="font-weight-bold mb-3" style="border-bottom:1px solid #e0e0e0;">Descripción</h3>
+                                    <p>{{ single_product.description|linebreaksbr }}</p>
+                                </div>
+                            </div>
+                            <!-- ============================ COMPONENT 2 DESCRIPTION END .// ================================= -->
+
+                            <!-- FAQs -->
+                            {% if product_faqs %}
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h3 class="font-weight-bold mb-3">Preguntas Frecuentes sobre este producto</h3>
+                                    <div class="accordion" id="productFaqAccordion">
+                                        {% for faq in product_faqs %}
+                                        <div class="card">
+                                            <div class="card-header bg-white" id="heading{{ faq.id }}">
+                                                <h2 class="mb-0">
+                                                    <button class="btn btn-link text-dark text-decoration-none w-100 text-left d-flex justify-content-between align-items-center" 
+                                                            type="button" 
+                                                            data-toggle="collapse" 
+                                                            data-target="#collapse{{ faq.id }}">
+                                                        {{ faq.question }}
+                                                        <i class="fa fa-chevron-down"></i>
+                                                    </button>
+                                                </h2>
+                                            </div>
+                                            <div id="collapse{{ faq.id }}" 
+                                                class="collapse {% if forloop.first %}show{% endif %}" 
+                                                data-parent="#productFaqAccordion">
+                                                <div class="card-body">
+                                                    {{ faq.answer|linebreaks }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            <!-- FAQs END -->
+
+                            <div class="row"><!-- ============================ PRODUCT REVIEW ================================= -->
+                                <div class="col-md-12">
+                                    <form action="{% url 'submit_review' single_product.id %}" method="post">
+                                        {% csrf_token %}
+                                        <h5>Escribe tu reseña o comentario</h5>
+                                        <br>
+                                        <div class="">
+                                            <label for="">¿Cómo calificarias este producto?</label>
+                                            <br>
+                            
+                                            <div class="rate">
+                                                <input type="radio" name="rating" value="5" id="rating10"><label for="rating10" title="5"></label>
+                                                <input type="radio" name="rating" value="4.5" id="rating9"><label for="rating9" title="4.5" class="half"></label>
+                                                <input type="radio" name="rating" value="4" id="rating8"><label for="rating8" title="4"></label>
+                                                <input type="radio" name="rating" value="3.5" id="rating7"><label for="rating7" title="3.5" class="half"></label>
+                                                <input type="radio" name="rating" value="3" id="rating6"><label for="rating6" title="3"></label>
+                                                <input type="radio" name="rating" value="2.5" id="rating5"><label for="rating5" title="2.5" class="half"></label>
+                                                <input type="radio" name="rating" value="2" id="rating4"><label for="rating4" title="2"></label>
+                                                <input type="radio" name="rating" value="1.5" id="rating3"><label for="rating3" title="1.5" class="half"></label>
+                                                <input type="radio" name="rating" value="1" id="rating2"><label for="rating2" title="1"></label>
+                                                <input type="radio" name="rating" value="0.5" id="rating1"><label for="rating1" title="0.5" class="half"></label>
+                                            </div>
+                                            <br>
+                            
+                                            Titulo del comentario:
+                                            <input type="text" class="form-control" name="subject" value="">
+                                            <br>
+                            
+                                            Comentario:
+                                            <textarea name="review" rows="4" class="form-control" placeholder="Escribe aquí tu reseña"></textarea>
+                                            <br>
+                                            {% if user.is_authenticated %}
+                                
+                                                {% if orderproduct %}
+                                                    <input type="submit" name="" value="Enviar reseña" class="btn btn-primary">
+                                                {% else %}
+                                                    <p>Primero necesitas comprar el producto para escribir una reseña!</p>
+                                                {% endif %}
+                                
+                                            {% else %}
+                                                <p>Para enviar un comentario debes estar registrado <span><a href="{% url 'login' %}">Inicia Sesión</a></span></p>
+                                            {% endif %}
+                                        </div>
+                                        {% include 'includes/alerts.html' %}
+                                    </form>
+                                    <br>
+                                    <header class="section-heading">
+                                        <h3>Reseñas de compradores verificados</h3>
+                                        <div class="rating-star">
+                                            <span>
+                                                <i class="fa fa-star{% if single_product.averageReview < 0.5 %}-o{% elif single_product.averageReview >= 0.5 and single_product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                <i class="fa fa-star{% if single_product.averageReview < 1.5 %}-o{% elif single_product.averageReview >= 1.5 and single_product.averageReview < 2 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                <i class="fa fa-star{% if single_product.averageReview < 2.5 %}-o{% elif single_product.averageReview >= 2.5 and single_product.averageReview < 3 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                <i class="fa fa-star{% if single_product.averageReview < 3.5 %}-o{% elif single_product.averageReview >= 3.5 and single_product.averageReview < 4 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                <i class="fa fa-star{% if single_product.averageReview < 4.5 %}-o{% elif single_product.averageReview >= 4.5 and single_product.averageReview < 5 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                            </span>
+                                        </div>
+                                    </header>
+                        
+                                    {% for review in reviews %}
+                                    <article class="box mb-3">
+                                        <div class="icontext w-100">
+                                            <div class="text">
+                                                <span class="date text-muted float-md-right">{{ review.updated_at }}</span>
+                                                <h6 class="mb-1">{{ review.user.full_name }}</h6>
+                                                <div class="rating-star">
+                                                    <span>
+                                                        <i class="fa fa-star{% if review.rating == 0.5 %}-half-o{% elif review.rating < 1 %}-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if review.rating == 1.5 %}-half-o{% elif review.rating < 2 %}-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if review.rating == 2.5 %}-half-o{% elif review.rating < 3 %}-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if review.rating == 3.5 %}-half-o{% elif review.rating < 4 %}-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if review.rating == 4.5 %}-half-o{% elif review.rating < 5 %}-o {% endif %}" aria-hidden="true"></i>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div> <!-- icontext.// -->
+                                        <div class="mt-3">
+                                            <h6>{{ review.subject }}</h6>
+                                            <p>
+                                                {{ review.review }}
+                                            </p>
+                                        </div>
+                                    </article>
+                                    {% endfor %}
+                                </div> <!-- col.// -->
+                            </div> <!-- ============================ PRODUCT REVIEW END. // ================================= -->
+                        </div> <!-- col-md-10 -->
+                    </div> <!-- row principal -->
+                </div> <!-- container .//  -->
+            </section>
+            <!-- Carrito flotante -->
+            <div class="floating-cart">
+                <div class="cart-toggle">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="badge badge-pill badge-danger cart-count">0</span>
+                </div>
+                <div class="cart-content">
+                <div class="cart-header">
+                    <h5>Mi Carrito</h5>
+                    <button type="button" class="close cart-close">
+                    <span>&times;</span>
+                    </button>
+                </div>
+                <div class="cart-body">
+                    <div class="cart-items">
+                    <!-- Los items del carrito se cargarán aquí dinámicamente -->
+                    </div>
+                </div>
+                <div class="cart-footer">
+                    <div class="cart-total">Total: $<span id="cart-total-amount">0.00</span></div>
+                    <a href="{% url 'cart' %}" class="btn btn-primary btn-sm btn-block">Ver Carrito Completo</a>
+                </div>
+                </div>
+            </div>
+            <!-- JavaScript para manejar la cantidad de productos -->
+            <script>
+                $(document).ready(function() {
+                    // ===== CARRITO FLOTANTE =======
+                    // Cargar el carrito al inicio
+                    loadFloatingCart();
+                    
+                    // Mostrar/ocultar el carrito al hacer clic en el icono
+                    $('.cart-toggle').on('click', function() {
+                        $('.floating-cart').toggleClass('active');
+                    });
+                    
+                    // Cerrar el carrito
+                    $('.cart-close').on('click', function() {
+                        $('.floating-cart').removeClass('active');
+                    });
+                    
+                    // Función para cargar el contenido del carrito
+                    function loadFloatingCart() {
+                        $.ajax({
+                        url: '{% url "get_cart_data" %}',
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(data) {
+                            updateFloatingCart(data);
+                        },
+                        error: function(error) {
+                            console.log('Error al cargar el carrito:', error);
+                        }
+                        });
+                    }
+                    
+                    // Actualizar la vista del carrito flotante
+                    function updateFloatingCart(data) {
+                        $('.cart-count').text(data.cart_count);
+                        $('#cart-total-amount').text(data.cart_total.toFixed(2));
+                        
+                        let cartItemsHtml = '';
+                        
+                        if (data.cart_items.length === 0) {
+                        cartItemsHtml = '<div class="empty-cart-message">Tu carrito está vacío</div>';
+                        } else {
+                        data.cart_items.forEach(function(item) {
+                            let itemImage = item.image ? item.image : '\admin\img\placeholder.png';
+                            
+                            cartItemsHtml += `
+                            <div class="cart-item">
+                                <img src="${itemImage}" class="cart-item-image" alt="${item.name}">
+                                <div class="cart-item-details">
+                                <div class="cart-item-name">${item.name}</div>
+                                <div class="cart-item-price">
+                                    <span>${item.quantity} x $${(item.price / item.quantity).toFixed(2)}</span>
+                                    <span>$${item.price.toFixed(2)}</span>
+                                </div>
+                                </div>
+                            </div>
+                            `;
+                        });
+                        }
+                        $('.cart-items').html(cartItemsHtml);
+                    }
+                    // Actualizar el carrito después de agregar un producto mediante AJAX
+                    $(document).on('cart:updated', function() {
+                        loadFloatingCart();
+                    });
+                    
+                    // Modificar los enlaces de "Agregar al Carrito" para usar AJAX
+                    $(document).on('click', '.add-to-cart', function(e) {
+                        e.preventDefault();
+                        var $this = $(this);
+                        var qty = $this.closest('figure').find('.qty-input').val();
+                        var href = $this.attr('href');
+                        
+                        // Construir la URL completa
+                        if (href.indexOf('?') !== -1) {
+                        href = href + '&qty=' + qty;
+                        } else {
+                        href = href + '?qty=' + qty;
+                        }
+                        
+                        // Mostrar indicador de carga
+                        $this.html('<i class="fas fa-spinner fa-spin"></i> Agregando...');
+                        $this.prop('disabled', true);
+                        
+                        // Hacer la solicitud AJAX
+                        $.ajax({
+                        url: href,
+                        type: 'GET',
+                        headers: {'X-Requested-With': 'XMLHttpRequest'},
+                        success: function(response) {
+                            // Restaurar el botón
+                            $this.html('Agregar al Carrito');
+                            $this.prop('disabled', false);
+                            
+                            // Mostrar notificación
+                            $('<div class="alert alert-success add-cart-alert">Producto agregado al carrito</div>')
+                            .appendTo('body')
+                            .fadeIn('fast')
+                            .delay(2000)
+                            .fadeOut('fast', function() { $(this).remove(); });
+                            
+                            // Actualizar el carrito flotante
+                            loadFloatingCart();
+                            
+                            // Mostrar el carrito flotante
+                            $('.floating-cart').addClass('active');
+                            
+                            // Ocultar después de 5 segundos
+                            setTimeout(function() {
+                            $('.floating-cart').removeClass('active');
+                            }, 5000);
+                        },
+                        error: function(error) {
+                            // Restaurar el botón en caso de error
+                            $this.html('Agregar al Carrito');
+                            $this.prop('disabled', false);
+                            console.log('Error al agregar al carrito:', error);
+                        }
+                        });
+                    });
+                    // ============================================== ===== CARRITO FLOTANTE END =======
+
+                    // Manejar clic en botón de incremento
+                    $('.increase-qty').on('click', function() {
+                        var $input = $(this).closest('.input-group').find('.qty-input');
+                        var currentVal = parseInt($input.val());
+                        if (!isNaN(currentVal)) {
+                            $input.val(currentVal + 1);
+                        }
+                    });
+
+                    // Manejar clic en botón de decremento
+                    $('.decrease-qty').on('click', function() {
+                        var $input = $(this).closest('.input-group').find('.qty-input');
+                        var currentVal = parseInt($input.val());
+                        if (!isNaN(currentVal) && currentVal > 1) {
+                            $input.val(currentVal - 1);
+                        }
+                    });
+                });
+                // Imagenes de galería y botones de navegación
+                (function() {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Obtener los elementos del DOM
+                        var dimensionVariants = JSON.parse('{{ dimension_variants_json|safe }}');
+                        var applyButton = document.getElementById('apply-dimensions');
+                        var diameterSelect = document.getElementById('diameter');
+                        var lengthSelect = document.getElementById('length');
+                        // Verificar que todos los elementos necesarios existan
+                        if (applyButton && diameterSelect && lengthSelect) {
+                            applyButton.addEventListener('click', function() {
+                                var selectedDiameter = diameterSelect.value;
+                                var selectedLength = lengthSelect.value;
+                                
+                                // Buscar la variante que coincida con las dimensiones seleccionadas
+                                var variant = dimensionVariants.find(function(v) {
+                                    return v.diameter === selectedDiameter && v.length === selectedLength;
+                                });
+                                
+                                if (variant && variant.url) {
+                                    window.location.href = variant.url;
+                                } else {
+                                    alert('La combinación seleccionada no está disponible');
+                                }
+                            });
+                        }
+                    });
+                })();
+                document.addEventListener('DOMContentLoaded', function() {
+                    const thumbs = Array.from(document.querySelectorAll('.gallery-thumb'));
+                    let current = 0;
+
+                    function showImage(idx) {
+                        const thumb = thumbs[idx];
+                        if (!thumb) return;
+                        var webp = thumb.getAttribute('data-lg-webp');
+                        var img = thumb.getAttribute('data-lg-img');
+                        document.getElementById('main-product-source').setAttribute('srcset', webp);
+                        document.getElementById('main-product-img').setAttribute('src', img);
+                        current = idx;
+                        // Opcional: resaltar el thumbnail activo
+                        thumbs.forEach(t => t.classList.remove('active-thumb'));
+                        thumb.classList.add('active-thumb');
+                    }
+
+                    thumbs.forEach(function(thumb, idx) {
+                        thumb.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            showImage(idx);
+                        });
+                    });
+
+                    // Botones de navegación
+                    const prevBtn = document.querySelector('.gallery-prev');
+                    const nextBtn = document.querySelector('.gallery-next');
+
+                    if (prevBtn && nextBtn) {
+                        prevBtn.addEventListener('click', function() {
+                            showImage((current - 1 + thumbs.length) % thumbs.length);
+                        });
+                        nextBtn.addEventListener('click', function() {
+                            showImage((current + 1) % thumbs.length);
+                        });
+                    }
+
+                    // Inicializa resaltando el primero
+                    showImage(0);
+                });
+
+                </script>
+                <style>
+                    /* Opcional: resalta el thumbnail activo */
+                    .active-thumb img {
+                        border: 2px solid #007bff;
+                        border-radius: 4px;
+                    }
+                </style>
+        {% endblock %}
+</html>

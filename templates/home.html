@@ -1,0 +1,671 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% load store_filters %}
+
+{% block content %}
+    <!-- ========================= SECTION MAIN - CARRUSEL ========================= -->
+    <section class="section-carousel px-0">
+        <div class="container-fluid px-0">
+            <div id="mainCarousel" class="carousel slide" data-ride="carousel">
+                <div class="carousel-indicators">
+                    {% for i in total_slides|times %}
+                    <button type="button" data-target="#mainCarousel" data-slide-to="{{ forloop.counter0 }}"
+                            {% if forloop.first %}class="active" aria-current="true"{% endif %}
+                            aria-label="Slide {{ forloop.counter }}"></button>
+                    {% endfor %}
+                </div>
+
+                <div class="carousel-inner"><!-- ========================= SECTION MAIN - CARRUSEL // IMAGES ========================= -->
+
+                    <!-- Slide de imágenes administradas -->
+                    {% for image in carousel_images %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <div class="carousel-background-overlay">
+                                        {% if image.url %}
+                                            <a href="{{ image.url }}" class="carousel-link">
+                                        <picture>
+                                            <!-- WebP -->
+                                            <source 
+                                                srcset="{% get_media_prefix %}photos/carousel/webp/lg/{{ image.image.name|basename }}.webp"
+                                                type="image/webp"
+                                                media="(min-width: 1200px)">
+                                            <source 
+                                                srcset="{% get_media_prefix %}photos/carousel/webp/md/{{ image.image.name|basename }}.webp"
+                                                type="image/webp"
+                                                media="(min-width: 768px)">
+                                            <source 
+                                                srcset="{% get_media_prefix %}photos/carousel/webp/sm/{{ image.image.name|basename }}.webp"
+                                                type="image/webp"
+                                                media="(max-width: 767px)">
+                                            <!-- Fallback JPG/PNG -->
+                                            <img src="{{ image.image.url }}" 
+                                                class="carousel-img" 
+                                                alt="{{ image.title }}"
+                                                loading="lazy">
+                                        </picture>
+                                            </a>
+                                        {% elif image.product %}
+                                            <a href="{{ image.product.get_url }}" class="carousel-link">
+                                        <picture>
+                                            <!-- WebP -->
+                                            <source 
+                                                srcset="{% get_media_prefix %}photos/carousel/webp/lg/{{ image.image.name|basename }}.webp"
+                                                type="image/webp"
+                                                media="(min-width: 1200px)">
+                                            <source 
+                                                srcset="{% get_media_prefix %}photos/carousel/webp/md/{{ image.image.name|basename }}.webp"
+                                                type="image/webp"
+                                                media="(min-width: 768px)">
+                                            <source 
+                                                srcset="{% get_media_prefix %}photos/carousel/webp/sm/{{ image.image.name|basename }}.webp"
+                                                type="image/webp"
+                                                media="(max-width: 767px)">
+                                            <!-- Fallback JPG/PNG -->
+                                            <img src="{{ image.image.url }}" 
+                                                class="carousel-img" 
+                                                alt="{{ image.title }}"
+                                                loading="lazy">
+                                        </picture>
+                                            </a>
+                                        {% else %}
+                                            <img src="{{ image.image.url }}" class="carousel-img" alt="{{ image.title }}">
+                                        {% endif %}
+                                        {% if image.title %}
+                                        <div class="carousel-caption d-none d-md-block">
+                                            <h5>{{ image.title }}</h5>
+                                            {% if image.description %}
+                                            <p class="d-none d-lg-block">{{ image.description }}</p>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <!-- Productos más buscados globalmente (agrupados de a 4) -->
+                    {% for group in most_searched_products_groups %}
+                        <div class="carousel-item {% if forloop.first and carousel_images|length == 0 %}active{% endif %}">
+                            <div class="carousel-background-overlay">
+                                <div class="container">
+                                    <div class="carousel-products-wrapper">
+                                        <h3 class="text-center mb-3">Productos más populares</h3>
+                                        <div class="row carousel-products-container">
+                                            {% for product in group %}
+                                                <div class="col-6 col-md-3">
+                                                    <div class="card product-card">
+                                                        <a href="{{ product.get_url }}">
+                                                            {% if product.images %}
+                                                                <picture>
+                                                                    <!-- WebP -->
+                                                                    <source 
+                                                                        srcset="{% get_media_prefix %}photos/products/webp/lg/{{ product.images.name|basename }}.webp"
+                                                                        type="image/webp">
+                                                                    <!-- Fallback JPG/PNG -->
+                                                                    <img src="{{ product.images.url }}" 
+                                                                        class="card-img-top" 
+                                                                        alt="{{ product.name }}"
+                                                                        loading="lazy">
+                                                                </picture>
+                                                            {% else %}
+                                                                <img src="{% static 'admin/img/placeholder.png' %}" class="card-img-top" alt="sin imagen">
+                                                            {% endif %}
+                                                            <div class="card-body">
+                                                                <h5 class="card-title text-truncate">{{ product.name }}</h5>
+                                                                <p class="card-text">${{ product.price|floatformat:2 }}</p>
+                                                            </div>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <!-- Productos basados en búsqueda del usuario -->
+                    {% for group in user_searched_products_groups %}
+                        <div class="carousel-item {% if forloop.first and carousel_images|length == 0 %}active{% endif %}">
+                            <div class="carousel-background-overlay">
+                                <div class="container">
+                                    <div class="carousel-products-wrapper">
+                                        <h3 class="text-center mb-3">Productos más populares</h3>
+                                        <div class="row carousel-products-container">
+                                            {% for product in group %}
+                                                <div class="col-6 col-md-3">
+                                                    <div class="card product-card">
+                                                        <a href="{{ product.get_url }}">
+                                                            {% if product.images %}
+                                                                <picture>
+                                                                    <!-- WebP -->
+                                                                    <source 
+                                                                        srcset="{% get_media_prefix %}photos/products/webp/lg/{{ product.images.name|basename }}.webp"
+                                                                        type="image/webp">
+                                                                    <!-- Fallback JPG/PNG -->
+                                                                    <img src="{{ product.images.url }}" 
+                                                                        class="card-img-top" 
+                                                                        alt="{{ product.name }}"
+                                                                        loading="lazy">
+                                                                </picture>
+                                                            {% else %}
+                                                                <img src="{% static 'images/placeholder.png' %}" class="card-img-top" alt="sin imagen">
+                                                            {% endif %}
+                                                            <div class="card-body">
+                                                                <h5 class="card-title text-truncate">{{ product.name }}</h5>
+                                                                <p class="card-text">${{ product.price|floatformat:2 }}</p>
+                                                            </div>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                </div>
+                        <!-- ========================= SECTION MAIN - CARRUSEL INDICATORS ========================= -->
+                <button class="carousel-control-prev" type="button" data-target="#mainCarousel" data-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-target="#mainCarousel" data-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        </div>
+    </section>
+    <!-- ========================= SECTION MAIN END// CARRUSEL ========================= -->
+
+    <!-- ========================= SECTION CATEGORÍAS RÁPIDAS ========================= -->
+    <section class="section-quicklinks bg-white">
+        <div class="container">
+            <div class="row py-3">
+                <div class="col quicklink-item text-center">
+                    <a href="{% url 'store' %}">
+                        <div class="icon-wrap mb-2">
+                            <i class="fa fa-eye"></i>
+                        </div>
+                        <p>Visto recientemente</p>
+                    </a>
+                </div>
+                <div class="col quicklink-item text-center">
+                    <a href="#" data-toggle="modal" data-target="#mediosPagoModal">
+                        <div class="icon-wrap mb-2">
+                            <i class="fa fa-credit-card"></i>
+                        </div>
+                        <p>Medios de pago</p>
+                    </a>
+                </div>
+                <div class="col quicklink-item text-center">
+                    <a href="{% url 'offers' %}">
+                        <div class="icon-wrap mb-2">
+                            <i class="fa fa-tag"></i>
+                        </div>
+                        <p>Ofertas</p>
+                    </a>
+                </div>
+                <div class="col quicklink-item text-center">
+                    <a href="#" data-toggle="modal" data-target="#enviosModal">
+                        <div class="icon-wrap mb-2">
+                            <i class="fa fa-truck"></i>
+                        </div>
+                        <p>Envíos</p>
+                    </a>
+                </div>
+                <div class="col quicklink-item text-center">
+                    <a href="#como-comprar">
+                        <div class="icon-wrap mb-2">
+                            <i class="fa fa-shield"></i>
+                        </div>
+                        <p>Cómo COMPRAR</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- ========================= SECTION CATEGORÍAS RÁPIDAS END// ========================= -->
+
+    <!-- ========================= SECTION LO MÁS VENDIDO (CAROUSEL)========================= -->
+    <section class="section-bestsellers py-4">
+        <div class="container">
+            <header class="section-heading mb-3">
+                <h3 class="section-title">Los más vendidos</h3>
+                <a href="{% url 'store' %}" class="btn btn-outline-primary">Ver Todo</a>
+            </header>
+
+            <div id="bestsellersCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    {% for group in bestseller_products_groups %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <div class="row">
+                            {% for product in group %}
+                                    <div class="col-6 col-md-3">
+                                        <div class="card card-product-grid">
+                                            <a href="{{ product.get_url }}" class="img-wrap"> 
+                                                <picture>
+                                                    <!-- WebP -->
+                                                    <source 
+                                                        srcset="{% get_media_prefix %}photos/products/webp/lg/{{ product.images.name|basename }}.webp"
+                                                        type="image/webp">
+                                                    <!-- Fallback JPG/PNG -->
+                                                    <img src="{{ product.images.url }}" 
+                                                        class="card-img-top" 
+                                                        alt="{{ product.name }}"
+                                                        loading="lazy">
+                                                </picture>
+                                            </a>
+                                            <div class="card-body d-flex flex-column">
+                                                <a href="{{ product.get_url }}" class="title text-truncate mb-2">{{product.name}}</a>
+                                                <div class="price mt-auto">${{ product.price|floatformat:2 }}</div>
+                                                <div class="rating-star">
+                                                    <span>
+                                                        <i class="fa fa-star{% if product.averageReview < 0.5 %}-o{% elif product.averageReview >= 0.5 and product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if product.averageReview < 1.5 %}-o{% elif product.averageReview >= 1.5 and product.averageReview < 2 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if product.averageReview < 2.5 %}-o{% elif product.averageReview >= 2.5 and product.averageReview < 3 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if product.averageReview < 3.5 %}-o{% elif product.averageReview >= 3.5 and product.averageReview < 4 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                        <i class="fa fa-star{% if product.averageReview < 4.5 %}-o{% elif product.averageReview >= 4.5 and product.averageReview < 5 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-target="#bestsellersCarousel" data-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Anterior</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-target="#bestsellersCarousel" data-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Siguiente</span>
+                </button>
+            </div>
+        </div>
+    </section>
+    <!-- ========================= SECTION LO MÁS VENDIDO END ========================= -->
+
+    <!-- ========================= SECTION TODAS LAS CATEGORÍAS ========================= -->
+    <section class="section-categories py-4 bg-light">
+        <div class="container">
+            <header class="section-heading mb-4">
+                <h3 class="section-title">Todas las Categorías:</h3>
+            </header>
+
+            <div class="row g-4 justify-content-center">
+                {% for category in all_categories %}
+                    <div class="col-4 col-sm-3 col-md-2">
+                        <a href="{% url 'products_by_category' category.slug %}" class="category-item">
+                            <div class="hexagon-wrapper">
+                                <div class="hexagon">
+                                    {% if category.cat_image %}
+                                        <img src="{{ category.cat_image.url }}" alt="{{ category.category_name }}">
+                                    {% else %}
+                                        <i class="fa fa-folder"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="category-name text-center mt-2">{{ category.category_name }}</div>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    <!-- ========================= SECTION TODAS LAS CATEGORÍAS END// ========================= -->
+
+<!-- ========================= SECTION CATEGORÍAS DESTACADAS ========================= -->
+{% for category in featured_categories %}
+    <section class="section-category-products py-4">
+        <div class="container">
+            <header class="section-heading mb-3">
+                <h3 class="section-title">{{ category.category_name }}</h3>
+                <a href="{% url 'products_by_category' category.slug %}" class="btn btn-outline-primary">Ver Todo</a>
+            </header>
+
+            <div id="category{{ category.id }}Carousel" class="carousel slide" data-ride="carousel">
+                <div class="carousel-inner">
+                    {% with product_groups=category_products|get_item:category %}
+                    {% for group in product_groups %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <div class="row">
+                            {% for product in group %}
+                            <div class="col-6 col-md-3">
+                                <div class="card card-product-grid h-100">
+                                    <a href="{{ product.get_url }}" class="img-wrap"> 
+                                        <picture>
+                                            <!-- WebP -->
+                                            <source 
+                                                srcset="{% get_media_prefix %}photos/products/webp/lg/{{ product.images.name|basename }}.webp"
+                                                type="image/webp">
+                                            <!-- Fallback JPG/PNG -->
+                                            <img src="{{ product.images.url }}" 
+                                                class="card-img-top" 
+                                                alt="{{ product.name }}"
+                                                loading="lazy">
+                                        </picture>
+                                    </a>
+                                    <div class="card-body d-flex flex-column">
+                                        <a href="{{ product.get_url }}" class="title text-truncate mb-2">{{product.name}}</a>
+                                        <div class="price mt-auto">${{ product.price|floatformat:2 }}</div>
+                                        <div class="rating-star">
+                                            <span>
+                                                <i class="fa fa-star{% if product.averageReview < 0.5 %}-o{% elif product.averageReview >= 0.5 and product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                <i class="fa fa-star{% if product.averageReview < 1.5 %}-o{% elif product.averageReview >= 1.5 and product.averageReview < 2 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                <i class="fa fa-star{% if product.averageReview < 2.5 %}-o{% elif product.averageReview >= 2.5 and product.averageReview < 3 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                <i class="fa fa-star{% if product.averageReview < 3.5 %}-o{% elif product.averageReview >= 3.5 and product.averageReview < 4 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                                <i class="fa fa-star{% if product.averageReview < 4.5 %}-o{% elif product.averageReview >= 4.5 and product.averageReview < 5 %}-half-o {% endif %}" aria-hidden="true"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endwith %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-target="#category{{ category.id }}Carousel" data-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Anterior</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-target="#category{{ category.id }}Carousel" data-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Siguiente</span>
+                </button>
+            </div>
+        </div>
+    </section>
+{% endfor %}
+<!-- ========================= SECTION CATEGORÍAS DESTACADAS END// ========================= -->
+
+    <!-- ======================= Modales =============================== -->
+<!-- ========================= SECTION CÓMO COMPRAR ========================= -->
+<section class="section-purchase-process py-5" id="como-comprar">
+    <div class="container">
+        <!-- Encabezado con branding -->
+        <div class="row mb-5">
+            <div class="col-md-7 d-flex flex-column justify-content-center">
+                <div class="brand-container mb-3">
+                    <img src="{% static 'images/logo-bulonera-alvear.png' %}" alt="Bulonera Alvear" class="brand-logo">
+                </div>
+                <h2 class="section-title text-white mb-3">Cómo comprar:</h2>
+            </div>
+            <div class="col-md-5 d-flex justify-content-center align-items-center">
+                <div class="mobile-container">
+                    <img src="{% static 'images/mobile-shop.png' %}" alt="Mobile Shop" class="mobile-image">
+                </div>
+            </div>
+        </div>
+
+        <!-- Proceso de compra -->
+        <div class="row justify-content-center">
+            <!-- Paso 1 -->
+            <div class="col-6 col-md-3 mb-4">
+                <div class="card process-card bg-blue h-100">
+                    <div class="card-body text-center">
+                        <div class="step-number rounded-circle mb-3">1</div>
+                        <img src="{% static 'images/process/seleccionar_productos.png' %}" alt="Seleccionar productos" class="process-icon mb-3">
+                        <h5 class="card-title">Seleccionar los productos</h5>
+                        <p class="card-text">Se irán agregando a tu carrito de compras.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Paso 2 -->
+            <div class="col-6 col-md-3 mb-4">
+                <div class="card process-card bg-blue h-100">
+                    <div class="card-body text-center">
+                        <div class="step-number rounded-circle mb-3">2</div>
+                        <img src="{% static 'images/process/ordenarlos.png' %}" alt="Ordenarlos" class="process-icon mb-3">
+                        <h5 class="card-title">Ordenarlos</h5>
+                        <p class="card-text">Luego de ordenarlos, serás redireccionado al WhatsApp.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estado Nuevo -->
+            <div class="col-6 col-md-3 mb-4">
+                <div class="card process-card bg-dark h-100">
+                    <div class="card-body text-center">
+                        <img src="{% static 'images/process/estado_nuevo.png' %}" alt="Estado Nuevo" class="process-icon mb-3">
+                        <h5 class="card-title">ESTADO 'NUEVO'</h5>
+                        <p class="card-text">Se creará una ORDEN en estado 'NUEVO' en tu Dashboard.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Paso 3 -->
+            <div class="col-6 col-md-3 mb-4">
+                <div class="card process-card bg-blue h-100">
+                    <div class="card-body text-center">
+                        <div class="step-number rounded-circle mb-3">3</div>
+                        <img src="{% static 'images/process/coordinar.png' %}" alt="Coordinar con nosotros" class="process-icon mb-3">
+                        <h5 class="card-title">Coordinar con nosotros!</h5>
+                        <p class="card-text">Te ayudaremos a ultimar detalles de tu compra, y por último te enviaremos un link de pago o QR.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <!-- Estado Aceptada -->
+            <div class="col-6 col-md-3 mb-4">
+                <div class="card process-card bg-dark h-100">
+                    <div class="card-body text-center">
+                        <img src="{% static 'images/process/estado_aceptada.png' %}" alt="Estado Aceptada" class="process-icon mb-3">
+                        <h5 class="card-title">ESTADO 'ACEPTADA'</h5>
+                        <p class="card-text">Tu orden cambia el estado a 'ACEPTADA'.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Paso 4 -->
+            <div class="col-6 col-md-3 mb-4">
+                <div class="card process-card bg-blue h-100">
+                    <div class="card-body text-center">
+                        <div class="step-number rounded-circle mb-3">4</div>
+                        <img src="{% static 'images/process/pagar_disfrutar.png' %}" alt="Pagar y disfrutar" class="process-icon mb-3">
+                        <h5 class="card-title">Pagar y DISFRUTAR!</h5>
+                        <p class="card-text">Luego de realizado el pago, coordinamos el envío en tu transporte de confianza!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estado Completada -->
+            <div class="col-6 col-md-3 mb-4">
+                <div class="card process-card bg-dark h-100">
+                    <div class="card-body text-center">
+                        <img src="{% static 'images/process/estado_completada.png' %}" alt="Estado Completada" class="process-icon mb-3">
+                        <h5 class="card-title">ESTADO 'COMPLETADA'</h5>
+                        <p class="card-text">Tu orden cambia el estado a 'COMPLETADA'.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- ========================= SECTION CÓMO COMPRAR END// ========================= -->
+
+    <!-- ======================= Modal de Medios de Pago =============================== -->
+    <div class="modal fade" id="mediosPagoModal" tabindex="-1" aria-labelledby="mediosPagoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 bg-indigo text-white">
+            <h5 class="modal-title w-100 text-center" id="mediosPagoModalLabel">MEDIOS DE PAGO</h5>
+            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body bg-indigo text-white py-4">
+            <div class="container">
+                <!-- Logo circular -->
+                <div class="text-center mb-4">
+                <div class="logo-circle">
+                    <img src="{% static 'images/logo-bulonera-alvear.png' %}" alt="Logo" class="img-fluid" style="max-width: 200px;">
+                </div>
+                </div>
+                
+                <!-- Opciones de pago -->
+                <div class="payment-options">
+                <!-- Efectivo -->
+                <div class="payment-option mb-3">
+                    <a href="#" class="btn btn-payment w-100 d-flex align-items-center">
+                    <div class="icon-circle bg-white text-indigo mr-3">
+                        <i class="fa fa-money"></i>
+                    </div>
+                    <span class="flex-grow-1 text-left">Efectivo</span>
+                    </a>
+                </div>
+                
+                <!-- Transferencia -->
+                <div class="payment-option mb-3">
+                    <a href="#" class="btn btn-payment w-100 d-flex align-items-center">
+                    <div class="icon-circle bg-white text-indigo mr-3">
+                        <i class="fa fa-exchange"></i>
+                    </div>
+                    <span class="flex-grow-1 text-left">Transferencia</span>
+                    </a>
+                </div>
+                
+                <!-- Débito/crédito -->
+                <div class="payment-option mb-3">
+                    <a href="#" class="btn btn-payment w-100 d-flex align-items-center">
+                    <div class="icon-circle bg-white text-indigo mr-3">
+                        <i class="fa fa-credit-card"></i>
+                    </div>
+                    <span class="flex-grow-1 text-left">Débito/crédito</span>
+                    </a>
+                </div>
+                </div>
+                
+                <!-- Mensaje final -->
+                <div class="text-center mt-4">
+                <p>COORDINA CON NOSOTROS TU MEJOR<br>FORMA DE PAGAR!</p>
+                </div>
+            </div>
+            </div>
+        </div>
+        </div>
+    </div>
+    <!-- ======================= Modal de Medios de Pago END =============================== -->
+
+        <!-- ======================= Modal de Envíos ======================= -->
+    <div class="modal fade" id="enviosModal" tabindex="-1" aria-labelledby="enviosModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 bg-indigo text-white">
+                    <h5 class="modal-title w-100 text-center" id="enviosModalLabel">ENVÍOS</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body bg-indigo text-white py-4">
+                    <div class="container">
+                        <!-- Imagen del camión -->
+                        <div class="text-center mb-4">
+                        <div class="truck-icon">
+                            <div class="logo-circle">
+                                <img src="{% static 'images/envios.png' %}" alt="Logo" class="img-fluid" style="max-width: 200px;">
+                            </div>
+                        </div>
+                        </div>
+                        
+                        <!-- Texto principal -->
+                        <div class="shipping-text text-center">
+                            <h2 class="display-4 font-weight-bold mb-4">Envíos a TODO<br>EL PAÍS!</h2>
+                        </div>
+                        
+                        <!-- Opciones de envío (puedes agregar estas si las necesitas) -->
+                        <div class="shipping-options mt-4">
+                            <div class="row justify-content-center">
+                                <div class="col-md-10">
+                                    <div class="card bg-transparent border-white mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Información de envíos</h5>
+                                            <p class="card-text">Trabajamos con múltiples transportes a todo el país. Puedes usar tu transporte de confianza o te ayudamos a coordinar el envío.</p>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="card bg-transparent border-white">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Retiro en sucursal</h5>
+                                            <p class="card-text">También puedes retirar tu pedido en nuestra sucursal sin costo adicional. Consulta por horarios de atención.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Información adicional -->
+                        <div class="shipping-info text-center mt-5">
+                            <p class="mb-0 slogan">BULONERA ALVEAR, Construyendo el futuro, tornillo a tornillo.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+            <!-- ======================= Modal de Envíos END ======================= -->
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Inicializar el carrusel principal
+        $('#mainCarousel').carousel({
+            interval: 5000,  // Tiempo entre slides en milisegundos
+            ride: 'carousel', // Inicia el carrusel automáticamente
+            pause: 'hover',  // Pausa en hover
+            wrap: true,      // Permite ciclar continuamente
+            keyboard: true   // Permite control con teclado
+        });
+        
+        // Función para ajustar la altura del carrusel principal responsivamente
+        function adjustMainCarouselHeight() {
+            const windowWidth = window.innerWidth;
+            let carouselHeight;
+            
+            // Ajustar altura según el ancho de la pantalla
+            if (windowWidth < 400) {
+                carouselHeight = 150;
+            } else if (windowWidth < 576) {
+                carouselHeight = 200;
+            } else if (windowWidth < 768) {
+                carouselHeight = 250;
+            } else if (windowWidth < 992) {
+                carouselHeight = 300;
+            } else if (windowWidth < 1200) {
+                carouselHeight = 350;
+            } else {
+                carouselHeight = 390;
+            }
+            
+            // Aplicar altura a los items del carrusel
+            const carouselItems = document.querySelectorAll('#mainCarousel .carousel-item');
+            carouselItems.forEach(item => {
+                item.style.height = carouselHeight + 'px';
+            });
+        }
+        
+        // Aplicar ajustes iniciales y en cada cambio de tamaño
+        adjustMainCarouselHeight();
+        window.addEventListener('resize', adjustMainCarouselHeight);
+        
+        // Inicializar los demás carruseles
+        $('.carousel').not('#mainCarousel').each(function() {
+            $(this).carousel({
+                interval: false, // Los otros carruseles no se mueven automáticamente
+                wrap: true
+            });
+        });
+    });
+    </script>
+{% endblock %}
