@@ -12,12 +12,12 @@ staticfiles/
 media/
 bulonera.sock
 
-# Entorno — NUNCA al repo
+# Entorno
 .env
 .env.*
 !.env.example
 
-# Venv (vive fuera del proyecto, pero por si acaso)
+# Venv
 venv/
 env/
 .venv/
