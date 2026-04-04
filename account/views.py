@@ -1,4 +1,6 @@
 import requests
+import urllib.parse
+import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib import messages, auth
@@ -9,6 +11,8 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.core.mail import EmailMessage
+
+logger = logging.getLogger(__name__)
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -114,18 +118,19 @@ def login(request):
                                 item.user = user
                                 item.save()
                                 
-            except:
-                pass
+            except Exception as e:
+                logger.error(f"Error updating cart on login for user {user.email}: {e}")
             
             url = request.META.get('HTTP_REFERER')
             try:
-                query = request.utils.urlparse(url).query
+                query = urllib.parse.urlparse(url).query
                 params = dict(x.split('=') for x in query.split('&'))
                 if 'next' in params:
                     nextPage = params['next']
-                    return redirect(nextPage=nextPage)
+                    return redirect(nextPage)
                 
-            except:
+            except Exception as e:
+                logger.exception(f"Error parsing referer URL: {e}")
                 return redirect('home')
             
         else:
@@ -201,7 +206,7 @@ def forgotPassword(request):
                 'token' : default_token_generator.make_token(user),
             })
             to_email = email
-            send_email = EmailMessage(mail_subject, body, to=['to_email'])
+            send_email = EmailMessage(mail_subject, body, to=[to_email])
             send_email.send()
             
             messages.success(request, 'Un email fue enviado a tu bandeja de entrada para recuperar tu contraseña')
@@ -246,6 +251,7 @@ def resetPassword(request):
     else:
         return render(request, 'accounts/resetPassword.html')
 
+@login_required(login_url='login')
 def my_orders(request):
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
     context = {

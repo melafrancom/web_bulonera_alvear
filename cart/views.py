@@ -5,8 +5,12 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 
+import logging
+
 from .models import Cart, CartItem
 from store.models import Product, Variation
+
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 
@@ -57,8 +61,10 @@ def add_cart(request, product_id):
                 try:
                     variation = Variation.objects.get(product=product, variation_category__iexact=key, variation_value__iexact=value)
                     product_variation.append(variation)
-                except:
+                except Variation.DoesNotExist:
                     pass
+                except Exception as e:
+                    logger.error(f"Error fetching variation {key}={value} for product {product.id}: {e}")
             # Get quantity from form
             quantity = int(request.POST.get('quantity', 1))# obtener la cantidad del POST si envías cantidad ahí.  
             
@@ -114,8 +120,10 @@ def add_cart(request, product_id):
                 try:
                     variation = Variation.objects.get(product=product, variation_category__iexact=key, variation_value__iexact=value)
                     product_variation.append(variation)
-                except:
+                except Variation.DoesNotExist:
                     pass
+                except Exception as e:
+                    logger.error(f"Error fetching variation {key}={value} for product {product.id}: {e}")
         if request.method == 'POST':
             quantity = int(request.POST.get('quantity', 1))
         else:
@@ -196,8 +204,10 @@ def remove_cart(request, product_id, cart_item_id):
         else:
             cart_item.delete()
         
-    except:
+    except CartItem.DoesNotExist:
         pass
+    except Exception as e:
+        logger.error(f"Error removing cart item: {e}")
     
     return redirect('cart')
 

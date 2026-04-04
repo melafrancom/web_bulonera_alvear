@@ -3,7 +3,10 @@ from django.urls import reverse
 from django.db.models import Avg, Count
 from django.utils.text import slugify
 from django.utils.text import Truncator
-from bulonera.settings import SITE_URL, CURRENCY
+from django.conf import settings
+
+SITE_URL = settings.SITE_URL
+CURRENCY = settings.CURRENCY
 #Local:
 from account.models import Account
 from category.models import Category, SubCategory
@@ -93,10 +96,11 @@ class Product(models.Model):
         # Guardar primero para tener el ID si es nuevo
         super().save(*args, **kwargs)
         
-        # Procesar la imagen si se ha proporcionado una nueva
+        # Procesar la imagen de forma asincrónica usando Celery
         if self.images:
-            processor = ImageProcessor(self.images.path)
-            processor.process_image()
+            from store.tasks import process_product_image
+            # Lanzar tarea asincrónica en background
+            process_product_image.delay(self.id, self.images.path)
         
     def get_url(self):
         return reverse('product_detail', args=[self.category.slug, self.slug])
@@ -312,10 +316,11 @@ class CarouselImage(models.Model):
         # Guardar primero para tener el ID si es nuevo
         super().save(*args, **kwargs)
         
-        # Procesar la imagen si se ha proporcionado una nueva
+        # Procesar la imagen de forma asincrónica usando Celery
         if self.image:
-            processor = CarouselImageProcessor(self.image.path)
-            processor.process_image()
+            from store.tasks import process_carousel_image
+            # Lanzar tarea asincrónica en background
+            process_carousel_image.delay(self.id, self.image.path)
 
     @property
     def get_image_urls(self):

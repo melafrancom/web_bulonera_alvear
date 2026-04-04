@@ -1,7 +1,4 @@
-# views.py - Contact Views (compatibilidad hacia atrás)
-# Las vistas ahora están en contact.web.views
+"""Contact Web Package"""
 from contact.web.views import contact_view, contact_success
 
 __all__ = ['contact_view', 'contact_success']
-
-

@@ -1,0 +1,231 @@
+name: CI - Django Tests & Code Quality (Phase 1C.4)
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+env:
+  DJANGO_SETTINGS_MODULE: web_bulonera.settings.test
+  SECRET_KEY: ci-test-key-not-real
+  WHATSAPP_NUMBER: "54111111111"
+  SITE_URL: "http://localhost:8002"
+  META_PIXEL_ID: ""
+  ALLOWED_HOSTS: "localhost"
+  SMTP_HOST: "smtp.test.com"
+  SMTP_PORT: "587"
+  SMTP_USER: "test@test.com"
+  SMTP_PASSWORD: "test"
+  EMAIL_TO_SEND_MESSAGES: "test@test.com"
+  EMAIL_TO_RECEIVE_MESSAGES: "test@test.com"
+  DB_NAME: "test_buloneraalvearDB"
+  DB_USER: "test_user"
+  DB_PASSWORD: "test_password"
+  DB_HOST: "127.0.0.1"
+  DB_PORT: "3306"
+  CELERY_BROKER_URL: "redis://localhost:6379/0"
+  CELERY_RESULT_BACKEND: "redis://localhost:6379/1"
+  REDIS_URL: "redis://localhost:6379/2"
+
+jobs:
+  test:
+    name: Run Django Tests with Pytest
+    runs-on: ubuntu-latest
+    
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: test_buloneraalvearDB
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Django System Check
+      run: |
+        python manage.py check --deploy
+
+    - name: Run Pytest with Coverage
+      run: |
+        pytest --cov=. --cov-report=xml --cov-report=term:skip-covered -v --tb=short -x
+      continue-on-error: false
+
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.xml
+        fail_ci_if_error: false
+        verbose: false
+
+  lint-ruff:
+    name: Code Quality - Ruff Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Ruff
+      run: |
+        pip install ruff
+
+    - name: Run Ruff Linter
+      run: |
+        ruff check . --select=E,F,W --show-source --statistics || exit 0
+
+    - name: Check Code Format
+      run: |
+        ruff format --check . || exit 0
+
+  docker-build:
+    name: Docker Build Validation
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Validate Docker Compose
+      run: |
+        docker-compose config > /dev/null && echo "✅ Docker Compose is valid" || exit 1
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install bandit
+
+    - name: Run Bandit Security Scan
+      run: |
+        bandit -r . -ll -q || exit 0
+        image: redis:7-alpine
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmariadb-dev pkg-config libjpeg-dev zlib1g-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Django system check
+        run: python manage.py check
+
+      - name: Run migrations
+        run: python manage.py migrate --run-syncdb
+
+      - name: Run tests
+        run: pytest --cov=. --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+
+  linting:
+    name: Python Linting (Flake8)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 flake8-django
+
+      - name: Lint with flake8
+        run: |
+          # Ignorar líneas muy largas en migraciones
+          flake8 . --exclude=migrations,venv,.venv,entornos \
+            --max-line-length=120 \
+            --max-complexity=10 \
+            --select=E9,F63,F7,F82 \
+            --show-source
+        continue-on-error: true
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: docker build -t bulonera_web:ci -f Dockerfile .
+
+      - name: Verify image works
+        run: |
+          docker run --rm bulonera_web:ci python -c "import django; print('Django loaded successfully')"

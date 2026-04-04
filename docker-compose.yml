@@ -1,0 +1,132 @@
+services:
+  db_mariadb:
+    image: mariadb:11-jammy
+    container_name: bulonera_web_db_mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: root_bulonera_dev
+      MYSQL_DATABASE: buloneraalvearDB_dev
+      MYSQL_USER: bulonera_dev
+      MYSQL_PASSWORD: bulonera_dev_password
+      MARIADB_INITDB_SKIP_TZINFO: 1
+    ports:
+      - "3308:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  bulonera_web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bulonera_web_local
+    env_file:
+      - .env.local
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DJANGO_SETTINGS_MODULE: web_bulonera.settings.local
+      STATIC_ROOT: /app/staticfiles
+      MEDIA_ROOT: /app/media
+      LOG_DIR: /app/logs
+      CELERY_BROKER_URL: redis://bulonera_web_redis:6379/0
+      CELERY_RESULT_BACKEND: redis://bulonera_web_redis:6379/1
+      REDIS_URL: redis://bulonera_web_redis:6379/2
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./:/app
+      - ./media:/app/media
+      - ./staticfiles:/app/staticfiles
+      - ./logs:/app/logs
+    depends_on:
+      - db_mariadb
+      - bulonera_web_redis
+    restart: unless-stopped
+
+  bulonera_web_redis:
+    image: redis:7-alpine
+    container_name: bulonera_web_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  bulonera_web_celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bulonera_web_celery_worker
+    command: celery -A web_bulonera worker -l info --concurrency=4
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DJANGO_SETTINGS_MODULE: web_bulonera.settings.local
+      STATIC_ROOT: /app/staticfiles
+      MEDIA_ROOT: /app/media
+      LOG_DIR: /app/logs
+      CELERY_BROKER_URL: redis://bulonera_web_redis:6379/0
+      CELERY_RESULT_BACKEND: redis://bulonera_web_redis:6379/1
+    volumes:
+      - ./:/app
+      - ./logs:/app/logs
+    depends_on:
+      - db_mariadb
+      - bulonera_web_redis
+      - bulonera_web
+    restart: unless-stopped
+
+  bulonera_web_celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bulonera_web_celery_beat
+    command: celery -A web_bulonera beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DJANGO_SETTINGS_MODULE: web_bulonera.settings.local
+      STATIC_ROOT: /app/staticfiles
+      MEDIA_ROOT: /app/media
+      LOG_DIR: /app/logs
+      CELERY_BROKER_URL: redis://bulonera_web_redis:6379/0
+      CELERY_RESULT_BACKEND: redis://bulonera_web_redis:6379/1
+    volumes:
+      - ./:/app
+      - ./logs:/app/logs
+    depends_on:
+      - db_mariadb
+      - bulonera_web_redis
+      - bulonera_web
+    restart: unless-stopped
+
+  bulonera_web_flower:
+    image: mher/flower:2.0
+    container_name: bulonera_web_flower
+    command: celery flower --broker=redis://bulonera_web_redis:6379/0 --port=5555 --basic_auth=admin:flower123
+    ports:
+      - "5555:5555"
+    environment:
+      CELERY_BROKER_URL: redis://bulonera_web_redis:6379/0
+      CELERY_RESULT_BACKEND: redis://bulonera_web_redis:6379/1
+    depends_on:
+      - bulonera_web_redis
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  mariadb_data:

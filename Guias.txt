@@ -1,0 +1,124 @@
+Guía de Importación de Productos mediante Excel
+    # El archivo acepta archivos .xlsx o .csv.
+
+    Estructura del Archivo Excel
+        ** Unicamente son necesarios los campos obligatorios.
+
+        Campos Obligatorios
+            code        # Código único del producto
+            name        # Nombre del producto
+            price       # Precio del producto
+            category    # Categoría principal
+
+        Campos Opcionales
+            diameter         # Diámetro del producto
+            length           # Longitud del producto
+            description      # Descripción detallada
+            stock            # Stock disponible (default: 0)
+            subcategories    # Subcategorías (separadas por comas)
+            images           # Imagen principal
+            gallery          # Imágenes adicionales (separadas por comas)
+            brand            # Marca del producto
+            condition        # Estado (new, used, refurbished)
+            gtin             # Código universal (EAN, UPC, ISBN)
+            mpn              # Número de parte del fabricante
+            faq              # Preguntas frecuentes específicas
+        
+        Campos SEO
+            meta_title       # Título para SEO
+            meta_description # Descripción para SEO
+            meta_keywords    # Palabras clave
+
+        Especificaciones Técnicas
+            norm            # Norma técnica
+            grade           # Grado/Dureza
+            material        # Material
+            colour          # Color
+            type            # Tipo
+            form            # Forma
+            thread_formats  # Formatos de rosca
+            origin          # País de origen
+    
+    Proceso de Importación
+        | code | name        | price | category | subcategories | diameter | length | images      | gallery           | faq                                    |
+        |------|------------|-------|----------|---------------|----------|---------|-------------|-------------------|----------------------------------------|
+        | 001  | Tornillo M8| 100   | Bulones  | Hexagonales   | 8mm     | 50mm    | torn1.jpg   | gal1.jpg,gal2.jpg | "¿Es zincado?" Si, "¿Viene con tuerca?" No |
+
+Formulación de Nombres de Productos
+    Basado en el código del modelo Product, 
+    la formulación de nombres sigue una estructura específica, 
+    especialmente para productos con dimensiones.
+
+    Estructura Principal
+    {nombre_base} {diámetro} x {longitud}
+
+    Por ejemplo:
+        "Tornillo Hexagonal G2 UNC 1/4" x 1""
+        "Bulón Cabeza Hexagonal G2 UNC Zincado 1-1/4" x 10-1/2""
+
+    Generación Automática
+        El nombre se genera automáticamente en el método save() del modelo:
+        -
+            def save(self, *args, **kwargs):
+                # Auto-generar nombre completo
+                if self.diameter and self.length:
+                    # Si el nombre no incluye ya las dimensiones, agregarlas
+                    if f" {self.diameter} x {self.length}" not in self.name:
+                        self.name = f"{self.name} {self.diameter} x {self.length}"
+        -
+    Características
+    1. Unicidad:
+    -
+        name = models.CharField(max_length=200, unique=True)
+    -    
+        + No pueden existir dos productos con el mismo nombre
+    
+    2. Dimensiones como Campos Separados:
+    -
+        diameter = models.CharField(max_length=50, blank=True, null=True)
+        length = models.CharField(max_length=50, blank=True, null=True)
+    -
+    3. Generación de Slug:
+    -
+        if not self.slug:
+            self.slug = slugify(self.name)
+    -
+    4. Crea URLs amigables automáticamente
+
+Método para Obtener Nombre Base
+-
+    def get_base_name(self):
+    """Obtiene el nombre base del producto sin dimensiones"""
+    if self.diameter and self.length:
+        suffix = f" {self.diameter} x {self.length}"
+        if self.name.endswith(suffix):
+            return self.name[:-len(suffix)]
+    return self.name
+-
+Ejemplo Práctico
+    Nombre Base: "Tornillo Hexagonal G2 UNC Zincado"
+    Diámetro: "1/4""
+    Longitud: "2""
+    Resultado Final: "Tornillo Hexagonal G2 UNC Zincado 1/4" x 2""
+    
+    #### Consideraciones Importantes ####
+        Imágenes (leer guía de importación de imagenes)
+            Deben estar en el servidor antes de la importación
+            Se procesarán automáticamente en múltiples tamaños
+            Se generarán versiones WebP
+
+        FAQs
+            Se crean por subcategoría
+            Formato: "¿Pregunta?" Respuesta, "¿Pregunta2?" Respuesta2
+            No se duplican si ya existen
+
+        Categorías y Subcategorías
+            Se crean automáticamente si no existen
+            Se mantienen las relaciones existentes
+            Los slugs se generan automáticamente
+
+        Actualizaciones
+            Productos existentes se actualizan por código
+            Las imágenes existentes se mantienen si no se especifican nuevas
+            Los precios se pueden actualizar por separado
+    

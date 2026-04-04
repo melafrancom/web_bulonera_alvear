@@ -4,11 +4,14 @@ from django.contrib import messages, auth
 import json
 import datetime
 import urllib.parse
+import logging
 from django.http import JsonResponse
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 #Local
 from .models import Payment, Order, OrderProduct
@@ -43,24 +46,36 @@ def payments(request):
                     order_number=body['orderID']
                 )
             except Order.DoesNotExist:
+                logger.warning(f"Orden no encontrada para usuario {request.user.id}: {body['orderID']}")
                 return JsonResponse({
                     'error': 'Orden no encontrada'
                 }, status=400)
 
             # Crear Payment
-            payment = Payment(
-                user=request.user,
-                payment_id=body['transID'],
-                payment_method=body['payment_method'],
-                amount_id=str(order.order_total),  # Convertir a string
-                status=body['status'],
-            )
-            payment.save()
+            try:
+                payment = Payment(
+                    user=request.user,
+                    payment_id=body['transID'],
+                    payment_method=body['payment_method'],
+                    amount_id=str(order.order_total),  # Convertir a string
+                    status=body['status'],
+                )
+                payment.save()
+            except Exception as e:
+                logger.error(f"Error creando Payment para usuario {request.user.id}: {e}", exc_info=True)
+                return JsonResponse({
+                    'error': 'Error procesando el pago'
+                }, status=500)
             
             # Actualizar orden
-            order.payment = payment
-            order.is_ordered = True
-            order.save()
+            try:
+                order.payment = payment
+                order.is_ordered = True
+                order.save()
+                logger.info(f"Orden {order.order_number} marcada como pagada para usuario {request.user.id}")
+            except Exception as e:
+                logger.error(f"Error actualizando orden {order.id}: {e}", exc_info=True)
+                raise
             
             # Procesar items del carrito
             cart_items = CartItem.objects.filter(user=request.user)
@@ -209,6 +224,7 @@ def payments(request):
         'error': 'Método no permitido'
     }, status=405)
 
+@login_required(login_url='login')
 def place_orders(request, total=0, quantity=0):
     current_user = request.user
     cart_items = CartItem.objects.filter(user=current_user)
@@ -273,19 +289,15 @@ def place_orders(request, total=0, quantity=0):
                 
                 # Redirigir a WhatsApp
                 whatsapp_url = f"{reverse('whatsapp_redirect')}?order_number={order_number}"
-                print(f"Redirigiendo a: {whatsapp_url}")  # Imprime para depuración
+                logger.info(f"Orden creada exitosamente: {order_number} para usuario {current_user.id}")
                 return redirect(whatsapp_url)
                 
             except Exception as e:
-                import traceback
-                print(f"Error al crear la orden: {str(e)}")
-                print(traceback.format_exc())
-                # Aquí puedes agregar un mensaje para el usuario
-                messages.error(request, f"Error al procesar la orden: {str(e)}")
+                logger.error(f"Error creando orden para usuario {current_user.id}: {e}", exc_info=True)
+                messages.error(request, "Error al procesar la orden. Por favor intenta nuevamente.")
                 
         else:
-            print("Formulario inválido:")
-            print(form.errors)  # Imprime los errores del formulario
+            logger.warning(f"Formulario inválido en place_orders para usuario {current_user.id}: {form.errors}")
             
         # Si llegamos aquí, hubo un error o el formulario no es válido
         cart_items = CartItem.objects.filter(user=current_user)

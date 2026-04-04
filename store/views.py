@@ -1,18 +1,18 @@
-import json
-import logging
-import csv
 from django.shortcuts import render, HttpResponse, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Q
 from django.contrib import messages
 from django.http import JsonResponse, Http404, HttpResponse
 from django.views.generic import DetailView, ListView
+from django.conf import settings
 from itertools import chain
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom.minidom import parseString
-#from django.conf import settings
 
-from bulonera.settings import SITE_URL, CURRENCY
+SITE_URL = settings.SITE_URL
+CURRENCY = settings.CURRENCY
+
 from .models import Product, ReviewRating, ProductGallery, ProductSearch, CarouselImage, FAQCategory, FAQ
 from account.models import Account
 from category.models import Category, SubCategory
@@ -61,7 +61,7 @@ def store(request, category_slug=None, subcategory_slug=None):
             products_base = products_base.filter(price__gte=min_price, price__lte=max_price)
             sale_products = sale_products.filter(price__gte=min_price, price__lte=max_price)
         except ValueError:
-            pass  # Si hay un error de conversión, ignoramos el filtro
+            logger.warning(f"Valores de precio inválidos recibidos: min={request.GET.get('min_price')}, max={request.GET.get('max_price')}")
 
     # Filtrado por marca
     brand = request.GET.get('brand')
@@ -277,7 +277,7 @@ def product_detail(request, category_slug, product_slug):
 
 
 def search(request):
-    keyword = request.GET['keyword']
+    keyword = request.GET.get('keyword', '')
     if keyword:
         products = Product.objects.order_by('-created_date').filter(Q(description__icontains=keyword) | Q(name__icontains=keyword))
 
@@ -321,6 +321,7 @@ def search(request):
     template_name = 'store/store.html'
     return render(request, template_name, context)
 
+@login_required(login_url='login')
 def submit_review(request, product_id):
     url = request.META.get('HTTP_REFERER')
     if request.method == 'POST':
