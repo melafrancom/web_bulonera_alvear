@@ -16,7 +16,7 @@ class TestContactWebViews(TestCase):
     def test_contact_view_get(self):
         """Test: GET /contact/ muestra el formulario"""
         # Act
-        response = self.client.get(reverse('contact'))
+        response = self.client.get(reverse('contact:contact'))
         
         # Assert
         self.assertEqual(response.status_code, 200)
@@ -35,11 +35,11 @@ class TestContactWebViews(TestCase):
         }
         
         # Act
-        response = self.client.post(reverse('contact'), data, follow=True)
+        response = self.client.post(reverse('contact:contact'), data, follow=True)
         
         # Assert
         self.assertEqual(response.status_code, 200)
-        self.assertRedirects(response, reverse('contact_success'))
+        self.assertRedirects(response, reverse('contact:contact_success'))
         self.assertTrue(ContactOption.objects.filter(name='Pedro Sánchez').exists())
     
     def test_contact_view_post_success_whatsapp(self):
@@ -54,11 +54,11 @@ class TestContactWebViews(TestCase):
         }
         
         # Act
-        response = self.client.post(reverse('contact'), data, follow=True)
+        response = self.client.post(reverse('contact:contact'), data, follow=True)
         
         # Assert
         self.assertEqual(response.status_code, 200)
-        self.assertRedirects(response, reverse('contact_success'))
+        self.assertRedirects(response, reverse('contact:contact_success'))
     
     def test_contact_view_invalid_form(self):
         """Test: POST /contact/ con datos inválidos"""
@@ -72,7 +72,7 @@ class TestContactWebViews(TestCase):
         }
         
         # Act
-        response = self.client.post(reverse('contact'), data)
+        response = self.client.post(reverse('contact:contact'), data)
         
         # Assert
         self.assertEqual(response.status_code, 200)
@@ -82,7 +82,7 @@ class TestContactWebViews(TestCase):
     def test_contact_success_view(self):
         """Test: GET /contact/success/ muestra página de éxito"""
         # Act
-        response = self.client.get(reverse('contact_success'))
+        response = self.client.get(reverse('contact:contact_success'))
         
         # Assert
         self.assertEqual(response.status_code, 200)

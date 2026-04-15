@@ -21,3 +21,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 META_PIXEL_ENABLED = False
 
 PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+
+# Contact Email Variables
+CONTACT_EMAIL = 'test_owner@bulonera.com'
+EMAIL_TO_SEND_MESSAGES = 'test_owner@bulonera.com'
+DEFAULT_FROM_EMAIL = 'noreply@bulonera.com'

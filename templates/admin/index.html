@@ -1,0 +1,228 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+    
+    .dashboard-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+    
+    .dashboard-card h3 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #64748b;
+        margin: 0 0 8px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .dashboard-card .stat {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+    
+    .dashboard-card .label {
+        font-size: 14px;
+        color: #64748b;
+        margin-top: 4px;
+    }
+    
+    .app-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        overflow-x: hidden;
+    }
+    
+    .app-list .module {
+        margin-bottom: 0;
+    }
+    
+    .app-list .module:only-child {
+        grid-column: 1 / -1;
+    }
+    
+    .app-list .module h2 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .app-list .module table {
+        width: 100%;
+    }
+    
+    .app-list .module table td {
+        padding: 8px 16px;
+    }
+    
+    .app-list .module table a {
+        color: #2563eb;
+        text-decoration: none;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .app-list .module table a:hover {
+        text-decoration: underline;
+    }
+    
+    .addlink::before {
+        content: "+";
+        display: inline-block;
+        margin-right: 4px;
+        font-weight: bold;
+    }
+    
+    .changelink::before {
+        content: "✎";
+        display: inline-block;
+        margin-right: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    
+    {% if app_list %}
+    
+    <!-- Welcome Section -->
+    <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border-radius: 12px; padding: 32px; margin-bottom: 32px; color: white;">
+        <h1 style="font-size: 28px; font-weight: 700; margin: 0 0 8px 0; color: white !important;">
+            {% trans 'Bienvenido al Panel de Administración' %}
+        </h1>
+        <p style="font-size: 16px; opacity: 0.9; margin: 0;">
+            Gestiona productos, pedidos, usuarios y más desde aquí.
+        </p>
+    </div>
+    
+    <!-- Quick Stats (if available) -->
+    {% comment %}
+    <div class="dashboard-grid">
+        <div class="dashboard-card">
+            <h3>Productos</h3>
+            <p class="stat">1,234</p>
+            <p class="label">Total en catálogo</p>
+        </div>
+        <div class="dashboard-card">
+            <h3>Pedidos</h3>
+            <p class="stat">56</p>
+            <p class="label">Pendientes</p>
+        </div>
+        <div class="dashboard-card">
+            <h3>Usuarios</h3>
+            <p class="stat">789</p>
+            <p class="label">Registrados</p>
+        </div>
+        <div class="dashboard-card">
+            <h3>Ventas</h3>
+            <p class="stat">$45,678</p>
+            <p class="label">Este mes</p>
+        </div>
+    </div>
+    {% endcomment %}
+    
+    <!-- App List -->
+    <div class="app-list">
+        {% for app in app_list %}
+        <div class="module">
+            <table>
+                <caption>
+                    <i data-lucide="folder" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle;"></i>
+                    <a href="{{ app.app_url }}" class="section" title="{% blocktrans with name=app.name %}Models in the {{ name }} application{% endblocktrans %}">
+                        {{ app.name }}
+                    </a>
+                </caption>
+                {% for model in app.models %}
+                <tr class="model-{{ model.object_name|lower }}">
+                    {% if model.admin_url %}
+                    <th scope="row">
+                        <a href="{{ model.admin_url }}">{{ model.name }}</a>
+                    </th>
+                    {% else %}
+                    <th scope="row">{{ model.name }}</th>
+                    {% endif %}
+
+                    {% if model.add_url %}
+                    <td><a href="{{ model.add_url }}" class="addlink">{% trans 'Add' %}</a></td>
+                    {% else %}
+                    <td>&nbsp;</td>
+                    {% endif %}
+
+                    {% if model.admin_url %}
+                    {% if model.view_only %}
+                    <td><a href="{{ model.admin_url }}" class="viewlink">{% trans 'View' %}</a></td>
+                    {% else %}
+                    <td><a href="{{ model.admin_url }}" class="changelink">{% trans 'Change' %}</a></td>
+                    {% endif %}
+                    {% else %}
+                    <td>&nbsp;</td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <p>{% trans "You don't have permission to view or edit anything." %}</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block sidebar %}
+<div id="content-related">
+    <div class="module" id="recent-actions-module">
+        <h2>{% trans 'Recent actions' %}</h2>
+        <h3>{% trans 'My actions' %}</h3>
+        {% load log %}
+        {% get_admin_log 10 as admin_log for_user user %}
+        {% if not admin_log %}
+        <p>{% trans 'None available' %}</p>
+        {% else %}
+        <ul class="actionlist">
+        {% for entry in admin_log %}
+        <li class="{% if entry.is_addition %}addlink{% endif %}{% if entry.is_change %}changelink{% endif %}{% if entry.is_deletion %}deletelink{% endif %}">
+            {% if entry.is_deletion or not entry.get_admin_url %}
+                {{ entry.object_repr }}
+            {% else %}
+                <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+            {% endif %}
+            <br>
+            {% if entry.content_type %}
+                <span class="mini quiet">{% filter capfirst %}{{ entry.content_type.name }}{% endfilter %}</span>
+            {% else %}
+                <span class="mini quiet">{% trans 'Unknown content' %}</span>
+            {% endif %}
+        </li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

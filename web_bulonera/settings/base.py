@@ -18,9 +18,12 @@ import environ
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-load_dotenv()  # Cargar variables de entorno desde .env
 env = environ.Env()
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', '')
+if 'production' in settings_module:
+    environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+else:
+    environ.Env.read_env(os.path.join(BASE_DIR, '.env.local'))
 
 
 # Quick-start development settings - unsuitable for production
@@ -46,18 +49,25 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sitemaps',
+    'django.contrib.humanize',
     
     # THIRD PARTY
     'rest_framework',
+    'rest_framework.authtoken',
     'drf_spectacular',
+    'django_celery_beat',
+    'django_redis',
     
     # LOCAL_APPS
+    'web_bulonera',
+    'erp_client',
     'category',
     'account',
     'store',
     'cart',
     'orders',
     'contact',
+    'media_bank',
 
 ]
 
@@ -89,6 +99,7 @@ TEMPLATES = [
                 'web_bulonera.context_processors.meta_settings',
                 'category.context_processors.menu_links',
                 'cart.context_processors.counter',
+                'web_bulonera.context_processors.site_theme',
                 
             ],
         },
@@ -280,13 +291,14 @@ CACHES = {
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
+    'PAGE_SIZE': 30,
     'DEFAULT_FILTER_BACKENDS': [
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.SessionAuthentication',  # Web HTML
+        'rest_framework.authentication.TokenAuthentication',    # PWA/API
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',

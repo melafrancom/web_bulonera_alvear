@@ -1,0 +1,168 @@
+{% comment %}
+Filter Sidebar Component
+Usage: {% include 'store/partials/_filter_sidebar.html' %}
+Requires context: links, current_category, brands, min_price, max_price, sort_by, category_slug
+{% endcomment %}
+
+<aside x-data="{
+    filters: {
+        categories: window.innerWidth > 768,
+        subcategories: window.innerWidth > 768,
+        sizes: false,
+        brands: window.innerWidth > 768,
+        prices: window.innerWidth > 768
+    },
+    toggle(filter) {
+        this.filters[filter] = !this.filters[filter];
+    }
+}" 
+class="space-y-4">
+    
+    <!-- Filtro: Categorías -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <button @click="toggle('categories')" 
+                class="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Categorías</h3>
+            <i data-lucide="chevron-down" 
+               class="w-5 h-5 text-slate-600 dark:text-slate-400 transition-transform"
+               :class="filters.categories ? 'rotate-180' : ''"></i>
+        </button>
+        
+        <div x-show="filters.categories" 
+             x-collapse
+             class="border-t border-slate-200 dark:border-slate-700">
+            <div class="p-4 space-y-2">
+                <a href="{% url 'store:store' %}" 
+                   class="block py-2 px-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors">
+                    Todas las categorías
+                </a>
+                {% for category in links %}
+                <div>
+                    <a href="{{ category.get_url }}" 
+                       class="block py-2 px-3 text-sm font-medium text-slate-900 dark:text-white hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors">
+                        {{ category.category_name }}
+                    </a>
+                    {% if category.subcategories.all %}
+                    <div class="ml-4 mt-1 space-y-1">
+                        {% for subcategory in category.subcategories.all %}
+                        <a href="{{ subcategory.get_url }}" 
+                           class="block py-1.5 px-3 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white rounded-lg transition-colors">
+                            {{ subcategory.subcategory_name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtro: Subcategorías (solo si hay categoría actual) -->
+    {% if current_category %}
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <button @click="toggle('subcategories')" 
+                class="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Subcategorías</h3>
+            <i data-lucide="chevron-down" 
+               class="w-5 h-5 text-slate-600 dark:text-slate-400 transition-transform"
+               :class="filters.subcategories ? 'rotate-180' : ''"></i>
+        </button>
+        
+        <div x-show="filters.subcategories" 
+             x-collapse
+             class="border-t border-slate-200 dark:border-slate-700">
+            <div class="p-4 space-y-1">
+                {% for sub in current_category.subcategories.all %}
+                <a href="{{ sub.get_url }}" 
+                   class="block py-2 px-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors">
+                    {{ sub.subcategory_name }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Filtro: Marcas -->
+    {% if brands %}
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <button @click="toggle('brands')" 
+                class="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Marcas</h3>
+            <i data-lucide="chevron-down" 
+               class="w-5 h-5 text-slate-600 dark:text-slate-400 transition-transform"
+               :class="filters.brands ? 'rotate-180' : ''"></i>
+        </button>
+        
+        <div x-show="filters.brands" 
+             x-collapse
+             class="border-t border-slate-200 dark:border-slate-700">
+            <div class="p-4 space-y-1 max-h-64 overflow-y-auto">
+                {% for brand in brands %}
+                <a href="?brand={% if brand == 'sin_marca' %}sin_marca{% else %}{{ brand }}{% endif %}" 
+                   class="block py-2 px-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors">
+                    {% if brand == 'sin_marca' %}Sin marca{% else %}{{ brand }}{% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Filtro: Precios -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <button @click="toggle('prices')" 
+                class="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Precios</h3>
+            <i data-lucide="chevron-down" 
+               class="w-5 h-5 text-slate-600 dark:text-slate-400 transition-transform"
+               :class="filters.prices ? 'rotate-180' : ''"></i>
+        </button>
+        
+        <div x-show="filters.prices" 
+             x-collapse
+             class="border-t border-slate-200 dark:border-slate-700">
+            <form method="GET" action="{% url 'store:store' %}" class="p-4 space-y-4">
+                {% if category_slug %}
+                <input type="hidden" name="category" value="{{ category_slug }}">
+                {% endif %}
+                {% if sort_by %}
+                <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                {% endif %}
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Mínimo</label>
+                    <select name="min_price" 
+                            class="w-full px-3 py-2 text-sm text-slate-900 dark:text-white bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                        <option value="0" {% if min_price == '0' %}selected{% endif %}>$0</option>
+                        <option value="50" {% if min_price == '50' %}selected{% endif %}>$50</option>
+                        <option value="100" {% if min_price == '100' %}selected{% endif %}>$100</option>
+                        <option value="150" {% if min_price == '150' %}selected{% endif %}>$150</option>
+                        <option value="200" {% if min_price == '200' %}selected{% endif %}>$200</option>
+                        <option value="500" {% if min_price == '500' %}selected{% endif %}>$500</option>
+                        <option value="1000" {% if min_price == '1000' %}selected{% endif %}>$1000</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Máximo</label>
+                    <select name="max_price" 
+                            class="w-full px-3 py-2 text-sm text-slate-900 dark:text-white bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                        <option value="10000" {% if max_price == '10000' %}selected{% endif %}>$10,000</option>
+                        <option value="15000" {% if max_price == '15000' %}selected{% endif %}>$15,000</option>
+                        <option value="20000" {% if max_price == '20000' %}selected{% endif %}>$20,000</option>
+                        <option value="50000" {% if max_price == '50000' %}selected{% endif %}>$50,000</option>
+                        <option value="100000" {% if max_price == '100000' %}selected{% endif %}>$100,000</option>
+                        <option value="200000" {% if max_price == '200000' %}selected{% endif %}>$200,000+</option>
+                    </select>
+                </div>
+                
+                <button type="submit" 
+                        class="w-full px-4 py-2.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors">
+                    Buscar
+                </button>
+            </form>
+        </div>
+    </div>
+</aside>

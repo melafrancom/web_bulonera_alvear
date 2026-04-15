@@ -22,24 +22,34 @@ def db_session(db):
 @pytest.fixture
 def user(db_session):
     """Crea un usuario de test."""
-    return Account.objects.create_user(
+    user = Account.objects.create_user(
         email='testuser@test.com',
         username='testuser',
         password='TestPass123',
         first_name='Test',
-        last_name='User',
-        phone='+5491234567890'
+        last_name='User'
     )
+    user.phone = '+5491234567890'
+    user.is_active = True
+    user.save()
+    return user
 
 
 @pytest.fixture
 def admin_user(db_session):
     """Crea un usuario administrador de test."""
-    user = Account.objects.create_superuser(
+    user = Account.objects.create_user(
         email='admin@test.com',
         username='admin',
-        password='AdminPass123'
+        password='AdminPass123',
+        first_name='Admin',
+        last_name='User'
     )
+    user.is_admin = True
+    user.is_active = True
+    user.is_staff = True
+    user.is_superadmin = True
+    user.save()
     return user
 
 
@@ -56,6 +66,8 @@ def category(db_session):
 @pytest.fixture
 def product(db_session, category):
     """Crea un producto de test."""
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    mock_image = SimpleUploadedFile("test_image.png", b"file_content", content_type="image/png")
     return Product.objects.create(
         code='SCREW-001',
         name='Tornillo Acero Inox 3mm',
@@ -66,14 +78,15 @@ def product(db_session, category):
         category=category,
         is_available=True,
         diameter='3mm',
-        length='20mm'
+        length='20mm',
+        images=mock_image
     )
 
 
 @pytest.fixture
 def cart(db_session, user):
     """Crea un carrito de test para un usuario."""
-    cart = Cart.objects.create(user=user)
+    cart = Cart.objects.create(cart_id=f'cart_{user.id}')
     return cart
 
 

@@ -3,6 +3,7 @@ import admin_thumbnails
 from django.shortcuts import render, redirect
 from django.urls import path
 from django.contrib import messages
+from django.utils.safestring import mark_safe
 import pandas as pd
 import csv
 import io
@@ -18,20 +19,29 @@ from pathlib import Path
 from django.conf import settings
 
 # local:
-from .models import Product, Variation, ReviewRating, ProductGallery, CarouselImage, ProductSearch, FAQCategory, FAQ
+from .models import Product, Variation, ReviewRating, ProductGallery, CarouselImage, ProductSearch, FAQCategory, FAQ, HomeSection, HomeSectionProduct, PromoBanner
 from category.models import Category, SubCategory
-from .forms import ProductImportForm
+from store.web.forms import ProductImportForm
 from .utils import ImageProcessor
 
 
 
-@admin_thumbnails.thumbnail('image')
 class ProductGalleryInLine(admin.TabularInline):
     model = ProductGallery
     extra = 1
-    fields = ['image', 'alt']
+    fields = ['image_asset', 'image', 'image_preview', 'alt']
+    readonly_fields = ('image', 'image_preview')
     verbose_name = "Imagen adicional"
     verbose_name_plural = "Galería de imágenes"
+    autocomplete_fields = ['image_asset']
+
+    def image_preview(self, obj):
+        if obj.image_asset and obj.image_asset.file:
+            return mark_safe(f'<img src="{obj.image_asset.file.url}" style="max-height: 100px; border-radius:4px;"/>')
+        elif obj.image:
+            return mark_safe(f'<img src="{obj.image.url}" style="max-height: 100px; border-radius:4px;"/>')
+        return "—"
+    image_preview.short_description = "Vista previa"
 
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('code', 'name', 'price', 'stock', 'is_on_sale', 'category', 'display_subcategories', 'modified_date', 'is_available')
@@ -39,9 +49,10 @@ class ProductAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
     inlines = [ProductGalleryInLine]
     search_fields = ('code', 'name', 'description')
-    readonly_fields = ['created_date', 'modified_date']  # ⬅ evitamos modificar fechas manualmente
+    readonly_fields = ['created_date', 'modified_date', 'image_preview_method']  # ⬅ evitamos modificar fechas manualmente
     list_filter = ('category', 'subcategories', 'is_available', 'is_on_sale', 'brand', 'condition')
     filter_horizontal = ('subcategories',)
+    autocomplete_fields = ['image']
     actions = ['make_available', 'make_unavailable']
     # Agrega una url personalizada
     def get_urls(self):
@@ -51,6 +62,16 @@ class ProductAdmin(admin.ModelAdmin):
             path('update-prices/', self.admin_site.admin_view(self.update_prices), name='update_prices'),
         ]
         return custom_urls + urls
+    
+    def image_preview_method(self, obj):
+        """Preview readonly de la imagen seleccionada en el FK."""
+        if obj.image and obj.image.file and obj.image.file.name:
+            return mark_safe(
+                f'<img src="{obj.image.file.url}" '
+                f'style="max-width:400px; border-radius:8px;" />'
+            )
+        return "—"
+    image_preview_method.short_description = "Vista previa de imagen"
     
     def import_products(self, request):
         if request.method == 'POST':
@@ -533,6 +554,65 @@ class CarouselImageAdmin(admin.ModelAdmin):
     list_editable = ('position', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('title', 'product__name')
+    readonly_fields = (
+        'image_preview_method', 'image_mobile_preview_method',
+        'image_tablet_preview_method', 'image_large_preview_method',
+        'created_date'
+    )
+    autocomplete_fields = [
+        'image_asset', 'image_mobile_asset',
+        'image_tablet_asset', 'image_large_asset'
+    ]
+    
+    def image_preview_method(self, obj):
+        """Preview readonly de la imagen seleccionada en el FK."""
+        if obj.image_asset and obj.image_asset.file and obj.image_asset.file.name:
+            return mark_safe(
+                f'<img src="{obj.image_asset.file.url}" '
+                f'style="max-width:400px; border-radius:8px;" />'
+            )
+        elif obj.image and obj.image.name:
+            return mark_safe(
+                f'<img src="{obj.image.url}" '
+                f'style="max-width:400px; border-radius:8px;" />'
+            )
+        return "—"
+    image_preview_method.short_description = "Vista previa de imagen (Desktop)"
+
+    def image_mobile_preview_method(self, obj):
+        """Preview readonly de la imagen móvil (Art Direction)."""
+        if obj.image_mobile_asset and obj.image_mobile_asset.file and obj.image_mobile_asset.file.name:
+            return mark_safe(
+                f'<img src="{obj.image_mobile_asset.file.url}" '
+                f'style="max-width:300px; border-radius:8px;" />'
+            )
+        elif obj.image_mobile and obj.image_mobile.name:
+            return mark_safe(
+                f'<img src="{obj.image_mobile.url}" '
+                f'style="max-width:300px; border-radius:8px;" />'
+            )
+        return "—"
+    image_mobile_preview_method.short_description = "Vista previa de imagen (Mobile)"
+
+    def image_tablet_preview_method(self, obj):
+        """Preview readonly de la imagen tablet (Art Direction)."""
+        if obj.image_tablet_asset and obj.image_tablet_asset.file and obj.image_tablet_asset.file.name:
+            return mark_safe(
+                f'<img src="{obj.image_tablet_asset.file.url}" '
+                f'style="max-width:350px; border-radius:8px;" />'
+            )
+        return "—"
+    image_tablet_preview_method.short_description = "Vista previa de imagen (Tablet)"
+
+    def image_large_preview_method(self, obj):
+        """Preview readonly de la imagen large (Art Direction)."""
+        if obj.image_large_asset and obj.image_large_asset.file and obj.image_large_asset.file.name:
+            return mark_safe(
+                f'<img src="{obj.image_large_asset.file.url}" '
+                f'style="max-width:500px; border-radius:8px;" />'
+            )
+        return "—"
+    image_large_preview_method.short_description = "Vista previa de imagen (Large Monitor)"
 
 admin.site.register(CarouselImage, CarouselImageAdmin)
 
@@ -573,3 +653,161 @@ class FAQAdmin(admin.ModelAdmin):
             'subcategory', 
             'subcategory__category'
         )
+
+
+# ============================================================================
+# HOME PAGE BUILDER — Admin para Secciones Dinámicas
+# ============================================================================
+
+class HomeSectionProductInline(admin.TabularInline):
+    """Inline para seleccionar productos manualmente en cada sección."""
+    model = HomeSectionProduct
+    extra = 0
+    fields = ['product', 'position']
+    autocomplete_fields = ['product']
+    ordering = ['position']
+    verbose_name = "Producto seleccionado"
+    verbose_name_plural = "Productos seleccionados (manual)"
+
+
+class PromoBannerInline(admin.StackedInline):
+    """Inline para subir banners dentro de una sección banner_*."""
+    model = PromoBanner
+    extra = 0
+    fields = [
+        ('title', 'alt_text'),
+        ('image_desktop_asset', 'image_large_asset'),      # Desktop + Large juntos
+        ('image_tablet_asset', 'image_mobile_asset'),       # Tablet + Mobile juntos
+        ('image_desktop', 'image_mobile'),
+        ('url', 'open_new_tab'),
+        ('link_product', 'link_category', 'link_params'),
+        ('position', 'is_active'),
+    ]
+    autocomplete_fields = [
+        'image_desktop_asset', 'image_large_asset',
+        'image_tablet_asset', 'image_mobile_asset',
+        'link_product', 'link_category'
+    ]
+    verbose_name = "Banner"
+    verbose_name_plural = "Banners de esta sección"
+
+
+@admin.register(HomeSection)
+class HomeSectionAdmin(admin.ModelAdmin):
+    list_display = ('title', 'position', 'section_type', 'source_type',
+                    'category', 'product_count_display', 'is_active')
+    list_display_links = ('title',)
+    list_editable = ('position', 'is_active')
+    list_filter = ('section_type', 'is_active', 'source_type')
+    ordering = ('position',)
+    search_fields = ('title',)
+    raw_id_fields = ['category']
+    actions = ['auto_populate_products']
+
+    fieldsets = (
+        ('Configuración General', {
+            'fields': ('title', 'section_type', 'position', 'is_active', 'highlight_color')
+        }),
+        ('Fuente de Productos (solo para carruseles)', {
+            'fields': ('source_type', 'category', 'max_products'),
+            'classes': ('collapse',),
+            'description': 'Si selecciona productos manualmente abajo, estos campos se ignoran.'
+        }),
+    )
+
+    def get_inlines(self, request, obj=None):
+        """Mostrar inlines según el tipo de sección."""
+        if obj:
+            # Banners y carruseles de categorías usan PromoBanner
+            if obj.section_type.startswith('banner_') or \
+               obj.section_type in ('categories_carousel', 'categories_featured'):
+                return [PromoBannerInline]
+            # Carruseles de productos usan HomeSectionProduct
+            elif obj.section_type == 'product_carousel':
+                return [HomeSectionProductInline]
+        return []
+
+    def product_count_display(self, obj):
+        if obj.section_type == 'product_carousel':
+            manual = obj.home_section_products.count()
+            if manual > 0:
+                return f"✋ {manual} manuales"
+            return f"🤖 Auto ({obj.get_source_type_display()})"
+        elif obj.section_type.startswith('banner_') or \
+             obj.section_type in ('categories_carousel', 'categories_featured'):
+            return f"🖼️ {obj.banners.filter(is_active=True).count()} imágenes"
+        return "—"
+    product_count_display.short_description = "Contenido"
+
+    def auto_populate_products(self, request, queryset):
+        """
+        Acción admin: toma los productos auto-generados por source_type
+        y los convierte en selección manual editable.
+        """
+        from store.services import HomeSectionService
+        from store.models import HomeSectionProduct
+        
+        count = 0
+        for section in queryset.filter(section_type='product_carousel'):
+            products = HomeSectionService.get_recommended_products(section)
+            for i, product in enumerate(products):
+                HomeSectionProduct.objects.get_or_create(
+                    section=section, product=product,
+                    defaults={'position': i}
+                )
+            count += 1
+        
+        self.message_user(request, f"Se auto-poblaron {count} secciones con productos sugeridos.")
+    auto_populate_products.short_description = "🤖 Auto-poblar con productos recomendados"
+
+
+@admin.register(HomeSectionProduct)
+class HomeSectionProductAdmin(admin.ModelAdmin):
+    list_display = ('section', 'product', 'position')
+    list_editable = ('position',)
+    list_filter = ('section', )
+    search_fields = ('product__name', 'section__title')
+    autocomplete_fields = ['section', 'product']
+    ordering = ('section', 'position')
+
+
+@admin.register(PromoBanner)
+class PromoBannerAdmin(admin.ModelAdmin):
+    list_display = ('section', 'title', 'position', 'is_active', 'link_type_display')
+    list_editable = ('position', 'is_active')
+    list_filter = ('section', 'is_active', 'open_new_tab')
+    search_fields = ('title', 'alt_text', 'url')
+    raw_id_fields = ['link_product', 'link_category']
+    autocomplete_fields = [
+        'image_desktop_asset', 'image_large_asset',
+        'image_tablet_asset', 'image_mobile_asset'
+    ]
+    ordering = ('section', 'position')
+    
+    fieldsets = (
+        ('Información General', {
+            'fields': ('section', 'title', 'alt_text', 'position', 'is_active')
+        }),
+        ('Imágenes (Art Direction 4-layer)', {
+            'fields': (
+                ('image_desktop_asset', 'image_large_asset'),
+                ('image_tablet_asset', 'image_mobile_asset'),
+                ('image_desktop', 'image_mobile'),
+            ),
+            'description': '[NUEVOS] Desktop/Tablet/Mobile/Large desde Banco (recomendado). [LEGACY] Imágenes directas debajo (compatibilidad).'
+        }),
+        ('Sistema de Enlaces (Prioridad: URL > Producto > Categoría)', {
+            'fields': ('url', 'link_product', 'link_category', 'link_params', 'open_new_tab'),
+            'description': 'Defina SOLO uno: URL para externo, Producto/Categoría para interno.'
+        }),
+    )
+    
+    def link_type_display(self, obj):
+        if obj.url:
+            return "🌐 URL"
+        elif obj.link_product:
+            return "📦 Producto"
+        elif obj.link_category:
+            return "📂 Categoría"
+        return "—"
+    link_type_display.short_description = "Tipo de enlace"

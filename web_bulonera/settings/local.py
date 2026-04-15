@@ -4,6 +4,23 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': env('DB_NAME'),  # Debes crear esta base de datos primero
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),  # La contraseña que estableciste para root
+        'HOST': env('DB_HOST', default='localhost'),  # o 127.0.0.1
+        'PORT': env('DB_PORT', default='3306'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'collation': 'utf8mb4_spanish_ci',
+            'init_command': "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_spanish_ci';"
+        }
+    }
+}
+
 # Seguridad relajada para desarrollo
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False

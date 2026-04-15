@@ -1,55 +1,112 @@
-<!DOCTYPE html>
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
 
-    {% block content %}
-    <!-- ========================= SECTION CONTENT ========================= -->
-    <section class="section-conten padding-y bg">
-        {% include 'includes/alerts.html' %}
-        <div class="container">
-            <div class="row">
-                {% include 'includes/dashboard_sidebar.html' %}
-                <main class="col-md-9">
-                    <article class="card">
-                        <header class="card-header">
-                            <strong class="d-inline-block mr-3"> Ordenes de compra:</strong>
-                        </header>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th scope="col">Número de orden: </th>
-                                                <th scope="col">Estado: </th>
-                                                <th scope="col">Nombre de facturación: </th>
-                                                <th scope="col">Teléfono: </th>
-                                                <th scope="col">Total de la orden: </th>
-                                                <th scope="col">Fecha: </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {% for order in orders %}
-                                                    <tr>
-                                                        <th scope="row"><a href="{% url 'order_complete' order.order_number %}" class="btn btn-sm btn-primary">{{ order.order_number }}</a></th>
-                                                        <td>{% if order.is_ordered %}{{ order.status }}{% else %}Nuevo{% endif %}</td>
-                                                        <td>{{ order.full_name }}</td>
-                                                        <td>{{ order.phone }}</td>
-                                                        <td>${{ order.order_total|floatformat:2 }}</td>
-                                                        <td>{{ order.created_at }}</td>
-                                                    </tr>
-                                                {% endfor %}
-                                            </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </article>
-                </main>
-            </div>
-        </div>
-    </section>
-    {% endblock %}
+{% block title %}Mis Órdenes - Bulonera Alvear{% endblock %}
 
-</html>
+{% block meta_description %}Consulta el historial de tus órdenes en Bulonera Alvear.{% endblock %}
+
+{% block content %}
+<!-- My Orders Section -->
+<section class="py-8 bg-slate-50 dark:bg-slate-900 min-h-screen">
+    <div class="container mx-auto px-4">
+        
+        <!-- Breadcrumb -->
+        {% include 'includes/partials/_breadcrumb.html' with items=breadcrumb_items %}
+        
+        <!-- Page Title -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">
+                Mis Órdenes
+            </h1>
+            <p class="text-slate-600 dark:text-slate-400 mt-2">
+                Historial completo de tus compras
+            </p>
+        </div>
+        
+        <!-- Orders Content -->
+        <div>
+            {% if orders %}
+                <!-- Desktop Table -->
+                <div class="hidden md:block bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <table class="w-full">
+                        <thead class="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                            <tr class="text-sm uppercase text-slate-600 dark:text-slate-400">
+                                <th class="text-left py-4 px-6 font-semibold">Número</th>
+                                <th class="text-left py-4 px-6 font-semibold">Fecha</th>
+                                <th class="text-left py-4 px-6 font-semibold">Productos</th>
+                                <th class="text-left py-4 px-6 font-semibold">Estado</th>
+                                <th class="text-right py-4 px-6 font-semibold">Total</th>
+                                <th class="text-center py-4 px-6 font-semibold">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                            {% for order in orders %}
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                <td class="py-4 px-6">
+                                    <span class="font-semibold text-slate-900 dark:text-white">#{{ order.order_number }}</span>
+                                </td>
+                                <td class="py-4 px-6 text-slate-600 dark:text-slate-400">
+                                    {{ order.created_at|date:"d/m/Y" }}
+                                </td>
+                                <td class="py-4 px-6 text-slate-600 dark:text-slate-400">
+                                    {{ order.orderproduct_set.count }} producto{{ order.orderproduct_set.count|pluralize }}
+                                </td>
+                                <td class="py-4 px-6">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
+                                                 {% if order.status == 'new' %}bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200{% endif %}
+                                                 {% if order.status == 'accepted' %}bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200{% endif %}
+                                                 {% if order.status == 'completed' %}bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200{% endif %}
+                                                 {% if order.status == 'cancelled' %}bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200{% endif %}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="py-4 px-6 text-right">
+                                    <span class="font-bold text-slate-900 dark:text-white">${{ order.order_total|floatformat:2 }}</span>
+                                </td>
+                                <td class="py-4 px-6 text-center">
+                                    <a href="{% url 'orders:order_detail' order.order_number %}"
+                                       class="inline-flex items-center gap-1 px-3 py-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                        Ver
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Mobile Cards -->
+                <div class="md:hidden space-y-4">
+                    {% for order in orders %}
+                        {% include 'account/partials/_order_card.html' with order=order show_link=True %}
+                    {% endfor %}
+                </div>
+                
+            {% else %}
+                <!-- Empty State -->
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-12 text-center">
+                    <i data-lucide="inbox" class="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4"></i>
+                    <h3 class="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                        No tienes órdenes aún
+                    </h3>
+                    <p class="text-slate-600 dark:text-slate-400 mb-6">
+                        Comienza a comprar productos de ferretería de calidad
+                    </p>
+                    <a href="{% url 'store:store' %}"
+                       class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium rounded-lg transition-colors">
+                        <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                        Comenzar a Comprar
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        
+    </div>
+</section>
+
+<!-- Floating Cart -->
+{% include 'includes/partials/_floating_cart.html' %}
+
+{% endblock %}

@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Detalle de Orden #{{ order_number }} - Bulonera Alvear{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-soft-bg dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto">
+    <!-- Breadcrumb -->
+    {% include 'includes/partials/_breadcrumb.html' %}
+
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+        Orden #{{ order_number }}
+      </h1>
+      <p class="text-slate-600 dark:text-slate-400">
+        Fecha: {{ order.created_at|date:"d/m/Y H:i" }}
+      </p>
+    </div>
+
+    <!-- Status Timeline -->
+    <div class="mb-8 bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+      <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-6">Estado de la Orden</h2>
+      
+      <div class="flex items-center justify-between">
+        <!-- New -->
+        <div class="flex flex-col items-center">
+          <div class="w-12 h-12 rounded-full {% if order.status == 'New' or order.status == 'Accepted' or order.status == 'Completed' %}bg-blue-600{% else %}bg-slate-300 dark:bg-slate-600{% endif %} flex items-center justify-center mb-2">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-slate-900 dark:text-white">Nuevo</span>
+        </div>
+
+        <!-- Line -->
+        <div class="flex-1 h-1 {% if order.status == 'Accepted' or order.status == 'Completed' %}bg-blue-600{% else %}bg-slate-300 dark:bg-slate-600{% endif %} mx-2"></div>
+
+        <!-- Accepted -->
+        <div class="flex flex-col items-center">
+          <div class="w-12 h-12 rounded-full {% if order.status == 'Accepted' or order.status == 'Completed' %}bg-blue-600{% else %}bg-slate-300 dark:bg-slate-600{% endif %} flex items-center justify-center mb-2">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-slate-900 dark:text-white">Aceptado</span>
+        </div>
+
+        <!-- Line -->
+        <div class="flex-1 h-1 {% if order.status == 'Completed' %}bg-blue-600{% else %}bg-slate-300 dark:bg-slate-600{% endif %} mx-2"></div>
+
+        <!-- Completed -->
+        <div class="flex flex-col items-center">
+          <div class="w-12 h-12 rounded-full {% if order.status == 'Completed' %}bg-blue-600{% else %}bg-slate-300 dark:bg-slate-600{% endif %} flex items-center justify-center mb-2">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-slate-900 dark:text-white">Completado</span>
+        </div>
+      </div>
+
+      <!-- Current Status Badge -->
+      <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-600 dark:text-slate-400">Estado Actual:</span>
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+            {% if order.status == 'New' %}bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200
+            {% elif order.status == 'Accepted' %}bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200
+            {% elif order.status == 'Completed' %}bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200
+            {% elif order.status == 'Cancelled' %}bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200
+            {% endif %}">
+            {{ order.get_status_display }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Left Column: Order Info -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Shipping Information -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Información de Envío</h2>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Nombre Completo</p>
+              <p class="text-slate-900 dark:text-white font-medium">{{ order.full_name }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Teléfono</p>
+              <p class="text-slate-900 dark:text-white font-medium">{{ order.phone }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Email</p>
+              <p class="text-slate-900 dark:text-white font-medium">{{ order.email }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">País</p>
+              <p class="text-slate-900 dark:text-white font-medium">{{ order.country }}</p>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Dirección</p>
+            <p class="text-slate-900 dark:text-white font-medium">{{ order.full_address }}</p>
+            <p class="text-slate-900 dark:text-white font-medium">{{ order.city }}, {{ order.state }}</p>
+          </div>
+        </div>
+
+        <!-- Payment Information -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Información de Pago</h2>
+          
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-slate-600 dark:text-slate-400">Método de Pago:</span>
+              <span class="text-slate-900 dark:text-white font-medium">
+                {% if payment %}{{ payment.payment_method }}{% else %}Pendiente{% endif %}
+              </span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-600 dark:text-slate-400">ID Transacción:</span>
+              <span class="text-slate-900 dark:text-white font-medium">{{ transID|default:"N/A" }}</span>
+            </div>
+            {% if payment %}
+            <div class="flex justify-between">
+              <span class="text-slate-600 dark:text-slate-400">Estado del Pago:</span>
+              <span class="inline-flex items-center px-2 py-1 rounded text-sm font-medium
+                {% if payment.status == 'Completed' %}bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200
+                {% elif payment.status == 'Pending' %}bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200
+                {% elif payment.status == 'Failed' %}bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200
+                {% endif %}">
+                {{ payment.status }}
+              </span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Products -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Productos</h2>
+          
+          <div class="space-y-4">
+            {% for item in ordered_products %}
+            <div class="flex items-start justify-between pb-4 border-b border-slate-200 dark:border-slate-700 last:border-b-0 last:pb-0">
+              <div class="flex-1">
+                <h3 class="text-slate-900 dark:text-white font-medium">{{ item.product.name }}</h3>
+                {% if item.variation.all %}
+                <div class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                  {% for variation in item.variation.all %}
+                  <p>{{ variation.variation_category|capfirst }}: {{ variation.variation_value|capfirst }}</p>
+                  {% endfor %}
+                </div>
+                {% endif %}
+              </div>
+              <div class="text-right ml-4">
+                <p class="text-slate-900 dark:text-white font-medium">
+                  {{ item.purchase_price|floatformat:2 }} $
+                </p>
+                <p class="text-sm text-slate-600 dark:text-slate-400">
+                  Cantidad: {{ item.quantity }}
+                </p>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Summary -->
+      <div class="lg:col-span-1">
+        <!-- Order Summary Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 sticky top-24">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Resumen</h2>
+          
+          <div class="space-y-3 mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+            <div class="flex justify-between">
+              <span class="text-slate-600 dark:text-slate-400">Subtotal:</span>
+              <span class="text-slate-900 dark:text-white font-medium">{{ subtotal|floatformat:2 }} $</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-600 dark:text-slate-400">Envío:</span>
+              <span class="text-slate-900 dark:text-white font-medium">A convenir</span>
+            </div>
+          </div>
+
+          <div class="flex justify-between mb-6">
+            <span class="text-lg font-semibold text-slate-900 dark:text-white">Total:</span>
+            <span class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ order.order_total|floatformat:2 }} $</span>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="space-y-3">
+            <a href="{% url 'account:my_orders' %}" class="w-full inline-flex items-center justify-center px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+              Volver a Órdenes
+            </a>
+
+            <button class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+              <a href="{% url 'contact:contact' %}" class="text-sm hover:text-white transition-colors flex items-center gap-2">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+              Contactar Soporte
+            </button>
+          </div>
+
+          <!-- Order Number Badge -->
+          <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+            <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Número de Orden</p>
+            <p class="text-lg font-mono font-bold text-slate-900 dark:text-white">{{ order_number }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="{% url 'store:store' %}" class="inline-flex items-center justify-center px-6 py-3 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7a2 2 0 012-2z"></path>
+        </svg>
+        Seguir Comprando
+      </a>
+      <a href="{% url 'account:dashboard' %}" class="inline-flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        Mi Cuenta
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

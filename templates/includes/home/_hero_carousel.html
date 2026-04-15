@@ -1,0 +1,364 @@
+{% load static %}
+<!-- ========================= SECTION MAIN - CARRUSEL HERO ========================= -->
+<section class="relative bg-gradient-to-br from-slate-900 via-primary-900 to-slate-900 overflow-hidden">
+    <div x-data="{
+        currentSlide: 0,
+        slides: {{ carousel_count|default:1 }},
+        autoplay: null,
+        
+        init() {
+            this.startAutoplay();
+        },
+        
+        startAutoplay() {
+            this.autoplay = setInterval(() => {
+                this.next();
+            }, 5000);
+        },
+        
+        stopAutoplay() {
+            clearInterval(this.autoplay);
+        },
+        
+        next() {
+            this.currentSlide = (this.currentSlide + 1) % this.slides;
+        },
+        
+        prev() {
+            this.currentSlide = (this.currentSlide - 1 + this.slides) % this.slides;
+        },
+        
+        goTo(index) {
+            this.currentSlide = index;
+            this.stopAutoplay();
+            this.startAutoplay();
+        }
+    }" 
+    @mouseenter="stopAutoplay()" 
+    @mouseleave="startAutoplay()"
+    class="relative">
+        
+        <!-- Slides Container - Más alto y con mejor proporción -->
+        <div class="carousel-container relative overflow-hidden h-[360px] sm:h-[300px] md:h-[400px] lg:h-[450px] 2xl:h-[480px]">
+            
+            <!-- Image Slides (FASE 2: Solo imágenes, sin productos populares) -->
+            {% for image in carousel_images %}
+            <div x-show="currentSlide === {{ forloop.counter0 }}"
+                x-transition:enter="transition ease-out duration-500"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-500"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="absolute inset-0"
+                style="display: none;">
+                
+                <!-- Background Image -->
+                <div class="absolute inset-0">
+                    {% if image.url %}
+                    <a href="{{ image.url }}" class="block w-full h-full">
+                        <picture>
+                            {# ── MOBILE < 640px (portrait/cuadrado) ── #}
+                            {% if image.image_mobile_asset %}
+                                {% if image.image_mobile_asset.get_webp_url %}
+                                <source media="(max-width: 639px)"
+                                        srcset="{{ image.image_mobile_asset.get_webp_url }}"
+                                        type="image/webp">
+                                {% endif %}
+                                <source media="(max-width: 639px)"
+                                        srcset="{{ image.image_mobile_asset.file.url }}">
+                            {% endif %}
+
+                            {# ── TABLET 640–1023px ── #}
+                            {% if image.image_tablet_asset %}
+                                {% if image.image_tablet_asset.get_webp_url %}
+                                <source media="(min-width: 640px) and (max-width: 1023px)"
+                                        srcset="{{ image.image_tablet_asset.get_webp_url }}"
+                                        type="image/webp">
+                                {% endif %}
+                                <source media="(min-width: 640px) and (max-width: 1023px)"
+                                        srcset="{{ image.image_tablet_asset.file.url }}">
+                            {% endif %}
+
+                            {# ── LARGE ≥1536px ── #}
+                            {% if image.image_large_asset %}
+                                {% if image.image_large_asset.get_webp_url %}
+                                <source media="(min-width: 1536px)"
+                                        srcset="{{ image.image_large_asset.get_webp_url }}"
+                                        type="image/webp">
+                                {% endif %}
+                                <source media="(min-width: 1536px)"
+                                        srcset="{{ image.image_large_asset.file.url }}">
+                            {% endif %}
+
+                            {# ── DESKTOP (fallback principal) + WebP ── #}
+                            {% if image.image_asset %}
+                                {% if image.image_asset.get_webp_url %}
+                                <source srcset="{{ image.image_asset.get_webp_url }}"
+                                        type="image/webp">
+                                {% endif %}
+                                <img src="{{ image.image_asset.file.url }}" alt="{{ image.title }}" 
+                                    width="1920" height="480"
+                                    class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                            {% else %}
+                                <img src="{{ image.image_url }}" alt="{{ image.title }}" 
+                                    width="1920" height="480"
+                                    class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                            {% endif %}
+                        </picture>
+                    </a>
+                    {% elif image.product %}
+                    <a href="{{ image.product.get_url }}" class="block w-full h-full">
+                        <picture>
+                            {# ── MOBILE < 640px (portrait/cuadrado) ── #}
+                            {% if image.image_mobile_asset %}
+                                {% if image.image_mobile_asset.get_webp_url %}
+                                <source media="(max-width: 639px)"
+                                        srcset="{{ image.image_mobile_asset.get_webp_url }}"
+                                        type="image/webp">
+                                {% endif %}
+                                <source media="(max-width: 639px)"
+                                        srcset="{{ image.image_mobile_asset.file.url }}">
+                            {% endif %}
+
+                            {# ── TABLET 640–1023px ── #}
+                            {% if image.image_tablet_asset %}
+                                {% if image.image_tablet_asset.get_webp_url %}
+                                <source media="(min-width: 640px) and (max-width: 1023px)"
+                                        srcset="{{ image.image_tablet_asset.get_webp_url }}"
+                                        type="image/webp">
+                                {% endif %}
+                                <source media="(min-width: 640px) and (max-width: 1023px)"
+                                        srcset="{{ image.image_tablet_asset.file.url }}">
+                            {% endif %}
+
+                            {# ── LARGE ≥1536px ── #}
+                            {% if image.image_large_asset %}
+                                {% if image.image_large_asset.get_webp_url %}
+                                <source media="(min-width: 1536px)"
+                                        srcset="{{ image.image_large_asset.get_webp_url }}"
+                                        type="image/webp">
+                                {% endif %}
+                                <source media="(min-width: 1536px)"
+                                        srcset="{{ image.image_large_asset.file.url }}">
+                            {% endif %}
+
+                            {# ── DESKTOP (fallback principal) + WebP ── #}
+                            {% if image.image_asset %}
+                                {% if image.image_asset.get_webp_url %}
+                                <source srcset="{{ image.image_asset.get_webp_url }}"
+                                        type="image/webp">
+                                {% endif %}
+                                <img src="{{ image.image_asset.file.url }}" alt="{{ image.title }}" 
+                                    width="1920" height="480"
+                                    class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                            {% else %}
+                                <img src="{{ image.image_url }}" alt="{{ image.title }}" 
+                                    width="1920" height="480"
+                                    class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                            {% endif %}
+                        </picture>
+                    </a>
+                    {% else %}
+                    <picture>
+                        {# ── MOBILE < 640px (portrait/cuadrado) ── #}
+                        {% if image.image_mobile_asset %}
+                            {% if image.image_mobile_asset.get_webp_url %}
+                            <source media="(max-width: 639px)"
+                                    srcset="{{ image.image_mobile_asset.get_webp_url }}"
+                                    type="image/webp">
+                            {% endif %}
+                            <source media="(max-width: 639px)"
+                                    srcset="{{ image.image_mobile_asset.file.url }}">
+                        {% endif %}
+
+                        {# ── TABLET 640–1023px ── #}
+                        {% if image.image_tablet_asset %}
+                            {% if image.image_tablet_asset.get_webp_url %}
+                            <source media="(min-width: 640px) and (max-width: 1023px)"
+                                    srcset="{{ image.image_tablet_asset.get_webp_url }}"
+                                    type="image/webp">
+                            {% endif %}
+                            <source media="(min-width: 640px) and (max-width: 1023px)"
+                                    srcset="{{ image.image_tablet_asset.file.url }}">
+                        {% endif %}
+
+                        {# ── LARGE ≥1536px ── #}
+                        {% if image.image_large_asset %}
+                            {% if image.image_large_asset.get_webp_url %}
+                            <source media="(min-width: 1536px)"
+                                    srcset="{{ image.image_large_asset.get_webp_url }}"
+                                    type="image/webp">
+                            {% endif %}
+                            <source media="(min-width: 1536px)"
+                                    srcset="{{ image.image_large_asset.file.url }}">
+                        {% endif %}
+
+                        {# ── DESKTOP (fallback principal) + WebP ── #}
+                        {% if image.image_asset %}
+                            {% if image.image_asset.get_webp_url %}
+                            <source srcset="{{ image.image_asset.get_webp_url }}"
+                                    type="image/webp">
+                            {% endif %}
+                            <img src="{{ image.image_asset.file.url }}" alt="{{ image.title }}" 
+                                width="1920" height="480"
+                                class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                        {% else %}
+                            <img src="{{ image.image_url }}" alt="{{ image.title }}" 
+                                width="1920" height="480"
+                                class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                        {% endif %}
+                    </picture>
+                    {% endif %}
+                    <!-- Overlay SOLO si hay título y eligió mostrarlo -->
+                    {% if image.title and image.show_title %}
+                    <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent"></div>
+                    {% endif %}
+                </div>
+                
+                <!-- Caption (Solo si tiene título y eligió mostrarlo) -->
+                {% if image.title and image.show_title %}
+                <div class="absolute inset-0 flex items-center">
+                    <div class="container mx-auto px-4">
+                        <div class="max-w-2xl text-white">
+                            <h2 class="text-2xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-4">
+                                {{ image.title }}
+                            </h2>
+                            {% if image.description %}
+                            <p class="hidden lg:block text-lg text-slate-200">
+                                {{ image.description }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            <!-- Most Searched Products Slides (Global) -->
+            {% for group in most_searched_products_groups %}
+            <div x-show="currentSlide === {{ forloop.counter0|add:carousel_count }}"
+                x-transition:enter="transition ease-out duration-500"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-500"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="absolute inset-0 bg-gradient-to-br from-primary-900 to-slate-900"
+                style="display: none;">
+                
+                <div class="container mx-auto px-4 h-full flex items-center">
+                    <div class="w-full">
+                        <h3 class="text-2xl md:text-3xl font-bold text-white mb-4 md:mb-6 text-center">
+                            Productos más populares
+                        </h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                            {% for product in group %}
+                            <a href="{{ product.get_url }}" class="group bg-white dark:bg-slate-800 rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all">
+                                <div class="aspect-square relative overflow-hidden">
+                                    {% if product.image or product.images %}
+                                    <picture>
+                                        <source srcset="{{ product.webp_image_url }}" type="image/webp">
+                                        <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+                                            width="400" height="400"
+                                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" loading="lazy">
+                                    </picture>
+                                    {% else %}
+                                    <img src="{% static 'images/placeholder.png' %}" alt="sin imagen" 
+                                        width="400" height="400"
+                                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                                    {% endif %}
+                                </div>
+                                <div class="p-2 md:p-3">
+                                    <h5 class="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 mb-1">
+                                        {{ product.name }}
+                                    </h5>
+                                    <p class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400">
+                                        ${{ product.price|floatformat:0 }}
+                                    </p>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- User Searched Products Slides -->
+            {% for group in user_searched_products_groups %}
+            <div x-show="currentSlide === {{ forloop.counter0|add:carousel_plus_searched_count }}"
+                x-transition:enter="transition ease-out duration-500"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-500"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="absolute inset-0 bg-gradient-to-br from-primary-900 to-slate-900"
+                style="display: none;">
+                
+                <div class="container mx-auto px-4 h-full flex items-center">
+                    <div class="w-full">
+                        <h3 class="text-2xl md:text-3xl font-bold text-white mb-4 md:mb-6 text-center">
+                            Productos más populares
+                        </h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                            {% for product in group %}
+                            <a href="{{ product.get_url }}" class="group bg-white dark:bg-slate-800 rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all">
+                                <div class="aspect-square relative overflow-hidden">
+                                    {% if product.images %}
+                                    <picture>
+                                        <source srcset="{{ product.webp_image_url }}" type="image/webp">
+                                        <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+                                            width="400" height="400"
+                                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" loading="lazy">
+                                    </picture>
+                                    {% else %}
+                                    <img src="{% static 'images/placeholder.png' %}" alt="sin imagen" 
+                                        width="400" height="400"
+                                        class="w-full h-full object-cover">
+                                    {% endif %}
+                                </div>
+                                <div class="p-2 md:p-3">
+                                    <h5 class="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 mb-1">
+                                        {{ product.name }}
+                                    </h5>
+                                    <p class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400">
+                                        ${{ product.price|floatformat:0 }}
+                                    </p>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Navigation Arrows -->
+            {% if carousel_count > 1 %}
+            <button @click="prev()" 
+                    class="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-2 md:p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all z-10">
+                <i data-lucide="chevron-left" class="w-5 h-5 md:w-6 md:h-6 text-white"></i>
+            </button>
+            <button @click="next()" 
+                    class="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-2 md:p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all z-10">
+                <i data-lucide="chevron-right" class="w-5 h-5 md:w-6 md:h-6 text-white"></i>
+            </button>
+            
+            <!-- Indicators -->
+            <div class="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex gap-1 md:gap-2 z-10">
+                <template x-for="i in {{ carousel_count }}" :key="i">
+                    <button @click="goTo(i - 1)" 
+                            class="w-2 h-2 rounded-full transition-all"
+                            :class="currentSlide === i - 1 ? 'bg-white w-6 md:w-8' : 'bg-white/50'">
+                    </button>
+                </template>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+<!-- ========================= SECTION MAIN - CARRUSEL HERO END ========================= -->
+

@@ -1,0 +1,417 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Bulonera Alvear Admin{% endblock %}
+
+{% block branding %}
+<div class="flex items-center gap-3 px-4 py-3">
+    <img src="{% static 'images/logo-bulonera-alvear.png' %}" alt="Bulonera Alvear" class="h-8 w-auto">
+    <h1 style="color: white; font-size: 1.25rem; font-weight: 700; margin: 0;">Bulonera Alvear</h1>
+</div>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+    /* Tailwind Config */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    :root {
+        --primary-50: #eff6ff;
+        --primary-100: #dbeafe;
+        --primary-200: #bfdbfe;
+        --primary-300: #93c5fd;
+        --primary-400: #60a5fa;
+        --primary-500: #3b82f6;
+        --primary-600: #2563eb;
+        --primary-700: #1d4ed8;
+        --primary-800: #1e40af;
+        --primary-900: #1e3a8a;
+    }
+    
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: var(--body-bg);
+    }
+    
+    /* Override Django Admin Styles */
+    #header {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        border-bottom: none;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    }
+    
+    #branding h1 {
+        color: white;
+        margin: 0;
+    }
+    
+    #user-tools {
+        color: white;
+        padding: 12px 16px;
+    }
+    
+    #user-tools a {
+        color: white;
+        text-decoration: none;
+        transition: opacity 0.2s;
+    }
+    
+    #user-tools a:hover {
+        opacity: 0.8;
+    }
+    
+    .breadcrumbs {
+        background: var(--darkened-bg);
+        border-bottom: 1px solid var(--border-color);
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+    
+    .breadcrumbs a {
+        color: #2563eb;
+        text-decoration: none;
+    }
+    
+    .breadcrumbs a:hover {
+        text-decoration: underline;
+    }
+    
+    #content {
+        padding: 24px;
+        width: 100%;
+        flex: 1;
+        box-sizing: border-box;
+    }
+    
+    .module {
+        width: 100%;
+        background: var(--darkened-bg);
+        border-radius: 8px;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+    
+    .module h2 {
+        background: var(--darkened-bg);
+        border-bottom: 1px solid var(--border-color);
+        padding: 12px 16px;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--body-fg);
+        margin: 0;
+    }
+    
+    .module caption {
+        background: var(--darkened-bg);
+        border-bottom: 1px solid var(--border-color);
+        padding: 12px 16px;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--body-fg);
+        text-align: left;
+    }
+    
+    /* Buttons */
+    .button, input[type=submit], input[type=button], .submit-row input, button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    
+    .button:hover, input[type=submit]:hover, input[type=button]:hover, .submit-row input:hover, button:hover {
+        background: #1d4ed8;
+    }
+    
+    .button.default, input[type=submit].default, .submit-row input.default {
+        background: #2563eb;
+    }
+    
+    .button.default:hover, input[type=submit].default:hover {
+        background: #1d4ed8;
+    }
+    
+    /* Forms */
+    input[type=text], input[type=password], input[type=email], input[type=url], 
+    input[type=number], input[type=tel], textarea, select {
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    
+    input[type=text]:focus, input[type=password]:focus, input[type=email]:focus, 
+    input[type=url]:focus, input[type=number]:focus, input[type=tel]:focus, 
+    textarea:focus, select:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    
+    /* Tables */
+    #changelist {
+        width: 100%;
+    }
+    #changelist .results {
+        width: 100%;
+        overflow-x: auto;
+    }
+    #result_list {
+        width: 100% !important;
+        display: table !important;
+        border: none;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    #result_list thead th {
+        background: var(--darkened-bg);
+        border-bottom: 2px solid var(--border-color);
+        padding: 12px 16px;
+        font-weight: 600;
+        color: var(--body-fg);
+        text-align: left;
+    }
+    
+    #result_list tbody tr {
+        border-bottom: 1px solid var(--border-color);
+        transition: background 0.2s;
+    }
+    
+    #result_list tbody tr:hover {
+        background: var(--selected-row);
+    }
+    
+    #result_list tbody td {
+        padding: 12px 16px;
+    }
+    
+    /* Messages */
+    .messagelist {
+        margin: 0 0 24px 0;
+        padding: 0;
+        list-style: none;
+    }
+    
+    .messagelist li {
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+    
+    .messagelist .success {
+        background: #dcfce7;
+        border-left: 4px solid #16a34a;
+        color: #166534;
+    }
+    
+    .messagelist .warning {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        color: #92400e;
+    }
+    
+    .messagelist .error {
+        background: #fee2e2;
+        border-left: 4px solid #dc2626;
+        color: #991b1b;
+    }
+    
+    .messagelist .info {
+        background: #dbeafe;
+        border-left: 4px solid #2563eb;
+        color: #1e40af;
+    }
+    
+    /* Contenido y Tablas Globales */
+    #content-main {
+        width: 100%;
+    }
+    
+    .module table {
+        width: 100%;
+        display: table !important;
+        border-collapse: collapse;
+    }
+    
+    .module table th,
+    .module table td {
+        text-align: left;
+        padding: 10px 16px;
+    }
+    
+    /* Object tools */
+    .object-tools {
+        float: right;
+        margin: 0 0 16px 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        gap: 8px;
+    }
+    
+    .object-tools li {
+        display: inline-block;
+    }
+    
+    .object-tools a {
+        background: #2563eb;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background 0.2s;
+        display: inline-block;
+    }
+    
+    .object-tools a:hover {
+        background: #1d4ed8;
+    }
+    
+    .object-tools a.addlink {
+        background: #16a34a;
+    }
+    
+    .object-tools a.addlink:hover {
+        background: #15803d;
+    }
+    
+    /* Pagination */
+    .paginator {
+        padding: 12px 16px;
+        background: var(--darkened-bg);
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .paginator a {
+        color: #2563eb;
+        text-decoration: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+    
+    .paginator a:hover {
+        background: #f1f5f9;
+    }
+    
+    /* Filters */
+    #changelist-filter {
+        background: var(--darkened-bg);
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    }
+    
+    #changelist-filter h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--body-fg);
+        margin: 0 0 12px 0;
+    }
+    
+    #changelist-filter h3 {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--body-fg);
+        margin: 16px 0 8px 0;
+    }
+    
+    #changelist-filter ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    #changelist-filter li {
+        padding: 4px 0;
+    }
+    
+    #changelist-filter a {
+        color: #2563eb;
+        text-decoration: none;
+        font-size: 14px;
+    }
+    
+    #changelist-filter a:hover {
+        text-decoration: underline;
+    }
+    
+    #changelist-filter li.selected a {
+        color: var(--body-fg);
+        font-weight: 600;
+    }
+    
+    /* ── Nav Sidebar (Django 5) ─────────────────────── */
+    #nav-sidebar {
+        background: #1e293b;
+    }
+    
+    #nav-sidebar .module {
+        background: transparent;
+    }
+    
+    #nav-sidebar .current-app .section:link,
+    #nav-sidebar .current-app .section:visited {
+        color: #93c5fd;
+        font-weight: 600;
+    }
+    
+    #nav-sidebar caption,
+    #nav-sidebar .module > h2 {
+        background: #0f172a;
+        color: #94a3b8;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 10px 16px 6px;
+        border-bottom: none;
+    }
+    
+    #nav-sidebar .module table tr:hover {
+        background: rgba(255,255,255,0.05);
+    }
+    
+    #nav-sidebar th a:link,
+    #nav-sidebar th a:visited {
+        color: #cbd5e1;
+        font-weight: 400;
+    }
+    
+    #nav-sidebar th a:hover {
+        color: #ffffff;
+    }
+    
+    /* Toggle sidebar button */
+    #nav-sidebar-toggle-label {
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block footer %}
+<div id="footer" style="clear: both; width: 100%; position: relative; bottom: 0; background: var(--darkened-bg); border-top: 1px solid var(--border-color); padding: 16px; text-align: center; color: var(--body-fg); font-size: 14px;">
+    <p>Bulonera Alvear Admin Panel | Powered by Django</p>
+</div>
+<script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+</script>
+{% endblock %}

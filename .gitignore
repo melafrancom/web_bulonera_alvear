@@ -1,50 +1,81 @@
 # Python
-*.pyc
-*.pyo
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
 *.egg-info/
+.installed.cfg
+*.egg
 
 # Django
 *.log
 local_settings.py
-staticfiles/
-media/
-bulonera.sock
+db.sqlite3
+db.sqlite3-journal
+/staticfiles/
+/media/
 
-# Entorno
+# Environment
 .env
-.env.*
-!.env.example
-
-# Venv
-venv/
+.env.local
+.venv
 env/
-.venv/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
-# IDE
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS
+*~
 .DS_Store
-Thumbs.db
 
-# uWSGI
-*.pid
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
 
-# Brain
-.agents/
-PROJECT_BRAIN.md
-ROLES_Y_PROMPTS.md
-ARCHITECTURE.md
-API_STRUCTURE.md
-REQUEST_FLOW.md
-ARCHITECTURE_VIEWS.md
-VALIDATION_CHECKLIST.md
-PWA-IMPLEMENTATION.md
-feature-rollout.md
-script_creados.md
-context_all_web.md
+# Backups
+*.sql
+*.sql.gz
+/backups/
+
+# Logs
+*.log
+/logs/
+
+# Docker
+docker-compose.override.yml
+
+# Node (si se usa)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Tailwind generated
+/static/css/tailwind.min.css
+
+# IDE
+*.md
+feature-rollout.m
+COMMIT_MESSAGE_FASE4.txt
+Guias.txt
+1 archivo_base.xlsx

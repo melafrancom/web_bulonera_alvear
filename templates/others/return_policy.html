@@ -3,50 +3,163 @@
 {% load custom_filters %}
 
 {% block title %}Política de Devoluciones | Bulonera Alvear{% endblock %}
+{% block meta_description %}Política de devoluciones de Bulonera Alvear. Condiciones, plazos y procedimientos para devoluciones de productos.{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <h1 class="mb-4 text-primary">Política de Devoluciones</h1>
-            <p><strong>Bulonera Alvear</strong> – Venta de productos de bulonería y ferretería</p>
-            <p>
-                En Bulonera Alvear trabajamos para que nuestros clientes reciban productos de calidad, con total claridad en cada operación. No obstante, entendemos que pueden surgir situaciones donde sea necesario gestionar una devolución. A continuación detallamos nuestra política aplicable a todas las ventas realizadas a través de nuestros canales oficiales: sitio web, marketplaces, Google y WhatsApp.
-            </p>
-            <hr>
-            <h4>1. Plazo para solicitar una devolución</h4>
-            <p>
-                El cliente dispone de un plazo máximo de <strong>treinta (30) días corridos</strong> desde la fecha de emisión de la factura o ticket para iniciar el proceso de devolución. Vencido dicho plazo, no se aceptarán reclamos bajo este concepto.
-            </p>
-            <h4>2. Condiciones para aceptar una devolución</h4>
-            <ul>
-                <li>El producto debe encontrarse <strong>sin uso</strong>, en perfecto estado de conservación.</li>
-                <li>El cliente debe conservar el <strong>empaque original</strong> y remitirlo tal como fue entregado.</li>
-                <li>Deberá presentarse la <strong>factura de compra, remito o ticket</strong> correspondiente.</li>
-                <li>El cliente deberá enviar <strong>fotos del producto embalado</strong> para su retorno, junto con comprobante del transporte seleccionado para la devolución.</li>
-            </ul>
-            <h4>3. Envío de la devolución</h4>
-            <ul>
-                <li>El <strong>costo y la gestión del envío</strong> corren por cuenta y responsabilidad exclusiva del cliente.</li>
-                <li>El cliente podrá coordinar el retiro o envío con el transporte de su elección. Es indispensable que nos facilite el <strong>número de seguimiento</strong> del envío.</li>
-            </ul>
-            <h4>4. Casos en los que no se aceptan devoluciones</h4>
-            <ul>
-                <li>Productos que hayan sido <strong>utilizados total o parcialmente</strong>. En caso de devolución mixta (producto parcialmente usado), podrá descontarse el valor proporcional correspondiente al producto afectado.</li>
-                <li>Productos que hayan sido solicitados como <strong>pedidos especiales o por encargo</strong>, previamente aprobados por el cliente, incluyendo aquellos que hayan sido verificados mediante muestras.</li>
-                <li>Transcurrido el <strong>plazo de 30 días</strong> desde la compra.</li>
-            </ul>
-            <h4>5. Proceso y tiempos de gestión</h4>
-            <p>
-                Una vez recibido el producto devuelto y verificado su estado, se procederá a la emisión del <strong>reembolso o nota de crédito</strong> correspondiente, dentro de los <strong>siete (7) días hábiles</strong> posteriores. El reembolso se realizará mediante el mismo medio de pago utilizado originalmente, o según coordinación previa con el cliente.
-            </p>
-            <hr>
-            <h5>Información Fiscal y Comercial</h5>
-            <ul>
-                <li>Bulonera Alvear emite comprobantes tipo <strong>Factura A, Factura B o Ticket</strong>, según corresponda al tipo de cliente, se confeccionará <strong>la NOTA DE CRÉDITO correspondiente.</strong></li>
-                <li>Recordemos una vez más que realizamos envíos a todo el país, los cuales se coordinan directamente con el cliente, siendo el costo del transporte a cargo del comprador, lo mismo se aplicará en caso de devoluciones.</li>
-            </ul>
-        </div>
-    </div>
+
+<!-- Breadcrumb -->
+<div class="bg-soft-bg dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+  <div class="container mx-auto px-4 py-3">
+    <nav class="flex items-center gap-2 text-sm">
+      <a href="{% url 'home' %}" class="text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+        <i data-lucide="home" class="w-4 h-4"></i>
+      </a>
+      <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+      <span class="text-slate-900 dark:text-white font-medium">Política de Devoluciones</span>
+    </nav>
+  </div>
 </div>
+
+<!-- Main Content -->
+<section class="py-8 md:py-12 bg-soft-bg dark:bg-slate-900">
+  <div class="container mx-auto px-4 max-w-5xl">
+    
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 md:p-8">
+      
+      <!-- Header -->
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
+          <i data-lucide="package-x" class="w-6 h-6 text-primary-600 dark:text-primary-400"></i>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Política de Devoluciones</h1>
+      </div>
+      
+      <div class="mb-6">
+        <p class="text-slate-700 dark:text-slate-300"><strong>Bulonera Alvear</strong> – Venta de productos de bulonería y ferretería</p>
+      </div>
+      
+      <p class="text-slate-700 dark:text-slate-300 mb-6 leading-relaxed">
+        En Bulonera Alvear trabajamos para que nuestros clientes reciban productos de calidad, con total claridad en cada operación. No obstante, entendemos que pueden surgir situaciones donde sea necesario gestionar una devolución. A continuación detallamos nuestra política aplicable a todas las ventas realizadas a través de nuestros canales oficiales: sitio web, marketplaces, Google y WhatsApp.
+      </p>
+      
+      <hr class="border-slate-200 dark:border-slate-700 my-6">
+      
+      <!-- Section 1: Plazo -->
+      <div class="mb-6">
+        <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+          <i data-lucide="calendar-clock" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
+          1. Plazo para solicitar una devolución
+        </h4>
+        <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600 dark:border-blue-400 p-4 rounded-r-lg">
+          <p class="text-slate-700 dark:text-slate-300">
+            El cliente dispone de un plazo máximo de <strong class="text-blue-700 dark:text-blue-300">treinta (30) días corridos</strong> desde la fecha de emisión de la factura o ticket para iniciar el proceso de devolución. Vencido dicho plazo, no se aceptarán reclamos bajo este concepto.
+          </p>
+        </div>
+      </div>
+      
+      <!-- Section 2: Condiciones -->
+      <div class="mb-6">
+        <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+          <i data-lucide="clipboard-check" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
+          2. Condiciones para aceptar una devolución
+        </h4>
+        <ul class="space-y-3">
+          <li class="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+            <i data-lucide="check-circle" class="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0"></i>
+            <span class="text-slate-700 dark:text-slate-300">El producto debe encontrarse <strong>sin uso</strong>, en perfecto estado de conservación.</span>
+          </li>
+          <li class="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+            <i data-lucide="check-circle" class="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0"></i>
+            <span class="text-slate-700 dark:text-slate-300">El cliente debe conservar el <strong>empaque original</strong> y remitirlo tal como fue entregado.</span>
+          </li>
+          <li class="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+            <i data-lucide="check-circle" class="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0"></i>
+            <span class="text-slate-700 dark:text-slate-300">Deberá presentarse la <strong>factura de compra, remito o ticket</strong> correspondiente.</span>
+          </li>
+          <li class="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+            <i data-lucide="check-circle" class="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0"></i>
+            <span class="text-slate-700 dark:text-slate-300">El cliente deberá enviar <strong>fotos del producto embalado</strong> para su retorno, junto con comprobante del transporte seleccionado.</span>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- Section 3: Envío -->
+      <div class="mb-6">
+        <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+          <i data-lucide="truck" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
+          3. Envío de la devolución
+        </h4>
+        <ul class="space-y-2 text-slate-700 dark:text-slate-300">
+          <li class="flex items-start gap-2">
+            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
+            <span>El <strong>costo y la gestión del envío</strong> corren por cuenta y responsabilidad exclusiva del cliente.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
+            <span>El cliente podrá coordinar el retiro o envío con el transporte de su elección. Es indispensable que nos facilite el <strong>número de seguimiento</strong> del envío.</span>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- Section 4: Casos no aceptados -->
+      <div class="mb-6">
+        <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+          <i data-lucide="x-circle" class="w-5 h-5 text-red-600 dark:text-red-400"></i>
+          4. Casos en los que no se aceptan devoluciones
+        </h4>
+        <ul class="space-y-3">
+          <li class="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0"></i>
+            <span class="text-slate-700 dark:text-slate-300">Productos que hayan sido <strong>utilizados total o parcialmente</strong>. En caso de devolución mixta, podrá descontarse el valor proporcional correspondiente al producto afectado.</span>
+          </li>
+          <li class="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0"></i>
+            <span class="text-slate-700 dark:text-slate-300">Productos solicitados como <strong>pedidos especiales o por encargo</strong>, previamente aprobados por el cliente, incluyendo aquellos verificados mediante muestras.</span>
+          </li>
+          <li class="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0"></i>
+            <span class="text-slate-700 dark:text-slate-300">Transcurrido el <strong>plazo de 30 días</strong> desde la compra.</span>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- Section 5: Proceso -->
+      <div class="mb-6">
+        <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+          <i data-lucide="refresh-ccw" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
+          5. Proceso y tiempos de gestión
+        </h4>
+        <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-600 dark:border-green-400 p-4 rounded-r-lg">
+          <p class="text-slate-700 dark:text-slate-300">
+            Una vez recibido el producto devuelto y verificado su estado, se procederá a la emisión del <strong class="text-green-700 dark:text-green-300">reembolso o nota de crédito</strong> correspondiente, dentro de los <strong class="text-green-700 dark:text-green-300">siete (7) días hábiles</strong> posteriores. El reembolso se realizará mediante el mismo medio de pago utilizado originalmente, o según coordinación previa con el cliente.
+          </p>
+        </div>
+      </div>
+      
+      <hr class="border-slate-200 dark:border-slate-700 my-6">
+      
+      <!-- Fiscal Info -->
+      <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-6">
+        <h5 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+          <i data-lucide="file-text" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
+          Información Fiscal y Comercial
+        </h5>
+        <ul class="space-y-2 text-slate-700 dark:text-slate-300">
+          <li class="flex items-start gap-2">
+            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
+            <span>Bulonera Alvear emite comprobantes tipo <strong>Factura A, Factura B o Ticket</strong>, según corresponda al tipo de cliente, se confeccionará <strong>la NOTA DE CRÉDITO correspondiente.</strong></span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
+            <span>Realizamos envíos a todo el país, los cuales se coordinan directamente con el cliente, siendo el costo del transporte a cargo del comprador, lo mismo se aplicará en caso de devoluciones.</span>
+          </li>
+        </ul>
+      </div>
+      
+    </div>
+    
+  </div>
+</section>
+
 {% endblock %}
+

@@ -1,134 +1,166 @@
-<!DOCTYPE html>
-<html lang="en">
-
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
 
+{% block title %}Carrito de Compras - Bulonera Alvear{% endblock %}
+
+{% block meta_description %}Revisa tu carrito de compras y procede al pago de forma segura.{% endblock %}
 
 {% block content %}
-
-    <section class="section-content padding-y bg">
-        <div class="container">
-                        <!-- ============================ COMPONENT 1 ================================= -->
-            {% if not cart_items %}
-            <h3 class="text-center">¡Parece que no has agregado nada aún! Añade productos de tu interés al carrito.</h3>
-            <br>
-            <div class="text-center">
-                <a href="{% url 'store' %}" class="btn btn-primary">Continuar Comprando</a>
-            </div>
-            {% else %}
-            <div class="row">
-                <aside class="col-lg-9">
-                    <div class="table-shopping-cart-wrap">
-                        <table class="table table-borderless table-shopping-cart">
-                            <thead class="text-muted">
-                                <tr class="small text-uppercase">
-                                    <th scope="col">Producto(s)</th>
-                                    <th scope="col" width="120">Cantidad</th>
-                                    <th scope="col" width="120">Precio</th>
-                                    <th scope="col" class="text-right" width="200"> </th>
+<!-- Cart Section -->
+<section class="py-8 bg-slate-50 dark:bg-slate-900 min-h-screen">
+    <div class="container mx-auto px-4">
+        
+        <!-- Breadcrumb -->
+        {% include 'includes/partials/_breadcrumb.html' with items=breadcrumb_items %}
+        
+        <!-- Page Title -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">
+                Carrito de Compras
+            </h1>
+            {% if cart_items %}
+            <p class="text-slate-600 dark:text-slate-400 mt-2">
+                Tienes {{ quantity }} producto{{ quantity|pluralize }} en tu carrito
+            </p>
+            {% endif %}
+        </div>
+        
+        <!-- Empty State -->
+        {% if not cart_items %}
+            {% include 'cart/partials/_empty_cart.html' %}
+        {% else %}
+        
+        <!-- Cart Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Cart Items Table -->
+            <div class="lg:col-span-8">
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    
+                    <!-- Desktop Table -->
+                    <div class="hidden md:block overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                                <tr class="text-sm uppercase text-slate-600 dark:text-slate-400">
+                                    <th class="text-left py-4 px-4 font-semibold">Producto</th>
+                                    <th class="text-center py-4 px-4 font-semibold w-32">Cantidad</th>
+                                    <th class="text-right py-4 px-4 font-semibold w-32">Precio</th>
+                                    <th class="text-right py-4 px-4 font-semibold w-32">Acciones</th>
                                 </tr>
                             </thead>
-
                             <tbody>
                                 {% for cart_item in cart_items %}
-                                <tr>
-                                    <td>
-                                        <figure class="itemside align-items-center">
-                                            <div class="aside"><img src="{{ cart_item.product.images.url }}" class="img-sm"></div>
-                                            <figcaption class="info">
-                                                <a href="{{ cart_item.product.get_url }}" class="title text-dark">{{ cart_item.product.name }}</a>
-                            
-                                                <p class="text-muted small">
-                                                {% if cart_item.variation.all %}
-                                                    {% for item in cart_item.variation.all %}
-                                                        {{ item.variation_category | capfirst }} : {{ item.variation_value | capfirst }} <br>
-                                                    {% endfor %}
-                                                {% endif %}
-                                                </p>
-                                            </figcaption>
-                                        </figure>
-                                    </td>
-
-                                    <td>
-                                        <!-- col.// -->
-                                        <div class="col">
-                                            <div class="input-group input-spinner">
-                                                <div class="input-group-prepend">
-                                                    <a href="{% url 'remove_cart' cart_item.product.id cart_item.id %}" class="btn btn-light" type="button" id="button-plus"> <i class="fa fa-minus"></i> </a>
-                                                </div>
-                                                <input type="text" class="form-control"  value="{{ cart_item.quantity }}">
-                                                <div class="input-group-append">
-                                                    <form action="{% url 'add_cart' cart_item.product.id %}" method="post">
-                                                        {% csrf_token %}
-                                                        {% for item in cart_item.variation.all %}
-                                                        <input type="hidden" name="{{ item.variation_category | lower }}" value="{{ item.variation_value | capfirst }}">
-                                                        {% endfor %}
-                                                        <button class="btn btn-light" type="submit" id="button-minus"> <i class="fa fa-plus"></i> </button>
-                    
-                                                    </form>
-
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <td>
-                                        <div class="price-wrap">
-                                            <var class="price">${{ cart_item.sub_total|floatformat:2 }}</var>
-                                            <small class="text-muted"> 
-                                                {% if cart_item.product.is_on_sale and cart_item.product.sale_price %}
-                                                    ${{ cart_item.product.sale_price|floatformat:2 }} cada uno 
-                                                    <del class="text-muted">${{ cart_item.product.price|floatformat:2 }}</del>
-                                                {% else %}
-                                                    ${{ cart_item.product.price|floatformat:2 }} cada uno
-                                                {% endif %}
-                                            </small>
-                                        </div>
-                                    </td>
-
-                                    <td class="text-right">
-                                        <a href="{% url 'remove_cart_item' cart_item.product.id cart_item.id %}" class="btn btn-danger"> Eliminar</a>
-                                    </td>
-
-                                </tr>
+                                    {% include 'cart/partials/_cart_item_row.html' with cart_item=cart_item %}
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                </aside>
-
-                <aside class="col-lg-3">
-                    <div class="card">
-                        <div class="card-body">
-<!-- 
-                            <dl class="dlist-align">
-                                <dt>Impuesto IVA (16%):</dt>
-                                <dd class="text-right"> {{ tax }}</dd>
-                            </dl>
--->
+                    
+                    <!-- Mobile Cards -->
+                    <div class="md:hidden divide-y divide-slate-200 dark:divide-slate-700">
+                        {% for cart_item in cart_items %}
+                        <div class="p-4" 
+                             x-data="{
+                                 qty: {{ cart_item.quantity }},
+                                 itemId: {{ cart_item.id }},
+                                 productId: {{ cart_item.product.id }},
+                                 
+                                 removeItem() {
+                                     if (confirm('¿Eliminar este producto del carrito?')) {
+                                         window.location.href = '{% url 'cart:remove_cart_item' cart_item.product.id cart_item.id %}';
+                                     }
+                                 }
+                             }">
                             
-                            <dl class="dlist-align">
-                                <dt>Total:</dt>
-                                <dd class="text-right text-dark b"><strong>{{ total|floatformat:2 }}</strong></dd>
-                            </dl>
-
-                            <hr>
-                            <p class="text-center mb-3">
-                                <img src="{% static './images/misc/payments.png' %}" height="26">
-                            </p>
-
-                            <a href="{% url 'checkout' %}" class="btn btn-primary btn-block"> Pagar </a>
-                            <a href="{% url 'store' %}" class="btn btn-light btn-block">Continuar comprando</a>
+                            <!-- Product Info -->
+                            <div class="flex gap-3 mb-4">
+                                <a href="{{ cart_item.product.get_url }}" class="flex-shrink-0">
+                                    <img src="{{ cart_item.product.image_url }}" 
+                                         alt="{{ cart_item.product.name }}"
+                                         class="w-20 h-20 object-cover rounded-lg border border-slate-200 dark:border-slate-700">
+                                </a>
+                                <div class="flex-1 min-w-0">
+                                    <a href="{{ cart_item.product.get_url }}" 
+                                       class="text-slate-900 dark:text-white font-medium hover:text-blue-600 dark:hover:text-blue-400 line-clamp-2 text-sm">
+                                        {{ cart_item.product.name }}
+                                    </a>
+                                    {% if cart_item.variation.all %}
+                                    <div class="mt-1 space-y-0.5">
+                                        {% for item in cart_item.variation.all %}
+                                        <p class="text-xs text-slate-600 dark:text-slate-400">
+                                            <span class="font-medium">{{ item.variation_category|capfirst }}:</span> 
+                                            {{ item.variation_value|capfirst }}
+                                        </p>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Price -->
+                            <div class="mb-3">
+                                <div class="text-lg font-semibold text-slate-900 dark:text-white">
+                                    ${{ cart_item.sub_total|floatformat:2 }}
+                                </div>
+                                <div class="text-sm text-slate-500 dark:text-slate-400">
+                                    {% if cart_item.product.is_on_sale and cart_item.product.sale_price %}
+                                        <span class="text-green-600 dark:text-green-400">${{ cart_item.product.sale_price|floatformat:2 }}</span> c/u
+                                        <del class="text-slate-400 dark:text-slate-500 ml-1">${{ cart_item.product.price|floatformat:2 }}</del>
+                                    {% else %}
+                                        ${{ cart_item.product.price|floatformat:2 }} c/u
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Quantity Controls -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden">
+                                    <a href="{% url 'cart:remove_cart' cart_item.product.id cart_item.id %}"
+                                       class="px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
+                                        <i data-lucide="minus" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
+                                    </a>
+                                    <input type="text" 
+                                           x-model="qty"
+                                           readonly
+                                           class="w-12 text-center border-0 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium">
+                                    <form action="{% url 'cart:add_cart' cart_item.product.id %}" method="post">
+                                        {% csrf_token %}
+                                        {% for item in cart_item.variation.all %}
+                                        <input type="hidden" name="{{ item.variation_category|lower }}" value="{{ item.variation_value|capfirst }}">
+                                        {% endfor %}
+                                        <button type="submit"
+                                                class="px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
+                                            <i data-lucide="plus" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <button @click="removeItem()"
+                                        class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    Eliminar
+                                </button>
+                            </div>
                         </div>
+                        {% endfor %}
                     </div>
-                </aside>
+                    
+                </div>
             </div>
-
-
-            {% endif %}
+            
+            <!-- Order Summary Sidebar -->
+            <div class="lg:col-span-4">
+                {% include 'cart/partials/_order_summary_card.html' with total=total show_checkout_button=True show_continue_button=True %}
+            </div>
+            
         </div>
-    </section>
+        {% endif %}
+        
+    </div>
+</section>
+
+<!-- Floating Cart -->
+{% include 'includes/partials/_floating_cart.html' %}
+
 {% endblock %}
-</html>

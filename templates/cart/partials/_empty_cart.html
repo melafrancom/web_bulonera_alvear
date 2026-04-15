@@ -1,0 +1,24 @@
+{% comment %}
+Empty Cart State Component
+Muestra mensaje cuando el carrito está vacío con CTA para continuar comprando
+{% endcomment %}
+
+<div class="flex flex-col items-center justify-center py-16 px-4">
+    <div class="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+        <i data-lucide="shopping-cart" class="w-12 h-12 text-slate-400 dark:text-slate-500"></i>
+    </div>
+    
+    <h3 class="text-2xl font-semibold text-slate-900 dark:text-white mb-3 text-center">
+        Tu carrito está vacío
+    </h3>
+    
+    <p class="text-slate-600 dark:text-slate-400 mb-8 text-center max-w-md">
+        ¡Parece que no has agregado nada aún! Añade productos de tu interés al carrito.
+    </p>
+    
+    <a href="{% url 'store:store' %}" 
+       class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium rounded-lg transition-colors duration-200">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        Continuar Comprando
+    </a>
+</div>

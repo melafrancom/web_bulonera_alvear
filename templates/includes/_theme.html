@@ -1,0 +1,46 @@
+{% load l10n %}
+<script>
+{% localize off %}
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                colors: {
+                    primary: {
+                        DEFAULT: '{{ site_theme.primary_800 }}',
+                        50:  '{{ site_theme.primary_50 }}',
+                        100: '{{ site_theme.primary_100 }}',
+                        200: '{{ site_theme.primary_200 }}',
+                        300: '{{ site_theme.primary_300 }}',
+                        400: '{{ site_theme.primary_400 }}',
+                        500: '{{ site_theme.primary_500 }}',
+                        600: '{{ site_theme.primary_600 }}',
+                        700: '{{ site_theme.primary_700 }}',
+                        800: '{{ site_theme.primary_800 }}',
+                        900: '{{ site_theme.primary_900 }}',
+                    },
+                    accent: {
+                        DEFAULT: '{{ site_theme.accent_500 }}',
+                        400: '{{ site_theme.accent_400 }}',
+                        500: '{{ site_theme.accent_500 }}',
+                        600: '{{ site_theme.accent_600 }}',
+                    },
+                    'soft-bg': '{{ site_theme.soft_bg }}',
+                    'navbar-bg': 'rgba({{ site_theme.navbar_bg_rgb }}, {{ site_theme.navbar_opacity_dec }})',
+                    'navbar-text': '{{ site_theme.navbar_text }}',
+                    'topbar-text': '{{ site_theme.topbar_text }}',
+                    'subbar-from': 'rgba({{ site_theme.subbar_from_rgb }}, {{ site_theme.subbar_opacity_dec }})',
+                    'subbar-to': 'rgba({{ site_theme.subbar_to_rgb }}, {{ site_theme.subbar_opacity_dec }})',
+                    'footer-bg': 'rgba({{ site_theme.footer_bg_rgb }}, {{ site_theme.footer_opacity_dec }})',
+                    'footer-text': '{{ site_theme.footer_text }}',
+                    'quickcat-bg': 'rgba({{ site_theme.quickcat_bg_rgb }}, {{ site_theme.quickcat_opacity_dec }})',
+                    'bestseller-bg': 'rgba({{ site_theme.bestseller_bg_rgb }}, {{ site_theme.bestseller_opacity_dec }})',
+                },
+                fontFamily: {
+                    sans: ['Inter', 'system-ui', 'sans-serif'],
+                },
+            }
+        }
+    }
+{% endlocalize %}
+</script>

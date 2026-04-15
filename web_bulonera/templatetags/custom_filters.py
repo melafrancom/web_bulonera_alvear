@@ -9,8 +9,11 @@ def get_item(dictionary, key):
 
 @register.filter
 def multiply(value, arg):
-    """Multiply a value by an argument"""
-    return int(value) * int(arg)
+    """Multiplica dos valores numéricos (soporta int y float)."""
+    try:
+        return float(value) * float(arg)
+    except (ValueError, TypeError):
+        return value
 
 @register.filter
 def slice_range(value, args):
@@ -33,10 +36,11 @@ def times(value):
 
 @register.filter
 def add(value, arg):
-    """
-    Suma un valor y un argumento
-    """
-    return int(value) + int(arg)
+    """Suma dos valores numéricos (soporta int y float)."""
+    try:
+        return float(value) + float(arg)
+    except (ValueError, TypeError):
+        return value
 
 @register.filter
 def make_list(value):

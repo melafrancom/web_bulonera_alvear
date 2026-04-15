@@ -1,29 +1,15 @@
 """
-URL configuration for bulonera project.
+Orders URLs - Compatibility Layer
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+DEPRECATED: Este archivo mantiene compatibilidad hacia atrás.
+Las URLs ahora están organizadas en:
+- orders.web.urls (URLs para vistas HTML tradicionales)
+- orders.api.urls (URLs para API REST con DRF)
+
+Configuración recomendada en web_bulonera/urls.py:
+    path('orders/', include('orders.web.urls', namespace='orders_web')),
+    path('api/v1/', include('orders.api.urls', namespace='orders_api')),
 """
+from orders.web.urls import urlpatterns, app_name
 
-from django.contrib import admin
-from django.urls import path, include
-
-from . import views
-
-#LOCAL APPS
-urlpatterns = [
-    path('place_order/', views.place_orders, name='place_orders'),
-    path('payments/', views.payments, name='payments'),
-    path('order_complete/<str:order_number>/', views.order_complete, name='order_complete'),
-    path('whatsapp_redirect/', views.whatsapp_redirect, name='whatsapp_redirect'),
-]
+__all__ = ['urlpatterns', 'app_name']

@@ -4,6 +4,7 @@ Account App Services
 Contiene la lógica de negocio pura para gestión de autenticación y perfiles de usuario.
 """
 import logging
+from typing import Optional, Dict, List
 from django.contrib.auth import authenticate
 from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
@@ -12,6 +13,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.core.mail import EmailMessage
 from django.conf import settings
+from django.db.models import QuerySet
 
 from account.models import Account, UserProfile
 
@@ -192,3 +194,127 @@ class ProfileUpdateService:
         except Exception as e:
             logger.error(f"Error actualizando foto de perfil de {user.email}: {e}")
             return False
+    
+    @staticmethod
+    def update_user_profile_address(user: Account, address_line_1: str = None, 
+                                   address_line_2: str = None, city: str = None,
+                                   state: str = None, country: str = None) -> bool:
+        """Actualiza dirección del usuario"""
+        try:
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            
+            if address_line_1 is not None:
+                profile.address_line_1 = address_line_1
+            if address_line_2 is not None:
+                profile.address_line_2 = address_line_2
+            if city is not None:
+                profile.city = city
+            if state is not None:
+                profile.state = state
+            if country is not None:
+                profile.country = country
+            
+            profile.save()
+            logger.info(f"Dirección actualizada para usuario {user.email}")
+            return True
+        except Exception as e:
+            logger.error(f"Error actualizando dirección de {user.email}: {e}")
+            return False
+
+
+class AccountActivationService:
+    """Servicio para activación de cuentas"""
+    
+    @staticmethod
+    def activate_account(uidb64: str, token: str) -> Optional[Account]:
+        """Activa cuenta de usuario con token"""
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = Account._default_manager.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, Account.DoesNotExist):
+            logger.warning(f"Error descodificando token de activación")
+            return None
+        
+        if user is not None and default_token_generator.check_token(user, token):
+            user.is_active = True
+            user.save()
+            logger.info(f"Cuenta activada para {user.email}")
+            return user
+        else:
+            logger.warning(f"Token de activación inválido para usuario {uid}")
+            return None
+
+
+class PasswordChangeService:
+    """Servicio para cambio de contraseña (usuario autenticado)"""
+    
+    @staticmethod
+    def change_password(user: Account, current_password: str, new_password: str) -> bool:
+        """Cambia contraseña verificando la actual"""
+        try:
+            if not user.check_password(current_password):
+                logger.warning(f"Contraseña actual incorrecta para {user.email}")
+                return False
+            
+            user.set_password(new_password)
+            user.save()
+            logger.info(f"Contraseña cambiada para {user.email}")
+            return True
+        except Exception as e:
+            logger.error(f"Error cambiando contraseña de {user.email}: {e}")
+            return False
+
+
+class DashboardService:
+    """Servicio para datos del dashboard del usuario"""
+    
+    @staticmethod
+    def get_user_dashboard_data(user: Account) -> Dict:
+        """Obtiene estadísticas del dashboard del usuario"""
+        from orders.models import Order
+        
+        try:
+            orders = Order.objects.filter(user=user).order_by('-created_at')
+            
+            data = {
+                'orders_count': orders.count(),
+                'new_orders_count': orders.filter(status='New').count(),
+                'accepted_orders_count': orders.filter(status='Accepted').count(),
+                'completed_orders_count': orders.filter(status='Completed').count(),
+                'cancelled_orders_count': orders.filter(status='Cancelled').count(),
+            }
+            
+            logger.info(f"Dashboard data obtenido para {user.email}")
+            return data
+        except Exception as e:
+            logger.error(f"Error obteniendo dashboard data para {user.email}: {e}")
+            return {
+                'orders_count': 0,
+                'new_orders_count': 0,
+                'accepted_orders_count': 0,
+                'completed_orders_count': 0,
+                'cancelled_orders_count': 0,
+            }
+    
+    @staticmethod
+    def get_user_profile(user: Account) -> Optional[UserProfile]:
+        """Obtiene o crea el perfil del usuario"""
+        try:
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            if created:
+                logger.info(f"Perfil creado para {user.email}")
+            return profile
+        except Exception as e:
+            logger.error(f"Error obteniendo perfil de {user.email}: {e}")
+            return None
+
+
+__all__ = [
+    'AccountRegistrationService',
+    'AccountLoginService',
+    'PasswordResetService',
+    'ProfileUpdateService',
+    'AccountActivationService',
+    'PasswordChangeService',
+    'DashboardService',
+]

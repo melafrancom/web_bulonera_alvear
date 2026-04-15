@@ -1,61 +1,277 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_filters %}
 
-        {% block content %}
-            <main>  
-                <!-- ========================= SECTION CONTENT ========================= -->
-                <section class="section-content padding-y">
-                    <!-- ============================ COMPONENT REGISTER   ================================= -->
-                    <div class="card mx-auto" style="max-width:520px; margin-top:40px;">
-                        <article class="card-body">
-                            {% include 'includes/alerts.html' %}
-                            <header class="mb-4"><h4 class="card-title">Registro de Usuario</h4></header>
-                            <form action="{% url 'register' %}" method="POST">
-                                {% csrf_token %}
-                                <div class="form-row">
-                                    <div class="col form-group">
-                                        <label>Nombre</label>
-                                            {{ form.first_name }}
-                                    </div> <!-- form-group end.// -->
-                                    <div class="col form-group">
-                                        <label>Apellido</label>
-                                            {{ form.last_name }}
-                                    </div> <!-- form-group end.// -->
-                                </div>
-                                <div class="form-row">
-                                    <div class="col form-group">
-                                        <label>Número de celular</label>
-                                            {{ form.phone }}
-                                    </div> <!-- form-group end.// -->
-                                    <div class="col form-group">
-                                        <label>Correo electrónico</label>
-                                        {{ form.email }}
-                                    </div> <!-- form-group end.// -->
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group col-md-6">
-                                        <label>Contraseña</label>
-                                        {{ form.password }}
-                                    </div> <!-- form-group end.// -->
-                                    <div class="form-group col-md-6">
-                                        <label>Repetir contraseña</label>
-                                        {{ form.confirm_password }}
-                                    </div> <!-- form-group end.// -->
-                                </div>
-                                <div class="form-group">
-                                    <button type="submit" class="btn btn-primary btn-block"> Registrarme  </button>
-                                </div> <!-- form-group// -->
+{% block title %}Crear Cuenta - Bulonera Alvear{% endblock %}
+
+{% block meta_description %}Regístrate en Bulonera Alvear y comienza a comprar productos de ferretería de calidad.{% endblock %}
+
+{% block content %}
+<!-- Register Section -->
+<section class="py-16 bg-slate-50 dark:bg-slate-900 min-h-screen flex items-center justify-center">
+    <div class="container mx-auto px-4">
+        
+        <div class="max-w-md mx-auto">
             
-                                {{ form.email.errors }}
-                                {{ form.non_field_errors }}
-                            </form>
-                        </article><!-- card-body END.// -->
-                    </div><!-- card END.// -->
-                    <p class="text-center mt-4">¿Tienes ya una cuenta? <a href="{% url 'login' %}">Inicia Sesión</a></p>
-                    <br><br>
-                <!-- ========================= SECTION CONTENT END// ========================= -->
-                </section>
-            </main>
-        {% endblock %}
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                    Crear Cuenta
+                </h1>
+                <p class="text-slate-600 dark:text-slate-400">
+                    Únete a nuestra comunidad de clientes
+                </p>
+            </div>
+            
+            <!-- Register Card -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 mb-6"
+                 x-data="{
+                     formData: {
+                         first_name: '',
+                         last_name: '',
+                         email: '',
+                         phone: '',
+                         password: '',
+                         confirm_password: ''
+                     },
+                     errors: {},
+                     passwordStrength: 0,
+                     showPassword: false,
+                     showConfirmPassword: false,
+                     agreedTerms: false,
+                     
+                     validatePasswordStrength() {
+                         const pwd = this.formData.password;
+                         let strength = 0;
+                         if (pwd.length >= 8) strength++;
+                         if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) strength++;
+                         if (/\d/.test(pwd)) strength++;
+                         if (/[^a-zA-Z\d]/.test(pwd)) strength++;
+                         this.passwordStrength = strength;
+                     },
+                     
+                     validateField(field) {
+                         if (field === 'email') {
+                             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                             if (!this.formData.email) {
+                                 this.errors.email = 'El email es requerido';
+                             } else if (!emailRegex.test(this.formData.email)) {
+                                 this.errors.email = 'Email inválido';
+                             } else {
+                                 delete this.errors.email;
+                             }
+                         } else if (field === 'password') {
+                             if (!this.formData.password) {
+                                 this.errors.password = 'La contraseña es requerida';
+                             } else if (this.formData.password.length < 8) {
+                                 this.errors.password = 'Mínimo 8 caracteres';
+                             } else {
+                                 delete this.errors.password;
+                             }
+                             this.validatePasswordStrength();
+                         } else if (field === 'confirm_password') {
+                             if (this.formData.password !== this.formData.confirm_password) {
+                                 this.errors.confirm_password = 'Las contraseñas no coinciden';
+                             } else {
+                                 delete this.errors.confirm_password;
+                             }
+                         } else if (field !== 'phone') {
+                             if (!this.formData[field]) {
+                                 this.errors[field] = 'Este campo es requerido';
+                             } else {
+                                 delete this.errors[field];
+                             }
+                         }
+                     },
+                     
+                     get isValid() {
+                         return this.formData.first_name && 
+                                this.formData.last_name && 
+                                this.formData.email && 
+                                this.formData.password === this.formData.confirm_password &&
+                                this.agreedTerms &&
+                                Object.keys(this.errors).length === 0;
+                     }
+                 }">
+                
+                <!-- Form -->
+                <form method="POST" class="space-y-4">
+                    {% csrf_token %}
+                    
+                    <!-- First Name -->
+                    <div>
+                        <label for="first_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Nombre <span class="text-red-500">*</span>
+                        </label>
+                        <input 
+                            type="text"
+                            id="first_name"
+                            name="first_name"
+                            x-model="formData.first_name"
+                            @blur="validateField('first_name')"
+                            placeholder="Tu nombre"
+                            required
+                            class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all
+                                   dark:bg-slate-700 dark:text-white"
+                            :class="errors.first_name ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600'">
+                        <p x-show="errors.first_name" x-text="errors.first_name" class="mt-1 text-sm text-red-500"></p>
+                    </div>
+                    
+                    <!-- Last Name -->
+                    <div>
+                        <label for="last_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Apellido <span class="text-red-500">*</span>
+                        </label>
+                        <input 
+                            type="text"
+                            id="last_name"
+                            name="last_name"
+                            x-model="formData.last_name"
+                            @blur="validateField('last_name')"
+                            placeholder="Tu apellido"
+                            required
+                            class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all
+                                   dark:bg-slate-700 dark:text-white"
+                            :class="errors.last_name ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600'">
+                        <p x-show="errors.last_name" x-text="errors.last_name" class="mt-1 text-sm text-red-500"></p>
+                    </div>
+                    
+                    <!-- Email -->
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Correo Electrónico <span class="text-red-500">*</span>
+                        </label>
+                        <input 
+                            type="email"
+                            id="email"
+                            name="email"
+                            x-model="formData.email"
+                            @blur="validateField('email')"
+                            placeholder="tu@email.com"
+                            required
+                            class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all
+                                   dark:bg-slate-700 dark:text-white"
+                            :class="errors.email ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600'">
+                        <p x-show="errors.email" x-text="errors.email" class="mt-1 text-sm text-red-500"></p>
+                    </div>
+                    
+                    <!-- Phone -->
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Teléfono
+                        </label>
+                        <input 
+                            type="tel"
+                            id="phone"
+                            name="phone"
+                            x-model="formData.phone"
+                            placeholder="+54 11 1234-5678"
+                            class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all
+                                   dark:bg-slate-700 dark:text-white">
+                    </div>
+                    
+                    <!-- Password -->
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Contraseña <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input 
+                                :type="showPassword ? 'text' : 'password'"
+                                id="password"
+                                name="password"
+                                x-model="formData.password"
+                                @blur="validateField('password')"
+                                placeholder="••••••••"
+                                required
+                                class="w-full pr-12 px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all
+                                       dark:bg-slate-700 dark:text-white"
+                                :class="errors.password ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600'">
+                            
+                            <!-- Toggle Password -->
+                            <button 
+                                type="button"
+                                @click="showPassword = !showPassword"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                <i data-lucide="eye" x-show="!showPassword" class="w-5 h-5"></i>
+                                <i data-lucide="eye-off" x-show="showPassword" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <p x-show="errors.password" x-text="errors.password" class="mt-1 text-sm text-red-500"></p>
+                        
+                        <!-- Password Requirements -->
+                        {% include 'account/partials/_password_requirements.html' %}
+                    </div>
+                    
+                    <!-- Confirm Password -->
+                    <div>
+                        <label for="confirm_password" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Confirmar Contraseña <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input 
+                                :type="showConfirmPassword ? 'text' : 'password'"
+                                id="confirm_password"
+                                name="confirm_password"
+                                x-model="formData.confirm_password"
+                                @blur="validateField('confirm_password')"
+                                placeholder="••••••••"
+                                required
+                                class="w-full pr-12 px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all
+                                       dark:bg-slate-700 dark:text-white"
+                                :class="errors.confirm_password ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600'">
+                            
+                            <!-- Toggle Password -->
+                            <button 
+                                type="button"
+                                @click="showConfirmPassword = !showConfirmPassword"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                <i data-lucide="eye" x-show="!showConfirmPassword" class="w-5 h-5"></i>
+                                <i data-lucide="eye-off" x-show="showConfirmPassword" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <p x-show="errors.confirm_password" x-text="errors.confirm_password" class="mt-1 text-sm text-red-500"></p>
+                    </div>
+                    
+                    <!-- Terms & Conditions -->
+                    <div class="flex items-start gap-2 pt-2">
+                        <input 
+                            type="checkbox"
+                            id="terms"
+                            x-model="agreedTerms"
+                            class="w-4 h-4 border-slate-300 rounded focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 mt-1">
+                        <label for="terms" class="text-sm text-slate-600 dark:text-slate-400">
+                            Acepto los <a href="#" class="text-blue-600 hover:text-blue-700 dark:text-blue-400">términos y condiciones</a>
+                            <span class="text-red-500">*</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button 
+                        type="submit"
+                        :disabled="!isValid"
+                        :class="isValid ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600' : 'bg-slate-300 dark:bg-slate-600 cursor-not-allowed'"
+                        class="w-full px-6 py-3 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mt-6">
+                        <i data-lucide="user-plus" class="w-5 h-5"></i>
+                        Crear Cuenta
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Login Link -->
+            <div class="text-center">
+                <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                    ¿Ya tienes cuenta?
+                </p>
+                <a href="{% url 'account:login' %}" 
+                   class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors">
+                    Inicia sesión aquí
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
+            </div>
+            
+        </div>
+        
+    </div>
+</section>
 
+{% endblock %}

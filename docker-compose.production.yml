@@ -1,8 +1,30 @@
 services:
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Redis (caché y broker de Celery)
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  redis:
+    image: redis:7-alpine
+    container_name: bulonera_web_redis
+    restart: always
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   bulonera_web:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.production
     container_name: bulonera_web_production
     env_file:
       - .env
@@ -15,12 +37,82 @@ services:
       MEDIA_ROOT: /app/media
       LOG_DIR: /app/logs
     ports:
-      - "127.0.0.1:8002:8002"
+      - "127.0.0.1:8003:8002"
     volumes:
-      - bulonera_staticfiles:/app/staticfiles
+      - /var/www/bulonera/staticfiles:/app/staticfiles
       - ${BULONERA_SHARED_MEDIA_PATH:-/var/www/shared/media}:/app/media
       - ${BULONERA_LOG_PATH:-/var/www/bulonera/logs}:/app/logs
+    depends_on:
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  bulonera_web_celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    container_name: bulonera_web_celery_worker_production
+    command: celery -A web_bulonera worker -l info --concurrency=4
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DJANGO_SETTINGS_MODULE: web_bulonera.settings.production
+      STATIC_ROOT: /app/staticfiles
+      MEDIA_ROOT: /app/media
+      LOG_DIR: /app/logs
+    volumes:
+      - /var/www/bulonera/staticfiles:/app/staticfiles
+      - ${BULONERA_SHARED_MEDIA_PATH:-/var/www/shared/media}:/app/media
+      - ${BULONERA_LOG_PATH:-/var/www/bulonera/logs}:/app/logs
+    depends_on:
+      - bulonera_web
     restart: unless-stopped
 
-volumes:
-  bulonera_staticfiles:
+  bulonera_web_celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    container_name: bulonera_web_celery_beat_production
+    command: celery -A web_bulonera beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DJANGO_SETTINGS_MODULE: web_bulonera.settings.production
+      STATIC_ROOT: /app/staticfiles
+      MEDIA_ROOT: /app/media
+      LOG_DIR: /app/logs
+    volumes:
+      - /var/www/bulonera/staticfiles:/app/staticfiles
+      - ${BULONERA_SHARED_MEDIA_PATH:-/var/www/shared/media}:/app/media
+      - ${BULONERA_LOG_PATH:-/var/www/bulonera/logs}:/app/logs
+    depends_on:
+      - bulonera_web
+    restart: unless-stopped
+
+  bulonera_web_flower:
+    image: mher/flower:2.0
+    container_name: bulonera_web_flower_production
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:5556:5555" # Only expose to localhost
+    depends_on:
+      - redis
+      - bulonera_web_celery_worker
+    command: >
+      celery --broker=${CELERY_BROKER_URL} flower
+      --port=5555
+      --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
+    restart: unless-stopped

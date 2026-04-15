@@ -32,11 +32,11 @@ class ContactOptionViewSet(viewsets.ModelViewSet):
         
         try:
             contact = ContactService.create_contact(
-                name=serializer.validated_data['name'],
-                email=serializer.validated_data['email'],
-                contact_method=serializer.validated_data['contact_method'],
-                subject=serializer.validated_data['subject'],
-                message=serializer.validated_data['message']
+                name=serializer.validated_data.get('name'),
+                email=serializer.validated_data.get('email'),
+                contact_method=serializer.validated_data.get('contact_method', 'email'),
+                subject=serializer.validated_data.get('subject'),
+                message=serializer.validated_data.get('message')
             )
             
             output_serializer = self.get_serializer(contact)

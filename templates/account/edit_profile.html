@@ -1,86 +1,265 @@
-<!DOCTYPE html>
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_filters %}
+
+{% block title %}Editar Perfil - Bulonera Alvear{% endblock %}
+
+{% block meta_description %}Edita tu información personal y dirección en Bulonera Alvear.{% endblock %}
 
 {% block content %}
-    <!-- ========================= SECTION CONTENT ========================= -->
-    <section class="section-conten padding-y bg">
-        {% include 'includes/alerts.html' %}
-        <div class="container">
-            <div class="row">
-                {% include 'includes/dashboard_sidebar.html' %}
-                <main class="col-md-9">
-                    <article class="card">
-                        <header class="card-header">
-                            <strong class="d-inline-block mr-3"> Edita tu perfil de usuario:</strong>
-                        </header>
-                        <div class="card-body">
-                            <div class="text-right">
-                                <img src="{{ userprofile.get_profile_picture_url }}" alt="Imagen de Perfil" width="100" style="border-radius:50px;">
+<!-- Edit Profile Section -->
+<section class="py-8 bg-slate-50 dark:bg-slate-900 min-h-screen">
+    <div class="container mx-auto px-4">
+        
+        <!-- Breadcrumb -->
+        {% include 'includes/partials/_breadcrumb.html' with items=breadcrumb_items %}
+        
+        <!-- Page Title -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">
+                Editar Perfil
+            </h1>
+            <p class="text-slate-600 dark:text-slate-400 mt-2">
+                Actualiza tu información personal y dirección
+            </p>
+        </div>
+        
+        <!-- Edit Profile Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8"
+             x-data="{
+                 profilePicturePreview: null,
+                 
+                 handleProfilePictureChange(event) {
+                     const file = event.target.files[0];
+                     if (file) {
+                         const reader = new FileReader();
+                         reader.onload = (e) => {
+                             this.profilePicturePreview = e.target.result;
+                         };
+                         reader.readAsDataURL(file);
+                     }
+                 }
+             }">
+            
+            <!-- Profile Picture Section -->
+            <div class="lg:col-span-1">
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 sticky top-4">
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Foto de Perfil</h3>
+                    
+                    <!-- Current Picture -->
+                    <div class="mb-6 flex justify-center">
+                        {% if userprofile.profile_picture %}
+                        <img x-show="!profilePicturePreview"
+                             src="{{ userprofile.profile_picture.url }}"
+                             alt="{{ user.full_name }}"
+                             class="w-32 h-32 rounded-full object-cover border-4 border-slate-200 dark:border-slate-700"
+                             x-cloak>
+                        {% else %}
+                        <div x-show="!profilePicturePreview" 
+                             class="w-32 h-32 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center border-4 border-slate-200 dark:border-slate-700"
+                             x-cloak>
+                            <i data-lucide="user" class="w-16 h-16 text-slate-400 dark:text-slate-500"></i>
+                        </div>
+                        {% endif %}
+                        
+                        <img x-show="profilePicturePreview"
+                             :src="profilePicturePreview"
+                             alt="Preview"
+                             class="w-32 h-32 rounded-full object-cover border-4 border-blue-500">
+                        
+                        {% if not userprofile.profile_picture %}
+                        <div class="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-4xl font-bold border-4 border-slate-200 dark:border-slate-700">
+                            {{ user.first_name|first }}{{ user.last_name|first }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Upload Button -->
+                    <div class="space-y-3">
+                        <label class="block">
+                            <span class="sr-only">Seleccionar foto</span>
+                            <input type="file"
+                                   name="profile_picture"
+                                   accept="image/*"
+                                   @change="handleProfilePictureChange"
+                                   class="block w-full text-sm text-slate-500 dark:text-slate-400
+                                          file:mr-4 file:py-2 file:px-4
+                                          file:rounded-lg file:border-0
+                                          file:text-sm file:font-semibold
+                                          file:bg-blue-50 file:text-blue-700
+                                          dark:file:bg-blue-900/30 dark:file:text-blue-400
+                                          hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50">
+                        </label>
+                        
+                        {% if userprofile.profile_picture %}
+                        <button type="button"
+                                class="w-full px-4 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 text-sm font-medium rounded-lg transition-colors">
+                            Eliminar Foto
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Forms Section -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- User Form -->
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-6">Información Personal</h3>
+                    
+                    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+                        {% csrf_token %}
+                        
+                        <!-- First Name -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="first_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Nombre <span class="text-red-500">*</span>
+                                </label>
+                                <input 
+                                    type="text"
+                                    id="first_name"
+                                    name="first_name"
+                                    value="{{ user.first_name }}"
+                                    required
+                                    class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white transition-all">
                             </div>
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <form class="" action="{% url 'edit_profile' %}" method="post" enctype="multipart/form-data">
-                                        {% csrf_token %}
-                                        <div class="form-row">
-                                            <div class="form-group col-md-6">
-                                                <label for="">Nombre(s)</label>
-                                                {{ user_form.first_name }}
-                                            </div>
-                        
-                                            <div class="form-group col-md-6">
-                                                <label for="">Apellido(s)</label>
-                                                {{ user_form.last_name }}
-                                            </div>
-                                        </div>
-                                            <div class="form-row">
-                                                <div class="form-group col-md-6">
-                                                <label for="">Teléfono</label>
-                                                {{ user_form.phone }}
-                                                </div>
-                        
-                                                <div class="form-group col-md-6">
-                                                <label for="">Imagen de perfil</label>
-                                                {{ profile_form.get_profile_picture_url }}
-                                                </div>
-                                            </div>
-                                            <div class="form-row">
-                                                <div class="form-group col-md-6">
-                                                <label for="">Dirección</label>
-                                                {{ profile_form.address_line_1 }}
-                                                </div>
-                        
-                                                <div class="form-group col-md-6">
-                                                <label for="">Detalles de dirección</label>
-                                                {{ profile_form.address_line_2 }}
-                                                </div>
-                                            </div>
-                                            <div class="form-row">
-                                                <div class="form-group col-md-4">
-                                                    <label for="">País</label>
-                                                    {{ profile_form.country }}
-                                                </div>
                             
-                                                <div class="form-group col-md-4">
-                                                    <label for="">Ciudad</label>
-                                                    {{ profile_form.city }}
-                                                </div>
-                            
-                                                <div class="form-group col-md-4">
-                                                    <label for="">Estado</label>
-                                                    {{ profile_form.state }}
-                                                </div>
-                                            </div>
-                                        <input type="submit" name="Guardar" value="Guardar cambios" class="btn btn-primary">
-
-                                    </form>
-                                </div>
+                            <!-- Last Name -->
+                            <div>
+                                <label for="last_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Apellido <span class="text-red-500">*</span>
+                                </label>
+                                <input 
+                                    type="text"
+                                    id="last_name"
+                                    name="last_name"
+                                    value="{{ user.last_name }}"
+                                    required
+                                    class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white transition-all">
                             </div>
                         </div>
-                </main>
+                        
+                        <!-- Phone -->
+                        <div>
+                            <label for="phone" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Teléfono
+                            </label>
+                            <input 
+                                type="tel"
+                                id="phone"
+                                name="phone"
+                                value="{{ user.phone|default:'' }}"
+                                placeholder="+54 11 1234-5678"
+                                class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white transition-all">
+                        </div>
+                        
+                        <!-- Address Line 1 -->
+                        <div>
+                            <label for="address_line_1" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Dirección
+                            </label>
+                            <input 
+                                type="text"
+                                id="address_line_1"
+                                name="address_line_1"
+                                value="{{ userprofile.address_line_1|default:'' }}"
+                                placeholder="Calle y número"
+                                class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white transition-all">
+                        </div>
+                        
+                        <!-- Address Line 2 -->
+                        <div>
+                            <label for="address_line_2" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Detalles de la Dirección
+                            </label>
+                            <input 
+                                type="text"
+                                id="address_line_2"
+                                name="address_line_2"
+                                value="{{ userprofile.address_line_2|default:'' }}"
+                                placeholder="Piso, depto, etc."
+                                class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white transition-all">
+                        </div>
+                        
+                        <!-- City, State, Country -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="city" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Ciudad
+                                </label>
+                                <input 
+                                    type="text"
+                                    id="city"
+                                    name="city"
+                                    value="{{ userprofile.city|default:'' }}"
+                                    class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white transition-all">
+                            </div>
+                            
+                            <div>
+                                <label for="state" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Provincia
+                                </label>
+                                <input 
+                                    type="text"
+                                    id="state"
+                                    name="state"
+                                    value="{{ userprofile.state|default:'' }}"
+                                    class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white transition-all">
+                            </div>
+                            
+                            <div>
+                                <label for="country" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    País
+                                </label>
+                                <input 
+                                    type="text"
+                                    id="country"
+                                    name="country"
+                                    value="{{ userprofile.country|default:'Argentina' }}"
+                                    class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white transition-all">
+                            </div>
+                        </div>
+                        
+                        <!-- Buttons -->
+                        <div class="flex gap-3 pt-4">
+                            <button type="submit"
+                                    class="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
+                                <i data-lucide="save" class="w-5 h-5"></i>
+                                Guardar Cambios
+                            </button>
+                            
+                            <a href="{% url 'account:dashboard' %}"
+                               class="flex-1 px-6 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
+                                <i data-lucide="x" class="w-5 h-5"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Change Password Link -->
+                <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-blue-900 dark:text-blue-100 mb-1">Cambiar Contraseña</h3>
+                            <p class="text-sm text-blue-700 dark:text-blue-300">Actualiza tu contraseña de forma segura</p>
+                        </div>
+                        <a href="{% url 'account:change_password' %}"
+                           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                            Cambiar
+                        </a>
+                    </div>
+                </div>
+                
             </div>
+            
         </div>
-    </section>
+        
+    </div>
+</section>
+
+<!-- Floating Cart -->
+{% include 'includes/partials/_floating_cart.html' %}
+
 {% endblock %}
-</html>

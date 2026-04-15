@@ -24,6 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: bulonera_web_local
+    command: python manage.py runserver 0.0.0.0:8002
     env_file:
       - .env.local
     extra_hosts:
@@ -69,7 +70,7 @@ services:
     container_name: bulonera_web_celery_worker
     command: celery -A web_bulonera worker -l info --concurrency=4
     env_file:
-      - .env
+      - .env.local
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
@@ -95,7 +96,7 @@ services:
     container_name: bulonera_web_celery_beat
     command: celery -A web_bulonera beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     env_file:
-      - .env
+      - .env.local
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:

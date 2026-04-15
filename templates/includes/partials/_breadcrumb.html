@@ -1,0 +1,40 @@
+{% comment %}
+Breadcrumb Component
+Usage: {% include 'includes/partials/_breadcrumb.html' with items=breadcrumb_items %}
+Items format: [{'name': 'Home', 'url': '/'}, {'name': 'Category', 'url': None}]
+Last item (url=None) is rendered as active (no link)
+{% endcomment %}
+{% load static %}
+
+<nav class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400" aria-label="Breadcrumb">
+    {% for item in items %}
+        {% if item.url %}
+            <a href="{{ item.url }}" class="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                {{ item.name }}
+            </a>
+            {% if not forloop.last %}
+                <i data-lucide="chevron-right" class="w-4 h-4 flex-shrink-0"></i>
+            {% endif %}
+        {% else %}
+            <span class="text-slate-900 dark:text-white font-medium">{{ item.name }}</span>
+        {% endif %}
+    {% endfor %}
+</nav>
+
+<!-- JSON-LD BreadcrumbList Schema -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {% for item in items %}
+        {
+            "@type": "ListItem",
+            "position": {{ forloop.counter }},
+            "name": "{{ item.name|escapejs }}"{% if item.url %},
+            "item": "{{ request.scheme }}://{{ request.get_host }}{{ item.url }}"{% endif %}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+}
+</script>

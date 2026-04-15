@@ -1,7 +1,10 @@
 #!/bin/sh
 set -e
 
-# Allow container startup even if DB is temporarily unavailable.
-python manage.py collectstatic --noinput || true
+# Migrations (safe: solo aplica pendientes)
+python manage.py migrate --noinput || true
+
+# Collect static files (--clear elimina huérfanos)
+python manage.py collectstatic --noinput --clear || true
 
 exec "$@"

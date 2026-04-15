@@ -2,8 +2,10 @@
 import pytest
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from contact.models import ContactOption
+
+Account = get_user_model()
 
 
 @pytest.mark.django_db
@@ -12,13 +14,15 @@ class TestContactAPIViewSet(APITestCase):
     
     def setUp(self):
         """Setup para tests de API"""
-        self.client = APIClient()
-        self.list_url = '/api/contact/'  # Ajustar según tu main urls.py
+        from django.urls import reverse
+        self.list_url = reverse('contact_api:contact-list')
         
         # Admin user para listar contactos
-        self.admin_user = User.objects.create_superuser(
-            username='admin',
+        self.admin_user = Account.objects.create_superuser(
             email='admin@example.com',
+            username='admin',
+            first_name='Admin',
+            last_name='User',
             password='admin123'
         )
     
@@ -47,9 +51,9 @@ class TestContactAPIViewSet(APITestCase):
         data = {
             'name': 'Carlos López',
             'email': 'carlos@example.com',
-            # Falta contact_method
-            'subject': 'Consulta',
-            'message': 'Hola'
+            'contact_method': 'email',
+            'subject': 'Consulta'
+            # FALTA message (requerido)
         }
         
         # Act

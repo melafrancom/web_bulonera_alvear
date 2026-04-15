@@ -1,18 +1,266 @@
 {% extends "admin/base_site.html" %}
-{% load i18n admin_urls %}
+{% load i18n admin_urls static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .update-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .update-header {
+        background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+        border-radius: 12px;
+        padding: 32px;
+        margin-bottom: 32px;
+        color: white;
+    }
+    
+    .update-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0 0 12px 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .update-header p {
+        font-size: 16px;
+        opacity: 0.9;
+        margin: 0;
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    }
+    
+    .info-card h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0 0 16px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .info-list li {
+        padding: 8px 0;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: start;
+        gap: 8px;
+    }
+    
+    .info-list li:last-child {
+        border-bottom: none;
+    }
+    
+    .info-list .label {
+        font-weight: 600;
+        color: #475569;
+        min-width: 120px;
+    }
+    
+    .info-list .value {
+        color: #64748b;
+    }
+    
+    .warning-card {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 12px;
+    }
+    
+    .warning-card p {
+        margin: 0;
+        color: #92400e;
+        font-size: 14px;
+    }
+    
+    .form-card {
+        background: white;
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    }
+    
+    .form-card h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0 0 16px 0;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 500;
+        color: #1e293b;
+        margin-bottom: 8px;
+    }
+    
+    .form-group input[type="file"] {
+        width: 100%;
+        padding: 12px;
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+    }
+    
+    .form-group input[type="file"]:hover {
+        border-color: #16a34a;
+        background: #f0fdf4;
+    }
+    
+    .submit-row {
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        gap: 12px;
+    }
+    
+    .submit-row input[type="submit"] {
+        background: #16a34a;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .submit-row input[type="submit"]:hover {
+        background: #15803d;
+    }
+    
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #2563eb;
+        text-decoration: none;
+        font-weight: 500;
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: background 0.2s;
+    }
+    
+    .back-link:hover {
+        background: #f1f5f9;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:store_product_changelist' %}">{% trans 'Products' %}</a>
+    &rsaquo; {% trans 'Update Prices' %}
+</div>
+{% endblock %}
 
 {% block content %}
-<div>
-    <h1>Actualizar Precios de Productos</h1>
-    <p>Sube un archivo Excel (.xlsx) o CSV con códigos de productos y nuevos precios.</p>
-    <p>Campos requeridos: 'code' (código de producto) y 'price' (nuevo precio)</p>
+<div class="update-container">
     
-    <form action="." method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <div class="submit-row">
-            <input type="submit" value="Actualizar Precios" class="default" name="_update">
-        </div>
-    </form>
+    <!-- Header -->
+    <div class="update-header">
+        <h1>
+            <i data-lucide="trending-up" style="width: 32px; height: 32px;"></i>
+            {% trans 'Actualizar Precios de Productos' %}
+        </h1>
+        <p>{% trans 'Actualiza los precios de múltiples productos de forma masiva mediante un archivo Excel o CSV.' %}</p>
+    </div>
+    
+    <!-- Warning -->
+    <div class="warning-card">
+        <i data-lucide="alert-triangle" style="width: 20px; height: 20px; color: #f59e0b; flex-shrink: 0;"></i>
+        <p><strong>{% trans 'Importante:' %}</strong> {% trans 'Esta operación actualizará los precios de los productos existentes. Asegúrate de que los códigos de producto sean correctos.' %}</p>
+    </div>
+    
+    <!-- Instructions -->
+    <div class="info-card">
+        <h3>
+            <i data-lucide="info" style="width: 20px; height: 20px; color: #16a34a;"></i>
+            {% trans 'Instrucciones' %}
+        </h3>
+        <ul class="info-list">
+            <li>
+                <i data-lucide="check-circle" style="width: 16px; height: 16px; color: #16a34a; flex-shrink: 0; margin-top: 2px;"></i>
+                <div>
+                    <span class="label">{% trans 'Campos requeridos:' %}</span>
+                    <span class="value"><code>code</code> (código de producto) y <code>price</code> (nuevo precio)</span>
+                </div>
+            </li>
+            <li>
+                <i data-lucide="file-spreadsheet" style="width: 16px; height: 16px; color: #64748b; flex-shrink: 0; margin-top: 2px;"></i>
+                <div>
+                    <span class="label">{% trans 'Formatos aceptados:' %}</span>
+                    <span class="value">.xlsx (Excel), .csv (CSV)</span>
+                </div>
+            </li>
+            <li>
+                <i data-lucide="search" style="width: 16px; height: 16px; color: #64748b; flex-shrink: 0; margin-top: 2px;"></i>
+                <div>
+                    <span class="label">{% trans 'Comportamiento:' %}</span>
+                    <span class="value">Solo se actualizan productos existentes. Los códigos no encontrados se ignoran.</span>
+                </div>
+            </li>
+            <li>
+                <i data-lucide="dollar-sign" style="width: 16px; height: 16px; color: #64748b; flex-shrink: 0; margin-top: 2px;"></i>
+                <div>
+                    <span class="label">{% trans 'Formato de precio:' %}</span>
+                    <span class="value">Números decimales (ej: 1234.56 o 1234,56)</span>
+                </div>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- Form -->
+    <div class="form-card">
+        <h3>{% trans 'Seleccionar Archivo' %}</h3>
+        <form action="." method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                {{ form.as_p }}
+            </div>
+            
+            <div class="submit-row">
+                <input type="submit" value="{% trans 'Actualizar Precios' %}" class="default" name="_update">
+                <a href="{% url 'admin:store_product_changelist' %}" class="back-link">
+                    <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+                    {% trans 'Volver a lista' %}
+                </a>
+            </div>
+        </form>
+    </div>
+    
 </div>
 {% endblock %}

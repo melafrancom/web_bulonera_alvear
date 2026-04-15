@@ -1,7 +1,7 @@
 import logging
 from celery import shared_task
 from .models import Product, CarouselImage
-from .utils import ImageProcessor, CarouselImageProcessor
+from .utils import ImageProcessor, CarouselImageProcessor, BannerImageProcessor, CategoryImageProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -43,4 +43,33 @@ def process_carousel_image(self, carousel_id: int, image_path: str):
         return {'status': 'error', 'message': 'Carousel not found'}
     except Exception as exc:
         logger.error(f"Error procesando imagen del carrusel {carousel_id}: {exc}")
+        raise self.retry(exc=exc, countdown=60)
+
+
+@shared_task(bind=True, max_retries=3)
+def process_image_asset_task(self, asset_id: int):
+    """Procesa un ImageAsset centralizadamente con dispatcher por tipo."""
+    from media_bank.models import ImageAsset, ImageType
+    try:
+        asset = ImageAsset.objects.get(id=asset_id)
+        
+        processor_map = {
+            ImageType.PRODUCT: lambda: ImageProcessor(asset.file.path).process_image(),
+            ImageType.CAROUSEL: lambda: CarouselImageProcessor(asset.file.path).process_image(),
+            ImageType.BANNER: lambda: BannerImageProcessor(asset.file.path).process_image(),
+            ImageType.CATEGORY: lambda: CategoryImageProcessor(asset.file.path).process_image(),
+            ImageType.SUBCATEGORY: lambda: CategoryImageProcessor(asset.file.path).process_image(is_subcategory=True),
+        }
+        
+        processor_fn = processor_map.get(asset.image_type)
+        if processor_fn:
+            processor_fn()
+            logger.info(f"ImageAsset {asset_id} ({asset.image_type}) procesado exitosamente")
+        else:
+            logger.warning(f"ImageAsset {asset_id}: tipo '{asset.image_type}' sin procesador definido")
+            
+    except ImageAsset.DoesNotExist:
+        logger.error(f"ImageAsset {asset_id} no encontrado")
+    except Exception as exc:
+        logger.error(f"Error procesando ImageAsset {asset_id}: {exc}")
         raise self.retry(exc=exc, countdown=60)

@@ -94,3 +94,98 @@ class TestReviewRatingModel:
             ip='127.0.0.1'
         )
         assert review.rating in [1, 2, 3, 4, 5]
+
+
+@pytest.mark.django_db
+class TestProductImageUrl:
+    """Tests para el property image_url del modelo Product."""
+
+    def test_image_url_with_image(self, product, category):
+        """Verifica que image_url retorna la URL correcta cuando hay imagen."""
+        # Crear producto con imagen mock
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from PIL import Image
+        import io
+        
+        # Crear imagen de prueba
+        image = Image.new('RGB', (100, 100), color='red')
+        image_io = io.BytesIO()
+        image.save(image_io, format='JPEG')
+        image_io.seek(0)
+        
+        product_with_image = Product.objects.create(
+            code='TEST-IMG-001',
+            name='Producto con Imagen',
+            slug='producto-con-imagen',
+            price=10.0,
+            stock=50,
+            category=category,
+            images=SimpleUploadedFile('test.jpg', image_io.read(), content_type='image/jpeg')
+        )
+        
+        # Verificar que retorna una URL válida
+        assert product_with_image.image_url is not None
+        assert '/media/' in product_with_image.image_url or product_with_image.image_url.startswith('http')
+
+    def test_image_url_without_image(self, category):
+        """Verifica que image_url retorna placeholder cuando no hay imagen."""
+        # Crear producto sin imagen
+        product_no_image = Product.objects.create(
+            code='TEST-NO-IMG',
+            name='Producto Sin Imagen',
+            slug='producto-sin-imagen',
+            price=10.0,
+            stock=50,
+            category=category
+        )
+        assert product_no_image.image_url == '/static/images/placeholder.png'
+
+    def test_image_url_empty_name(self, category):
+        """Verifica que image_url retorna placeholder cuando images.name está vacío."""
+        product_empty = Product.objects.create(
+            code='TEST-EMPTY-001',
+            name='Producto Sin Imagen',
+            slug='producto-sin-imagen',
+            price=10.0,
+            stock=50,
+            category=category
+        )
+        
+        assert product_empty.image_url == '/static/images/placeholder.png'
+
+
+@pytest.mark.django_db
+class TestCarouselImageUrl:
+    """Tests para el property image_url del modelo CarouselImage."""
+
+    def test_carousel_image_url_with_image(self, category):
+        """Verifica que image_url retorna la URL correcta cuando hay imagen."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from PIL import Image
+        import io
+        from store.models import CarouselImage
+        
+        # Crear imagen de prueba
+        image = Image.new('RGB', (1920, 390), color='blue')
+        image_io = io.BytesIO()
+        image.save(image_io, format='JPEG')
+        image_io.seek(0)
+        
+        carousel = CarouselImage.objects.create(
+            title='Test Carousel',
+            image=SimpleUploadedFile('carousel_test.jpg', image_io.read(), content_type='image/jpeg'),
+            position=1
+        )
+        
+        # Verificar que retorna una URL válida
+        assert carousel.image_url is not None
+        assert '/media/' in carousel.image_url or carousel.image_url.startswith('http')
+
+    def test_carousel_image_url_without_image(self):
+        """Verifica que image_url retorna placeholder cuando no hay imagen."""
+        from store.models import CarouselImage
+        
+        # Crear carousel sin imagen (esto normalmente no debería pasar, pero por seguridad)
+        carousel = CarouselImage(title='Test Without Image', position=1)
+        
+        assert carousel.image_url == '/static/images/placeholder.png'

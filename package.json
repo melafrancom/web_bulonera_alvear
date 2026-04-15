@@ -1,0 +1,12 @@
+{
+  "name": "bulonera-alvear-web",
+  "version": "1.0.0",
+  "description": "Bulonera Alvear - E-commerce Frontend",
+  "scripts": {
+    "build:css": "tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.min.css --minify",
+    "watch:css": "tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.min.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}

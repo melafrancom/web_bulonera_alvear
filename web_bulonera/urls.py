@@ -20,32 +20,61 @@ from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
 from django.contrib.sitemaps.views import sitemap
-from django.contrib.sitemaps import GenericSitemap
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from django.views.static import serve
 #local apps
 from . import views
-from store.models import Product
+from store.sitemaps import ProductSitemap, CategorySitemap
 
-info_dict = {
-    'queryset': Product.objects.all(),
-    'date_field': 'modified_date',
+# Sitemaps configuration
+sitemaps = {
+    'products': ProductSitemap,
+    'categories': CategorySitemap,
 }
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
-    path('store/', include('store.urls')),
-    path('cart/', include('cart.urls')),
-    path('account/', include('account.urls')),
-    path('orders/', include('orders.urls')),
-    path('contact/', include('contact.urls')),
+    
+    # Web URLs (Templates HTML)
+    path('store/', include(('store.web.urls', 'store'))),
+    path('cart/', include(('cart.web.urls', 'cart'))),
+    path('account/', include(('account.web.urls', 'account'))),
+    path('orders/', include(('orders.web.urls', 'orders'))),
+    path('contact/', include(('contact.web.urls', 'contact'))),
+    
+    # API REST v1
+    path('api/v1/store/', include('store.api.urls.urls')),
+    path('api/v1/category/', include('category.api.urls.urls')),
+    path('api/v1/cart/', include('cart.api.urls.urls')),
+    path('api/v1/orders/', include('orders.api.urls.urls')),
+    path('api/v1/account/', include('account.api.urls.urls')),
+    path('api/v1/contact/', include('contact.api.urls.urls')),
+    
+    # API Documentation
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    
     #Others:
     path('return-policy/', views.returnPolicy, name='return_policy'),
     path('terms-and-conditions/', views.termsAndConditions, name='terms_and_conditions'),
     path('privacy-and-warranty/', views.privacyAndwarranty, name='privacy_and_warranty'),
     path('location/', views.location, name='location'),
     path('history/', views.history, name='history'),
+    path('offline/', views.offline, name='offline'),
+    
+    # PWA - Service Worker (debe servirse desde la raíz, no /static/)
+    path('sw.js', serve, {'document_root': settings.STATIC_ROOT, 'path': 'js/sw.js'}, name='sw'),
+    
     # URLs para sitemaps y robots.txt
-    path('sitemap.xml', sitemap, {'sitemaps': {'products': GenericSitemap(info_dict, priority=0.8)}}, name='django.contrib.sitemaps.views.sitemap'),
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path("robots.txt", views.robots_txt),
+    path("llms.txt", views.llms_txt),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
+
+# Error handlers
+handler404 = 'web_bulonera.error_handlers.handler404'
+handler500 = 'web_bulonera.error_handlers.handler500'
+handler403 = 'web_bulonera.error_handlers.handler403'
+handler400 = 'web_bulonera.error_handlers.handler400'

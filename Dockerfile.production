@@ -1,0 +1,48 @@
+# Stage 1: Build Tailwind CSS
+FROM node:20-slim AS builder
+
+WORKDIR /app
+# Install dependencies
+COPY package.json package-lock.json* ./
+RUN npm install
+
+# Copy everything else and build CSS
+# This ensures Tailwind scans all HTML files for classes
+COPY . .
+RUN npm run build:css
+
+# Stage 2: Production Python Image
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# System deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+	build-essential \
+	default-libmysqlclient-dev \
+	pkg-config \
+	libjpeg62-turbo-dev \
+	zlib1g-dev \
+	libwebp-dev \
+	&& rm -rf /var/lib/apt/lists/*
+
+# Copy Python requirements
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir --upgrade pip && \
+	pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . /app/
+
+# Copy compiled CSS from builder
+COPY --from=builder /app/static/css/tailwind.min.css /app/static/css/
+
+RUN chmod +x /app/docker-entrypoint.sh
+
+EXPOSE 8002
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+CMD ["uwsgi", "--ini", "/app/uwsgi.production.ini"]

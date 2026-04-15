@@ -1,4 +1,5 @@
 """Contact Web Package"""
-from contact.web.views import contact_view, contact_success
+from .views import contact_view, contact_success
+from .forms import ContactForm
 
-__all__ = ['contact_view', 'contact_success']
+__all__ = ['contact_view', 'contact_success', 'ContactForm']

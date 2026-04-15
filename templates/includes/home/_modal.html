@@ -1,0 +1,133 @@
+{% load static %}
+
+<!-- ======================= MODALES =============================== -->
+
+<!-- Modal de Medios de Pago -->
+<div x-data="{ open: false }" 
+    @open-modal.window="if ($event.detail === 'mediosPagoModal') open = true"
+    x-show="open" 
+    x-cloak
+    class="fixed inset-0 z-50 overflow-y-auto"
+    style="display: none;">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-black/50 transition-opacity" @click="open = false"></div>
+    
+    <!-- Modal -->
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div @click.away="open = false" 
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            class="relative bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl shadow-2xl max-w-md w-full p-6 text-white">
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6">
+                <h5 class="text-2xl font-bold">MEDIOS DE PAGO</h5>
+                <button @click="open = false" class="p-1 hover:bg-white/10 rounded-lg transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <!-- Logo -->
+            <div class="flex justify-center mb-6">
+                <div class="w-32 h-32 bg-white rounded-full flex items-center justify-center p-4">
+                    <img src="{% static 'images/logo-bulonera-alvear.png' %}" alt="Logo" class="w-full h-full object-contain">
+                </div>
+            </div>
+            
+            <!-- Payment Options -->
+            <div class="space-y-3 mb-6">
+                <div class="flex items-center gap-3 p-4 bg-white/10 hover:bg-white/20 rounded-lg transition-colors cursor-pointer">
+                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                        <i data-lucide="banknote" class="w-6 h-6 text-indigo-600"></i>
+                    </div>
+                    <span class="text-lg font-semibold">Efectivo</span>
+                </div>
+                
+                <div class="flex items-center gap-3 p-4 bg-white/10 hover:bg-white/20 rounded-lg transition-colors cursor-pointer">
+                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                        <i data-lucide="arrow-left-right" class="w-6 h-6 text-indigo-600"></i>
+                    </div>
+                    <span class="text-lg font-semibold">Transferencia</span>
+                </div>
+                
+                <div class="flex items-center gap-3 p-4 bg-white/10 hover:bg-white/20 rounded-lg transition-colors cursor-pointer">
+                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                        <i data-lucide="credit-card" class="w-6 h-6 text-indigo-600"></i>
+                    </div>
+                    <span class="text-lg font-semibold">Débito/crédito</span>
+                </div>
+            </div>
+            
+            <!-- Message -->
+            <div class="text-center">
+                <p class="text-lg">COORDINA CON NOSOTROS TU MEJOR<br>FORMA DE PAGAR!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Envíos -->
+<div x-data="{ open: false }" 
+    @open-modal.window="if ($event.detail === 'enviosModal') open = true"
+    x-show="open" 
+    x-cloak
+    class="fixed inset-0 z-50 overflow-y-auto"
+    style="display: none;">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-black/50 transition-opacity" @click="open = false"></div>
+    
+    <!-- Modal -->
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div @click.away="open = false" 
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            class="relative bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl shadow-2xl max-w-2xl w-full p-6 text-white">
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6">
+                <h5 class="text-2xl font-bold">ENVÍOS</h5>
+                <button @click="open = false" class="p-1 hover:bg-white/10 rounded-lg transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <!-- Truck Image -->
+            <div class="flex justify-center mb-6">
+                <div class="w-48 h-48 bg-white rounded-full flex items-center justify-center p-6">
+                    <img src="{% static 'images/envios.png' %}" alt="Envíos" class="w-full h-full object-contain">
+                </div>
+            </div>
+            
+            <!-- Title -->
+            <h2 class="text-4xl md:text-5xl font-bold text-center mb-8">
+                Envíos a TODO<br>EL PAÍS!
+            </h2>
+            
+            <!-- Info Cards -->
+            <div class="grid md:grid-cols-2 gap-4 mb-6">
+                <div class="bg-white/10 border-2 border-white/30 rounded-lg p-4">
+                    <h5 class="font-bold text-lg mb-2">Información de envíos</h5>
+                    <p class="text-sm text-white/90">Trabajamos con múltiples transportes a todo el país. Puedes usar tu transporte de confianza o te ayudamos a coordinar el envío.</p>
+                </div>
+                
+                <div class="bg-white/10 border-2 border-white/30 rounded-lg p-4">
+                    <h5 class="font-bold text-lg mb-2">Retiro en sucursal</h5>
+                    <p class="text-sm text-white/90">También puedes retirar tu pedido en nuestra sucursal sin costo adicional. Consulta por horarios de atención.</p>
+                </div>
+            </div>
+            
+            <!-- Slogan -->
+            <div class="text-center">
+                <p class="text-sm italic">BULONERA ALVEAR, Construyendo el futuro, tornillo a tornillo.</p>
+            </div>
+        </div>
+    </div>
+</div>

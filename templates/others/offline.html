@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sin conexión - Bulonera Alvear{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col items-center justify-center text-center p-8 bg-slate-50 dark:bg-slate-900">
+    <div class="max-w-md mx-auto">
+        <!-- Icono WiFi Off -->
+        <div class="mb-6 flex justify-center">
+            <i data-lucide="wifi-off" class="w-20 h-20 text-slate-400 dark:text-slate-500"></i>
+        </div>
+        
+        <!-- Título -->
+        <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-3">
+            Sin conexión
+        </h1>
+        
+        <!-- Descripción -->
+        <p class="text-slate-600 dark:text-slate-400 mb-8 text-lg">
+            No hay internet disponible. Las páginas que visitaste antes están disponibles en caché.
+        </p>
+        
+        <!-- Botón Volver -->
+        <a href="/" 
+           class="inline-flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-medium px-6 py-3 rounded-xl transition-colors shadow-lg hover:shadow-xl">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span>Volver al inicio</span>
+        </a>
+        
+        <!-- Información adicional -->
+        <div class="mt-12 p-4 bg-blue-50 dark:bg-slate-800 rounded-xl border border-blue-100 dark:border-slate-700">
+            <div class="flex items-start gap-3 text-left">
+                <i data-lucide="info" class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0"></i>
+                <div class="text-sm text-slate-700 dark:text-slate-300">
+                    <p class="font-semibold mb-1">Modo offline</p>
+                    <p>Puedes navegar por las páginas que ya visitaste. El carrito y checkout requieren conexión a internet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

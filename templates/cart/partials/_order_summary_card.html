@@ -1,0 +1,61 @@
+{% comment %}
+Order Summary Card Component
+Card de resumen con total y botones de acción
+Props: total, show_checkout_button, show_continue_button
+{% endcomment %}
+{% load static %}
+{% load custom_filters %}
+
+<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 sticky top-4">
+    <div class="p-6">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+            Resumen de Orden
+        </h3>
+        
+        <!-- Total -->
+        <div class="flex items-center justify-between py-4 border-t border-b border-slate-200 dark:border-slate-700">
+            <span class="text-slate-600 dark:text-slate-400 font-medium">
+                Total:
+            </span>
+            <span class="text-2xl font-bold text-slate-900 dark:text-white">
+                ${{ total|floatformat:2 }}
+            </span>
+        </div>
+        
+        <!-- Medios de Pago -->
+        <div class="py-4 text-center">
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                Métodos de pago aceptados
+            </p>
+            <img src="{% static 'images/misc/payments.png' %}" 
+                 alt="Medios de pago" 
+                 class="h-6 mx-auto"
+                 loading="lazy">
+        </div>
+        
+        <!-- Botones -->
+        <div class="space-y-3">
+            {% if show_checkout_button %}
+            <a href="{% url 'cart:checkout' %}" 
+               class="block w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-center font-semibold rounded-lg transition-colors duration-200">
+                Proceder al Pago
+            </a>
+            {% endif %}
+            
+            {% if show_continue_button %}
+            <a href="{% url 'store:store' %}" 
+               class="block w-full px-6 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-white text-center font-medium rounded-lg transition-colors duration-200">
+                Continuar Comprando
+            </a>
+            {% endif %}
+        </div>
+        
+        <!-- Info Adicional -->
+        <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div class="flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <i data-lucide="shield-check" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+                <p>Compra segura. Tus datos están protegidos.</p>
+            </div>
+        </div>
+    </div>
+</div>

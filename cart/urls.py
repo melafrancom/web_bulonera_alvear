@@ -1,30 +1,15 @@
 """
-URL configuration for bulonera project.
+Cart URLs - Compatibility Layer
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+DEPRECATED: Este archivo mantiene compatibilidad hacia atrás.
+Las URLs ahora están organizadas en:
+- cart.web.urls (URLs para vistas HTML tradicionales)
+- cart.api.urls (URLs para API REST con DRF)
+
+Configuración recomendada en web_bulonera/urls.py:
+    path('cart/', include('cart.web.urls', namespace='cart_web')),
+    path('api/v1/', include('cart.api.urls', namespace='cart_api')),
 """
+from cart.web.urls import urlpatterns, app_name
 
-from django.contrib import admin
-from django.urls import path, include
-from . import views
-
-#LOCAL APPS
-urlpatterns = [
-    path('', views.cart, name='cart'),
-    path('add_cart/<int:product_id>', views.add_cart, name='add_cart'),
-    path('remove_cart/<int:product_id>/<int:cart_item_id>', views.remove_cart, name='remove_cart'),
-    path('remove_cart_item/<int:product_id>/<int:cart_item_id>', views.remove_cart_item, name='remove_cart_item'),
-    path('checkout/', views.checkout, name="checkout"),
-    path('get-cart-data/', views.get_cart_data, name='get_cart_data'),
-]
+__all__ = ['urlpatterns', 'app_name']

@@ -2,188 +2,167 @@
 {% load static %}
 {% load custom_filters %}
 
+{% block title %}Revisión de Pago - Bulonera Alvear{% endblock %}
+
 {% block content %}
-    <section class="section-content padding-y bg">
+<div class="min-h-screen bg-soft-bg dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Left Column -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Billing Address -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Dirección de Facturación</h2>
+          <div class="space-y-2 text-slate-700 dark:text-slate-300">
+            <p>{{ order.full_name }}</p>
+            <p>{{ order.full_address }}</p>
+            <p>{{ order.country }}, {{ order.city }}, {{ order.state }}</p>
+            <p>{{ order.email }}</p>
+            <p>{{ order.phone }}</p>
+            {% if order.order_note %}
+            <p class="mt-4"><strong>Detalles de la orden:</strong> {{ order.order_note }}</p>
+            {% endif %}
+          </div>
+        </div>
 
-        <div class="container">
+        <!-- Payment Method -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Método de Pago</h2>
+          <p class="text-slate-700 dark:text-slate-300">
+            Se le redireccionará a WhatsApp para confirmar stock, facturación y pago.
+          </p>
+        </div>
 
-        <!-- ============================ COMPONENT 1 ================================= -->
-            <div class="row">
-                <aside class="col-lg-8">
-                    <div class="card"><!-- card Dirección de Facturación// -->
-                        <h5 class="card-header">Dirección de Facturación</h5>
-                        <div class="card-body">
-                            <p class="card-text mb-0">{{ order.full_name }}</p>
-                            <p class="card-text mb-0">{{ order.full_address }}</p>
-                            <p class="card-text mb-0">{{ order.country }}, {{ order.city }}, {{ order.state }}</p>
-                            <p class="card-text mb-0">{{ order.email }}</p>
-                            <p class="card-text mb-0">{{ order.phone }}</p>
-                            {% if order.order_note %}
-                                <b>Detalles de la orden: </b> {{ order.order_note }}
-                            {% endif %}
+        <!-- Products Review -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Revisión de Productos</h2>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="border-b border-slate-200 dark:border-slate-700">
+                <tr class="text-sm text-slate-600 dark:text-slate-400">
+                  <th class="text-left py-3 px-2">Producto(s)</th>
+                  <th class="text-center py-3 px-2">Cantidad</th>
+                  <th class="text-right py-3 px-2">Precio</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for cart_item in cart_items %}
+                <tr class="border-b border-slate-200 dark:border-slate-700">
+                  <td class="py-4 px-2">
+                    <div class="flex items-center">
+                      <img src="{{ cart_item.product.image_url }}" alt="{{ cart_item.product.name }}" class="w-16 h-16 object-cover rounded mr-4">
+                      <div>
+                        <a href="{{ cart_item.product.get_url }}" class="text-slate-900 dark:text-white font-medium hover:text-blue-600 dark:hover:text-blue-400">
+                          {{ cart_item.product.name }}
+                        </a>
+                        {% if cart_item.variation.all %}
+                        <div class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                          {% for item in cart_item.variation.all %}
+                          <p>{{ item.variation_category|capfirst }}: {{ item.variation_value|capfirst }}</p>
+                          {% endfor %}
                         </div>
-                    </div> <!-- card.// -->
+                        {% endif %}
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-4 px-2 text-center text-slate-900 dark:text-white">
+                    {{ cart_item.quantity }}
+                  </td>
+                  <td class="py-4 px-2 text-right">
+                    <p class="font-medium text-slate-900 dark:text-white">${{ cart_item.sub_total }}</p>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">${{ cart_item.product.price }} c/u</p>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
-                    <div class="card"><!-- card Método de Pago// -->
-                        <h5 class="card-header">Método de Pago</h5>
-                        <div class="card-body">
-                            <p class="card-text">SE LE REDIRECCIONARÁ A WHATSAPP PARA CONFIRMAR STOCK, CONFIRMAR TEMAS DE FACTURACION Y PAGO!</p>
-                        </div>
-                    </div> <!-- card.// -->
+      <!-- Right Column: Summary -->
+      <div class="lg:col-span-1">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 sticky top-24">
+          <div class="space-y-4 mb-6">
+            <div class="flex justify-between text-slate-700 dark:text-slate-300">
+              <span>Precio Total:</span>
+              <span class="font-semibold">${{ total }}</span>
+            </div>
+          </div>
 
-                    <div class="card"><!-- card Revision de productos// -->
-                        <h5 class="card-header">Revisión de Productos</h5>
-                        <div class="card-body">
+          <hr class="border-slate-200 dark:border-slate-700 my-6">
 
-                            <table class="table table-borderless table-shopping-cart">
-                                <thead class="text-muted">
-                                    <tr class="small text-uppercase">
-                                        <th scope="col">Producto(s)</th>
-                                        <th scope="col" width="120">Cantidad</th>
-                                        <th scope="col" width="120">Precio</th>
+          <div class="text-center mb-6">
+            <img src="{% static 'images/misc/payments.png' %}" alt="Métodos de pago" class="h-8 mx-auto">
+          </div>
 
-                                    </tr>
-                                </thead>
-                                <tbody>
+          <button 
+            id="pay-button" 
+            class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+          >
+            Pagar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-                                    {% for cart_item in cart_items %}
-                                        <tr>
-                                            <td>
-                                                <figure class="itemside align-items-center">
-                                                    <div class="aside"><img src="{{ cart_item.product.images.url }}" class="img-sm"></div>
-                                                    <figcaption class="info">
-                                                        <a href="{{ cart_item.product.get_url }}" class="title text-dark">{{ cart_item.product.name }}</a>
+<script>
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
 
-                                                        <p class="text-muted small">
-                                                            {% if cart_item.variation.all %}
-                                                                {% for item in cart_item.variation.all %}
-                                                                {{ item.variation_category | capfirst }} : {{ item.variation_value | capfirst }} <br>
-                                                                {% endfor %}
-                                                            {% endif %}
-                                                        </p>
-                                                    </figcaption>
-                                                </figure>
-                                            </td>
-                                            <td>
+document.addEventListener('DOMContentLoaded', function() {
+  const payButton = document.getElementById('pay-button');
+  const csrftoken = getCookie('csrftoken');
 
-                                                <label for="">{{ cart_item.quantity }}</label>
+  if (payButton) {
+    payButton.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      const orderID = "{{ order.order_number }}";
+      const amount = "{{ total }}";
 
-                                            </td>
-                                            <td>
-                                                <div class="price-wrap">
-                                                    <var class="price">${{ cart_item.sub_total }}</var>
-                                                    <small class="text-muted"> ${{ cart_item.product.price }} cada uno </small>
-                                                </div> <!-- price-wrap .// -->
-                                            </td>
-
-                                        </tr>
-                                    {% endfor %}
-
-                                </tbody>
-                            </table>
-
-                        </div>
-                    </div> <!-- card.// -->
-
-                </aside> <!-- col.// -->
-                <aside class="col-lg-4">
-
-                    <div class="card">
-                        <div class="card-body">
-                            <dl class="dlist-align">
-                                <dt>Precio Total:</dt>
-                                <dd class="text-right">{{ total }}</dd>
-                            </dl>
-                            <!--
-                            <dl class="dlist-align">
-                                <dt>Impuesto IVA (16%):</dt>
-                                <dd class="text-right"> {{ tax }}</dd>
-                            </dl>
-                            
-
-                            <dl class="dlist-align">
-                                <dt>Total:</dt>
-                                <dd class="text-right text-dark b"><strong>{{ grand_total }}</strong></dd>
-                            </dl>
-                            -->
-
-                            <hr>
-                            <p class="text-center mb-3">
-                                <img src="{% static './images/misc/payments.png' %}" height="26">
-                            </p>
-
-                            <button id="pay-button" class="btn btn-primary">Pagar</button>
-                    
-                        </div> <!-- card-body.// -->
-                    </div> <!-- card.// -->
-
-                </aside> <!-- col.// -->
-
-
-            </div> <!-- row.// -->
-        <!-- ============================ COMPONENT 1 END .// ================================= -->
-        </div> <!-- container .//  -->
-
-    </section>
-
-        <!--  ################ Script JS ################  -->
-        <script type="text/javascript">
-        function getCookie(name){
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== ''){
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++){
-                const cookie = cookies[i].trim();
-                if(cookie.substring(0,name.length + 1) === (name + '=')){
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-                }
-            }
-
-            return cookieValue;
-            }
-
-            document.addEventListener('DOMContentLoaded', function() {
-                const payButton = document.getElementById('pay-button');
-                const csrftoken = getCookie('csrftoken');
-
-                if (payButton) {
-                    payButton.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        
-                        // Obtener datos de la orden
-                        const orderID = "{{ order.order_number }}";
-                        const amount = "{{ total }}";
-
-                        // Enviar solicitud de procesamiento
-                        fetch("{% url 'payments' %}", {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': csrftoken
-                            },
-                            body: `orderID=${orderID}&amount=${amount}`
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                // Guardar enlace de WhatsApp en localStorage
-                                localStorage.setItem('whatsappLink', data.whatsapp_link);
-                                
-                                // Redirigir a página de redirección
-                                window.location.href = "{% url 'whatsapp_redirect' %}?order_number=" + data.order_number;
-                            } else {
-                                alert('Error al procesar el pedido');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('Ocurrió un error al procesar su pedido');
-                        });
-                    });
-                }
-        });
-        </script>
-
+      fetch("{% url 'orders:payments' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+          orderID: orderID,
+          amount: amount
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          localStorage.setItem('whatsappLink', data.whatsapp_link);
+          window.location.href = "{% url 'orders:whatsapp_redirect' %}?order_number=" + data.order_number;
+        } else {
+          alert('Error al procesar el pedido');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Ocurrió un error al procesar su pedido');
+      });
+    });
+  }
+});
+</script>
 {% endblock %}
+

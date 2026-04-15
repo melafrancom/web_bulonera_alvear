@@ -1,0 +1,74 @@
+{% load static %}
+{% load custom_filters %}
+{% load store_filters %}
+
+<!-- Product Gallery Component -->
+<div x-data="{
+    current: 0,
+    images: [
+        {
+            webp: '{{ product.webp_image_url }}',
+            img: '{{ product.image_url }}',
+            thumb: '{{ product.webp_image_url }}',
+            alt: '{{ product.image_alt|default:product.name }}'
+        }{% if gallery %}{% for img in gallery %},
+        {
+            webp: '{{ img.get_image_urls.webp }}',
+            img: '{{ img.get_image_urls.thumbnail }}',
+            thumb: '{{ img.get_image_urls.thumbnail }}',
+            alt: '{{ img.alt|default:img.image.name }}'
+        }{% endfor %}{% endif %}
+    ],
+    showImage(idx) {
+        this.current = idx;
+        this.$refs.mainImg.src = this.images[idx].webp; // Fallback al webp
+    },
+    next() {
+        this.showImage((this.current + 1) % this.images.length);
+    },
+    prev() {
+        this.showImage((this.current - 1 + this.images.length) % this.images.length);
+    }
+}" class="space-y-4">
+    <!-- Main Image -->
+    <div class="relative bg-white dark:bg-slate-800 rounded-xl overflow-hidden aspect-square">
+        <img x-ref="mainImg" 
+             :src="images[current].webp" 
+             :alt="images[current].alt"
+             class="w-full h-full object-contain"
+             loading="lazy">
+        
+        <!-- Navigation Buttons -->
+        <template x-if="images.length > 1">
+            <div>
+                <button @click="prev()" 
+                        class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110">
+                    <i data-lucide="chevron-left" class="w-6 h-6"></i>
+                </button>
+                <button @click="next()" 
+                        class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110">
+                    <i data-lucide="chevron-right" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </template>
+    </div>
+    
+    <!-- Thumbnails -->
+    <template x-if="images.length > 1">
+        <div class="flex gap-2 overflow-x-auto pb-2">
+            <template x-for="(img, idx) in images" :key="idx">
+                <button @click="showImage(idx)" 
+                        :class="current === idx ? 'ring-2 ring-blue-600 dark:ring-blue-500' : 'ring-1 ring-slate-200 dark:ring-slate-700'"
+                        class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden transition-all duration-200 hover:ring-2 hover:ring-blue-400">
+                    <picture>
+                        <source :srcset="img.thumb" type="image/webp">
+                        <img :src="img.img" 
+                             :alt="img.alt"
+                             class="w-full h-full object-cover"
+                             loading="lazy">
+                    </picture>
+                </button>
+            </template>
+        </div>
+    </template>
+</div>

@@ -1,11 +1,16 @@
-# urls.py - Contact Web URLs (importa desde web/)
-from django.urls import path, include
+"""
+Contact URLs - Compatibility Layer
 
-# Importar URLs de la layer web
-from contact.web.urls import urlpatterns as web_urlpatterns
+DEPRECATED: Este archivo mantiene compatibilidad hacia atrás.
+Las URLs ahora están organizadas en:
+- contact.web.urls (URLs para vistas HTML tradicionales)
+- contact.api.urls (URLs para API REST con DRF)
 
-urlpatterns = web_urlpatterns
+Configuración recomendada en web_bulonera/urls.py:
+    path('contact/', include('contact.web.urls', namespace='contact_web')),
+    path('api/v1/contact/', include('contact.api.urls', namespace='contact_api')),
+"""
+from contact.web.urls import urlpatterns, app_name
 
-# NOTA: Para usar la API REST, agregar a web_bulonera/urls.py:
-# path('api/', include('contact.api.urls')),
+__all__ = ['urlpatterns', 'app_name']
 

@@ -1,0 +1,172 @@
+<form method="POST" class="space-y-6" x-data="contactForm()" @submit.prevent="submitForm">
+  {% csrf_token %}
+
+  <!-- Name Field -->
+  <div>
+    <label for="id_name" class="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+      Nombre Completo
+    </label>
+    <input 
+      type="text" 
+      id="id_name" 
+      name="name" 
+      placeholder="Tu nombre completo"
+      x-model="form.name"
+      @blur="validateField('name')"
+      class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+      required
+    >
+    {% if form.name.errors %}
+    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.name.errors.0 }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Email Field -->
+  <div>
+    <label for="id_email" class="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+      Correo Electrónico
+    </label>
+    <input 
+      type="email" 
+      id="id_email" 
+      name="email" 
+      placeholder="tu@email.com"
+      x-model="form.email"
+      @blur="validateField('email')"
+      class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+      required
+    >
+    {% if form.email.errors %}
+    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.email.errors.0 }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Contact Method -->
+  <div>
+    <label for="id_contact_method" class="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+      Método de Contacto
+    </label>
+    <select 
+      id="id_contact_method" 
+      name="contact_method"
+      x-model="form.contact_method"
+      class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+    >
+      <option value="email">📧 Correo Electrónico</option>
+      <option value="whatsapp">💬 WhatsApp</option>
+    </select>
+    {% if form.contact_method.errors %}
+    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.contact_method.errors.0 }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Subject Field -->
+  <div>
+    <label for="id_subject" class="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+      Asunto
+    </label>
+    <input 
+      type="text" 
+      id="id_subject" 
+      name="subject" 
+      placeholder="¿Cuál es tu consulta?"
+      x-model="form.subject"
+      @blur="validateField('subject')"
+      class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+      required
+    >
+    {% if form.subject.errors %}
+    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.subject.errors.0 }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Message Field -->
+  <div>
+    <label for="id_message" class="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+      Mensaje
+    </label>
+    <textarea 
+      id="id_message" 
+      name="message" 
+      placeholder="Cuéntanos más detalles..."
+      x-model="form.message"
+      @blur="validateField('message')"
+      rows="5"
+      class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
+      required
+    ></textarea>
+    {% if form.message.errors %}
+    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.message.errors.0 }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Submit Button -->
+  <button 
+    type="submit"
+    :disabled="!isFormValid"
+    class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center justify-center"
+  >
+    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+    </svg>
+    Enviar Mensaje
+  </button>
+</form>
+
+<script>
+function contactForm() {
+  return {
+    form: {
+      name: '',
+      email: '',
+      contact_method: 'email',
+      subject: '',
+      message: '',
+    },
+    errors: {},
+    
+    validateField(field) {
+      if (!this.form[field] || this.form[field].trim() === '') {
+        this.errors[field] = 'Este campo es requerido';
+        return false;
+      }
+      
+      if (field === 'email') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(this.form.email)) {
+          this.errors[field] = 'Ingresa un email válido';
+          return false;
+        }
+      }
+      
+      delete this.errors[field];
+      return true;
+    },
+    
+    get isFormValid() {
+      return this.form.name.trim() !== '' &&
+             this.form.email.trim() !== '' &&
+             this.form.subject.trim() !== '' &&
+             this.form.message.trim() !== '' &&
+             /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email);
+    },
+    
+    submitForm() {
+      // Validar todos los campos
+      const fields = ['name', 'email', 'subject', 'message'];
+      let isValid = true;
+      
+      fields.forEach(field => {
+        if (!this.validateField(field)) {
+          isValid = false;
+        }
+      });
+      
+      if (isValid) {
+        // Enviar formulario
+        this.$el.submit();
+      }
+    }
+  }
+}
+</script>
