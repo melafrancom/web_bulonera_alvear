@@ -1,16 +1,41 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}Error - Bulonera Alvear{% endblock %}
+
 {% block content %}
-<div class="container my-5">
-    <div class="row">
-        <div class="col-md-12 text-center">
-            <h1>¡Ups! Algo salió mal</h1>
-            <p>{{ error_message }}</p>
-            <div class="my-4">
-                <a href="{% url 'store' %}" class="btn btn-primary">Volver a la tienda</a>
-            </div>
-        </div>
+<div class="min-h-screen bg-soft-bg dark:bg-slate-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full text-center">
+    <!-- Icon -->
+    <div class="flex justify-center mb-6">
+      <div class="w-24 h-24 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+        <svg class="w-12 h-12 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>
+      </div>
     </div>
+
+    <!-- Title -->
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-4">
+      ¡Ups! Algo Salió Mal
+    </h1>
+
+    <!-- Error Message -->
+    <p class="text-lg text-slate-600 dark:text-slate-400 mb-8">
+      {{ error_message|default:"Ha ocurrido un error inesperado. Por favor, intenta nuevamente." }}
+    </p>
+
+    <!-- Button -->
+    <a 
+      href="{% url 'store:store' %}" 
+      class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+    >
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      </svg>
+      Volver a la Tienda
+    </a>
+  </div>
 </div>
 {% endblock %}
+

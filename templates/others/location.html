@@ -1,33 +1,71 @@
-<!DOCTYPE html>
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
 
-<html lang="en">
-    
-    {% block content %}
-    <div class="card-body"><!-- Nos encontrás en: -->
-        <div class="card-header bg-primary text-white">
-            <h2 class="text-center mb-0">Nos encontrás en:</h2>
+{% block title %}Ubicación - Bulonera Alvear{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-soft-bg dark:bg-slate-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="bg-blue-600 dark:bg-blue-700 rounded-t-lg px-6 py-4">
+      <h1 class="text-3xl font-bold text-white text-center">
+        Nos Encontrás En:
+      </h1>
+    </div>
+
+    <!-- Locations Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+      <!-- Casa Central -->
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg overflow-hidden">
+        <div class="p-6">
+          <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4 text-center">
+            Casa Central
+          </h2>
+          <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden">
+            <iframe 
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3540.7335905695527!2d-59.009128328846515!3d-27.446412208054795!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94450c7c12df062d%3A0x4d6cb5878c377427!2sBulonera%20Alvear!5e0!3m2!1ses-419!2sar!4v1744065511827!5m2!1ses-419!2sar" 
+              class="w-full h-96 border-0" 
+              allowfullscreen="" 
+              loading="lazy" 
+              referrerpolicy="no-referrer-when-downgrade"
+            ></iframe>
+          </div>
         </div>
+      </div>
+
+      <!-- Sucursal 1 -->
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg overflow-hidden">
+        <div class="p-6">
+          <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4 text-center">
+            Sucursal 1
+          </h2>
+          <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden">
+            <iframe 
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3541.1257855420026!2d-59.022848588562745!3d-27.434190376241503!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94450b0042a383d3%3A0x99509462955cc966!2sBulonera%20Alvear!5e0!3m2!1ses-419!2sar!4v1744067091849!5m2!1ses-419!2sar" 
+              class="w-full h-96 border-0" 
+              allowfullscreen="" 
+              loading="lazy" 
+              referrerpolicy="no-referrer-when-downgrade"
+            ></iframe>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="card-body"><!-- Casa CENTRAL -->
-        <div class="text-center">
-            <div>
-                <p>Casa central:</p>
-            </div>
-            <div class="col-md "><!-- maps -->
-                <iframe class="iframe1" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3540.7335905695527!2d-59.009128328846515!3d-27.446412208054795!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94450c7c12df062d%3A0x4d6cb5878c377427!2sBulonera%20Alvear!5e0!3m2!1ses-419!2sar!4v1744065511827!5m2!1ses-419!2sar" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-            </div>
+
+    <!-- Back Button -->
+    <div class="mt-8 text-center">
+      <a 
+        href="{% url 'home' %}" 
+        class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+      >
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Volver al Inicio
+      </a>
     </div>
-    <div class="card-body"><!-- SUCURSAL -->
-        <div class="text-center">
-            <div>
-                <p>Sucursal 1:</p>
-            </div>
-            <div class="col-md"><!-- maps -->
-                <iframe class="iframe1" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3541.1257855420026!2d-59.022848588562745!3d-27.434190376241503!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94450b0042a383d3%3A0x99509462955cc966!2sBulonera%20Alvear!5e0!3m2!1ses-419!2sar!4v1744067091849!5m2!1ses-419!2sar" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-            </div>
-    </div>
-    {% endblock%}
-</html>
+  </div>
+</div>
+{% endblock %}
+

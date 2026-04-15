@@ -1,0 +1,58 @@
+{% comment %}
+Pagination Component
+Usage: {% include 'includes/partials/_pagination.html' with page_obj=products query_params=request.GET %}
+Preserves all query parameters in pagination links
+{% endcomment %}
+
+{% if page_obj.has_other_pages %}
+<nav class="flex items-center justify-center gap-2 mt-8" aria-label="Pagination">
+    <!-- Previous Button -->
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% for key, value in query_params.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+           class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Anterior</span>
+        </a>
+    {% else %}
+        <span class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-400 dark:text-slate-600 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-not-allowed">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Anterior</span>
+        </span>
+    {% endif %}
+
+    <!-- Page Numbers (hidden on mobile) -->
+    <div class="hidden md:flex items-center gap-1">
+        {% for i in page_obj.paginator.page_range %}
+            {% if page_obj.number == i %}
+                <span class="inline-flex items-center justify-center w-10 h-10 text-sm font-bold text-white bg-primary-600 dark:bg-primary-500 rounded-lg">
+                    {{ i }}
+                </span>
+            {% else %}
+                <a href="?page={{ i }}{% for key, value in query_params.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                   class="inline-flex items-center justify-center w-10 h-10 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                    {{ i }}
+                </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Current Page Indicator (mobile only) -->
+    <span class="md:hidden text-sm font-medium text-slate-700 dark:text-slate-300">
+        {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+    </span>
+
+    <!-- Next Button -->
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% for key, value in query_params.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+           class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+            <span class="hidden sm:inline">Siguiente</span>
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </a>
+    {% else %}
+        <span class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-400 dark:text-slate-600 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-not-allowed">
+            <span class="hidden sm:inline">Siguiente</span>
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </span>
+    {% endif %}
+</nav>
+{% endif %}

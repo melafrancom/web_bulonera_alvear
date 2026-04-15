@@ -1,0 +1,44 @@
+{% comment %}
+Order Card Component
+Card de orden reutilizable para dashboard y my_orders
+Props: order, show_link
+{% endcomment %}
+{% load custom_filters %}
+
+<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 hover:shadow-md transition-shadow">
+    <!-- Header -->
+    <div class="flex items-start justify-between mb-4">
+        <div>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Orden #{{ order.order_number }}</p>
+            <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ order.created_at|date:"d/m/Y" }}</p>
+        </div>
+        
+        <!-- Status Badge -->
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
+                     {% if order.status == 'new' %}bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200{% endif %}
+                     {% if order.status == 'accepted' %}bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200{% endif %}
+                     {% if order.status == 'completed' %}bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200{% endif %}
+                     {% if order.status == 'cancelled' %}bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200{% endif %}">
+            {{ order.get_status_display }}
+        </span>
+    </div>
+    
+    <!-- Items Count -->
+    <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">
+        {{ order.orderproduct_set.count }} producto{{ order.orderproduct_set.count|pluralize }}
+    </p>
+    
+    <!-- Total -->
+    <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700">
+        <span class="text-slate-600 dark:text-slate-400 font-medium">Total:</span>
+        <span class="text-lg font-bold text-slate-900 dark:text-white">${{ order.order_total|floatformat:2 }}</span>
+    </div>
+    
+    <!-- Link -->
+    {% if show_link %}
+    <a href="{% url 'orders:order_detail' order.order_number %}" 
+       class="mt-4 w-full block text-center px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+        Ver detalles
+    </a>
+    {% endif %}
+</div>

@@ -1,0 +1,162 @@
+{% comment %}
+Product Grid Item Component
+Usage: {% include 'store/partials/_product_grid_item.html' with product=product %}
+Displays a product card with image, price, quantity selector and add to cart button
+Note: Requires parent template to load: static, custom_filters, store_filters, humanize
+{% endcomment %}
+
+{% load static %}
+{% load custom_filters store_filters %}
+<div x-data="{
+    qty: 1,
+    max: {{ product.stock }},
+    adding: false,
+    
+    increase() {
+        if (this.qty < this.max) this.qty++;
+    },
+    
+    decrease() {
+        if (this.qty > 1) this.qty--;
+    },
+    
+    async addToCart() {
+        if (this.adding) return;
+        
+        this.adding = true;
+        const url = '{% url "cart:add_cart" product.id %}?qty=' + this.qty;
+        
+        try {
+            const response = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            
+            if (response.ok) {
+                // Dispatch event to update floating cart
+                window.dispatchEvent(new CustomEvent('cart-updated'));
+                
+                // Show success notification
+                window.dispatchEvent(new CustomEvent('show-toast', {
+                    detail: { message: 'Producto agregado al carrito', type: 'success' }
+                }));
+                
+                // Reset quantity
+                this.qty = 1;
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            window.dispatchEvent(new CustomEvent('show-toast', {
+                detail: { message: 'Error al agregar producto', type: 'error' }
+            }));
+        } finally {
+            this.adding = false;
+        }
+    }
+}" 
+class="bg-white dark:bg-slate-800 rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden group">
+    
+    <!-- Product Image -->
+    <a href="{{ product.get_url }}" class="block relative aspect-square overflow-hidden bg-slate-100 dark:bg-slate-700">
+        {% if product.discount_percentage %}
+        <span class="absolute top-2 right-2 z-10 px-2 py-1 text-xs font-bold text-white bg-accent-500 rounded-full">
+            -{{ product.discount_percentage }}%
+        </span>
+        {% endif %}
+        
+        {% if product.image or product.images %}
+        <picture>
+            <source srcset="{{ product.webp_image_url }}" type="image/webp">
+            <img src="{{ product.image_url }}" 
+                 alt="{{ product.name }}"
+                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                 loading="lazy"
+                 width="300"
+                 height="300">
+        </picture>
+        {% else %}
+        <img src="{% static 'images/placeholder.png' %}" 
+             alt="sin imagen"
+             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+             loading="lazy"
+             width="300"
+             height="300">
+        {% endif %}
+    </a>
+    
+    <!-- Product Info -->
+    <div class="p-4">
+        <!-- Title -->
+        <a href="{{ product.get_url }}" 
+           class="block text-sm md:text-base font-semibold text-slate-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 line-clamp-2 mb-2 min-h-[2.5rem] transition-colors">
+            {{ product.name }}
+        </a>
+        
+        <!-- Price -->
+        <div class="mb-3">
+            {% if product.sale_price %}
+            <div class="flex items-center gap-2">
+                <span class="text-lg md:text-xl font-bold text-green-600 dark:text-green-400">
+                    ${{ product.sale_price|floatformat:0 }}
+                </span>
+                <span class="text-sm text-slate-400 line-through">
+                    ${{ product.price|floatformat:0 }}
+                </span>
+            </div>
+            {% else %}
+            <span class="text-lg md:text-xl font-bold text-slate-900 dark:text-white">
+                ${{ product.price|floatformat:0 }}
+            </span>
+            {% endif %}
+        </div>
+        
+        <!-- Material & Grade Badges -->
+        {% if product.material or product.grade %}
+        <div class="flex flex-wrap gap-1 mb-3">
+            {% if product.material %}
+            <span class="inline-block bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs px-2 py-1 rounded-full font-medium truncate">
+                {{ product.material }}
+            </span>
+            {% endif %}
+            {% if product.grade %}
+            <span class="inline-block bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 text-xs px-2 py-1 rounded-full font-medium truncate">
+                {{ product.grade }}
+            </span>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Quantity Selector -->
+        <div class="flex items-center gap-2 mb-3">
+            <button @click="decrease()" 
+                    type="button"
+                    class="flex items-center justify-center w-8 h-8 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors">
+                <i data-lucide="minus" class="w-4 h-4"></i>
+            </button>
+            <input x-model.number="qty" 
+                   type="number" 
+                   :max="max"
+                   min="1"
+                   @change="qty = Math.max(1, Math.min(parseInt($event.target.value) || 1, max))"
+                   class="w-16 text-center text-sm font-medium text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+            <button @click="increase()" 
+                    type="button"
+                    class="flex items-center justify-center w-8 h-8 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+            </button>
+        </div>
+        
+        <!-- Add to Cart Button -->
+        <button @click="addToCart()" 
+                :disabled="adding"
+                type="button"
+                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <template x-if="!adding">
+                <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+            </template>
+            <template x-if="adding">
+                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            </template>
+            <span x-text="adding ? 'Agregando...' : 'Agregar al Carrito'"></span>
+        </button>
+    </div>
+</div>

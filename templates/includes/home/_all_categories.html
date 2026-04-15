@@ -1,0 +1,33 @@
+{% load static %}
+
+<!-- ========================= SECTION TODAS LAS CATEGORÍAS ========================= -->
+<section class="py-8 md:py-12 {% if section.highlight_color %}{{ section.highlight_color }}{% else %}bg-soft-bg dark:bg-slate-800{% endif %}">
+    <div class="container mx-auto px-4">
+        <h3 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-6 md:mb-8">
+            {{ section.title }}
+        </h3>
+        
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-4">
+            {% for category in all_categories %}
+            <a href="{% url 'store:products_by_category' category.slug %}" class="group">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-lg transition-all overflow-hidden p-4 md:p-6 h-full flex flex-col items-center justify-center gap-3">
+                    <!-- Imagen o icono -->
+                    {% if category.image or category.cat_image %}
+                    <img src="{{ category.image_url }}" alt="{{ category.category_name }}" 
+                        class="w-12 h-12 md:w-16 md:h-16 object-contain group-hover:scale-110 transition-transform">
+                    {% else %}
+                    <i data-lucide="folder" class="w-12 h-12 md:w-16 md:h-16 text-primary-600 dark:text-primary-400 group-hover:scale-110 transition-transform"></i>
+                    {% endif %}
+                    
+                    <!-- Nombre -->
+                    <p class="text-xs md:text-sm font-medium text-center text-slate-700 dark:text-slate-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2">
+                        {{ category.category_name }}
+                    </p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+<!-- ========================= SECTION TODAS LAS CATEGORÍAS END ========================= -->
+

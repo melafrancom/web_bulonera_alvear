@@ -1,139 +1,289 @@
 {% load static %}
 {% load custom_filters %}
-<!DOCTYPE html>
-<html lang="en">
-    <header class="headerBase">
-        <!-- Header principal -->
-        <section class="header-main border-bottom">
-            <div class="container">
-                <!-- Row principal -->
-                <div class="row align-items-center">
-                    <!-- Logo -->
-                    <div class="col-12 col-lg-2 d-flex align-items-center justify-content-center justify-content-lg-start mb-3 mb-lg-0">
-                        <a href="{% url 'home' %}" class="brand-wrap">
-                            <img class="logo img-fluid" src="{% static './images/logo02.png' %}">
-                        </a>
-                    </div>
 
-                    <!-- Contenido derecho -->
-                    <div class="col-12 col-lg-10">
-                        <div class="row align-items-center g-2">
-                            <!-- Botón Hamburguesa para móvil -->
-                            <div class="col-3 col-sm-2 d-lg-none">
-                                <button class="btn btn-primary dropdown-toggle w-100" type="button" data-toggle="collapse" data-target="#mobile-menu">
-                                    <i class="fa fa-bars"></i>
-                                </button>
-                            </div>
-
-                            <!-- Botón Tienda -->
-                            <div class="col-3 col-sm-2 col-lg-2 mb-2 mb-lg-0">
-                                <a href="{% url 'store' %}" class="btn btn-primary w-100">Tienda</a>
-                            </div>
-
-                            <!-- Categorías -->
-                            <div class="col-lg-2 mb-2 mb-lg-0 d-none d-lg-block">
-                                <div class="category-wrap dropdown">
-                                    <button type="button" class="btn btn-primary dropdown-toggle w-100" data-toggle="dropdown">
-                                        <i class="fa fa-bars"></i> Categorías
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{% url 'store' %}">Mostrar Todos</a>
-                                        {% for category in links %}
-                                        <a class="dropdown-item" href="{{ category.get_url }}">{{ category.category_name }}</a>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Búsqueda -->
-                            <div class="col-4 col-sm-6 col-lg-5 mb-2 mb-lg-0">
-                                <form action="{% url 'search' %}" class="search">
-                                    <div class="input-group w-100">
-                                        <input type="text" class="form-control" placeholder="Buscar" name="keyword">
-                                        <div class="input-group-append">
-                                            <button class="btn btn-primary" type="submit">
-                                                <i class="fa fa-search"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                            
-                            <!-- Usuario + Carrito -->
-                            <div class="col-2 col-sm-2 col-lg-3 d-flex justify-content-end">
-                                <div class="d-flex align-items-center">
-                                    <!-- Usuario desktop -->
-                                    <div class="widget-header d-none d-lg-block text-right">
-                                        {% if user.id is None %}
-                                            <small class="title text-muted">Bienvenido a Bulonera Alvear!</small>
-                                            <div>
-                                                <a href="{% url 'login' %}">Iniciar Sesión</a> <span class="dark-transp"> | </span> 
-                                                <a href="{% url 'register' %}">Registrarse</a>
-                                            </div>
-                                        {% else %}
-                                            <small class="title text-muted">Bienvenido/a {{ user.first_name }}</small>
-                                            <div>
-                                                <a href="{% url 'dashboard' %}">Mi cuenta</a> <span class="dark-transp"> | </span>
-                                                <a href="{% url 'logout' %}">Cerrar sesión</a>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-
-                                    <!-- Carrito -->
-                                    <a href="{% url 'cart' %}" class="widget-header pl-lg-3 ml-lg-3">
-                                        <div class="icon icon-sm rounded-circle border"><i class="fa fa-shopping-cart"></i></div>
-                                        <span class="badge badge-pill badge-danger notify">{{ cart_count }}</span>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<!-- Navbar con Alpine.js - REDISEÑO FASE 2: 3 Capas tipo Fravega -->
+<div x-data="{
+    mobileOpen: false,
+    darkMode: localStorage.getItem('dark-mode') === 'true',
+    categoriesOpen: false,
+    cartCount: {{ cart_count|default:0 }},
+    
+    toggleDark() {
+        this.darkMode = !this.darkMode;
+        localStorage.setItem('dark-mode', this.darkMode);
+        document.documentElement.classList.toggle('dark', this.darkMode);
+    }
+}" class="sticky top-0 z-50">
+    
+    <!-- ════════════════════════════════════════════════════════════
+        CAPA 1: BARRA DE UTILIDADES (TOP BAR)
+        ════════════════════════════════════════════════════════════ -->
+    <nav class="hidden lg:block bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between py-2 text-xs">
+                <!-- Left: Ubicación + Teléfono -->
+                <div class="flex items-center gap-6 text-slate-600 dark:text-slate-400">
+                    <a href="{% url 'location' %}" class="flex items-center gap-2 hover:text-primary-600 transition-colors">
+                        <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                        <span>Resistencia, Chaco, Argentina</span>
+                    </a>
+                    <span class="text-slate-300 dark:text-slate-600">|</span>
+                    <a href="tel:{{ WHATSAPP_NUMBER }}" class="flex items-center gap-2 hover:text-primary-600 transition-colors">
+                        <i data-lucide="phone" class="w-3.5 h-3.5"></i>
+                        <span>{{ WHATSAPP_NUMBER }}</span>
+                    </a>
                 </div>
-
-                <!-- Menú móvil colapsable -->
-                <div class="collapse navbar-collapse mt-3 d-lg-none" id="mobile-menu">
-                    <ul class="navbar-nav">
-                        <!-- Categorías en móvil -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">
-                                <i class="fa fa-bars"></i> Categorías
-                            </a>
-                            <div class="dropdown-menu">
-                                <a class="dropdown-item" href="{% url 'store' %}">Mostrar Todos</a>
-                                {% for category in links %}
-                                <a class="dropdown-item" href="{{ category.get_url }}">{{ category.category_name }}</a>
-                                {% endfor %}
-                            </div>
-                        </li>
-
-                        <!-- Opciones de usuario en móvil -->
-                        {% if user.id is None %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'login' %}">Iniciar Sesión</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'register' %}">Registrarse</a>
-                            </li>
-                        {% else %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'dashboard' %}">Mi cuenta</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'logout' %}">Cerrar sesión</a>
-                            </li>
-                        {% endif %}
-                    </ul>
+                
+                <!-- Right: Dark Mode + Login/Cuenta -->
+                <div class="flex items-center gap-4">
+                    <button @click="toggleDark()" 
+                            class="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                            aria-label="Toggle dark mode">
+                        <i x-show="!darkMode" data-lucide="moon" class="w-3.5 h-3.5"></i>
+                        <i x-show="darkMode" data-lucide="sun" class="w-3.5 h-3.5"></i>
+                    </button>
+                    
+                    <span class="text-slate-300 dark:text-slate-600">|</span>
+                    
+                    {% if user.id is None %}
+                    <div class="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                        <a href="{% url 'account:login' %}" class="hover:text-primary-600 transition-colors">Iniciar Sesión</a>
+                        <span class="text-slate-300 dark:text-slate-600">/</span>
+                        <a href="{% url 'account:register' %}" class="hover:text-primary-600 transition-colors">Registrarse</a>
+                    </div>
+                    {% else %}
+                    <div class="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                        <span>Hola, {{ user.first_name }}</span>
+                        <span class="text-slate-300 dark:text-slate-600">/</span>
+                        <a href="{% url 'account:dashboard' %}" class="hover:text-primary-600 transition-colors">Mi Cuenta</a>
+                        <span class="text-slate-300 dark:text-slate-600">/</span>
+                        <a href="{% url 'account:logout' %}" class="hover:text-primary-600 transition-colors">Salir</a>
+                    </div>
+                    {% endif %}
                 </div>
-            </div>
-        </section>
-
-        <!-- Título debajo -->
-        <div class="bulonera-titulo">
-            <div class="container">
-                <h1 class="titulo-bulonera">
-                    Bulonería y Ferretería Online.
-                </h1>
             </div>
         </div>
-    </header>
-</html>
+    </nav>
+    
+    <!-- ════════════════════════════════════════════════════════════
+        CAPA 2: CABECERA PRINCIPAL (Logo + Búsqueda + Iconos)
+        ════════════════════════════════════════════════════════════ -->
+    <nav class="bg-navbar-bg dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 backdrop-blur-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between gap-4 py-3 lg:py-4">
+                
+                <!-- Logo (Izquierda) -->
+                <a href="{% url 'home' %}" class="flex-shrink-0">
+                    <img src="{% static 'images/logo-bulonera-alvear.png' %}" 
+                         alt="Bulonera Alvear" 
+                         class="h-12 lg:h-14 w-auto transition-transform hover:scale-105">
+                </a>
+                
+                <!-- Búsqueda Centrada (Desktop) -->
+                <form action="{% url 'store:search' }}" class="hidden lg:flex flex-1 max-w-2xl mx-4">
+                    <div class="w-full relative">
+                        <input type="text" 
+                               name="keyword" 
+                               placeholder="Buscar tornillos, herramientas, bulonería..." 
+                               class="w-full px-5 py-2.5 pl-12 pr-14 bg-slate-50 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-full focus:outline-none focus:ring-0 focus:border-primary-500 transition-all">
+                        <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <button type="submit" 
+                                class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-full transition-colors">
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Iconos Derecha (Mi Cuenta + Carrito) -->
+                <div class="flex items-center gap-2 lg:gap-4">
+                    
+                    <!-- Mi Cuenta (Desktop) -->
+                    <a href="{% url 'account:dashboard' %}" class="hidden md:flex flex-col items-center justify-center gap-1 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors group">
+                        <i data-lucide="user" class="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-primary-600 transition-colors"></i>
+                        <span class="text-xs text-slate-600 dark:text-slate-400 group-hover:text-primary-600 transition-colors">Mi Cuenta</span>
+                    </a>
+                    
+                    <!-- Dark mode toggle (visible en mobile) -->
+                    <button @click="toggleDark()"
+                            class="lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                            aria-label="Toggle dark mode">
+                        <i x-show="!darkMode" data-lucide="moon" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
+                        <i x-show="darkMode" data-lucide="sun" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
+                    </button>
+                    
+                    <!-- Carrito -->
+                    <a href="{% url 'cart:cart' %}" class="relative flex flex-col items-center justify-center gap-1 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors group">
+                        <i data-lucide="shopping-cart" class="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-primary-600 transition-colors"></i>
+                        <span class="hidden md:block text-xs text-slate-600 dark:text-slate-400 group-hover:text-primary-600 transition-colors">Carrito</span>
+                        <span x-show="cartCount > 0" 
+                              x-text="cartCount"
+                              class="absolute -top-1 -right-1 bg-primary-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        </span>
+                    </a>
+                    
+                    <!-- Mobile Menu Button -->
+                    <button @click="mobileOpen = !mobileOpen" 
+                            class="lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                            aria-label="Toggle menu">
+                        <i x-show="!mobileOpen" data-lucide="menu" class="w-6 h-6"></i>
+                        <i x-show="mobileOpen" data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Búsqueda Mobile (debajo de la cabecera principal) -->
+            <div class="lg:hidden pb-3">
+                <form action="{% url 'store:search' %}" class="relative">
+                    <input type="text" 
+                           name="keyword" 
+                           placeholder="Buscar..." 
+                           class="w-full px-4 py-2 pl-10 bg-slate-50 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-full focus:outline-none focus:border-primary-500">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                </form>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- ════════════════════════════════════════════════════════════
+        CAPA 3: NAVEGACIÓN DE CATEGORÍAS (Barra azul con degradado)
+        ════════════════════════════════════════════════════════════ -->
+    <nav class="hidden lg:block bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-800 dark:to-primary-900 backdrop-blur-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center gap-8 py-2.5 overflow-x-auto scrollbar-hide">
+                <!-- Link a Tienda completa -->
+                <a href="{% url 'store:store' %}" class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2">
+                    <i class="w-4 h-4 inline-block mr-2" data-lucide="store"></i>
+                    Toda la Tienda
+                </a>
+                
+                <span class="text-white/30">|</span>
+                
+                <!-- Links de Categorías -->
+                {% for category in links %}
+                <a href="{{ category.get_url }}" 
+                   class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2 whitespace-nowrap">
+                    {{ category.category_name }}
+                </a>
+                {% if not forloop.last %}
+                <span class="text-white/20">•</span>
+                {% endif %}
+                {% endfor %}
+                
+                <span class="text-white/30">|</span>
+                
+                <!-- Ofertas (si las hay) -->
+                <a href="{% url 'store:store' %}?promo=active" class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2 whitespace-nowrap">
+                    <i class="w-4 h-4 inline-block mr-2 text-accent-400" data-lucide="zap"></i>
+                    Ofertas
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- ════════════════════════════════════════════════════════════
+        MENÚ MÓVIL (DRAWER LATERAL)
+        ════════════════════════════════════════════════════════════ -->
+    
+    <!-- Overlay -->
+    <div x-show="mobileOpen"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click="mobileOpen = false"
+         class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+         style="display: none;">
+    </div>
+    
+    <!-- Drawer -->
+    <div x-show="mobileOpen"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="-translate-x-full"
+         x-transition:enter-end="translate-x-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="translate-x-0"
+         x-transition:leave-end="-translate-x-full"
+         class="fixed top-0 left-0 bottom-0 w-80 bg-white dark:bg-slate-800 z-50 overflow-y-auto lg:hidden"
+         style="display: none;">
+        
+        <div class="p-6">
+            <!-- Cerrar -->
+            <button @click="mobileOpen = false" class="absolute top-4 right-4 p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            
+            <!-- Logo -->
+            <img src="{% static 'images/logo-bulonera-alvear.png' %}" alt="Bulonera Alvear" class="h-11 mb-6">
+            
+            <!-- Usuario Info -->
+            <div class="mb-6 pb-6 border-b border-slate-200 dark:border-slate-700">
+                {% if user.id is None %}
+                <div class="space-y-2">
+                    <a href="{% url 'account:login' %}" class="block px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-center font-medium transition-colors">
+                        Iniciar Sesión
+                    </a>
+                    <a href="{% url 'account:register' %}" class="block px-4 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg text-center font-medium transition-colors">
+                        Registrarse
+                    </a>
+                </div>
+                {% else %}
+                <div class="space-y-2">
+                    <p class="text-sm font-medium text-slate-900 dark:text-white">Hola, {{ user.first_name }}!</p>
+                    <a href="{% url 'account:dashboard' %}" class="flex items-center gap-2 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                        <i data-lucide="user" class="w-5 h-5"></i>
+                        <span>Mi Cuenta</span>
+                    </a>
+                    <a href="{% url 'account:logout' %}" class="flex items-center gap-2 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                        <i data-lucide="log-out" class="w-5 h-5"></i>
+                        <span>Cerrar Sesión</span>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Navegación -->
+            <nav class="space-y-2">
+                <a href="{% url 'store:store' %}" @click="mobileOpen = false"
+                   class="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium">
+                    <i data-lucide="store" class="w-5 h-5"></i>
+                    <span>Toda la Tienda</span>
+                </a>
+                
+                <!-- Categorías -->
+                <div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                        Categorías
+                    </p>
+                    {% for category in links %}
+                    <a href="{{ category.get_url }}" @click="mobileOpen = false"
+                       class="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                        {{ category.category_name }}
+                    </a>
+                    {% endfor %}
+                </div>
+                
+                <!-- Ofertas -->
+                <div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <a href="{% url 'store:store' %}?promo=active" @click="mobileOpen = false"
+                       class="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium text-accent-600 dark:text-accent-400">
+                        <i data-lucide="zap" class="w-5 h-5"></i>
+                        <span>Ofertas</span>
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos para scrollbar oculto (para Capa 3) -->
+<style>
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>

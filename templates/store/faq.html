@@ -3,74 +3,103 @@
 {% block meta_description %}{{ meta_description }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5 mb-5">
+<div class="min-h-screen bg-soft-bg dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-4xl mx-auto">
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb bg-transparent px-0">
-            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Preguntas Frecuentes</li>
-        </ol>
+    <nav class="mb-8" aria-label="breadcrumb">
+      <ol class="flex items-center space-x-2 text-sm">
+        <li>
+          <a href="{% url 'home' %}" class="text-blue-600 dark:text-blue-400 hover:underline">Inicio</a>
+        </li>
+        <li class="text-slate-400 dark:text-slate-600">/</li>
+        <li class="text-slate-600 dark:text-slate-400" aria-current="page">Preguntas Frecuentes</li>
+      </ol>
     </nav>
 
-    <h1 class="mb-4">Preguntas Frecuentes (FAQ)</h1>
-    
-    <!-- Índice rápido -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <h5>Categorías:</h5>
-                    <div class="d-flex flex-wrap gap-2">
-                        {% for category in faq_categories %}
-                        <a href="#category-{{ category.id }}" class="btn btn-outline-primary m-1">{{ category.name }}</a>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Title -->
+    <h1 class="text-4xl font-bold text-slate-900 dark:text-white mb-8">
+      Preguntas Frecuentes (FAQ)
+    </h1>
+
+    <!-- Categories Index -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 mb-8">
+      <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Categorías:</h2>
+      <div class="flex flex-wrap gap-2">
+        {% for category in faq_categories %}
+        <a 
+          href="#category-{{ category.id }}" 
+          class="px-4 py-2 border border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors font-medium"
+        >
+          {{ category.name }}
+        </a>
+        {% endfor %}
+      </div>
     </div>
 
-    <!-- FAQs por categoría -->
+    <!-- FAQs by Category -->
     {% for category in faq_categories %}
-    <div class="mb-5" id="category-{{ category.id }}">
-        <h2 class="h3 mb-4">{{ category.name }}</h2>
-        <div class="accordion" id="accordion{{ category.id }}">
-            {% for faq in category.faqs.all %}
-            {% if faq.is_active %}
-            <div class="card">
-                <div class="card-header bg-white" id="heading{{ faq.id }}">
-                    <h3 class="mb-0">
-                        <button class="btn btn-link text-dark text-decoration-none w-100 text-left d-flex justify-content-between align-items-center" 
-                                type="button" 
-                                data-toggle="collapse" 
-                                data-target="#collapse{{ faq.id }}">
-                            {{ faq.question }}
-                            <i class="fa fa-chevron-down"></i>
-                        </button>
-                    </h3>
-                </div>
-                <div id="collapse{{ faq.id }}" 
-                        class="collapse {% if forloop.first %}show{% endif %}" 
-                        data-parent="#accordion{{ category.id }}">
-                    <div class="card-body">
-                        {{ faq.answer|linebreaks }}
-                    </div>
-                </div>
+    <div class="mb-12" id="category-{{ category.id }}">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">
+        {{ category.name }}
+      </h2>
+      
+      <div class="space-y-4" x-data="{ openFaq: {{ forloop.first|yesno:'0,-1' }} }">
+        {% for faq in category.faqs.all %}
+        {% if faq.is_active %}
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden">
+          <button 
+            @click="openFaq = openFaq === {{ forloop.counter0 }} ? -1 : {{ forloop.counter0 }}"
+            class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+          >
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white pr-4">
+              {{ faq.question }}
+            </h3>
+            <svg 
+              class="w-5 h-5 text-slate-600 dark:text-slate-400 transition-transform duration-200"
+              :class="{ 'rotate-180': openFaq === {{ forloop.counter0 }} }"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          
+          <div 
+            x-show="openFaq === {{ forloop.counter0 }}"
+            x-collapse
+            class="px-6 pb-4"
+          >
+            <div class="text-slate-600 dark:text-slate-400 prose dark:prose-invert max-w-none">
+              {{ faq.answer|linebreaks }}
             </div>
-            {% endif %}
-            {% endfor %}
+          </div>
         </div>
+        {% endif %}
+        {% endfor %}
+      </div>
     </div>
     {% endfor %}
 
-    <!-- Sección de ayuda adicional -->
-    <div class="card bg-light mt-5">
-        <div class="card-body text-center">
-            <h4>¿No encontraste lo que buscabas?</h4>
-            <p>Contactanos directamente y te ayudaremos con tus consultas.</p>
-            <a href="{% url 'contact' %}" class="btn btn-primary">Contactar</a>
-        </div>
+    <!-- Help Section -->
+    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-8 text-center">
+      <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+        ¿No encontraste lo que buscabas?
+      </h3>
+      <p class="text-slate-600 dark:text-slate-400 mb-6">
+        Contáctanos directamente y te ayudaremos con tus consultas.
+      </p>
+      <a 
+        href="{% url 'contact:contact' %}" 
+        class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+      >
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+        </svg>
+        Contactar
+      </a>
     </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -85,17 +114,17 @@
         {% if faq.is_active %}
         {
             "@type": "Question",
-            "name": "{{ faq.question }}",
+            "name": "{{ faq.question|escapejs }}",
             "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "{{ faq.answer|linebreaks }}"
+                "text": "{{ faq.answer|escapejs }}"
             }
-        }{% if not forloop.last %},{% endif %}
+        }{% if not forloop.last or not forloop.parentloop.last %},{% endif %}
         {% endif %}
         {% endfor %}
-        {% if not forloop.last %},{% endif %}
     {% endfor %}
     ]
 }
 </script>
 {% endblock %}
+

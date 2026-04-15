@@ -2,48 +2,107 @@
 {% load static %}
 {% load custom_filters %}
 
-{% block content %}
-<div class="historia-container">
-    <div class="info-column">
-        <div class="info-item">
-            <img src="{% static 'images/vision.png' %}" alt="Visión" class="info-icon">
-            <div class="info-label">
-                <h1>Historia</h1>
-            </div>
-            <p>
-                Hace más de tres décadas que Bulonera Alvear forma parte del desarrollo y crecimiento de la ciudad de Resistencia y la región.
+{% block title %}Nuestra Historia | Bulonera Alvear{% endblock %}
+{% block meta_description %}Más de 33 años de trayectoria en Resistencia, Chaco. Conoce la historia, misión y visión de Bulonera Alvear.{% endblock %}
 
-                Fundada en sus inicios por Marta Krugger, una empresaria visionaria y comprometida, la empresa fue tomando forma como referente en la provisión de bulonería y ferretería. En 2007, la conducción pasó a manos de Miguel Ángel Mela, quien había sido durante años su colaborador de confianza.
-                
-                Desde entonces, continuamos con el mismo espíritu de servicio, acompañando a clientes, emprendedores, industrias y familias en la concreción de proyectos de todo tipo: desde la construcción de un hogar hasta el desarrollo de grandes obras.
-                
-                Hoy, después de 33 años de trayectoria, nos enorgullece seguir siendo un aliado estratégico para quienes buscan productos confiables, atención cercana y compromiso real con sus necesidades.
-            </p>
-        </div>
-        <div class="info-item">
-            <img src="{% static 'images/mision.png' %}" alt="Misión" class="info-icon">
-            <div class="info-label">
-                <h1>Misión</h1>
-            </div>
-            <p>
-                Proveer a nuestros clientes un suministro confiable y continuo de productos de bulonería y ferretería, garantizando calidad, cumplimiento y atención personalizada.
-                Actuamos con responsabilidad, ética y respeto por los compromisos asumidos, generando relaciones comerciales sólidas y de largo plazo.
-            </p>
-        </div>
-        <div class="info-item">
-            <img src="{% static 'images/objetivos.png' %}" alt="Objetivo" class="info-icon">
-            <div class="info-label">
-                <h1>Visión</h1>
-            </div>
-            <p>
-                Consolidarnos como empresa líder en el norte argentino en el rubro de bulonería y ferretería, ampliando nuestra presencia y fortaleciendo vínculos comerciales en nuevas regiones.
-                Nuestro objetivo es posicionar a Bulonera Alvear como sinónimo de calidad, confianza y servicio, siendo la primera opción para clientes que valoran seriedad y compromiso.
-            </p>
-        </div>
-    </div>
-    <div class="logo-column">
-        <img src="{% static 'images/logo02.png' %}" alt="Bulonera Alvear Logo" class="logo-image">
-        <p class="slogan">Construyendo el futuro, tornillo a tornillo.</p>
-    </div>
+{% block content %}
+
+<!-- Breadcrumb -->
+<div class="bg-soft-bg dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+  <div class="container mx-auto px-4 py-3">
+    <nav class="flex items-center gap-2 text-sm">
+      <a href="{% url 'home' %}" class="text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+        <i data-lucide="home" class="w-4 h-4"></i>
+      </a>
+      <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+      <span class="text-slate-900 dark:text-white font-medium">Historia</span>
+    </nav>
+  </div>
 </div>
+
+<!-- Main Content -->
+<section class="py-8 md:py-12 bg-white dark:bg-slate-900">
+  <div class="container mx-auto px-4">
+    <div class="grid lg:grid-cols-3 gap-8">
+      
+      <!-- Info Column -->
+      <div class="lg:col-span-2 space-y-8">
+        
+        <!-- Historia -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 md:p-8">
+          <div class="flex items-start gap-4 mb-4">
+            <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+              <img src="{% static 'images/vision.png' %}" alt="Historia" class="w-10 h-10 object-contain">
+            </div>
+            <div>
+              <h1 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Historia</h1>
+            </div>
+          </div>
+          <div class="prose dark:prose-invert max-w-none">
+            <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+              Hace más de tres décadas que Bulonera Alvear forma parte del desarrollo y crecimiento de la ciudad de Resistencia y la región.
+            </p>
+            <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+              Fundada en sus inicios por Marta Krugger, una empresaria visionaria y comprometida, la empresa fue tomando forma como referente en la provisión de bulonería y ferretería. En 2007, la conducción pasó a manos de Miguel Ángel Mela, quien había sido durante años su colaborador de confianza.
+            </p>
+            <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+              Desde entonces, continuamos con el mismo espíritu de servicio, acompañando a clientes, emprendedores, industrias y familias en la concreción de proyectos de todo tipo: desde la construcción de un hogar hasta el desarrollo de grandes obras.
+            </p>
+            <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+              Hoy, después de 33 años de trayectoria, nos enorgullece seguir siendo un aliado estratégico para quienes buscan productos confiables, atención cercana y compromiso real con sus necesidades.
+            </p>
+          </div>
+        </div>
+        
+        <!-- Misión -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 md:p-8">
+          <div class="flex items-start gap-4 mb-4">
+            <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+              <img src="{% static 'images/mision.png' %}" alt="Misión" class="w-10 h-10 object-contain">
+            </div>
+            <div>
+              <h2 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Misión</h2>
+            </div>
+          </div>
+          <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+            Proveer a nuestros clientes un suministro confiable y continuo de productos de bulonería y ferretería, garantizando calidad, cumplimiento y atención personalizada.
+            Actuamos con responsabilidad, ética y respeto por los compromisos asumidos, generando relaciones comerciales sólidas y de largo plazo.
+          </p>
+        </div>
+        
+        <!-- Visión -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 md:p-8">
+          <div class="flex items-start gap-4 mb-4">
+            <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+              <img src="{% static 'images/objetivos.png' %}" alt="Visión" class="w-10 h-10 object-contain">
+            </div>
+            <div>
+              <h2 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Visión</h2>
+            </div>
+          </div>
+          <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+            Consolidarnos como empresa líder en el norte argentino en el rubro de bulonería y ferretería, ampliando nuestra presencia y fortaleciendo vínculos comerciales en nuevas regiones.
+            Nuestro objetivo es posicionar a Bulonera Alvear como sinónimo de calidad, confianza y servicio, siendo la primera opción para clientes que valoran seriedad y compromiso.
+          </p>
+        </div>
+        
+      </div>
+      
+      <!-- Logo Column -->
+      <div class="lg:col-span-1">
+        <div class="bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 rounded-xl shadow-sm border border-primary-200 dark:border-primary-800 p-8 sticky top-24">
+          <div class="flex flex-col items-center text-center">
+            <img src="{% static 'images/logo02.png' %}" alt="Bulonera Alvear Logo" class="w-full max-w-xs mb-6">
+            <p class="text-lg font-semibold text-primary-900 dark:text-primary-100 italic">
+              Construyendo el futuro, tornillo a tornillo.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</section>
+
 {% endblock %}
+

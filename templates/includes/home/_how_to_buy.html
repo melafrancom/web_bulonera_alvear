@@ -1,0 +1,88 @@
+{% load static %}
+
+<!-- ========================= SECTION CÓMO COMPRAR ========================= -->
+<section class="py-12 md:py-16 bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900" id="como-comprar">
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <div class="grid md:grid-cols-2 gap-8 mb-12">
+            <div class="flex flex-col justify-center">
+                <div class="mb-6">
+                    <img src="{% static 'images/logo-bulonera-alvear.png' %}" alt="Bulonera Alvear" class="h-16 md:h-20 w-auto">
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-3">
+                    Cómo comprar:
+                </h2>
+            </div>
+            <div class="flex justify-center items-center">
+                <img src="{% static 'images/mobile-shop.png' %}" alt="Mobile Shop" class="max-w-xs w-full">
+            </div>
+        </div>
+        
+        <!-- Steps -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <!-- Paso 1 -->
+            <div class="bg-blue-600 dark:bg-blue-700 rounded-xl p-4 md:p-6 text-white">
+                <div class="w-10 h-10 bg-white text-blue-600 rounded-full flex items-center justify-center font-bold text-xl mb-4 mx-auto">
+                    1
+                </div>
+                <img src="{% static 'images/process/seleccionar_productos.png' %}" alt="Seleccionar productos" class="w-16 h-16 mx-auto mb-4">
+                <h5 class="font-bold text-center mb-2">Seleccionar los productos</h5>
+                <p class="text-sm text-center text-blue-100">Se irán agregando a tu carrito de compras.</p>
+            </div>
+            
+            <!-- Paso 2 -->
+            <div class="bg-blue-600 dark:bg-blue-700 rounded-xl p-4 md:p-6 text-white">
+                <div class="w-10 h-10 bg-white text-blue-600 rounded-full flex items-center justify-center font-bold text-xl mb-4 mx-auto">
+                    2
+                </div>
+                <img src="{% static 'images/process/ordenarlos.png' %}" alt="Ordenarlos" class="w-16 h-16 mx-auto mb-4">
+                <h5 class="font-bold text-center mb-2">Ordenarlos</h5>
+                <p class="text-sm text-center text-blue-100">Luego de ordenarlos, serás redireccionado al WhatsApp.</p>
+            </div>
+            
+            <!-- Estado Nuevo -->
+            <div class="bg-slate-800 dark:bg-slate-900 rounded-xl p-4 md:p-6 text-white">
+                <img src="{% static 'images/process/estado_nuevo.png' %}" alt="Estado Nuevo" class="w-16 h-16 mx-auto mb-4">
+                <h5 class="font-bold text-center mb-2">ESTADO 'NUEVO'</h5>
+                <p class="text-sm text-center text-slate-300">Se creará una ORDEN en estado 'NUEVO' en tu Dashboard.</p>
+            </div>
+            
+            <!-- Paso 3 -->
+            <div class="bg-blue-600 dark:bg-blue-700 rounded-xl p-4 md:p-6 text-white">
+                <div class="w-10 h-10 bg-white text-blue-600 rounded-full flex items-center justify-center font-bold text-xl mb-4 mx-auto">
+                    3
+                </div>
+                <img src="{% static 'images/process/coordinar.png' %}" alt="Coordinar con nosotros" class="w-16 h-16 mx-auto mb-4">
+                <h5 class="font-bold text-center mb-2">Coordinar con nosotros!</h5>
+                <p class="text-sm text-center text-blue-100">Te ayudaremos a ultimar detalles de tu compra, y por último te enviaremos un link de pago o QR.</p>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+            <!-- Estado Aceptada -->
+            <div class="bg-slate-800 dark:bg-slate-900 rounded-xl p-4 md:p-6 text-white">
+                <img src="{% static 'images/process/estado_aceptada.png' %}" alt="Estado Aceptada" class="w-16 h-16 mx-auto mb-4">
+                <h5 class="font-bold text-center mb-2">ESTADO 'ACEPTADA'</h5>
+                <p class="text-sm text-center text-slate-300">Tu orden cambia el estado a 'ACEPTADA'.</p>
+            </div>
+            
+            <!-- Paso 4 -->
+            <div class="bg-blue-600 dark:bg-blue-700 rounded-xl p-4 md:p-6 text-white">
+                <div class="w-10 h-10 bg-white text-blue-600 rounded-full flex items-center justify-center font-bold text-xl mb-4 mx-auto">
+                    4
+                </div>
+                <img src="{% static 'images/process/pagar_disfrutar.png' %}" alt="Pagar y disfrutar" class="w-16 h-16 mx-auto mb-4">
+                <h5 class="font-bold text-center mb-2">Pagar y DISFRUTAR!</h5>
+                <p class="text-sm text-center text-blue-100">Luego de realizado el pago, coordinamos el envío en tu transporte de confianza!</p>
+            </div>
+            
+            <!-- Estado Completada -->
+            <div class="bg-slate-800 dark:bg-slate-900 rounded-xl p-4 md:p-6 text-white">
+                <img src="{% static 'images/process/estado_completada.png' %}" alt="Estado Completada" class="w-16 h-16 mx-auto mb-4">
+                <h5 class="font-bold text-center mb-2">ESTADO 'COMPLETADA'</h5>
+                <p class="text-sm text-center text-slate-300">Tu orden cambia el estado a 'COMPLETADA'.</p>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- ========================= SECTION CÓMO COMPRAR END ========================= -->

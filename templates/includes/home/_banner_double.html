@@ -1,0 +1,77 @@
+{% load static %}
+
+<!-- Banner Double Section - 2 banners lado a lado -->
+<section class="py-6 md:py-8 dark:bg-slate-900">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for banner in data.banners|slice:":2" %}
+            <a href="{{ banner.get_link_url|default:'#' }}"
+               {% if banner.open_new_tab %}target="_blank" rel="noopener"{% endif %}
+               class="block rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all group">
+                <picture>
+                    {# ── MOBILE < 640px (portrait/cuadrado) ── #}
+                    {% if banner.image_mobile_asset %}
+                        {% if banner.image_mobile_asset.get_webp_url %}
+                        <source media="(max-width: 639px)"
+                                srcset="{{ banner.image_mobile_asset.get_webp_url }}"
+                                type="image/webp">
+                        {% endif %}
+                        <source media="(max-width: 639px)"
+                                srcset="{{ banner.image_mobile_asset.file.url }}">
+                    {% elif banner.image_mobile %}
+                        <source media="(max-width: 639px)"
+                                srcset="{{ banner.image_mobile.url }}">
+                    {% endif %}
+
+                    {# ── TABLET 640–1023px ── #}
+                    {% if banner.image_tablet_asset %}
+                        {% if banner.image_tablet_asset.get_webp_url %}
+                        <source media="(min-width: 640px) and (max-width: 1023px)"
+                                srcset="{{ banner.image_tablet_asset.get_webp_url }}"
+                                type="image/webp">
+                        {% endif %}
+                        <source media="(min-width: 640px) and (max-width: 1023px)"
+                                srcset="{{ banner.image_tablet_asset.file.url }}">
+                    {% endif %}
+
+                    {# ── LARGE ≥1536px ── #}
+                    {% if banner.image_large_asset %}
+                        {% if banner.image_large_asset.get_webp_url %}
+                        <source media="(min-width: 1536px)"
+                                srcset="{{ banner.image_large_asset.get_webp_url }}"
+                                type="image/webp">
+                        {% endif %}
+                        <source media="(min-width: 1536px)"
+                                srcset="{{ banner.image_large_asset.file.url }}">
+                    {% endif %}
+
+                    {# ── DESKTOP (fallback principal) + WebP ── #}
+                    {% if banner.image_desktop_asset %}
+                        {% if banner.image_desktop_asset.get_webp_url %}
+                        <source srcset="{{ banner.image_desktop_asset.get_webp_url }}"
+                                type="image/webp">
+                        {% endif %}
+                        <img src="{{ banner.image_desktop_asset.file.url }}"
+                             alt="{{ banner.alt_text }}"
+                             class="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-300 min-h-[280px] sm:min-h-[220px] md:min-h-[250px] lg:min-h-[280px]"
+                             loading="lazy">
+                    {% elif banner.image_desktop %}
+                        <img src="{{ banner.image_desktop.url }}"
+                             alt="{{ banner.alt_text }}"
+                             class="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-300 min-h-[280px] sm:min-h-[220px] md:min-h-[250px] lg:min-h-[280px]"
+                             loading="lazy">
+                    {% else %}
+                        <div class="w-full min-h-[280px] sm:min-h-[220px] md:min-h-[250px] lg:min-h-[280px] bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                            <span class="text-slate-500 dark:text-slate-400 text-xs">Sin imagen</span>
+                        </div>
+                    {% endif %}
+                </picture>
+            </a>
+            {% empty %}
+            <div class="bg-slate-200 dark:bg-slate-800 rounded-xl min-h-[280px] sm:min-h-[220px] md:min-h-[250px] lg:min-h-[280px] flex items-center justify-center border border-slate-300 dark:border-slate-700">
+                <span class="text-slate-600 dark:text-slate-300">Sin banner</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>

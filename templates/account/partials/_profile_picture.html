@@ -1,0 +1,24 @@
+{% comment %}
+Profile Picture Component
+Avatar del usuario con foto o placeholder
+Props: user, size (sm, md, lg)
+{% endcomment %}
+
+<div class="flex-shrink-0">
+    {% if user.userprofile.profile_picture %}
+        <img src="{{ user.userprofile.profile_picture.url }}"
+             alt="{{ user.first_name }} {{ user.last_name }}"
+             class="rounded-full object-cover border-2 border-slate-200 dark:border-slate-700
+                    {% if size == 'sm' %}w-8 h-8{% endif %}
+                    {% if size == 'md' %}w-16 h-16{% endif %}
+                    {% if size == 'lg' %}w-32 h-32{% endif %}"
+             loading="lazy">
+    {% else %}
+        <div class="rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold border-2 border-slate-200 dark:border-slate-700
+                    {% if size == 'sm' %}w-8 h-8 text-xs{% endif %}
+                    {% if size == 'md' %}w-16 h-16 text-lg{% endif %}
+                    {% if size == 'lg' %}w-32 h-32 text-4xl{% endif %}">
+            {{ user.first_name|first }}{{ user.last_name|first }}
+        </div>
+    {% endif %}
+</div>

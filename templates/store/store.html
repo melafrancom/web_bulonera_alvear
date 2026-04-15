@@ -1,606 +1,270 @@
-<!DOCTYPE html>
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
 {% load store_filters %}
+{% load humanize %}
+
+{% block title %}
+{% if category %}{{ category.category_name }} | Bulonera Alvear
+{% elif subcategory %}{{ subcategory.subcategory_name }} | Bulonera Alvear
+{% else %}Catálogo de Productos | Bulonera Alvear{% endif %}
+{% endblock %}
+
+{% block meta_description %}
+{% if category %}Productos de {{ category.category_name }} en Bulonera Alvear. Ferretería industrial en Resistencia, Chaco.{% if products.number > 1 %} Página {{ products.number }}.{% endif %}
+{% else %}Catálogo completo de productos de ferretería industrial. Tornillos, tuercas, herramientas y más.{% if products.number > 1 %} Página {{ products.number }}.{% endif %}{% endif %}
+{% endblock %}
+
+{% block head_extra %}
+    <!-- Pagination rel tags -->
+    {% if products.has_previous %}
+    <link rel="prev" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ products.previous_page_number }}">
+    {% endif %}
+    {% if products.has_next %}
+    <link rel="next" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ products.next_page_number }}">
+    {% endif %}
+{% endblock %}
 
 {% block content %}
-    <!-- ========================= SECTION PAGETOP ========================= -->
-    <section class="section-pagetop bg">
-        <div class="container">
-            <h2 class="title-page">
-                {% if category %}Productos en {{ category.category_name }}
-                {% elif subcategory %}Productos en {{ subcategory.subcategory_name }}
-                {% else %}Encuentra los mejores productos de Bulonera Alvear
-                {% endif %}
-            </h2>
-            <nav aria-label="breadcrumb" class="mb-3">
-                <ol class="breadcrumb bg-transparent p-0">
-                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
-                    {% if current_category %}
-                        <li class="breadcrumb-item">
-                            <a href="{{ current_category.get_url }}">{{ current_category.category_name }}</a>
-                        </li>
-                    {% endif %}
-                    {% if current_subcategory %}
-                        <li class="breadcrumb-item active" aria-current="page">{{ current_subcategory.subcategory_name }}</li>
-                    {% endif %}
-                </ol>
-            </nav>
+
+<!-- Breadcrumb Section -->
+<section class="py-4 bg-soft-bg dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+    <div class="container mx-auto px-4">
+        <h1 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-3">
+            {% if category %}Productos en {{ category.category_name }}
+            {% elif subcategory %}Productos en {{ subcategory.subcategory_name }}
+            {% else %}Encuentra los mejores productos de Bulonera Alvear
+            {% endif %}
+        </h1>
+        
+        {% include 'includes/partials/_breadcrumb.html' with items=breadcrumb_items %}
+    </div>
+</section>
+
+<!-- Ofertas Especiales Carousel -->
+{% if sale_products_groups and not current_category and not current_subcategory or is_offers_page %}
+<section class="py-8 md:py-12 bg-gradient-to-br from-accent-50 to-accent-100 dark:from-slate-900 dark:to-slate-800">
+    <div class="container mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-6">
+            ¡Ofertas Especiales!
+        </h2>
+        
+        <div x-data="{
+            currentSlide: 0,
+            totalSlides: {{ sale_products_groups|length }},
+            next() { this.currentSlide = (this.currentSlide + 1) % this.totalSlides; },
+            prev() { this.currentSlide = (this.currentSlide - 1 + this.totalSlides) % this.totalSlides; }
+        }" class="relative">
+            <div class="overflow-hidden">
+                {% for group in sale_products_groups %}
+                <div x-show="currentSlide === {{ forloop.counter0 }}"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-x-4"
+                     x-transition:enter-end="opacity-100 translate-x-0"
+                     class="grid grid-cols-2 md:grid-cols-4 gap-4"
+                     style="display: none;">
+                    {% for product in group %}
+                    {% include 'store/partials/_product_grid_item.html' with product=product %}
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
             
+            {% if sale_products_groups|length > 1 %}
+            <button @click="prev()" 
+                    class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 p-2 bg-white dark:bg-slate-800 rounded-full shadow-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
+                <i data-lucide="chevron-left" class="w-6 h-6 text-slate-700 dark:text-slate-300"></i>
+            </button>
+            <button @click="next()" 
+                    class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 p-2 bg-white dark:bg-slate-800 rounded-full shadow-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
+                <i data-lucide="chevron-right" class="w-6 h-6 text-slate-700 dark:text-slate-300"></i>
+            </button>
+            {% endif %}
         </div>
-    </section>
+    </div>
+</section>
+{% endif %}
 
-    <!-- ========================= SECTION CONTENT OFFERS========================= -->
-    <!-- Al principio de la sección de contenido en store.html -->
-    {% if sale_products_groups and not current_category and not current_subcategory or is_offers_page %}
-    <section class="section-offers py-4">
-        <div class="container">
-            <header class="section-heading mb-3">
-                <h3 class="section-title">¡Ofertas Especiales!</h3>
-            </header>
-
-            <div id="offersCarousel" class="carousel slide" data-bs-ride="carousel">
-                <div class="carousel-inner">
-                    {% for group in sale_products_groups %}
-                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                        <div class="row">
-                            {% for product in group %}
-                                <div class="col-6 col-md-3">
-                                    <div class="card card-product-grid">
-                                        <div class="discount-badge">
-                                            {% if product.discount_percentage %}
-                                                -{{ product.discount_percentage }}%
-                                            {% else %}
-                                                ¡OFERTA!
-                                            {% endif %}
-                                        </div>
-                                        <a href="{{ product.get_url }}" class="img-wrap"> 
-                                            <img src="{{ product.images.url|default_if_none:'#' }}" class="card-img-top" alt="{{ product.name }}">
-                                        </a>
-                                        <div class="card-body d-flex flex-column">
-                                            <a href="{{ product.get_url }}" class="title text-truncate mb-2">{{product.name}}</a>
-                                            <div class="price-wrap mt-auto">
-                                                <span class="price text-success">${{ product.sale_price|floatformat:2 }}</span>
-                                                <del class="price-old text-muted">${{ product.price|floatformat:2 }}</del>
-                                            </div>
-                                            <div class="rating-star">
-                                                <span>
-                                                    <i class="fa fa-star{% if product.averageReview < 0.5 %}-o{% elif product.averageReview >= 0.5 and product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                                    <i class="fa fa-star{% if product.averageReview < 1.5 %}-o{% elif product.averageReview >= 1.5 and product.averageReview < 2 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                                    <i class="fa fa-star{% if product.averageReview < 2.5 %}-o{% elif product.averageReview >= 2.5 and product.averageReview < 3 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                                    <i class="fa fa-star{% if product.averageReview < 3.5 %}-o{% elif product.averageReview >= 3.5 and product.averageReview < 4 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                                    <i class="fa fa-star{% if product.averageReview < 4.5 %}-o{% elif product.averageReview >= 4.5 and product.averageReview < 5 %}-half-o {% endif %}" aria-hidden="true"></i>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                <button class="carousel-control-prev" type="button" data-target="#offersCarousel" data-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Anterior</span>
-                </button>
-                <button class="carousel-control-next" type="button" data-target="#offersCarousel" data-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Siguiente</span>
-                </button>
-            </div>
-        </div>
-    </section>
-    {% endif %}
-        <!-- ========================= SECTION CONTENT OFFERS END ========================= -->
-            <!-- ========================= SECTION TODAS LAS CATEGORÍAS ========================= -->
-    {% if not current_subcategory %}
-        <!-- ========================= SECTION TODAS LAS CATEGORÍAS ========================= -->
-        <section class="section-categories py-4 bg-light">
-            <div class="container">
-                <header class="section-heading mb-4">
-                    <h3 class="section-title">Todas las Categorías:</h3>
-                </header>
-                <div class="row g-4 justify-content-center">
-                    {% for category in links %}
-                        <div class="col-4 col-sm-3 col-md-2">
-                            <a href="{% url 'products_by_category' category.slug %}" class="category-item">
-                                <div class="hexagon-wrapper">
-                                    <div class="hexagon">
-                                        {% if category.cat_image %}
-                                            <img src="{{ category.cat_image.url }}" alt="{{ category.category_name }}" style="max-width:48px;max-height:48px;">
-                                        {% else %}
-                                            <i class="fa fa-folder"></i>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="category-name text-center mt-2">{{ category.category_name }}</div>
-                            </a>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </section>
-        <!-- ========================= SECTION SUBCATEGORÍAS ========================= -->
-        {% if current_category and current_category.subcategories.all %}
-            <section class="section-subcategories py-3">
-                <div class="container">
-                    <header class="section-heading mb-3">
-                        <h4 class="section-title">Subcategorías de {{ current_category.category_name }}</h4>
-                    </header>
-                    <div class="row g-3 justify-content-center">
-                        {% for sub in current_category.subcategories.all %}
-                        <div class="hexagon-wrapper">
-                            <div class="hexagon">
-                                <a href="{{ sub.get_url }}" class="subcategory-item btn btn-outline-primary w-100 mb-2 d-flex flex-column align-items-center">
-                                    {% if sub.image %}
-                                        <img src="{{ sub.image.url }}" alt="{{ sub.subcategory_name }}" class="subcategory-img mb-2" style="max-width:48px;max-height:48px;">
-                                    {% else %}
-                                        <i class="fa fa-folder fa-2x mb-2"></i>
-                                    {% endif %}
-                                    {{ sub.subcategory_name }}
-                                </a>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </section>
-        {% endif %}
-    {% endif %}
-    <!-- ========================= SECTION TODAS LAS CATEGORÍAS END// ========================= -->
-            <!-- ========================= SECTION CONTENT ========================= -->
-    <section class="section-content padding-y">
-        <div class="container">
-            <div class="row">
-                <aside class="col-md-3">
-                    <div class="card">
-                        <article class="filter-group"> <!-- Filtro de Categorias -->
-                            <header class="card-header">
-                                <a href="#" data-toggle="collapse" data-target="#collapse_1" aria-expanded="true" class="">
-                                    <i class="icon-control fa fa-chevron-down"></i>
-                                    <h6 class="title">Categorías</h6>
-                                </a>
-                            </header>
-                            <div class="filter-content collapse " id="collapse_1" style="">
-                                <div class="card-body">
-                                    <ul class="list-menu">
-                                        <li><a href="{% url 'store' %}">Todas las categorías:</a></li>
-                                        {% for category in links %}
-                                            <li>
-                                                <a href="{{ category.get_url }}">{{ category.category_name }}</a>
-                                                {% if category.subcategories.all %}
-                                                    <ul class="subcategories">
-                                                        {% for subcategory in category.subcategories.all %}
-                                                            <li><a href="{{ subcategory.get_url }}">{{ subcategory.subcategory_name }}</a></li>
-                                                        {% endfor %}
-                                                    </ul>
-                                                {% endif %}
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </div>
-                        </article>
-                        
-                        
-                        {% if current_category %}
-                        <article class="filter-group"><!-- Subcategorías de la categoría actual -->
-                            <header class="card-header">
-                                <a href="#" data-toggle="collapse" data-target="#collapse_subcategories" aria-expanded="true" class="">
-                                    <i class="icon-control fa fa-chevron-down"></i>
-                                    <h6 class="title">Subcategorías de {{ current_category.category_name }}</h6>
-                                </a>
-                            </header>
-                            <div class="filter-content collapse " id="collapse_subcategories">
-                                <div class="card-body">
-                                    <ul class="list-menu">
-                                        {% for sub in current_category.subcategories.all %}
-                                            <li><a href="{{ sub.get_url }}">{{ sub.subcategory_name }}</a></li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </div>
-                        </article>
-                        {% endif %}
-
-                        <article class="filter-group"> <!-- Filtro de Tamaños -->
-                            <header class="card-header">
-                                <a href="#" data-toggle="collapse" data-target="#collapse_4" aria-expanded="true" class="">
-                                    <i class="icon-control fa fa-chevron-down"></i>
-                                    <h6 class="title">Tamaños </h6>
-                                </a>
-                            </header>
-                            <div class="filter-content collapse " id="collapse_4" style="">
-                                <div class="card-body">
-                                    <label class="checkbox-btn">
-                                        <input type="checkbox" name="size" value="XS">
-                                        <span class="btn btn-light"> XS </span>
-                                    </label>
-                        
-                                    <label class="checkbox-btn">
-                                        <input type="checkbox" name="size" value="SM">
-                                        <span class="btn btn-light"> SM </span>
-                                    </label>
-                        
-                                    <label class="checkbox-btn">
-                                        <input type="checkbox" name="size" value="LG">
-                                        <span class="btn btn-light"> LG </span>
-                                    </label>
-                        
-                                    <label class="checkbox-btn">
-                                        <input type="checkbox" name="size" value="XXL">
-                                        <span class="btn btn-light"> XXL </span>
-                                    </label>
-                                </div><!-- card-body.// -->
-                            </div>
-                        </article> <!-- filter-group .// -->
-
-                        <article class="filter-group"><!-- Filtro de Marca -->
-                            <header class="card-header">
-                                <a href="#" data-toggle="collapse" data-target="#collapse_5" aria-expanded="true" class="">
-                                    <i class="icon-control fa fa-chevron-down"></i>
-                                    <h6 class="title">Marcas</h6>
-                                </a>
-                            </header>
-                            <div class="filter-content collapse " id="collapse_5" style="">
-                                <div class="card-body">
-                                    <ul class="list-menu">
-                                        {% for brand in brands %}
-                                            {% if brand == 'sin_marca' %}
-                                                <li><a href="?brand=sin_marca">Sin marca</a></li>
-                                            {% else %}
-                                                <li><a href="?brand={{ brand }}">{{ brand }}</a></li>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </div>
-                        </article><!-- filter-group .// -->
-
-                        <article class="filter-group"> <!-- Filtro de Precios -->
-                            <header class="card-header">
-                                <a href="#" data-toggle="collapse" data-target="#collapse_3" aria-expanded="true" class="">
-                                    <i class="icon-control fa fa-chevron-down"></i>
-                                    <h6 class="title">Precios </h6>
-                                </a>
-                            </header>
-                            <div class="filter-content collapse " id="collapse_3" style="">
-                                <div class="card-body">
-                                    <form method="GET" action="{% url 'store' %}">
-                                        {% if category_slug %}
-                                            <input type="hidden" name="category" value="{{ category_slug }}">
-                                        {% endif %}
-                                        {% if sort_by %}
-                                            <input type="hidden" name="sort_by" value="{{ sort_by }}">
-                                        {% endif %}
-                                        <div class="form-row">
-                                            <div class="form-group col-md-6">
-                                                <label>Min</label>
-                                                <select class="mr-2 form-control" name="min_price">
-                                                    <option value="0" {% if min_price == '0' %}selected{% endif %}>$0</option>
-                                                    <option value="50" {% if min_price == '50' %}selected{% endif %}>$50</option>
-                                                    <option value="100" {% if min_price == '100' %}selected{% endif %}>$100</option>
-                                                    <option value="150" {% if min_price == '150' %}selected{% endif %}>$150</option>
-                                                    <option value="200" {% if min_price == '200' %}selected{% endif %}>$200</option>
-                                                    <option value="500" {% if min_price == '500' %}selected{% endif %}>$500</option>
-                                                    <option value="1000" {% if min_price == '1000' %}selected{% endif %}>$1000</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group text-right col-md-6">
-                                                <label>Max</label>
-                                                <select class="mr-2 form-control" name="max_price">
-                                                    <option value="10000" {% if max_price == '10000' %}selected{% endif %}>$10000</option>
-                                                    <option value="15000" {% if max_price == '15000' %}selected{% endif %}>$15000</option>
-                                                    <option value="20000" {% if max_price == '20000' %}selected{% endif %}>$20000</option>
-                                                    <option value="50000" {% if max_price == '50000' %}selected{% endif %}>$50000</option>
-                                                    <option value="100000" {% if max_price == '100000' %}selected{% endif %}>$100000</option>
-                                                    <option value="200000" {% if max_price == '200000' %}selected{% endif %}>$200000+</option>
-                                                </select>
-                                            </div>
-                                        </div> <!-- form-row.// -->
-                                        <button type="submit" class="btn btn-block btn-primary">Buscar</button>
-                                    </form>
-                                </div><!-- card-body.// -->
-                            </div>
-                        </article> <!-- filter-group .// -->
-                    </div>
-                </aside>
-
-                <main class="col-md-9">
-                    <header class="border-bottom mb-4 pb-3"><!-- Productos Encontrados -->
-                        <div class="form-inline">
-                            <span class="mr-md-auto"><b>{{ product_count }}</b> Productos Encontrados </span>
-                            <form method="GET" class="form-inline">
-                                {% if min_price %}<input type="hidden" name="min_price" value="{{ min_price }}">{% endif %}
-                                {% if max_price %}<input type="hidden" name="max_price" value="{{ max_price }}">{% endif %}
-                                {% if category_slug %}<input type="hidden" name="category" value="{{ category_slug }}">{% endif %}
-                                <select name="sort_by" class="form-control" onchange="this.form.submit()">
-                                    <option value="id" {% if sort_by == 'id' %}selected{% endif %}>Ordenar por defecto</option>
-                                    <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Precio: menor a mayor</option>
-                                    <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Precio: mayor a menor</option>
-                                </select>
-                            </form>
-                        </div>
-                    </header>
-
-                    <div class="row"><!-- Boton de agregar al carrito +/- y CONTADOR -->
-                        {% if products %}
-                            {% for product in products %}
-                                <div class="col-6 col-md-4 col-lg-4">
-                                    <figure class="card card-product-grid">
-                                        <div class="discount-badge">
-                                            {% if product.discount_percentage %}
-                                                -{{ product.discount_percentage }}%
-                                            {% endif %}
-                                        </div>
-                                        <div class="img-wrap">
-                                            {% if product.images %}
-                                                <picture>
-                                                    <!-- WebP -->
-                                                    <source 
-                                                        srcset="{% get_media_prefix %}photos/products/webp/lg/{{ product.images.name|basename }}.webp"
-                                                        type="image/webp"
-                                                        media="(min-width: 768px)">
-                                                    <source 
-                                                        srcset="{% get_media_prefix %}photos/products/webp/sm/{{ product.images.name|basename }}.webp"
-                                                        type="image/webp"
-                                                        media="(max-width: 767px)">
-                                                    <!-- Fallback JPG/PNG -->
-                                                    <img src="{{ product.images.url }}" 
-                                                        alt="{{ product.name }}"
-                                                        loading="lazy"
-                                                        width="300"
-                                                        height="300">
-                                                </picture>
-                                            {% else %}
-                                                <picture>
-                                                    <source 
-                                                        srcset="{% static 'admin/img/placeholder.webp' %}"
-                                                        type="image/webp">
-                                                    <img src="{% static 'admin/img/placeholder.png' %}" 
-                                                        alt="sin imagen"
-                                                        loading="lazy"
-                                                        width="300"
-                                                        height="300">
-                                                </picture>
-                                            {% endif %}
-                                        </div> <!-- img-wrap.// -->
-                                        <figcaption class="info-wrap">
-                                            <div class="fix-height">
-                                                <a href="{{ product.get_url }}" class="title">{{product.name}}</a>
-                                                <div class="price-wrap mt-2">
-                                                    <span class="price">{% if product.sale_price %}${{ product.sale_price|floatformat:2 }} {% else %}${{ product.price|floatformat:2 }}{% endif %}</span>
-                                                </div> <!-- price-wrap.// -->
-                                            </div>
-                                            <div class="input-group mb-2">
-                                                <div class="input-group-prepend">
-                                                    <button class="btn btn-outline-secondary decrease-qty" type="button">-</button>
-                                                </div>
-                                                <input type="text" class="form-control text-center qty-input" value="1" min="1">
-                                                <div class="input-group-append">
-                                                    <button class="btn btn-outline-secondary increase-qty" type="button">+</button>
-                                                </div>
-                                            </div>
-                                            <a href="{% url 'add_cart' product.id %}" class="btn btn-block btn-success add-to-cart">Agregar al Carrito</a>
-                                        </figcaption>
-                                    </figure>
-                                </div> <!-- col.// -->
-                            {% endfor %}
+<!-- Grid de Categorías -->
+{% if not current_subcategory %}
+<section class="dark:bg-slate-900">
+    <div class="container mx-auto px-4">
+        <h2 class="font-bold text-slate-900 dark:text-white">
+            Todas las Categorías
+        </h2>
+        
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+            {% for category in links %}
+            <a href="{% url 'store:products_by_category' category.slug %}" 
+               class="flex flex-col items-center group">
+                <div class="relative w-20 h-20 md:w-24 md:h-24">
+                    <div class="w-full h-full dark:from-primary-900/30 dark:to-primary-800/30 group-hover:from-primary-200 group-hover:to-primary-300 dark:group-hover:from-primary-800/40 dark:group-hover:to-primary-700/40 transition-all duration-300 flex items-center justify-center" 
+                         style="clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);">
+                        {% if category.image or category.cat_image %}
+                        <img src="{{ category.image_url }}" 
+                             alt="{{ category.category_name }}" 
+                             class="w-12 h-12 md:w-16 md:h-16 object-contain">
                         {% else %}
-                            <div style="text-align: center; color: darkgray; font-size: small; width: 100%;">
-                                <h2>No se han encontrado resultados para tu búsqueda</h2>
-                            </div>
+                        <i data-lucide="folder" class="w-8 h-8 md:w-10 md:h-10 text-primary-600 dark:text-primary-400"></i>
                         {% endif %}
                     </div>
-
-                    <nav class="mt-4" aria-label="Page navigation sample"><!-- Others pages -->
-                        {% if products.has_other_pages %}
-                            <ul class="pagination">
-                                {% if products.has_previous %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ products.previous_page_number }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}">Anterior</a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled"><a class="page-link" href="#">Anterior</a></li>
-                                {% endif %}
-
-                                {% for i in products.paginator.page_range %}
-                                    {% if products.number == i %}
-                                        <li class="page-item active"><a class="page-link" href="#">{{i}}</a></li>
-                                    {% else %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{i}}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}">{{i}}</a>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-
-                                {% if products.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{products.next_page_number}}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}">Siguiente</a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled"><a class="page-link" href="#">Siguiente</a></li>
-                                {% endif %}
-                            </ul>
-                        {% endif %}
-                    </nav>
-                </main>
-            </div>
-        </div>
-    </section>
-    
-        <!-- Carrito flotante -->
-        <div class="floating-cart">
-            <div class="cart-toggle">
-            <i class="fas fa-shopping-cart"></i>
-            <span class="badge badge-pill badge-danger cart-count">0</span>
-            </div>
-            <div class="cart-content">
-            <div class="cart-header">
-                <h5>Mi Carrito</h5>
-                <button type="button" class="close cart-close">
-                <span>&times;</span>
-                </button>
-            </div>
-            <div class="cart-body">
-                <div class="cart-items">
-                <!-- Los items del carrito se cargarán aquí dinámicamente -->
                 </div>
+                <p class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2">
+                    {{ category.category_name }}
+                </p>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Grid de Subcategorías -->
+{% if current_category and current_category.subcategories.all %}
+<section class="py-6 bg-soft-bg dark:bg-slate-800 border-y border-slate-200 dark:border-slate-700">
+    <div class="container mx-auto px-4">
+        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">
+            Subcategorías de {{ current_category.category_name }}
+        </h3>
+        <div class="flex flex-wrap gap-3">
+            {% for sub in current_category.subcategories.all %}
+            <a href="{{ sub.get_url }}" 
+               class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:border-primary-500 dark:hover:border-primary-500 transition-colors">
+                {% if sub.image %}
+                <img src="{{ sub.image_url }}" 
+                     alt="{{ sub.subcategory_name }}" 
+                     class="w-6 h-6 object-contain">
+                {% else %}
+                <i data-lucide="folder" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
+                {% endif %}
+                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ sub.subcategory_name }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endif %}
+
+<!-- Main Content: Filtros + Productos -->
+<section class="py-8 md:py-12 bg-soft-bg dark:bg-slate-900">
+    <div class="container mx-auto px-4">
+        <div class="grid lg:grid-cols-4 gap-6">
+            
+            <!-- Sidebar Filtros (Desktop) -->
+            <div class="hidden lg:block">
+                {% include 'store/partials/_filter_sidebar.html' %}
             </div>
-            <div class="cart-footer">
-                <div class="cart-total">Total: $<span id="cart-total-amount">0.00</span></div>
-                <a href="{% url 'cart' %}" class="btn btn-primary btn-sm btn-block">Ver Carrito Completo</a>
-            </div>
+            
+            <!-- Main Content -->
+            <div class="lg:col-span-3">
+                
+                <!-- Header: Contador + Ordenamiento -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg font-bold text-slate-900 dark:text-white">{{ product_count }}</span>
+                        <span class="text-sm text-slate-600 dark:text-slate-400">Productos Encontrados</span>
+                    </div>
+                    
+                    <form method="GET" class="flex items-center gap-2">
+                        {% if min_price %}<input type="hidden" name="min_price" value="{{ min_price }}">{% endif %}
+                        {% if max_price %}<input type="hidden" name="max_price" value="{{ max_price }}">{% endif %}
+                        {% if category_slug %}<input type="hidden" name="category" value="{{ category_slug }}">{% endif %}
+                        
+                        <label for="sort_by" class="text-sm text-slate-600 dark:text-slate-400 hidden sm:inline">Ordenar:</label>
+                        <select name="sort_by" 
+                                id="sort_by"
+                                onchange="this.form.submit()"
+                                class="px-3 py-2 text-sm text-slate-900 dark:text-white bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                            <option value="id" {% if sort_by == 'id' %}selected{% endif %}>Por defecto</option>
+                            <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Precio: menor a mayor</option>
+                            <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Precio: mayor a menor</option>
+                        </select>
+                    </form>
+                </div>
+                
+                <!-- Grid de Productos -->
+                {% if products %}
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+                    {% for product in products %}
+                    {% include 'store/partials/_product_grid_item.html' with product=product %}
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <i data-lucide="search-x" class="w-16 h-16 text-slate-400 dark:text-slate-600 mb-4"></i>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">No se encontraron productos</h3>
+                    <p class="text-slate-600 dark:text-slate-400 text-center max-w-md">
+                        No hay productos que coincidan con tu búsqueda. Intenta ajustar los filtros o busca otra categoría.
+                    </p>
+                    <a href="{% url 'store:store' %}" 
+                       class="mt-6 inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                        Ver todos los productos
+                    </a>
+                </div>
+                {% endif %}
+                
+                <!-- Paginación -->
+                {% include 'includes/partials/_pagination.html' with page_obj=products query_params=request.GET %}
             </div>
         </div>
-    <script>
-        $(document).ready(function() {
-            // ===== CARRITO FLOTANTE =======
-            // Cargar el carrito al inicio
-            loadFloatingCart();
-            
-            // Mostrar/ocultar el carrito al hacer clic en el icono
-            $('.cart-toggle').on('click', function() {
-                $('.floating-cart').toggleClass('active');
-            });
-            
-            // Cerrar el carrito
-            $('.cart-close').on('click', function() {
-                $('.floating-cart').removeClass('active');
-            });
-            
-            // Función para cargar el contenido del carrito
-            function loadFloatingCart() {
-                $.ajax({
-                url: '{% url "get_cart_data" %}',
-                type: 'GET',
-                dataType: 'json',
-                success: function(data) {
-                    updateFloatingCart(data);
-                },
-                error: function(error) {
-                    console.log('Error al cargar el carrito:', error);
-                }
-                });
-            }
-            
-            // Actualizar la vista del carrito flotante
-            function updateFloatingCart(data) {
-                $('.cart-count').text(data.cart_count);
-                $('#cart-total-amount').text(data.cart_total.toFixed(2));
-                
-                let cartItemsHtml = '';
-                
-                if (data.cart_items.length === 0) {
-                cartItemsHtml = '<div class="empty-cart-message">Tu carrito está vacío</div>';
-                } else {
-                data.cart_items.forEach(function(item) {
-                    let itemImage = item.image ? item.image : '\admin\img\placeholder.png';
-                    
-                    cartItemsHtml += `
-                    <div class="cart-item">
-                        <img src="${itemImage}" class="cart-item-image" alt="${item.name}">
-                        <div class="cart-item-details">
-                        <div class="cart-item-name">${item.name}</div>
-                        <div class="cart-item-price">
-                            <span>${item.quantity} x $${(item.price / item.quantity).toFixed(2)}</span>
-                            <span>$${item.price.toFixed(2)}</span>
-                        </div>
-                        </div>
-                    </div>
-                    `;
-                });
-                }
-                $('.cart-items').html(cartItemsHtml);
-            }
-            // Actualizar el carrito después de agregar un producto mediante AJAX
-            $(document).on('cart:updated', function() {
-                loadFloatingCart();
-            });
-            
-            // Modificar los enlaces de "Agregar al Carrito" para usar AJAX
-            $(document).on('click', '.add-to-cart', function(e) {
-                e.preventDefault();
-                var $this = $(this);
-                var qty = $this.closest('figure').find('.qty-input').val();
-                var href = $this.attr('href');
-                
-                // Construir la URL completa
-                if (href.indexOf('?') !== -1) {
-                href = href + '&qty=' + qty;
-                } else {
-                href = href + '?qty=' + qty;
-                }
-                
-                // Mostrar indicador de carga
-                $this.html('<i class="fas fa-spinner fa-spin"></i> Agregando...');
-                $this.prop('disabled', true);
-                
-                // Hacer la solicitud AJAX
-                $.ajax({
-                url: href,
-                type: 'GET',
-                headers: {'X-Requested-With': 'XMLHttpRequest'},
-                success: function(response) {
-                    // Restaurar el botón
-                    $this.html('Agregar al Carrito');
-                    $this.prop('disabled', false);
-                    
-                    // Mostrar notificación
-                    $('<div class="alert alert-success add-cart-alert">Producto agregado al carrito</div>')
-                    .appendTo('body')
-                    .fadeIn('fast')
-                    .delay(2000)
-                    .fadeOut('fast', function() { $(this).remove(); });
-                    
-                    // Actualizar el carrito flotante
-                    loadFloatingCart();
-                    
-                    // Mostrar el carrito flotante
-                    $('.floating-cart').addClass('active');
-                    
-                    // Ocultar después de 5 segundos
-                    setTimeout(function() {
-                    $('.floating-cart').removeClass('active');
-                    }, 5000);
-                },
-                error: function(error) {
-                    // Restaurar el botón en caso de error
-                    $this.html('Agregar al Carrito');
-                    $this.prop('disabled', false);
-                    console.log('Error al agregar al carrito:', error);
-                }
-                });
-            });
-            // ==============================================
-            // Manejar clic en botón de incremento
-            $('.increase-qty').on('click', function() {
-                var $input = $(this).closest('.input-group').find('.qty-input');
-                var currentVal = parseInt($input.val());
-                if (!isNaN(currentVal)) {
-                    $input.val(currentVal + 1);
-                }
-            });
+    </div>
+</section>
 
-            // Manejar clic en botón de decremento
-            $('.decrease-qty').on('click', function() {
-                var $input = $(this).closest('.input-group').find('.qty-input');
-                var currentVal = parseInt($input.val());
-                if (!isNaN(currentVal) && currentVal > 1) {
-                    $input.val(currentVal - 1);
-                }
-            });
-        });
-        document.addEventListener("DOMContentLoaded", function() {
-            if(window.innerWidth > 768) {
-                var collapses = document.querySelectorAll('.filter-content.collapse');
-                collapses.forEach(function(el) {
-                    el.classList.add('show');
-                });
-            }
-        });
-    </script>
+<!-- Carrito Flotante -->
+{% include 'includes/partials/_floating_cart.html' %}
+
+<!-- Toast Notifications -->
+<div x-data="{
+    show: false,
+    message: '',
+    type: 'success',
+    
+    showToast(event) {
+        this.message = event.detail.message;
+        this.type = event.detail.type || 'success';
+        this.show = true;
+        setTimeout(() => { this.show = false; }, 4000);
+    }
+}"
+@show-toast.window="showToast($event)"
+x-show="show"
+x-transition:enter="transition ease-out duration-300"
+x-transition:enter-start="opacity-0 translate-y-2"
+x-transition:enter-end="opacity-100 translate-y-0"
+x-transition:leave="transition ease-in duration-200"
+x-transition:leave-start="opacity-100 translate-y-0"
+x-transition:leave-end="opacity-0 translate-y-2"
+class="fixed top-20 right-4 z-50 max-w-sm"
+style="display: none;">
+    <div class="flex items-center gap-3 p-4 rounded-lg shadow-lg border"
+         :class="{
+             'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800': type === 'success',
+             'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800': type === 'error',
+             'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800': type === 'info'
+         }">
+        <i data-lucide="check-circle" 
+           x-show="type === 'success'"
+           class="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0"></i>
+        <i data-lucide="alert-circle" 
+           x-show="type === 'error'"
+           class="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0"></i>
+        <i data-lucide="info" 
+           x-show="type === 'info'"
+           class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0"></i>
+        <p class="text-sm font-medium"
+           :class="{
+               'text-green-900 dark:text-green-100': type === 'success',
+               'text-red-900 dark:text-red-100': type === 'error',
+               'text-blue-900 dark:text-blue-100': type === 'info'
+           }"
+           x-text="message"></p>
+        <button @click="show = false" 
+                class="ml-auto flex-shrink-0">
+            <i data-lucide="x" class="w-4 h-4 text-slate-600 dark:text-slate-400"></i>
+        </button>
+    </div>
+</div>
+
 {% endblock %}
-</html>
+

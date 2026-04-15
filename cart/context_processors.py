@@ -1,20 +1,18 @@
-from .models import Cart, CartItem
-from .views import _cart_id
+"""
+Cart Context Processors
+
+Provee datos del carrito para templates.
+"""
+from cart.services import CartService
 
 
 def counter(request):
-    cart_count = 0
-
-    try:
-        cart = Cart.objects.filter(cart_id=_cart_id(request))
-
-        if request.user.is_authenticated:
-            cart_items = CartItem.objects.all().filter(user=request.user)
-        else:
-            cart_items = CartItem.objects.all().filter(cart=cart[:1])
-
-        for cart_item in cart_items:
-            cart_count += cart_item.quantity
-    except Cart.DoesNotExist:
-        cart_count = 0
+    """
+    Context processor que provee el conteo de items del carrito.
+    
+    Uso en templates: {{ cart_count }}
+    """
+    user = request.user if request.user.is_authenticated else None
+    cart_count = CartService.get_cart_count(request, user)
+    
     return dict(cart_count=cart_count)

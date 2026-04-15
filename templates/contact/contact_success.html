@@ -1,32 +1,61 @@
-
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
 
+{% block title %}Mensaje Enviado - Bulonera Alvear{% endblock %}
+
 {% block content %}
-<div class="container my-5">
-    <div class="row">
-        <div class="col-lg-8 mx-auto">
-            <div class="card shadow">
-                <div class="card-header bg-success text-white">
-                    <h2 class="text-center mb-0">¡Mensaje Enviado!</h2>
-                </div>
-                <div class="card-body text-center">
-                    <i class="fas fa-check-circle fa-5x text-success mb-4"></i>
-                    <h3>Gracias por contactarnos</h3>
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-success">{{ message }}</div>
-                        {% endfor %}
-                    {% else %}
-                        <p>Hemos recibido tu mensaje. Nos pondremos en contacto contigo lo antes posible.</p>
-                    {% endif %}
-                    <div class="mt-4">
-                        <a href="{% url 'home' %}" class="btn btn-primary">Volver al Inicio</a>
-                    </div>
-                </div>
-            </div>
+<div class="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-2xl w-full">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg overflow-hidden">
+      <!-- Header -->
+      <div class="bg-green-600 dark:bg-green-700 px-6 py-4">
+        <h1 class="text-2xl font-bold text-white text-center">
+          ¡Mensaje Enviado!
+        </h1>
+      </div>
+
+      <!-- Body -->
+      <div class="p-8 text-center">
+        <!-- Icon -->
+        <div class="flex justify-center mb-6">
+          <div class="w-24 h-24 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+            <svg class="w-12 h-12 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
         </div>
+
+        <!-- Title -->
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+          Gracias por Contactarnos
+        </h2>
+
+        <!-- Messages -->
+        {% if messages %}
+          {% for message in messages %}
+          <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+            <p class="text-green-800 dark:text-green-200">{{ message }}</p>
+          </div>
+          {% endfor %}
+        {% else %}
+        <p class="text-lg text-slate-600 dark:text-slate-400 mb-8">
+          Hemos recibido tu mensaje. Nos pondremos en contacto contigo lo antes posible.
+        </p>
+        {% endif %}
+
+        <!-- Button -->
+        <a 
+          href="{% url 'home' %}" 
+          class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+          </svg>
+          Volver al Inicio
+        </a>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}

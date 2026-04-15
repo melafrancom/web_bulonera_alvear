@@ -1,0 +1,143 @@
+{% load static %}
+{% load custom_filters %}
+
+<!-- Product Carousel Section - CSS Scroll Snap Architecture -->
+<section class="py-2 md:py-3 {% if section.highlight_color %}{{ section.highlight_color }}{% else %}bg-white dark:bg-slate-900{% endif %} dark:bg-slate-900">
+    <div class="container mx-auto px-4">
+        <!-- Title -->
+        <div class="mb-8">
+            <h2 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                {{ section.title }}
+            </h2>
+            {% if section.description %}
+            <p class="text-slate-600 dark:text-slate-400">
+                {{ section.description }}
+            </p>
+            {% endif %}
+        </div>
+        
+        <!-- Carousel Container -->
+        <div x-data="{
+            el: null,
+            init() { this.el = this.$refs.track },
+            next() { 
+                if (this.el) this.el.scrollBy({ left: this.el.clientWidth * 0.8, behavior: 'smooth' }) 
+            },
+            prev() { 
+                if (this.el) this.el.scrollBy({ left: -this.el.clientWidth * 0.8, behavior: 'smooth' }) 
+            }
+        }" class="relative">
+            
+            <!-- Scroll Track: lista plana con snap -->
+            <div x-ref="track"
+                 class="flex gap-3 md:gap-4 overflow-x-auto pb-3 scrollbar-hide snap-x snap-mandatory scroll-smooth">
+                
+                {% for product in data.products %}
+                <a href="{{ product.get_url }}"
+                   class="group flex-shrink-0 snap-start
+                          w-[42%] sm:w-[30%] md:w-[23%] lg:w-[22%]">
+                    <div class="bg-white dark:bg-slate-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all h-full flex flex-col border-0 dark:border dark:border-slate-700">
+                        
+                        <!-- Product Image -->
+                        <div class="aspect-square relative overflow-hidden bg-slate-100 dark:bg-slate-700">
+                            {% if product.image or product.images %}
+                            <picture>
+                                <source srcset="{{ product.webp_image_url }}" type="image/webp">
+                                <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                    loading="lazy">
+                            </picture>
+                            {% else %}
+                            <img src="{% static 'images/placeholder.png' %}" alt="sin imagen" 
+                                class="w-full h-full object-cover">
+                            {% endif %}
+                            
+                            <!-- Badge: On Sale -->
+                            {% if product.is_on_sale %}
+                            <div class="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">
+                                -{{ product.discount_percentage }}%
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Product Info -->
+                        <div class="p-3 md:p-4 flex flex-col flex-grow">
+                            <h5 class="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                                {{ product.name }}
+                            </h5>
+                            
+                            <!-- Price -->
+                            <div class="flex items-center gap-2 mt-auto">
+                                {% if product.is_on_sale %}
+                                <span class="text-xs line-through text-slate-500">
+                                    ${{ product.price|floatformat:0 }}
+                                </span>
+                                <span class="text-base md:text-lg font-bold text-red-600">
+                                    ${{ product.sale_price|floatformat:0 }}
+                                </span>
+                                {% else %}
+                                <span class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400">
+                                    ${{ product.price|floatformat:0 }}
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Material & Grade Badges -->
+                            {% if product.material or product.grade %}
+                            <div class="flex flex-wrap gap-1 mt-2">
+                                {% if product.material %}
+                                <span class="inline-block bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs px-2 py-1 rounded-full font-medium truncate">
+                                    {{ product.material }}
+                                </span>
+                                {% endif %}
+                                {% if product.grade %}
+                                <span class="inline-block bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 text-xs px-2 py-1 rounded-full font-medium truncate">
+                                    {{ product.grade }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Rating (si existe) -->
+                            {% if product.averageReview > 0 %}
+                            <div class="flex items-center gap-1 mt-2">
+                                <div class="flex gap-0.5">
+                                    {% for i in "12345" %}
+                                        {% if i|add:0 <= product.averageReview %}
+                                        <i data-lucide="star" class="w-3 h-3 fill-yellow-400 text-yellow-400"></i>
+                                        {% else %}
+                                        <i data-lucide="star" class="w-3 h-3 text-slate-300 dark:text-slate-600"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span class="text-xs text-slate-600 dark:text-slate-400">
+                                    ({{ product.countReview }})
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            
+            <!-- Navigation Buttons (Desktop Only) -->
+            {% if data.products %}
+            <button @click="prev()" 
+                    class="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 p-2 md:p-3 
+                           bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl rounded-full 
+                           text-slate-900 dark:text-white transition-all z-10 hidden md:flex items-center justify-center
+                           hover:bg-slate-50 dark:hover:bg-slate-700">
+                <i data-lucide="chevron-left" class="w-5 h-5 md:w-6 md:h-6"></i>
+            </button>
+            <button @click="next()" 
+                    class="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 p-2 md:p-3 
+                           bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl rounded-full 
+                           text-slate-900 dark:text-white transition-all z-10 hidden md:flex items-center justify-center
+                           hover:bg-slate-50 dark:hover:bg-slate-700">
+                <i data-lucide="chevron-right" class="w-5 h-5 md:w-6 md:h-6"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</section>

@@ -2,73 +2,202 @@
 {% load static %}
 {% load custom_filters %}
 
-{% block content %}
-    <section class="section-conten padding-y bg">
-        {% include 'includes/alerts.html' %}
-        <div class="container">
-            <div class="row">
-                {% include 'includes/dashboard_sidebar.html' %}
-                <main class="col-md-9">
-                    <article class="card">
-                        <header class="card-header">
-                            <strong class="d-inline-block mr-3">Bienvenido nuevamente:</strong>
-                            <span>{{ user.full_name }}</span>
-                        </header>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6"><!-- ========================= TOTAL DE ORDENES ========================= -->
-                                    <div class="card" style="text-align:center">
-                                        <div class="card-body">
-                                            <h5 class="card-tittle">Total de ordenes realizadas:</h5>
-                                            <h4>{{ orders_count }}</h4>
-                                            <a href="{% url 'my_orders' %}">Ver mis ordenes</a>
-                                        </div>
-                                    </div>
+{% block title %}Mi Dashboard - Bulonera Alvear{% endblock %}
 
+{% block meta_description %}Accede a tu dashboard personal, órdenes y perfil en Bulonera Alvear.{% endblock %}
+
+{% block content %}
+<!-- Dashboard Section -->
+<section class="py-8 bg-slate-50 dark:bg-slate-900 min-h-screen">
+    <div class="container mx-auto px-4">
+        
+        <!-- Breadcrumb -->
+        {% include 'includes/partials/_breadcrumb.html' with items=breadcrumb_items %}
+        
+        <!-- Page Title -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">
+                Bienvenido, {{ user.first_name }}
+            </h1>
+            <p class="text-slate-600 dark:text-slate-400 mt-2">
+                Aquí puedes ver tus órdenes, perfil y configuración
+            </p>
+        </div>
+        
+        <!-- Dashboard Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8"
+             x-data="{ activeTab: 'overview' }">
+            
+            <!-- Sidebar -->
+            <aside class="lg:col-span-3">
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden sticky top-4">
+                    
+                    <!-- User Info -->
+                    <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+                        <div class="flex items-center gap-4 mb-4">
+                            {% include 'account/partials/_profile_picture.html' with user=user size='md' %}
+                            <div>
+                                <h3 class="font-semibold text-slate-900 dark:text-white">{{ user.full_name }}</h3>
+                                <p class="text-sm text-slate-500 dark:text-slate-400">{{ user.email }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Navigation -->
+                    <nav class="divide-y divide-slate-200 dark:divide-slate-700">
+                        <button @click="activeTab = 'overview'"
+                                :class="activeTab === 'overview' ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600' : 'border-l-4 border-transparent'"
+                                class="w-full text-left px-6 py-3 flex items-center gap-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                            <i data-lucide="layout-dashboard" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
+                            <span class="font-medium text-slate-900 dark:text-white">Overview</span>
+                        </button>
+                        
+                        <button @click="activeTab = 'orders'"
+                                :class="activeTab === 'orders' ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600' : 'border-l-4 border-transparent'"
+                                class="w-full text-left px-6 py-3 flex items-center gap-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                            <i data-lucide="shopping-bag" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
+                            <span class="font-medium text-slate-900 dark:text-white">Mis Órdenes</span>
+                        </button>
+                        
+                        <a href="{% url 'account:edit_profile' %}"
+                           class="w-full text-left px-6 py-3 flex items-center gap-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50 border-l-4 border-transparent">
+                            <i data-lucide="user" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
+                            <span class="font-medium text-slate-900 dark:text-white">Editar Perfil</span>
+                        </a>
+                        
+                        <a href="{% url 'account:change_password' %}"
+                           class="w-full text-left px-6 py-3 flex items-center gap-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50 border-l-4 border-transparent">
+                            <i data-lucide="lock" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
+                            <span class="font-medium text-slate-900 dark:text-white">Cambiar Contraseña</span>
+                        </a>
+                        
+                        <a href="{% url 'account:logout' %}"
+                           class="w-full text-left px-6 py-3 flex items-center gap-3 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 border-l-4 border-transparent">
+                            <i data-lucide="log-out" class="w-5 h-5 text-red-600 dark:text-red-400"></i>
+                            <span class="font-medium text-red-600 dark:text-red-400">Cerrar Sesión</span>
+                        </a>
+                    </nav>
+                </div>
+            </aside>
+            
+            <!-- Main Content -->
+            <main class="lg:col-span-9">
+                
+                <!-- Overview Tab -->
+                <div x-show="activeTab === 'overview'" x-transition class="space-y-6">
+                    
+                    <!-- KPIs -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Total Orders -->
+                        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Total de Órdenes</p>
+                                    <p class="text-3xl font-bold text-slate-900 dark:text-white">{{ orders_count }}</p>
                                 </div>
-                                <div class="col-md-6"><!-- ========================= DATOS ========================= -->
-                                    <div class="card" style="text-align:center">
-                                        <div class="card-body">
-                                            <img src="{{ userprofile.get_profile_picture_url }}" alt="imagen de perfil" width="50" height="50" style="border-radius:50%">
-                                            <br><br>
-                                            <p class="mb-0">{{ user.email }}</p>
-                                            <p class="mb-0">{{ user.phone }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6" style="text-align:center"><!-- ========================= ORDENES NUEVAS ========================= -->
-                                    <div class="card-body">
-                                        <h5 class="card-tittle">Nuevas:</h5>
-                                        <h4>{{ new_orders_count }}</h4>
-                                        <a href="{% url 'my_orders' %}">Ver mis ordenes</a>
-                                    </div>
-                                </div>
-                                <div class="col-md-6" style="text-align:center"><!-- ========================= ORDENES ACEPTADAS ========================= -->
-                                    <div class="card-body">
-                                        <h5 class="card-tittle">Aceptadas:</h5>
-                                        <h4>{{ accepted_orders_count }}</h4>
-                                        <a href="{% url 'my_orders' %}">Ver mis ordenes</a>
-                                    </div>
-                                </div>
-                                <div class="col-md-6" style="text-align:center"><!-- ========================= ORDENES COMPLETADAS ========================= -->
-                                    <div class="card-body">
-                                        <h5 class="card-tittle">Completadas:</h5>
-                                        <h4>{{ completed_orders_count }}</h4>
-                                        <a href="{% url 'my_orders' %}">Ver mis ordenes</a>
-                                    </div>
-                                </div>
-                                <div class="col-md-6" style="text-align:center"><!-- ========================= ORDENES CANCELADAS ========================= -->
-                                    <div class="card-body">
-                                        <h5 class="card-tittle">Canceladas:</h5>
-                                        <h4>{{ cancelled_orders_count }}</h4>
-                                        <a href="{% url 'my_orders' %}">Ver mis ordenes</a>
-                                    </div>
+                                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                                    <i data-lucide="shopping-bag" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
                                 </div>
                             </div>
                         </div>
-                    </article>
-                </main>
-            </div>
+                        
+                        <!-- New Orders -->
+                        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Órdenes Nuevas</p>
+                                    <p class="text-3xl font-bold text-slate-900 dark:text-white">{{ new_orders_count }}</p>
+                                </div>
+                                <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
+                                    <i data-lucide="alert-circle" class="w-6 h-6 text-yellow-600 dark:text-yellow-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Accepted Orders -->
+                        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Aceptadas</p>
+                                    <p class="text-3xl font-bold text-slate-900 dark:text-white">{{ accepted_orders_count }}</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                                    <i data-lucide="check-circle" class="w-6 h-6 text-green-600 dark:text-green-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Completed Orders -->
+                        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Completadas</p>
+                                    <p class="text-3xl font-bold text-slate-900 dark:text-white">{{ completed_orders_count }}</p>
+                                </div>
+                                <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
+                                    <i data-lucide="flag" class="w-6 h-6 text-emerald-600 dark:text-emerald-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Orders -->
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-semibold text-slate-900 dark:text-white">Órdenes Recientes</h2>
+                            <a href="{% url 'account:my_orders' %}" class="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium">
+                                Ver todas →
+                            </a>
+                        </div>
+                        
+                        <!-- Orders List -->
+                        <div class="space-y-4">
+                            {% for order in userprofile.user.order_set.all|slice:":5" %}
+                                {% include 'account/partials/_order_card.html' with order=order show_link=True %}
+                            {% empty %}
+                                <div class="text-center py-8">
+                                    <i data-lucide="inbox" class="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3"></i>
+                                    <p class="text-slate-600 dark:text-slate-400">No tienes órdenes aún</p>
+                                    <a href="{% url 'store:store' %}" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-sm font-medium mt-2">
+                                        Comenzar a comprar →
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                <!-- Orders Tab -->
+                <div x-show="activeTab === 'orders'" x-transition>
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-6">Todas mis Órdenes</h2>
+                        
+                        <div class="space-y-4">
+                            {% for order in userprofile.user.order_set.all %}
+                                {% include 'account/partials/_order_card.html' with order=order show_link=True %}
+                            {% empty %}
+                                <div class="text-center py-12">
+                                    <i data-lucide="inbox" class="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4"></i>
+                                    <p class="text-slate-600 dark:text-slate-400 mb-4">No tienes órdenes aún</p>
+                                    <a href="{% url 'store:store' %}" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium rounded-lg transition-colors">
+                                        <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                                        Comenzar a comprar
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+            </main>
+            
         </div>
-    </section>
-    {% endblock %}
+        
+    </div>
+</section>
+
+<!-- Floating Cart -->
+{% include 'includes/partials/_floating_cart.html' %}
+
+{% endblock %}

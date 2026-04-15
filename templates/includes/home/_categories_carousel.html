@@ -1,0 +1,102 @@
+{% load static %}
+{% load custom_filters %}
+
+{# Carrusel de categorías (Dual: Auto con categorías reales o Manual con banners) #}
+<section class="py-3 md:py-4 {% if section.highlight_color %}{{ section.highlight_color }}{% else %}bg-soft-bg dark:bg-slate-900{% endif %} dark:bg-slate-900">
+    <div class="container mx-auto px-4">
+        {% if section.title %}
+        <h3 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-6">
+            {{ section.title }}
+        </h3>
+        {% endif %}
+        
+        <div class="flex gap-4 md:gap-8 overflow-x-auto pb-4 scrollbar-hide">
+            {% if data.categories %}
+                {# MODO AUTOMÁTICO: Usa las categorías del sistema #}
+                {% for category in data.categories %}
+                <a href="{{ category.get_url }}" class="flex-shrink-0 flex flex-col items-center gap-2 group">
+                    <div class="w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-white dark:bg-slate-800 shadow-sm group-hover:shadow-md border-2 border-transparent group-hover:border-primary-500 dark:group-hover:border-primary-400 transition-all flex items-center justify-center p-2 dark:border-slate-700">
+                        {% if category.image or category.cat_image %}
+                        <img src="{{ category.image_url }}" 
+                             alt="{{ category.category_name }}" 
+                             class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                             loading="lazy">
+                        {% else %}
+                        <i data-lucide="folder" class="w-8 h-8 md:w-10 md:h-10 text-primary-600 dark:text-primary-400"></i>
+                        {% endif %}
+                    </div>
+                    <p class="text-[10px] md:text-xs font-medium text-center text-slate-700 dark:text-slate-300 max-w-[70px] line-clamp-2">
+                        {{ category.category_name }}
+                    </p>
+                </a>
+                {% endfor %}
+            
+            {% elif data.banners %}
+                {# MODO MANUAL: Usa los banners configurados #}
+                {% for banner in data.banners %}
+                <a href="{{ banner.get_link_url|default:'#' }}"
+                   {% if banner.open_new_tab %}target="_blank" rel="noopener"{% endif %}
+                   class="flex-shrink-0 flex flex-col items-center gap-2 group">
+                    
+                    {# Imagen de categoría #}
+                    <div class="w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-white dark:bg-slate-800 shadow-sm group-hover:shadow-md border-2 border-transparent group-hover:border-primary-500 dark:group-hover:border-primary-400 transition-all flex items-center justify-center dark:border-slate-700">
+                        <picture>
+                            {# Mobile Art Direction (≤768px) - WebP first #}
+                            {% if banner.image_mobile_asset and banner.image_mobile_asset.get_webp_url %}
+                            <source media="(max-width: 768px)" 
+                                    srcset="{{ banner.image_mobile_asset.get_webp_url }}" 
+                                    type="image/webp">
+                            {% endif %}
+                            {% if banner.image_mobile_asset and banner.image_mobile_asset.file %}
+                            <source media="(max-width: 768px)" 
+                                    srcset="{{ banner.image_mobile_asset.file.url }}" 
+                                    type="image/jpeg">
+                            {% elif banner.image_mobile %}
+                            <source media="(max-width: 768px)" 
+                                    srcset="{{ banner.image_mobile.url }}" 
+                                    type="image/jpeg">
+                            {% endif %}
+                            
+                            {# Desktop Art Direction (>768px) - WebP first #}
+                            {% if banner.image_desktop_asset and banner.image_desktop_asset.get_webp_url %}
+                            <source srcset="{{ banner.image_desktop_asset.get_webp_url }}" 
+                                    type="image/webp">
+                            {% endif %}
+                            
+                            {% if banner.image_desktop_asset and banner.image_desktop_asset.file %}
+                            <img src="{{ banner.image_desktop_asset.file.url }}" 
+                                 alt="{{ banner.alt_text|default:banner.title }}"
+                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                 loading="lazy"
+                                 width="80"
+                                 height="80">
+                            {% elif banner.image_desktop %}
+                            <img src="{{ banner.image_desktop.url }}" 
+                                 alt="{{ banner.alt_text|default:banner.title }}"
+                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                 loading="lazy"
+                                 width="80"
+                                 height="80">
+                            {% else %}
+                            <i data-lucide="image" class="w-8 h-8 md:w-10 md:h-10 text-slate-400 dark:text-slate-500"></i>
+                            {% endif %}
+                        </picture>
+                    </div>
+                    
+                    {# Título (si existe) #}
+                    {% if banner.title %}
+                    <p class="text-[10px] md:text-xs font-medium text-center text-slate-700 dark:text-slate-300 max-w-[70px] line-clamp-2">
+                        {{ banner.title }}
+                    </p>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            
+            {% else %}
+                <p class="text-slate-500 dark:text-slate-400 py-8 col-span-full">
+                    No hay categorías para mostrar.
+                </p>
+            {% endif %}
+        </div>
+    </div>
+</section>

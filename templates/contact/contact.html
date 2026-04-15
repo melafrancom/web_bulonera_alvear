@@ -1,109 +1,186 @@
-<!-- templates/contact.html -->
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_filters %}
+
+{% block title %}Contacto - Bulonera Alvear{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="row">
-        <div class="col-lg-8 mx-auto">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h2 class="text-center mb-0">Contáctanos</h2>
-                </div>
-                <div class="card-body">
-                    <div class="mb-4">
-                        <p>Elige tu método de contacto preferido:</p>
-                        <div class="row text-center">
-                            <div class="col-md-6 mb-3"><!-- Whatsapp -->
-                                <a href="https://wa.me/{{ whatsapp_number }}" class="contact-option whatsapp-option" id="whatsapp-option" target="_blank">
-                                    <div class="card h-100 border-success">
-                                        <div class="card-body">
-                                            <i class="fab fa-whatsapp fa-3x text-success mb-3"></i>
-                                            <h4>WhatsApp</h4>
-                                            <p>Contáctanos directamente por WhatsApp</p>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-                            <div class="col-md-6 mb-3"><!-- Email -->
-                                <div class="contact-option email-option" id="email-option">
-                                    <div class="card h-100 border-primary">
-                                        <div class="card-body">
-                                            <i class="fas fa-envelope fa-3x text-primary mb-3"></i>
-                                            <h4>Correo Electrónico</h4>
-                                            <p>Envíanos un mensaje por correo</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="email-form" style="display: none;">
-                        <form method="post">
-                            {% csrf_token %}
-                            <input type="hidden" name="contact_method" value="email" id="contact-method-input">
-                            
-                            <div class="form-group mb-3">
-                                <label for="{{ form.name.id_for_label }}">Nombre:</label>
-                                {{ form.name }}
-                                {% if form.name.errors %}
-                                    <div class="text-danger">{{ form.name.errors }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="form-group mb-3">
-                                <label for="{{ form.email.id_for_label }}">Correo Electrónico:</label>
-                                {{ form.email }}
-                                {% if form.email.errors %}
-                                    <div class="text-danger">{{ form.email.errors }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="form-group mb-3">
-                                <label for="{{ form.subject.id_for_label }}">Asunto:</label>
-                                {{ form.subject }}
-                                {% if form.subject.errors %}
-                                    <div class="text-danger">{{ form.subject.errors }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="form-group mb-3">
-                                <label for="{{ form.message.id_for_label }}">Mensaje:</label>
-                                {{ form.message }}
-                                {% if form.message.errors %}
-                                    <div class="text-danger">{{ form.message.errors }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="text-center mt-4">
-                                <button type="submit" class="btn btn-primary btn-lg">Enviar Mensaje</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+<div class="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto">
+    <!-- Breadcrumb -->
+    {% include 'includes/partials/_breadcrumb.html' %}
 
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const emailOption = document.getElementById('email-option');
-        const emailForm = document.getElementById('email-form');
-        const contactMethodInput = document.getElementById('contact-method-input');
-        
-        // Mostrar el formulario cuando se hace clic en la opción de correo
-        emailOption.addEventListener('click', function() {
-            emailForm.style.display = 'block';
-            emailOption.querySelector('.card').classList.add('border-primary', 'bg-light');
-            contactMethodInput.value = 'email';
-            // Hacer scroll suave hacia el formulario
-            emailForm.scrollIntoView({ behavior: 'smooth' });
-        });
-    });
-</script>
+    <!-- Header -->
+    <div class="mb-12 text-center">
+      <h1 class="text-4xl font-bold text-slate-900 dark:text-white mb-4">
+        Ponte en Contacto
+      </h1>
+      <p class="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+        ¿Tienes preguntas o necesitas ayuda? Estamos aquí para asistirte. Completa el formulario y nos pondremos en contacto pronto.
+      </p>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Left Column: Form -->
+      <div class="lg:col-span-2">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-8">
+          {% include 'contact/partials/_contact_form.html' %}
+        </div>
+      </div>
+
+      <!-- Right Column: Contact Info -->
+      <div class="lg:col-span-1 space-y-6">
+        <!-- Email Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+                Correo Electrónico
+              </h3>
+              <p class="text-slate-600 dark:text-slate-400 text-sm mb-3">
+                Responderemos en 24 horas
+              </p>
+              <a href="mailto:info@buloneralvear.com" class="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                contacto@buloneraalvear.online
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- WhatsApp Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-4.255.949c-1.238.503-2.335 1.236-3.356 2.259-1.02 1.02-1.756 2.119-2.259 3.357-.504 1.238-.749 2.565-.949 4.255-.2 1.69-.2 3.39 0 5.08.2 1.69.445 3.017.949 4.255.503 1.238 1.239 2.335 2.259 3.356 1.02 1.02 2.119 1.756 3.357 2.259 1.238.504 2.565.749 4.255.949 1.69.2 3.39.2 5.08 0 1.69-.2 3.017-.445 4.255-.949 1.238-.503 2.335-1.239 3.356-2.259 1.02-1.02 1.756-2.119 2.259-3.357.504-1.238.749-2.565.949-4.255.2-1.69.2-3.39 0-5.08-.2-1.69-.445-3.017-.949-4.255-.503-1.238-1.239-2.335-2.259-3.356-1.02-1.02-2.119-1.756-3.357-2.259-1.238-.504-2.565-.749-4.255-.949-1.69-.2-3.39-.2-5.08 0z"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+                WhatsApp
+              </h3>
+              <p class="text-slate-600 dark:text-slate-400 text-sm mb-3">
+                Respuesta inmediata
+              </p>
+              {% if whatsapp_number %}
+              <a href="https://wa.me/{{ whatsapp_number }}" target="_blank" rel="noopener noreferrer" class="text-green-600 dark:text-green-400 hover:underline font-medium">
+                {{ whatsapp_number }}
+              </a>
+              {% else %}
+              <p class="text-slate-600 dark:text-slate-400 text-sm">
+                Disponible en horario de atención
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Hours Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg class="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">
+                Horarios de Atención
+              </h3>
+              <div class="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                <div class="flex justify-between">
+                  <span>Lunes - Viernes:</span>
+                  <span class="font-medium text-slate-900 dark:text-white">8:00 - 20:00</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Sábado:</span>
+                  <span class="font-medium text-slate-900 dark:text-white">08:00 - 13:00</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Domingo:</span>
+                  <span class="font-medium text-slate-900 dark:text-white">Cerrado</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Location Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+                Ubicación
+              </h3>
+              <p class="text-slate-600 dark:text-slate-400 text-sm">
+                Av. Alvear 1301<br>
+                Resistencia, CHACO, Argentina
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="mt-16">
+      <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-8 text-center">
+        Preguntas Frecuentes
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- FAQ Item 1 -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+          <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+            ¿Cuál es el tiempo de respuesta?
+          </h3>
+          <p class="text-slate-600 dark:text-slate-400">
+            Respondemos correos en 24 horas hábiles. Por WhatsApp, la respuesta es inmediata durante horarios de atención.
+          </p>
+        </div>
+
+        <!-- FAQ Item 2 -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+          <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+            ¿Puedo hacer consultas sobre productos?
+          </h3>
+          <p class="text-slate-600 dark:text-slate-400">
+            Claro, puedes consultar sobre especificaciones, disponibilidad, precios y cualquier otra información sobre nuestros productos.
+          </p>
+        </div>
+
+        <!-- FAQ Item 3 -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+          <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+            ¿Hacen entregas a domicilio?
+          </h3>
+          <p class="text-slate-600 dark:text-slate-400">
+            Sí, realizamos entregas a todo el país. Contáctanos para conocer costos y tiempos de envío según tu ubicación.
+          </p>
+        </div>
+
+        <!-- FAQ Item 4 -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
+          <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+            ¿Ofrecen descuentos por volumen?
+          </h3>
+          <p class="text-slate-600 dark:text-slate-400">
+            Sí, contáctanos para consultar sobre nuestros precios especiales para compras en volumen.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
