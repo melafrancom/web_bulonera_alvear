@@ -116,3 +116,6 @@ services:
       --port=5555
       --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
     restart: unless-stopped
+
+volumes:
+  redis_data:
