@@ -17,10 +17,10 @@ DJANGO_SETTINGS="web_bulonera.settings.production"
 
 # Puertos y contenedores
 WEB_PORT="8003"
-WEB_CONTAINER="bulonera_web_production"
-REDIS_CONTAINER="bulonera_web_redis"
-CELERY_WORKER_CONTAINER="bulonera_web_celery_worker_production"
-CELERY_BEAT_CONTAINER="bulonera_web_celery_beat_production"
+WEB_CONTAINER="bulonera_web"
+REDIS_CONTAINER="redis"
+CELERY_WORKER_CONTAINER="bulonera_web_celery_worker"
+CELERY_BEAT_CONTAINER="bulonera_web_celery_beat"
 
 # Colores
 RED='\033[0;31m'
@@ -128,14 +128,15 @@ done
 step "7/7 Estado final del sistema"
 docker compose -f "$COMPOSE_FILE" ps
 
-# Verificar Redis y Celery
-if [ "$(docker inspect -f '{{.State.Status}}' "$REDIS_CONTAINER" 2>/dev/null)" == "running" ]; then
+# Verificar Redis y Celery (usando docker compose ps o inspect al contenedor real)
+# Buscamos por nombre real de contenedor
+if [ "$(docker inspect -f '{{.State.Status}}' bulonera_web_redis 2>/dev/null)" == "running" ]; then
     ok "Redis: Activo"
 else
     fail "Redis: Inactivo"
 fi
 
-if [ "$(docker inspect -f '{{.State.Status}}' "$CELERY_WORKER_CONTAINER" 2>/dev/null)" == "running" ]; then
+if [ "$(docker inspect -f '{{.State.Status}}' bulonera_web_celery_worker_production 2>/dev/null)" == "running" ]; then
     ok "Celery Worker: Activo"
 else
     fail "Celery Worker: Inactivo"
