@@ -54,9 +54,9 @@ ERRORS=0
 
 echo "🐳 Docker Services"
 echo "------------------"
-if docker compose -f /var/www/bulonera/web/docker-compose.production.yml ps | grep -q "Up"; then
+if docker compose -f /var/www/bulonera/web_bulonera_alvear/docker-compose.production.yml ps | grep -q "Up"; then
     echo -e "${GREEN}✅ Docker Compose${NC}"
-    docker compose -f /var/www/bulonera/web/docker-compose.production.yml ps
+    docker compose -f /var/www/bulonera/web_bulonera_alvear/docker-compose.production.yml ps
 else
     echo -e "${RED}❌ Docker Compose${NC}"
     ((ERRORS++))
@@ -78,7 +78,7 @@ echo ""
 
 echo "🌐 Web Services"
 echo "---------------"
-check_url "Django Local" "http://127.0.0.1:8002/" || ((ERRORS++))
+check_url "Django Local" "http://127.0.0.1:8003/" || ((ERRORS++))
 check_url "HTTPS Public" "https://buloneraalvear.online/" || ((ERRORS++))
 check_url "API Products" "https://buloneraalvear.online/api/v1/store/products/" || ((ERRORS++))
 check_url "API Docs" "https://buloneraalvear.online/api/docs/" || ((ERRORS++))
