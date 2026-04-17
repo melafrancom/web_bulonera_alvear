@@ -1,6 +1,7 @@
 """Media Bank Models"""
 import os
 from django.db import models
+from media_bank.upload_utils import overwrite_upload_path
 
 
 class ImageType(models.TextChoices):
@@ -23,9 +24,9 @@ UPLOAD_PATHS = {
 
 
 def image_asset_upload_path(instance, filename):
-    """Rutea la imagen al directorio correcto según su tipo."""
+    """Rutea la imagen al directorio correcto según su tipo y sobrescribe."""
     base_path = UPLOAD_PATHS.get(instance.image_type, 'photos/products/original/')
-    return f'{base_path}{filename}'
+    return overwrite_upload_path(f'{base_path}{filename}')
 
 
 class ImageAsset(models.Model):

@@ -1,26 +1,17 @@
 from django.db import models
 from django.urls import reverse
-import unidecode
+from media_bank.upload_utils import overwrite_upload_path, create_clean_filename
 import os
 
-
 def category_image_path(instance, filename):
-    # Limpia el nombre del archivo para eliminar caracteres problemáticos
-    # Obtiene el nombre base sin extensión
-    name, ext = os.path.splitext(filename)
-    # Convierte acentos a caracteres sin acentos y reemplaza espacios con guiones
-    clean_name = unidecode.unidecode(name).replace(' ', '-')
-    # Crea la ruta de destino con el nombre limpio
-    return f'photos/categories/{clean_name}{ext}'
+    clean_name = create_clean_filename(filename)
+    relative_path = f'photos/categories/{clean_name}'
+    return overwrite_upload_path(relative_path)
 
 def subcategory_image_path(instance, filename):
-    # Limpia el nombre del archivo para eliminar caracteres problemáticos
-    # Obtiene el nombre base sin extensión
-    name, ext = os.path.splitext(filename)
-    # Convierte acentos a caracteres sin acentos y reemplaza espacios con guiones
-    clean_name = unidecode.unidecode(name).replace(' ', '-')
-    # Crea la ruta de destino con el nombre limpio
-    return f'photos/categories/subcategories/{clean_name}{ext}'
+    clean_name = create_clean_filename(filename)
+    relative_path = f'photos/categories/subcategories/{clean_name}'
+    return overwrite_upload_path(relative_path)
 
 class Category(models.Model):
     category_name = models.CharField(max_length=50, unique=True)

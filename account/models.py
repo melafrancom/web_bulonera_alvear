@@ -1,5 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from media_bank.upload_utils import overwrite_upload_path, create_clean_filename
+
+def profile_picture_path(instance, filename):
+    clean_name = create_clean_filename(filename)
+    return overwrite_upload_path(f'userprofile/{clean_name}')
 
 
 # Create your models here.
@@ -76,7 +81,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(Account, on_delete=models.CASCADE)
     address_line_1 = models.CharField(max_length=100, blank=True)
     address_line_2 = models.CharField(max_length=100, blank=True)
-    profile_picture = models.ImageField(blank=True, upload_to='userprofile')
+    profile_picture = models.ImageField(blank=True, upload_to=profile_picture_path)
     city = models.CharField(max_length=50, blank=True)
     state = models.CharField(max_length=50, blank=True)
     country = models.CharField(max_length=50, blank=True)
