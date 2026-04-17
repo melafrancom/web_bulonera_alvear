@@ -83,7 +83,8 @@ class ImageAsset(models.Model):
     def get_webp_url(self):
         """
         Construye la URL al archivo WebP correspondiente.
-        Retorna None si no existe ruta definida para el tipo.
+        Verifica la existencia física del archivo con fallback a subcarpetas legacy.
+        Retorna None si no existe.
         """
         if not self.file or not self.file.name:
             return None
@@ -91,13 +92,32 @@ class ImageAsset(models.Model):
         # Obtener el nombre del archivo sin extensión
         base_name = os.path.splitext(os.path.basename(self.file.name))[0]
         
-        # Rutas del WebP según el tipo de imagen
-        WEBP_PATHS = {
-            ImageType.PRODUCT:     f'/media/photos/products/webp/{base_name}.webp',
-            ImageType.CAROUSEL:    f'/media/photos/carousel/webp/{base_name}.webp',
-            ImageType.BANNER:      f'/media/photos/banners/webp/{base_name}.webp',
-            ImageType.CATEGORY:    f'/media/photos/categories/webp/{base_name}.webp',
-            ImageType.SUBCATEGORY: f'/media/photos/categories/subcategories/webp/{base_name}.webp',
+        # Candidatos de rutas por tipo (nueva → legacy)
+        WEBP_CANDIDATES = {
+            ImageType.PRODUCT: [
+                f'photos/products/webp/{base_name}.webp',  # Estándar nuevo
+                f'photos/products/webp/lg/{base_name}.webp',  # Legacy servidor
+            ],
+            ImageType.CATEGORY: [
+                f'photos/categories/webp/{base_name}.webp',
+            ],
+            ImageType.SUBCATEGORY: [
+                f'photos/categories/subcategories/webp/{base_name}.webp',
+            ],
+            ImageType.CAROUSEL: [
+                f'photos/carousel/webp/{base_name}.webp',
+            ],
+            ImageType.BANNER: [
+                f'photos/banners/webp/{base_name}.webp',
+            ],
         }
         
-        return WEBP_PATHS.get(self.image_type, None)
+        from django.conf import settings
+        candidates = WEBP_CANDIDATES.get(self.image_type, [])
+        
+        for candidate in candidates:
+            full_path = os.path.join(settings.MEDIA_ROOT, candidate)
+            if os.path.isfile(full_path):
+                return f'/media/{candidate}'
+        
+        return None

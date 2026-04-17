@@ -210,12 +210,22 @@ class Product(models.Model):
     
     @property
     def webp_image_url(self):
-        """Obtiene la URL del WebP generado para la imagen principal."""
+        """Obtiene la URL del WebP generado para la imagen principal.
+        Con fallback a subcarpetas legacy si es necesario."""
         if self.image and self.image.file and self.image.file.name:
             return self.image.get_webp_url()
         if self.images:
+            from django.conf import settings
             base_name = os.path.splitext(os.path.basename(self.images.name))[0]
-            return f"/media/photos/products/webp/{base_name}.webp"
+            # Buscar en raíz y luego en lg/ (legacy)
+            for subdir in ['', 'lg/']:
+                candidate = os.path.join(
+                    settings.MEDIA_ROOT, 
+                    'photos', 'products', 'webp', subdir, 
+                    f"{base_name}.webp"
+                )
+                if os.path.isfile(candidate):
+                    return f"/media/photos/products/webp/{subdir}{base_name}.webp"
         return '/static/images/placeholder.png'
     
     # Métodos para obtener las dimensiones disponibles para el producto

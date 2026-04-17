@@ -47,6 +47,23 @@ class Category(models.Model):
             return self.cat_image.url
         return '/static/images/placeholder.png'
     
+    @property
+    def webp_url(self):
+        """Retorna URL del WebP de la categoría, o None si no existe."""
+        if self.image and self.image.file:
+            return self.image.get_webp_url()
+        if self.cat_image and self.cat_image.name:
+            base_name = os.path.splitext(os.path.basename(self.cat_image.name))[0]
+            from django.conf import settings
+            candidate = os.path.join(
+                settings.MEDIA_ROOT, 
+                'photos', 'categories', 'webp', 
+                f'{base_name}.webp'
+            )
+            if os.path.isfile(candidate):
+                return f'/media/photos/categories/webp/{base_name}.webp'
+        return None
+    
     def __str__(self):
         return self.category_name
 
