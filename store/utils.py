@@ -54,10 +54,27 @@ class ImageProcessor:
 
     @staticmethod
     def get_image_urls(base_name, extension):
-        """Obtiene la URL para la imagen WebP"""
+        """Obtiene URLs de imagen con fallback a subcarpeta lg/ para WebP.
+        
+        En producción con OLS, los WebP en la raíz de webp/ devuelven 404,
+        pero funcionan en webp/lg/. Este método busca el archivo en disco
+        y devuelve la ruta que existe.
+        """
+        # Buscar WebP con fallback: raíz → lg/
+        webp_relative = f'photos/products/webp/{base_name}.webp'
+        for subdir in ['', 'lg/']:
+            candidate = os.path.join(
+                settings.MEDIA_ROOT,
+                'photos', 'products', 'webp', subdir,
+                f'{base_name}.webp'
+            )
+            if os.path.isfile(candidate):
+                webp_relative = f'photos/products/webp/{subdir}{base_name}.webp'
+                break
+        
         return {
             'original': f'photos/products/original/{base_name}{extension}',
-            'webp': f'photos/products/webp/{base_name}.webp'
+            'webp': webp_relative
         } 
 
 class CarouselImageProcessor:
