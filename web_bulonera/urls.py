@@ -66,6 +66,9 @@ urlpatterns = [
     # PWA - Service Worker (debe servirse desde la raíz, no /static/)
     path('sw.js', serve, {'document_root': settings.STATIC_ROOT, 'path': 'js/sw.js'}, name='sw'),
     
+    # PWA - Manifest (debe servirse desde la raíz con MIME correcto)
+    path('manifest.json', serve, {'document_root': settings.STATIC_ROOT, 'path': 'images/manifest.json'}, name='manifest'),
+    
     # URLs para sitemaps y robots.txt
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path("robots.txt", views.robots_txt),

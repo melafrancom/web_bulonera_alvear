@@ -1,8 +1,11 @@
 {% comment %}
-Pagination Component
+Pagination Component with Windowing (Elision)
 Usage: {% include 'includes/partials/_pagination.html' with page_obj=products query_params=request.GET %}
 Preserves all query parameters in pagination links
+Shows condensed page range: 1 ... 6 7 8 ... 58 (instead of all pages for large catalogs)
 {% endcomment %}
+
+{% load store_filters %}
 
 {% if page_obj.has_other_pages %}
 <nav class="flex items-center justify-center gap-2 mt-8" aria-label="Pagination">
@@ -22,8 +25,12 @@ Preserves all query parameters in pagination links
 
     <!-- Page Numbers (hidden on mobile) -->
     <div class="hidden md:flex items-center gap-1">
-        {% for i in page_obj.paginator.page_range %}
-            {% if page_obj.number == i %}
+        {% for i in page_obj.number|elided_page_range:page_obj.paginator %}
+            {% if i == page_obj.paginator.ELLIPSIS %}
+                <span class="inline-flex items-center justify-center w-10 h-10 text-sm font-medium text-slate-400 dark:text-slate-500">
+                    &hellip;
+                </span>
+            {% elif page_obj.number == i %}
                 <span class="inline-flex items-center justify-center w-10 h-10 text-sm font-bold text-white bg-primary-600 dark:bg-primary-500 rounded-lg">
                     {{ i }}
                 </span>
