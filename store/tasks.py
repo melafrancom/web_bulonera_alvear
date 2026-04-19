@@ -73,3 +73,77 @@ def process_image_asset_task(self, asset_id: int):
     except Exception as exc:
         logger.error(f"Error procesando ImageAsset {asset_id}: {exc}")
         raise self.retry(exc=exc, countdown=60)
+
+
+# ============================================================================
+# IndexNow Notification (FASE 1.4 — Auditoría SEO — Notificar cambios a Bing)
+# ============================================================================
+
+@shared_task(bind=True, max_retries=3)
+def notify_indexnow(self, url_list: list, action: str = 'update'):
+    """
+    Notifica a Bing IndexNow sobre cambios de productos (nuevos, actualizados, restaurados en stock).
+    
+    Args:
+        url_list: Lista de URLs absolutas a notificar (máx 500 por request)
+        action: Tipo de acción ('create', 'update', 'restock') para logging
+    
+    Returns:
+        dict: {'status': 'success'|'error', 'count': len(url_list), 'action': action}
+    
+    Raises:
+        self.retry si IndexNow API devuelve error no-fatal (429, 503, etc)
+    """
+    import requests
+    from django.conf import settings
+    
+    try:
+        # Validar que la clave API esté configurada
+        api_key = settings.INDEXNOW_API_KEY
+        if not api_key:
+            logger.warning("INDEXNOW_API_KEY no configurada en settings. Skipping IndexNow notification.")
+            return {'status': 'skipped', 'reason': 'INDEXNOW_API_KEY not configured', 'count': 0}
+        
+        # Validar lista de URLs
+        if not url_list or len(url_list) == 0:
+            logger.warning("URL list vacía para IndexNow notification")
+            return {'status': 'skipped', 'reason': 'Empty URL list', 'count': 0}
+        
+        # Limitar a 500 URLs por request (spec IndexNow)
+        url_list = url_list[:500]
+        
+        # Construir payload
+        payload = {
+            'host': 'buloneraalvear.online',
+            'key': api_key,
+            'keyLocation': 'https://buloneraalvear.online/indexnow.txt',
+            'urlList': url_list,
+        }
+        
+        # POST a IndexNow API
+        response = requests.post(
+            'https://api.indexnow.org/indexnow',
+            json=payload,
+            timeout=10,
+            headers={'Content-Type': 'application/json'},
+        )
+        
+        # Manejo de respuestas
+        if response.status_code == 200:
+            logger.info(f"IndexNow notification successful: {len(url_list)} URLs [{action}]")
+            return {'status': 'success', 'count': len(url_list), 'action': action}
+        elif response.status_code in [429, 503]:
+            # Rate limit o servicio no disponible -> retry
+            logger.warning(f"IndexNow API returned {response.status_code}. Retrying...")
+            raise self.retry(countdown=120, exc=Exception(f"IndexNow HTTP {response.status_code}"))
+        else:
+            # Otro error HTTP
+            logger.error(f"IndexNow API error {response.status_code}: {response.text}")
+            return {'status': 'error', 'count': len(url_list), 'action': action, 'http_status': response.status_code}
+            
+    except requests.RequestException as exc:
+        logger.error(f"IndexNow network error: {exc}")
+        raise self.retry(exc=exc, countdown=120)
+    except Exception as exc:
+        logger.error(f"Unexpected error in notify_indexnow: {exc}")
+        raise self.retry(exc=exc, countdown=120)

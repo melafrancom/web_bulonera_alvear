@@ -17,6 +17,9 @@ class Category(models.Model):
     category_name = models.CharField(max_length=50, unique=True)
     description = models.CharField(max_length=255, blank=True)
     slug = models.CharField(max_length=100, unique=True)
+    # SEO Metadata fields (FASE 1.3 — Auditoría SEO)
+    meta_title = models.CharField(max_length=60, blank=True, null=True, help_text="SEO Title (máx 60 caracteres)")
+    meta_description = models.TextField(max_length=155, blank=True, null=True, help_text="SEO Description (máx 155 caracteres)")
     # Nuevo FK a ImageAsset (Fase A)
     image = models.ForeignKey(
         'media_bank.ImageAsset',
@@ -33,6 +36,15 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
+    
+    def save(self, *args, **kwargs):
+        # Auto-fill meta_title si está vacío (FASE 1.3)
+        if not self.meta_title:
+            self.meta_title = f"{self.category_name} | Bulonera Alvear"[:60]
+        # Auto-fill meta_description si está vacío (FASE 1.3)
+        if not self.meta_description:
+            self.meta_description = (self.description or f"Productos de {self.category_name} en Bulonera Alvear. Ferretería industrial en Resistencia, Chaco.")[:155]
+        super().save(*args, **kwargs)
     
     def get_url(self):
         return reverse('store:products_by_category', args=[self.slug])
@@ -71,6 +83,9 @@ class SubCategory(models.Model):
     subcategory_name = models.CharField(max_length=50, unique=True)
     slug = models.CharField(max_length=100, unique=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
+    # SEO Metadata fields (FASE 1.3 — Auditoría SEO)
+    meta_title = models.CharField(max_length=60, blank=True, null=True, help_text="SEO Title (máx 60 caracteres)")
+    meta_description = models.TextField(max_length=155, blank=True, null=True, help_text="SEO Description (máx 155 caracteres)")
     # Nuevo FK a ImageAsset (Fase A)
     image_asset = models.ForeignKey(
         'media_bank.ImageAsset',
@@ -86,6 +101,15 @@ class SubCategory(models.Model):
     class Meta:
         verbose_name = 'Sub Category'
         verbose_name_plural = 'Sub Categories'
+    
+    def save(self, *args, **kwargs):
+        # Auto-fill meta_title si está vacío (FASE 1.3)
+        if not self.meta_title:
+            self.meta_title = f"{self.subcategory_name} | Bulonera Alvear"[:60]
+        # Auto-fill meta_description si está vacío (FASE 1.3)
+        if not self.meta_description:
+            self.meta_description = f"Productos de {self.subcategory_name} en {self.category.category_name}. Ferretería industrial en Resistencia, Chaco."[:155]
+        super().save(*args, **kwargs)
 
     def get_faqs(self):
         """Obtener todas las FAQs activas de esta subcategoría"""

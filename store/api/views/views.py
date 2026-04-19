@@ -159,14 +159,10 @@ class SearchViewSet(viewsets.ViewSet):
 
 class ReviewViewSet(viewsets.ViewSet):
     """ViewSet para reviews"""
+    permission_classes = [IsAuthenticated]
     
     def create(self, request):
         """POST /api/v1/store/reviews/"""
-        if not request.user.is_authenticated:
-            return Response({
-                'error': 'Debes estar autenticado para dejar una review'
-            }, status=status.HTTP_401_UNAUTHORIZED)
-        
         product_id = request.data.get('product_id')
         if not product_id:
             return Response({'error': 'Se requiere product_id'}, status=status.HTTP_400_BAD_REQUEST)

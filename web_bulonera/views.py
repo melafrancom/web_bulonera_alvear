@@ -70,10 +70,38 @@ def offline(request):
 #-------------------- OTRAS VISTAS que no hacen a la funcionalidad. NO NECESARIOS. SITEMAPS AND ROBOTS ------------------------
 def robots_txt(request):
     """
-    Robots.txt view
+    Robots.txt view with specific User-Agent rules (FASE 3.2 — Auditoría SEO)
     Disallow admin, api, cart, orders
+    Permite explícitamente Googlebot, Bingbot, Facebookexternalhit, Twitterbot
     """
     lines = [
+        # Googlebot explicit rules
+        "User-Agent: Googlebot",
+        "Allow: /",
+        "Disallow: /admin/",
+        "Disallow: /api/",
+        "Disallow: /cart/",
+        "Disallow: /orders/",
+        "Disallow: /account/dashboard/",
+        "",
+        # Bingbot explicit rules
+        "User-Agent: Bingbot",
+        "Allow: /",
+        "Disallow: /admin/",
+        "Disallow: /api/",
+        "Disallow: /cart/",
+        "Disallow: /orders/",
+        "Disallow: /account/dashboard/",
+        "",
+        # Meta/Facebook crawler
+        "User-Agent: Facebookexternalhit",
+        "Allow: /",
+        "",
+        # Twitter crawler
+        "User-Agent: Twitterbot",
+        "Allow: /",
+        "",
+        # Default (catch-all)
         "User-Agent: *",
         "Allow: /",
         "Disallow: /admin/",

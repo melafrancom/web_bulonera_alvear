@@ -11,8 +11,8 @@ class TestProductModel:
     def test_product_creation(self, product):
         """Verifica que se puede crear un producto correctamente."""
         assert product.code == 'SCREW-001'
-        assert product.name == 'Tornillo Acero Inox 3mm'
-        assert product.slug == 'tornillo-acero-inox-3mm'
+        assert product.name == 'Tornillo Acero Inox 3mm 3mm x 20mm'
+        assert product.slug == 'tornillo-acero-inox-3mm-3mm-x-20mm'
         assert product.price == 10.50
         assert product.stock == 100
         assert product.is_available is True

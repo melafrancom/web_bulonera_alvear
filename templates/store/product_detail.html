@@ -16,6 +16,10 @@
     <meta property="og:description" content="{{ single_product.description|truncatewords:25 }}">
     <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ single_product.get_url }}">
     <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ single_product.image_url }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/webp">
+    <meta property="og:site_name" content="Bulonera Alvear">
     <meta property="og:type" content="product">
     <meta property="product:brand" content="{{ single_product.brand|default:'Bulonera Alvear' }}">
     <meta property="product:availability" content="{% if single_product.is_available and single_product.stock > 0 %}in stock{% else %}out of stock{% endif %}">
@@ -32,6 +36,9 @@
 {% endblock %}
 
 {% block head_extra %}
+    <!-- LCP Preload (FASE 3.6) -->
+    <link rel="preload" as="image" href="{{ single_product.webp_image_url }}" type="image/webp">
+    
     <!-- JSON-LD Product Schema -->
     <script type="application/ld+json">
     {
@@ -63,6 +70,48 @@
         }{% endif %}
     }
     </script>
+    
+    <!-- JSON-LD BreadcrumbList Schema (FASE 3.4) -->
+    {% if breadcrumb_items %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {% for item in breadcrumb_items %}
+            {
+                "@type": "ListItem",
+                "position": {{ forloop.counter }},
+                "name": "{{ item.name }}",
+                "item": "{{ request.scheme }}://{{ request.get_host }}{{ item.url }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+    }
+    </script>
+    {% endif %}
+    
+    <!-- JSON-LD FAQPage Schema (FASE 3.5) -->
+    {% if product_faqs %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {% for faq in product_faqs %}
+            {
+                "@type": "Question",
+                "name": "{{ faq.question|escapejs }}",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "{{ faq.answer|escapejs|truncatewords:100 }}"
+                }
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+    }
+    </script>
+    {% endif %}
     
     <!-- Meta Pixel ViewContent Event -->
     <script>

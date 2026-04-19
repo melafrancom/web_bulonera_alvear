@@ -33,4 +33,21 @@ class CategorySitemap(Sitemap):
         return Category.objects.all()
 
     def location(self, obj):
-        return f'/store/category/{obj.slug}/'
+        return obj.get_url()
+
+
+class SubCategorySitemap(Sitemap):
+    """Sitemap for subcategories"""
+    changefreq = 'monthly'
+    priority = 0.5
+    protocol = 'https'
+
+    def items(self):
+        from category.models import SubCategory
+        return SubCategory.objects.all().select_related('category')
+
+    def lastmod(self, obj):
+        return getattr(obj, 'modified_date', obj.category.modified_date) if hasattr(obj, 'modified_date') else None
+
+    def location(self, obj):
+        return obj.get_url()

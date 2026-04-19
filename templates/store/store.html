@@ -15,6 +15,26 @@
 {% else %}Catálogo completo de productos de ferretería industrial. Tornillos, tuercas, herramientas y más.{% if products.number > 1 %} Página {{ products.number }}.{% endif %}{% endif %}
 {% endblock %}
 
+{% block meta %}
+<!-- Open Graph Tags -->
+<meta property="og:title" content="{% if category %}{{ category.meta_title|default:category.category_name }}{% else %}Catálogo de Productos{% endif %} | Bulonera Alvear">
+<meta property="og:description" content="{% if category %}{{ category.meta_description|default:'Productos de '|add:category.category_name }}{% else %}Catálogo completo de productos de ferretería industrial{% endif %}">
+<meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+<meta property="og:type" content="website">
+{% if category.image_url %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ category.image_url }}">{% else %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo-bulonera-alvear.png' %}">{% endif %}
+
+<!-- Noindex for pagination 2+ (FASE 3.1) -->
+{% if products.number > 1 %}
+<meta name="robots" content="noindex, follow">
+{% endif %}
+
+<!-- Twitter Card Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{% if category %}{{ category.meta_title|default:category.category_name }}{% else %}Catálogo de Productos{% endif %}">
+<meta name="twitter:description" content="{% if category %}{{ category.meta_description|default:'Productos de '|add:category.category_name }}{% else %}Catálogo completo de productos de ferretería industrial{% endif %}">
+{% if category.image_url %}<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ category.image_url }}">{% else %}<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo-bulonera-alvear.png' %}">{% endif %}
+{% endblock %}
+
 {% block head_extra %}
     <!-- Pagination rel tags -->
     {% if products.has_previous %}
@@ -23,6 +43,44 @@
     {% if products.has_next %}
     <link rel="next" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ products.next_page_number }}">
     {% endif %}
+
+    <!-- CollectionPage Schema (FASE 2.1 — Auditoría SEO) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "{% if category %}{{ category.category_name }}{% elif subcategory %}{{ subcategory.subcategory_name }}{% else %}Catálogo de Productos{% endif %}",
+        "description": "{% if category %}{{ category.meta_description|default:'Productos de '|add:category.category_name }}{% else %}Catálogo completo de productos de ferretería industrial{% endif %}",
+        "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}",
+        "mainEntity": {
+            "@type": "ItemList",
+            "numberOfItems": {{ products.paginator.count }},
+            "itemListElement": [
+                {% for product in products %}
+                {
+                    "@type": "ListItem",
+                    "position": {{ forloop.counter }},
+                    "url": "{{ request.scheme }}://{{ request.get_host }}{{ product.get_url }}",
+                    "name": "{{ product.name|escapejs }}"
+                }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]
+        },
+        "isPartOf": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {% for breadcrumb in breadcrumb_items %}
+                {
+                    "@type": "ListItem",
+                    "position": {{ forloop.counter }},
+                    "name": "{{ breadcrumb.name }}",
+                    "item": "{{ request.scheme }}://{{ request.get_host }}{{ breadcrumb.url }}"
+                }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]
+        }
+    }
+    </script>
 {% endblock %}
 
 {% block content %}

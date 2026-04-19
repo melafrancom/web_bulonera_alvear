@@ -24,12 +24,13 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.views.static import serve
 #local apps
 from . import views
-from store.sitemaps import ProductSitemap, CategorySitemap
+from store.sitemaps import ProductSitemap, CategorySitemap, SubCategorySitemap
 
 # Sitemaps configuration
 sitemaps = {
     'products': ProductSitemap,
     'categories': CategorySitemap,
+    'subcategories': SubCategorySitemap,
 }
 
 urlpatterns = [

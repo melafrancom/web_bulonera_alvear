@@ -13,6 +13,7 @@ def meta_settings(request):
         'CURRENCY': getattr(settings, 'CURRENCY', 'USD'),
         'WHATSAPP_NUMBER': getattr(settings, 'WHATSAPP_NUMBER', ''),
         'EMAIL_TO_SEND_MESSAGES': getattr(settings, 'EMAIL_TO_SEND_MESSAGES', ''),
+        'INDEXNOW_API_KEY': getattr(settings, 'INDEXNOW_API_KEY', ''),
         'DEBUG': settings.DEBUG,
     }
 def site_theme(request):

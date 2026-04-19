@@ -70,8 +70,8 @@ def product(db_session, category):
     mock_image = SimpleUploadedFile("test_image.png", b"file_content", content_type="image/png")
     return Product.objects.create(
         code='SCREW-001',
-        name='Tornillo Acero Inox 3mm',
-        slug='tornillo-acero-inox-3mm',
+        name='Tornillo Acero Inox 3mm 3mm x 20mm',
+        slug='tornillo-acero-inox-3mm-3mm-x-20mm',
         description='Tornillo de acero inoxidable',
         price=10.50,
         stock=100,

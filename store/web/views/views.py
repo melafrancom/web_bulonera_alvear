@@ -207,6 +207,13 @@ def product_detail(request, category_slug, product_slug):
         # Obtener FAQs del producto
         product_faqs = FAQService.get_product_faqs(single_product)
         
+        # Construir breadcrumb_items (FASE 3.4)
+        breadcrumb_items = [
+            {'name': 'Inicio', 'url': '/'},
+            {'name': single_product.category.category_name, 'url': single_product.category.get_url()},
+            {'name': single_product.name, 'url': None},
+        ]
+        
         context = {
             'single_product': single_product,
             'in_cart': in_cart,
@@ -220,6 +227,7 @@ def product_detail(request, category_slug, product_slug):
             'dimension_variants_json': dimension_variants_json,
             'sale_products': sale_products,
             'product_faqs': product_faqs,
+            'breadcrumb_items': breadcrumb_items,
         }
         
         return render(request, 'store/product_detail.html', context)

@@ -210,6 +210,9 @@ SITE_URL = env('SITE_URL')
 META_PIXEL_ID = env('META_PIXEL_ID', default='')
 # META_PIXEL_ENABLED y EMAIL_* configurados en local.py/production.py/test.py
 
+# IndexNow API Key for Bing notifications (FASE 1.4 — Auditoría SEO)
+INDEXNOW_API_KEY = env('INDEXNOW_API_KEY', default='')
+
 # Logging Configuration
 from pathlib import Path
 
