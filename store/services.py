@@ -270,7 +270,7 @@ class ProductService:
     def _sanitize_price(price_value) -> float:
         """
         Sanitiza el valor del precio: quita símbolos, espacios y normaliza separadores.
-        Soporta formatos: "1.234,56" (europeo), "1,234.56" (americano), "1000", etc.
+        Soporta formatos: "1.234,56" (europeo), "1,234.56" (americano), "$7.161,61", "1000", etc.
         
         Heurística:
         - Si hay punto y coma: el último separa decimales, el otro separa miles
@@ -284,69 +284,73 @@ class ProductService:
             float: Precio sanitizado
         
         Raises:
-            ValueError: Si no puede convertir a float
+            ValueError: Si no puede convertir a float o el precio es negativo
         """
-        if price_value is None or pd.isna(price_value):
-            raise ValueError("Precio vacío")
+        if price_value is None or (isinstance(price_value, float) and pd.isna(price_value)):
+            raise ValueError("Precio vacío o nulo")
         
-        # Convertir a string y remover símbolos
+        # Si ya es numérico (Pandas lo parseó bien), retornar directo
+        if isinstance(price_value, (int, float)):
+            result = float(price_value)
+            if result < 0:
+                raise ValueError(f"Precio negativo: {result}")
+            return result
+        
+        # Normalizar string
         price_str = str(price_value).strip()
-        price_str = price_str.replace('$', '').replace(' ', '')
+        price_str = price_str.replace('$', '').replace('\xa0', '').strip()  # quitar símbolo y non-breaking space
         
-        # Detectar formato y normalizar
-        if ',' in price_str and '.' in price_str:
-            # Ambos separadores: el ÚLTIMO es decimal, el otro es miles
-            last_comma_pos = price_str.rfind(',')
-            last_dot_pos = price_str.rfind('.')
-            
-            if last_dot_pos > last_comma_pos:
-                # Patrón: 1,234.56 (americano)
-                # Quitar comas (miles) y dejar punto (decimales)
-                price_str = price_str.replace(',', '')
+        # Detectar y normalizar separadores
+        has_comma = ',' in price_str
+        has_dot = '.' in price_str
+        
+        if has_comma and has_dot:
+            # Ambos: el último es decimal
+            if price_str.rfind('.') > price_str.rfind(','):
+                price_str = price_str.replace(',', '')  # americano: 7,161.61
             else:
-                # Patrón: 1.234,56 (europeo)
-                # Quitar puntos (miles) y cambiar coma (decimales) a punto
-                price_str = price_str.replace('.', '').replace(',', '.')
-        elif ',' in price_str:
-            # Solo comas: asumir formato argentino (coma = decimal)
-            price_str = price_str.replace(',', '.')
-        # Si solo hay puntos, dejar como está (ya está en formato float)
+                price_str = price_str.replace('.', '').replace(',', '.')  # europeo: 7.161,61
+        elif has_comma and not has_dot:
+            price_str = price_str.replace(',', '.')  # solo coma = decimal AR
+        # Solo punto o sin separadores → ya es formato float válido
         
         try:
-            return float(price_str)
+            result = float(price_str)
+            if result < 0:
+                raise ValueError(f"Precio negativo: {result}")
+            return result
         except ValueError:
-            raise ValueError(f"Precio inválido después de sanitización: {price_str}")
+            raise ValueError(f"No se pudo parsear el precio: '{price_value}' → '{price_str}'")
     
     @staticmethod
     def _parse_file(file_or_path) -> list:
         """
         Detecta formato (.xlsx/.csv) y devuelve lista de dicts.
-        Fuerza type string para campos de código para preservar ceros a la izquierda.
+        PASO 1: Desactiva Type Inference forzando TODO a string.
+        PASO 2: Normaliza headers a lowercase.
+        PASO 3: Limpia basuras de representación string (.0, nan, etc.).
         Migrado desde ProductAdmin.parse_excel() y parse_csv().
         """
         name = getattr(file_or_path, 'name', str(file_or_path))
         
-        # Definir columnas que deben ser strings para preservar ceros a la izquierda
-        dtype_map = {'code': str, 'internal_code': str}
-        
+        # PASO 1: Desactivar Type Inference forzando TODO a string
         if name.lower().endswith('.xlsx'):
-            df = pd.read_excel(file_or_path, dtype=dtype_map, keep_default_na=True, na_values=[''])
+            df = pd.read_excel(file_or_path, dtype=str, keep_default_na=True, na_values=[''])
         elif name.lower().endswith('.csv'):
-            df = pd.read_csv(file_or_path, dtype=dtype_map, keep_default_na=True, na_values=[''])
+            df = pd.read_csv(file_or_path, dtype=str, keep_default_na=True, na_values=[''])
         else:
             raise ValueError(f"Formato de archivo no soportado: {name}")
         
-        # Normalizar nombres de columnas
+        # PASO 2: Normalizar headers
         df.columns = df.columns.str.lower().str.strip()
         
-        # Limpiar espacios y sufijos .0 en columnas de código
+        # PASO 3: Limpieza de basuras de representación string
         for col in ['code', 'internal_code']:
             if col in df.columns:
-                df[col] = df[col].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
-                # Si quedó como 'None' o 'nan' por el cast, volver a None
-                df[col] = df[col].replace(['None', 'nan', 'NaN'], None)
+                df[col] = df[col].astype(str).str.strip()
+                df[col] = df[col].str.replace(r'\.0$', '', regex=True)
+                df[col] = df[col].replace(['nan', 'None', 'NaN', '', '<NA>'], None)
         
-        # Rellenar NaN con None
         df = df.where(pd.notna(df), None)
         
         return df.to_dict('records')

@@ -157,24 +157,15 @@ class ProductAdmin(admin.ModelAdmin):
 
     def parse_excel(self, file):
         """Analizar archivo Excel y devolver datos como lista de diccionarios"""
-        # Lee el archivo Excel con pandas, convirtiendo cadenas vacías a NaN
-        df = pd.read_excel(file, keep_default_na=True, na_values=[''])
-        
-        # Rellenar los valores NaN con None para un manejo más intuitivo en Python
-        df = df.where(pd.notna(df), None)
-        
-        # Convertir DataFrame a lista de diccionarios
-        return df.to_dict('records')
+        # Delegar al parser canónico de services.py
+        from store.services import ProductService
+        return ProductService._parse_file(file)
     
     def parse_csv(self, file):
         """Analizar archivo CSV y devolver datos como lista de diccionarios"""
-        csv_file = TextIOWrapper(file, encoding='utf-8')
-        
-        # Leer CSV con pandas para manejar NaN de forma consistente
-        df = pd.read_csv(csv_file, keep_default_na=True, na_values=[''])
-        df = df.where(pd.notna(df), None)
-        
-        return df.to_dict('records')
+        # Delegar al parser canónico de services.py
+        from store.services import ProductService
+        return ProductService._parse_file(file)
     
     def find_image_in_directory(self, image_path, directory):
         """
@@ -465,6 +456,8 @@ class ProductAdmin(admin.ModelAdmin):
         
     def process_price_update(self, products_data):
         """Procesar y actualizar precios de productos desde los datos analizados"""
+        from store.services import ProductService
+        
         success_count = 0
         failed_count = 0
         validation_errors = []
@@ -483,20 +476,19 @@ class ProductAdmin(admin.ModelAdmin):
                     continue
                 
                 # Convertir código a string para asegurar la búsqueda correcta
-                product_code = str(item['code'])
+                product_code = str(item['code']).strip()
                 
                 # Verificar si el producto existe
                 try:
                     product = Product.objects.get(code=product_code)
                     
-                    # Convertir precio a float de manera segura
+                    # Sanitizar precio usando el método canónico de services.py
                     try:
-                        new_price = float(item['price'])
-                        product.price = new_price
-                        product.save()
+                        product.price = ProductService._sanitize_price(item['price'])
+                        product.save(update_fields=['price', 'modified_date'])
                         success_count += 1
-                    except (ValueError, TypeError) as e:
-                        validation_errors.append(f"Producto {product_code}: Error al convertir precio '{item['price']}' - {str(e)}")
+                    except ValueError as e:
+                        validation_errors.append(f"Producto {product_code}: {str(e)}")
                         failed_count += 1
                     
                 except Product.DoesNotExist:

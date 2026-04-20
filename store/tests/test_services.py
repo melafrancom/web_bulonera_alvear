@@ -424,3 +424,153 @@ class TestCarouselService:
         positions = [img.position for img in images]
         
         assert positions == [1, 2, 3]
+
+
+@pytest.mark.django_db
+class TestProductImportRegression:
+    """Tests de regresión para importación de productos (Fix Bug #1, #2, #3)"""
+
+    def test_parse_file_code_mantiene_ceros_a_la_izquierda(self):
+        """El parser no debe convertir '00100200020' en '100200020' o '100200020.0'"""
+        import pandas as pd
+        from io import BytesIO
+        
+        # Crear DataFrame con código que tiene ceros a la izquierda
+        data = [{'code': '00100200020', 'price': '100.0', 'category': 'Test'}]
+        df = pd.DataFrame(data)
+        
+        # Guardar como Excel
+        buffer = BytesIO()
+        df.to_excel(buffer, index=False)
+        buffer.seek(0)
+        buffer.name = 'test.xlsx'
+        
+        # Parsear con el método corregido
+        result = ProductService._parse_file(buffer)
+        
+        # Verificar que el código mantiene los ceros a la izquierda
+        assert result[0]['code'] == '00100200020'
+        assert not result[0]['code'].endswith('.0')
+
+    def test_parse_file_header_mayusculas_es_normalizado(self):
+        """El parser debe funcionar aunque el Excel tenga 'Code' en lugar de 'code'"""
+        import pandas as pd
+        from io import BytesIO
+        
+        # DataFrame con columna 'Code' (mayúscula) - simula el Excel real
+        df = pd.DataFrame([{'Code': '12345', 'Price': '100.0', 'Category': 'Test'}])
+        
+        buffer = BytesIO()
+        df.to_excel(buffer, index=False)
+        buffer.seek(0)
+        buffer.name = 'test.xlsx'
+        
+        result = ProductService._parse_file(buffer)
+        
+        # Verificar que los headers fueron normalizados a lowercase
+        assert 'code' in result[0]
+        assert 'price' in result[0]
+        assert 'category' in result[0]
+        assert result[0]['code'] == '12345'
+
+    def test_sanitize_price_formato_argentino_con_simbolo(self):
+        """$7.161,61 debe retornar 7161.61"""
+        result = ProductService._sanitize_price('$7.161,61')
+        assert result == 7161.61
+
+    def test_sanitize_price_formato_europeo(self):
+        """7.161,61 debe retornar 7161.61"""
+        result = ProductService._sanitize_price('7.161,61')
+        assert result == 7161.61
+
+    def test_sanitize_price_formato_americano(self):
+        """7,161.61 debe retornar 7161.61"""
+        result = ProductService._sanitize_price('7,161.61')
+        assert result == 7161.61
+
+    def test_sanitize_price_float_directo(self):
+        """Si Pandas parsea el número, debe aceptarlo sin string processing"""
+        result = ProductService._sanitize_price(7161.61)
+        assert result == 7161.61
+
+    def test_sanitize_price_integer(self):
+        """Un entero debe convertirse a float correctamente"""
+        result = ProductService._sanitize_price(1000)
+        assert result == 1000.0
+
+    def test_sanitize_price_con_espacio_no_breaking(self):
+        """$ 7.161,61 con non-breaking space debe retornar 7161.61"""
+        result = ProductService._sanitize_price('$\xa07.161,61')
+        assert result == 7161.61
+
+    def test_sanitize_price_rechaza_negativo(self):
+        """Debe rechazar precios negativos"""
+        with pytest.raises(ValueError, match="negativo"):
+            ProductService._sanitize_price(-100.0)
+
+    def test_sanitize_price_rechaza_vacio(self):
+        """Debe rechazar precios vacíos o None"""
+        with pytest.raises(ValueError, match="vacío"):
+            ProductService._sanitize_price(None)
+
+    def test_import_actualiza_no_duplica_si_codigo_ya_existe(self, category):
+        """Si el código ya existe, debe actualizar — no crear un segundo registro"""
+        import pandas as pd
+        from io import BytesIO
+        
+        # Crear producto inicial
+        Product.objects.create(
+            code='00101',
+            name='Original',
+            slug='original',
+            price=50.0,
+            stock=10,
+            category=category
+        )
+        
+        # Preparar datos de importación con el mismo código
+        data = [{'code': '00101', 'name': 'Actualizado', 'price': '75.0',
+                 'category': category.category_name, 'stock': '20'}]
+        df = pd.DataFrame(data)
+        
+        buffer = BytesIO()
+        df.to_excel(buffer, index=False)
+        buffer.seek(0)
+        buffer.name = 'test.xlsx'
+        
+        # Importar
+        result = ProductService.import_from_file(buffer)
+        
+        # Verificar que se actualizó, no se creó
+        assert result.created == 0
+        assert result.updated == 1
+        
+        # CRÍTICO: solo debe existir UN producto con ese código
+        assert Product.objects.filter(code='00101').count() == 1
+        
+        # Verificar que se actualizó el precio
+        product = Product.objects.get(code='00101')
+        assert product.price == 75.0
+        assert product.name == 'Actualizado'
+        assert product.stock == 20
+
+    def test_parse_file_elimina_sufijo_punto_cero(self):
+        """Si el código viene como '100200.0' debe limpiarse a '100200'"""
+        import pandas as pd
+        from io import BytesIO
+        
+        # Simular un Excel donde Pandas infirió el código como float
+        # (esto ya no debería pasar con dtype=str, pero validamos la limpieza)
+        data = [{'code': '100200.0', 'price': '50.0'}]
+        df = pd.DataFrame(data)
+        
+        buffer = BytesIO()
+        df.to_excel(buffer, index=False)
+        buffer.seek(0)
+        buffer.name = 'test.xlsx'
+        
+        result = ProductService._parse_file(buffer)
+        
+        # Verificar que el sufijo .0 fue eliminado
+        assert result[0]['code'] == '100200'
+        assert not result[0]['code'].endswith('.0')
