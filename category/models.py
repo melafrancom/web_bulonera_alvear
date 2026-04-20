@@ -40,10 +40,10 @@ class Category(models.Model):
     def save(self, *args, **kwargs):
         # Auto-fill meta_title si está vacío (FASE 1.3)
         if not self.meta_title:
-            self.meta_title = f"{self.category_name} | Bulonera Alvear"[:60]
+            self.meta_title = f"{self.category_name} | Bulonera Alvear"[:70]
         # Auto-fill meta_description si está vacío (FASE 1.3)
         if not self.meta_description:
-            self.meta_description = (self.description or f"Productos de {self.category_name} en Bulonera Alvear. Ferretería industrial en Resistencia, Chaco.")[:155]
+            self.meta_description = (self.description or f"Productos de {self.category_name} en Bulonera Alvear. Ferretería industrial en Resistencia, Chaco.")[:160]
         super().save(*args, **kwargs)
     
     def get_url(self):

@@ -13,21 +13,21 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='category',
             name='meta_description',
-            field=models.TextField(blank=True, help_text='SEO Description (máx 155 caracteres)', max_length=155, null=True),
+            field=models.TextField(blank=True, help_text='SEO Description (máx 160 caracteres)', max_length=160, null=True),
         ),
         migrations.AddField(
             model_name='category',
             name='meta_title',
-            field=models.CharField(blank=True, help_text='SEO Title (máx 60 caracteres)', max_length=60, null=True),
+            field=models.CharField(blank=True, help_text='SEO Title (máx 70 caracteres)', max_length=70, null=True),
         ),
         migrations.AddField(
             model_name='subcategory',
             name='meta_description',
-            field=models.TextField(blank=True, help_text='SEO Description (máx 155 caracteres)', max_length=155, null=True),
+            field=models.TextField(blank=True, help_text='SEO Description (máx 160 caracteres)', max_length=160, null=True),
         ),
         migrations.AddField(
             model_name='subcategory',
             name='meta_title',
-            field=models.CharField(blank=True, help_text='SEO Title (máx 60 caracteres)', max_length=60, null=True),
+            field=models.CharField(blank=True, help_text='SEO Title (máx 70 caracteres)', max_length=70, null=True),
         ),
     ]
