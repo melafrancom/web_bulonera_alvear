@@ -78,11 +78,9 @@ class Product(models.Model):
     )
     
     # Funcionalidad del SEO
-    meta_title = models.CharField("Meta título", max_length=60, blank=True, null=True)
-    meta_description = models.TextField("Meta descripción", max_length=155, blank=True, null=True)
+    meta_title = models.CharField("Meta título", max_length=70, blank=True, null=True)
+    meta_description = models.TextField("Meta descripción", max_length=160, blank=True, null=True)
     meta_keywords = models.CharField("Palabras clave (separadas por comas)", max_length=255, blank=True, null=True)
-    
-    #Especificaciones del producto (opcional)
     norm = models.CharField("Norma", max_length=100, blank=True, null=True)
     grade = models.CharField("Grado/Dureza", max_length=100, blank=True, null=True)
     material = models.CharField("Material", max_length=100, blank=True, null=True)
