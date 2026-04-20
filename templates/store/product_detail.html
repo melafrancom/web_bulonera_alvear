@@ -122,7 +122,7 @@
                     content_ids: ['{{ meta_pixel_data.id }}'],
                     content_name: '{{ meta_pixel_data.title }}',
                     content_category: '{{ single_product.category.name }}',
-                    value: '{{ price|floatformat:2 }}',
+                    value: '{{ price }}',
                     currency: '{{ CURRENCY }}'
                 });
             }
@@ -163,10 +163,10 @@
                                 </h4>
                                 <div class="flex items-center gap-1 text-xs">
                                     <span class="text-green-600 dark:text-green-400 font-bold">
-                                        ${{ product.sale_price|floatformat:2|intcomma }}
+                                        {{ product.sale_price|argentina_currency }}
                                     </span>
                                     <span class="text-slate-400 dark:text-slate-500 line-through text-[10px]">
-                                        ${{ product.price|floatformat:2|intcomma }}
+                                        {{ product.price|argentina_currency }}
                                     </span>
                                 </div>
                             </div>
@@ -276,10 +276,10 @@
                                     {% if single_product.is_on_sale and single_product.sale_price %}
                                         <div class="flex items-center gap-3">
                                             <span class="text-4xl font-bold text-green-600 dark:text-green-400">
-                                                ${{ single_product.sale_price|floatformat:2|intcomma }}
+                                                {{ single_product.sale_price|argentina_currency }}
                                             </span>
                                             <span class="text-xl text-slate-400 dark:text-slate-500 line-through">
-                                                ${{ single_product.price|floatformat:2|intcomma }}
+                                                {{ single_product.price|argentina_currency }}
                                             </span>
                                             <span class="bg-red-600 text-white text-sm font-bold px-3 py-1 rounded-full">
                                                 -{{ single_product.discount_percentage }}%

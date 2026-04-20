@@ -40,4 +40,39 @@ def elided_page_range(number, paginator):
         # Fallback: retornar rango completo si falla elisión
         return paginator.page_range
 
-# ... existing code ... 
+
+@register.filter
+def argentina_currency(value):
+    """
+    Formatea un valor numérico como moneda argentina: $1.234,56
+    (punto para miles, coma para decimales)
+    
+    Sin dependencia de locale, garantizado funciona en cualquier OS.
+    
+    Ejemplos:
+    - 1234.56 → $1.234,56
+    - 1000 → $1.000,00
+    - 100 → $100,00
+    - 1000000.99 → $1.000.000,99
+    """
+    try:
+        num = float(value)
+    except (ValueError, TypeError):
+        return str(value)
+    
+    # Paso 1: Formatear con 2 decimales (sin separadores)
+    formatted = f"{num:.2f}"  # Ej: "1234.56"
+    
+    # Paso 2: Separar integer y decimal
+    integer_str, decimal_str = formatted.split('.')
+    
+    # Paso 3: Insertar puntos cada 3 dígitos desde derecha a izquierda
+    # Ej: "1000000" → "1.000.000"
+    integer_with_thousands = ""
+    for i, digit in enumerate(reversed(integer_str)):
+        if i > 0 and i % 3 == 0:
+            integer_with_thousands = "." + integer_with_thousands
+        integer_with_thousands = digit + integer_with_thousands
+    
+    # Paso 4: Armar resultado final con formato argentino
+    return f"${integer_with_thousands},{decimal_str}"

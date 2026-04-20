@@ -209,6 +209,7 @@ class ProductService:
     def update_prices_from_file(file_or_path) -> ImportResult:
         """
         Actualiza solo precios de productos existentes.
+        Sanitiza precios y maneja códigos con ceros a la izquierda.
         Migrado desde ProductAdmin.process_price_update().
         
         Args:
@@ -234,12 +235,12 @@ class ProductService:
                         result.error_details.append((idx + 2, f"Producto {item['code']}: Falta el precio"))
                         continue
                     
-                    code = str(item['code'])
+                    code = str(item['code']).strip()
                     
                     try:
                         product = Product.objects.get(code=code)
-                        # FIX: Usar float (el modelo tiene FloatField, debería ser DecimalField en el futuro)
-                        product.price = float(item['price'])
+                        # Sanitizar precio
+                        product.price = ProductService._sanitize_price(item['price'])
                         product.save(update_fields=['price', 'modified_date'])
                         result.updated += 1
                         
@@ -247,6 +248,10 @@ class ProductService:
                         result.errors += 1
                         result.error_details.append((idx + 2, f"Código {code} no existe"))
                         
+                except ValueError as e:
+                    result.errors += 1
+                    result.error_details.append((idx + 2, f"Error en datos: {str(e)}"))
+                    logger.error(f"Error actualizando precio fila {idx+2}: {e}")
                 except Exception as e:
                     result.errors += 1
                     result.error_details.append((idx + 2, str(e)))
@@ -262,22 +267,84 @@ class ProductService:
             return result
     
     @staticmethod
+    def _sanitize_price(price_value) -> float:
+        """
+        Sanitiza el valor del precio: quita símbolos, espacios y normaliza separadores.
+        Soporta formatos: "1.234,56" (europeo), "1,234.56" (americano), "1000", etc.
+        
+        Heurística:
+        - Si hay punto y coma: el último separa decimales, el otro separa miles
+        - Si solo hay coma: es decimal (formato argentino)
+        - Si solo hay punto: es decimal (formato simple)
+        
+        Args:
+            price_value: Valor del precio como string o número
+        
+        Returns:
+            float: Precio sanitizado
+        
+        Raises:
+            ValueError: Si no puede convertir a float
+        """
+        if price_value is None or pd.isna(price_value):
+            raise ValueError("Precio vacío")
+        
+        # Convertir a string y remover símbolos
+        price_str = str(price_value).strip()
+        price_str = price_str.replace('$', '').replace(' ', '')
+        
+        # Detectar formato y normalizar
+        if ',' in price_str and '.' in price_str:
+            # Ambos separadores: el ÚLTIMO es decimal, el otro es miles
+            last_comma_pos = price_str.rfind(',')
+            last_dot_pos = price_str.rfind('.')
+            
+            if last_dot_pos > last_comma_pos:
+                # Patrón: 1,234.56 (americano)
+                # Quitar comas (miles) y dejar punto (decimales)
+                price_str = price_str.replace(',', '')
+            else:
+                # Patrón: 1.234,56 (europeo)
+                # Quitar puntos (miles) y cambiar coma (decimales) a punto
+                price_str = price_str.replace('.', '').replace(',', '.')
+        elif ',' in price_str:
+            # Solo comas: asumir formato argentino (coma = decimal)
+            price_str = price_str.replace(',', '.')
+        # Si solo hay puntos, dejar como está (ya está en formato float)
+        
+        try:
+            return float(price_str)
+        except ValueError:
+            raise ValueError(f"Precio inválido después de sanitización: {price_str}")
+    
+    @staticmethod
     def _parse_file(file_or_path) -> list:
         """
         Detecta formato (.xlsx/.csv) y devuelve lista de dicts.
+        Fuerza type string para campos de código para preservar ceros a la izquierda.
         Migrado desde ProductAdmin.parse_excel() y parse_csv().
         """
         name = getattr(file_or_path, 'name', str(file_or_path))
         
+        # Definir columnas que deben ser strings para preservar ceros a la izquierda
+        dtype_map = {'code': str, 'internal_code': str}
+        
         if name.lower().endswith('.xlsx'):
-            df = pd.read_excel(file_or_path, keep_default_na=True, na_values=[''])
+            df = pd.read_excel(file_or_path, dtype=dtype_map, keep_default_na=True, na_values=[''])
         elif name.lower().endswith('.csv'):
-            df = pd.read_csv(file_or_path, keep_default_na=True, na_values=[''])
+            df = pd.read_csv(file_or_path, dtype=dtype_map, keep_default_na=True, na_values=[''])
         else:
             raise ValueError(f"Formato de archivo no soportado: {name}")
         
         # Normalizar nombres de columnas
         df.columns = df.columns.str.lower().str.strip()
+        
+        # Limpiar espacios y sufijos .0 en columnas de código
+        for col in ['code', 'internal_code']:
+            if col in df.columns:
+                df[col] = df[col].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
+                # Si quedó como 'None' o 'nan' por el cast, volver a None
+                df[col] = df[col].replace(['None', 'nan', 'NaN'], None)
         
         # Rellenar NaN con None
         df = df.where(pd.notna(df), None)
@@ -321,10 +388,16 @@ class ProductService:
         if 'price' not in item or not item['price'] or pd.isna(item['price']):
             raise ValueError("Falta el precio")
         
-        code = str(item['code'])
+        code = str(item['code']).strip()
+        if code.endswith('.0'):
+            code = code[:-2]
         
         # Verificar si el producto existe
         product_exists = Product.objects.filter(code=code).exists()
+        
+        if not product_exists and '.' not in code:
+            # Intenta buscar versión legacy con .0 si el código es limpio
+            product_exists = Product.objects.filter(code=f"{code}.0").exists()
         
         return not product_exists
     
@@ -345,7 +418,10 @@ class ProductService:
         if 'price' not in item or not item['price'] or pd.isna(item['price']):
             raise ValueError("Falta el precio")
         
-        code = str(item['code'])
+        code = str(item['code']).strip()
+        if code.endswith('.0'):
+            code = code[:-2]
+        item['code'] = code
         
         # Verificar si el producto existe
         product_exists = Product.objects.filter(code=code).exists()
@@ -366,11 +442,11 @@ class ProductService:
         elif not product_exists:
             product.name = f"Producto {code}"
         
-        # FIX: Usar float (el modelo tiene FloatField, debería ser DecimalField en el futuro)
+        # Sanitizar y asignar precio
         try:
-            product.price = float(item['price'])
-        except (ValueError, TypeError) as e:
-            raise ValueError(f"Precio inválido: {item['price']}")
+            product.price = ProductService._sanitize_price(item['price'])
+        except ValueError as e:
+            raise ValueError(f"Precio inválido para código {code}: {str(e)}")
         
         # Campos opcionales
         if 'diameter' in item and not pd.isna(item['diameter']):
@@ -545,12 +621,16 @@ class SearchService:
     
     @staticmethod
     def search_products(keyword: str) -> QuerySet:
-        """Busca productos por palabra clave"""
+        """Busca productos por palabra clave en múltiples campos"""
         if not keyword:
             return Product.objects.filter(is_available=True)
         
+        # Expandir búsqueda a múltiples campos: código, nombre, descripción, marca
         return Product.objects.filter(
-            Q(description__icontains=keyword) | Q(name__icontains=keyword),
+            Q(code__icontains=keyword) |
+            Q(name__icontains=keyword) |
+            Q(description__icontains=keyword) |
+            Q(brand__icontains=keyword),
             is_available=True
         ).order_by('-created_date')
     

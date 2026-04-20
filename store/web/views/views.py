@@ -244,7 +244,8 @@ def product_detail(request, category_slug, product_slug):
 
 def search(request):
     """Vista de búsqueda de productos"""
-    keyword = request.GET.get('keyword', '')
+    # Soportar parámetro estándar 'q' además de 'keyword' (retrocompatibilidad)
+    keyword = request.GET.get('q', request.GET.get('keyword', ''))
     products = SearchService.search_products(keyword)
     
     # Registrar búsquedas
