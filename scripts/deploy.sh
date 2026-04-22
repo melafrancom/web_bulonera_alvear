@@ -57,21 +57,21 @@ fi
 # ====================================================
 # 1. Git Pull
 # ====================================================
-step "1/7 Actualizando código..."
+step "1/8 Actualizando código..."
 git pull origin main
 ok "Código actualizado"
 
 # ====================================================
 # 2. Build de imagen
 # ====================================================
-step "2/7 Construyendo imagen Docker..."
+step "2/8 Construyendo imagen Docker..."
 docker compose -f "$COMPOSE_FILE" build
 ok "Imagen construida"
 
 # ====================================================
 # 3. Migraciones (contenedor temporal, sin afectar al live)
 # ====================================================
-step "3/7 Ejecutando migraciones..."
+step "3/8 Ejecutando migraciones..."
 docker compose -f "$COMPOSE_FILE" run --rm \
     -e DJANGO_SETTINGS_MODULE="$DJANGO_SETTINGS" \
     bulonera_web python manage.py migrate --no-input
@@ -80,7 +80,7 @@ ok "Migraciones aplicadas"
 # ====================================================
 # 4. Collectstatic
 # ====================================================
-step "4/7 Recolectando archivos estáticos..."
+step "4/8 Recolectando archivos estáticos..."
 docker compose -f "$COMPOSE_FILE" run --rm \
     -e DJANGO_SETTINGS_MODULE="$DJANGO_SETTINGS" \
     bulonera_web python manage.py collectstatic --no-input
@@ -91,7 +91,7 @@ ok "Archivos estáticos recolectados"
 #    "up -d" solo recrea los contenedores que cambiaron.
 #    Redis NO se reinicia si no cambió → cero downtime.
 # ====================================================
-step "5/7 Reiniciando servicios..."
+step "5/8 Reiniciando servicios..."
 docker compose -f "$COMPOSE_FILE" up -d
 
 # Reiniciar workers explícitamente para garantizar que recargan el nuevo código Python
@@ -101,9 +101,41 @@ docker compose -f "$COMPOSE_FILE" restart "$CELERY_WORKER_CONTAINER" "$CELERY_BE
 ok "Servicios levantados"
 
 # ====================================================
+# 5.5 Optimización SEO de Slugs (si aplica)
+# ====================================================
+# Verificar si hay cambios en el modelo de productos (nuevos slugs inteligentes)
+if git diff HEAD~1 store/models.py | grep -q "_generate_unique_slug\|_should_regenerate_slug"; then
+    step "5.5 Regenerando slugs SEO (optimización inteligente)..."
+    
+    # Dry-run primero para validar
+    echo "📋 Validando cambios (dry-run)..."
+    docker compose -f "$COMPOSE_FILE" exec -T "$WEB_CONTAINER" \
+        python manage.py seo_optimize_slugs --dry-run
+    
+    echo ""
+    read -p "¿Aplicar cambios de slugs SEO en PRODUCCIÓN? (s/n): " -r
+    echo
+    if [[ $REPLY =~ ^[Ss]$ ]]; then
+        echo "⚙️  Aplicando regeneración de slugs..."
+        docker compose -f "$COMPOSE_FILE" exec -T "$WEB_CONTAINER" \
+            python manage.py seo_optimize_slugs
+        ok "Slugs regenerados"
+        
+        # Verificar resultados
+        echo "📊 Verificando resultados..."
+        docker compose -f "$COMPOSE_FILE" exec -T "$WEB_CONTAINER" \
+            python scripts/verify_slugs.py
+    else
+        echo "⏭️  Regeneración de slugs omitida"
+    fi
+else
+    echo "ℹ️  Sin cambios en lógica de slugs"
+fi
+
+# ====================================================
 # 6. Verificación de arranque
 # ====================================================
-step "6/7 Verificando arranque (espera hasta 30s)..."
+step "7/8 Verificando arranque (espera hasta 30s)..."
 
 for i in $(seq 1 6); do
     sleep 5
@@ -123,9 +155,9 @@ for i in $(seq 1 6); do
 done
 
 # ====================================================
-# 7. Estado final
+# 8. Estado final
 # ====================================================
-step "7/7 Estado final del sistema"
+step "8/8 Estado final del sistema"
 docker compose -f "$COMPOSE_FILE" ps
 
 # Verificar Redis y Celery (usando docker compose ps o inspect al contenedor real)

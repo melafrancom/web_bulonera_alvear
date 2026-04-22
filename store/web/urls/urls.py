@@ -7,7 +7,15 @@ urlpatterns = [
     path('offers/', views.offers, name='offers'),
     path('category/<slug:category_slug>/', views.store, name="products_by_category"),
     path('category/<slug:category_slug>/subcategory/<slug:subcategory_slug>/', views.products_by_subcategory, name='products_by_subcategory'),
-    path('category/<slug:category_slug>/product/<slug:product_slug>/', views.product_detail, name="product_detail"),
+    
+    # Nueva URL plana (Fase 1 - SEO Refactoring)
+    path('p/<slug:product_slug>/', views.product_detail, name="product_detail"),
+    
+    # Legacy redirect 301 (Fase 1 - SEO Refactoring)
+    # Redirige: /store/category/<cat>/product/<slug>/ → /store/p/<slug>/
+    path('category/<slug:category_slug>/product/<slug:product_slug>/', 
+         views.redirect_legacy_product, name="legacy_product_redirect"),
+    
     path('search/', views.search, name='search'),
     path('submit_review/<int:product_id>/', views.submit_review, name='submit_review'),
     path('feeds/facebook.csv', views.facebook_feed, name='facebook_feed'),

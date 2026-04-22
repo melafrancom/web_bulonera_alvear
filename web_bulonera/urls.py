@@ -25,6 +25,7 @@ from django.views.static import serve
 #local apps
 from . import views
 from store.sitemaps import ProductSitemap, CategorySitemap, SubCategorySitemap
+from store.web.views import views as store_views  # Fase 1 - SEO Refactoring
 
 # Sitemaps configuration
 sitemaps = {
@@ -36,6 +37,10 @@ sitemaps = {
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
+    
+    # URLs planas para productos (Fase 1 - SEO Refactoring)
+    # Exponer /p/<slug>/ en la raíz para máxima URL flatness
+    path('p/<slug:product_slug>/', store_views.product_detail, name='product_detail_flat'),
     
     # Web URLs (Templates HTML)
     path('store/', include(('store.web.urls', 'store'))),

@@ -24,15 +24,29 @@ class TestStoreViews:
         assert response.status_code == 200
 
     def test_product_detail_view(self, client, product):
-        """Verifica que la vista de detalle del producto carga."""
-        response = client.get(reverse('store:product_detail', args=[product.category.slug, product.slug]))
+        """Verifica que la vista de detalle del producto carga con URL plana (Fase 1)."""
+        # URL plana: /store/p/<slug>/
+        response = client.get(reverse('store:product_detail', args=[product.slug]))
         assert response.status_code == 200
         assert response.context['single_product'] == product
 
-    def test_product_detail_nonexistent_404(self, client, category):
+    def test_product_detail_nonexistent_404(self, client):
         """Verifica que detalle de producto inexistente retorna 404."""
-        response = client.get(reverse('store:product_detail', args=[category.slug, 'nonexistent-slug']))
+        # URL plana
+        response = client.get(reverse('store:product_detail', args=['nonexistent-slug']))
         assert response.status_code == 404
+
+    def test_legacy_product_redirect_301(self, client, product, category):
+        """Verifica que URLs legacy redirigen con 301 (Fase 1 - SEO Refactoring)."""
+        # URL legacy: /store/category/<cat>/product/<slug>/
+        legacy_url = f'/store/category/{category.slug}/product/{product.slug}/'
+        
+        response = client.get(legacy_url, follow=False)
+        assert response.status_code == 301  # Moved Permanently (permanent redirect)
+        
+        # Verificar que redirige a la URL plana
+        new_url = reverse('store:product_detail', args=[product.slug])
+        assert new_url in response['Location']
 
     def test_search_view_without_keyword(self, client):
         """Verifica que search sin keyword devuelve todos los productos."""

@@ -4,7 +4,7 @@ import logging
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.conf import settings
 import csv
 from xml.etree.ElementTree import Element, SubElement, tostring
@@ -131,15 +131,43 @@ def products_by_subcategory(request, category_slug, subcategory_slug):
         raise
 
 
-def product_detail(request, category_slug, product_slug):
-    """Vista de detalle de producto"""
+def redirect_legacy_product(request, category_slug, product_slug):
+    """
+    Redirige permanentemente URLs legacy a la nueva estructura plana.
+    /store/category/<cat>/product/<slug>/ → /store/p/<slug>/
+    HTTP 301 (Moved Permanently) para mantener SEO.
+    
+    Fase 1 - SEO URL Refactoring
+    """
+    from django.http import HttpResponsePermanentRedirect
+    from django.urls import reverse
+    
+    # Obtener el producto para garantizar que existe antes de redirigir
     try:
-        # Obtener producto
-        single_product = ProductService.get_product_by_slug(product_slug, category_slug)
+        single_product = Product.objects.get(slug=product_slug)
+        # Redirigir a la nueva URL plana
+        new_url = reverse('store:product_detail', args=[product_slug])
+        return HttpResponsePermanentRedirect(new_url)
+    except Product.DoesNotExist:
+        # Si el producto no existe, devolver 404
+        return render(request, 'store/404.html', 
+                     {'category_slug': category_slug, 'product_slug': product_slug},
+                     status=404)
+
+
+def product_detail(request, product_slug):
+    """
+    Vista de detalle de producto - Nueva estructura plana sin category_slug en URL.
+    
+    Fase 1 - SEO URL Refactoring
+    La categoría se extrae de product.category (FK existente).
+    """
+    try:
+        # Obtener producto solo por slug (la categoría viene del FK)
+        single_product = Product.objects.get(slug=product_slug)
         
         if not single_product:
             context = {
-                'category_slug': category_slug,
                 'product_slug': product_slug
             }
             return render(request, 'store/404.html', context, status=404)
@@ -198,6 +226,56 @@ def product_detail(request, category_slug, product_slug):
             }
         
         # Determinar precio a mostrar
+        display_price = single_product.sale_price if single_product.is_on_sale and single_product.sale_price else single_product.price
+        
+        # Actualizar precio en meta_pixel_data si hay oferta
+        if single_product.is_on_sale and single_product.sale_price:
+            meta_pixel_data['price'] = f"{single_product.sale_price:.2f}"
+        
+        # Obtener FAQs del producto
+        product_faqs = FAQService.get_product_faqs(single_product)
+        
+        # Construir breadcrumb_items usando categoria del producto (no del URL)
+        breadcrumb_items = [
+            {'name': 'Inicio', 'url': '/'},
+            {'name': single_product.category.category_name, 'url': single_product.category.get_url()},
+            {'name': single_product.name, 'url': None},
+        ]
+        
+        context = {
+            'single_product': single_product,
+            'in_cart': in_cart,
+            'orderproduct': orderproduct,
+            'reviews': reviews,
+            'product_gallery': product_gallery,
+            'meta_pixel_data': meta_pixel_data,
+            'price': display_price,
+            'CURRENCY': CURRENCY,
+            'dimensions': dimensions,
+            'dimension_variants_json': dimension_variants_json,
+            'sale_products': sale_products,
+            'product_faqs': product_faqs,
+            'breadcrumb_items': breadcrumb_items,
+        }
+        
+        return render(request, 'store/product_detail.html', context)
+    
+    except Product.DoesNotExist:
+        logger.warning(f'Producto no encontrado: {product_slug}')
+        return render(
+            request,
+            'store/404.html',
+            {'product_slug': product_slug},
+            status=404
+        )
+    except Exception as e:
+        logger.error(f'Error en product_detail para producto {product_slug}: {str(e)}')
+        return render(
+            request,
+            'store/error.html',
+            {'error_message': 'Ha ocurrido un error al cargar el producto'},
+            status=500
+        )
         display_price = single_product.sale_price if single_product.is_on_sale and single_product.sale_price else single_product.price
         
         # Actualizar precio en meta_pixel_data si hay oferta

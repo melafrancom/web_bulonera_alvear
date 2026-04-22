@@ -90,6 +90,61 @@ class Product(models.Model):
     thread_formats = models.CharField("Formatos de rosca", max_length=100, blank=True, null=True)
     origin = models.CharField("Origen", max_length=100, blank=True, null=True)
     
+    def _should_regenerate_slug(self):
+        """
+        Detecta si el slug actual es un placeholder basura y el nombre ya fue 
+        enriquecido con un valor real.
+        
+        Retorna True si:
+        - El nombre es real (no comienza por "Producto " y tiene más de 10 caracteres)
+        - El slug actual es un placeholder (comienza por "producto-")
+        
+        Fase 2 - Smart Slug Regeneration
+        """
+        name_is_real = (
+            self.name and
+            not self.name.startswith('Producto ') and
+            len(self.name) > 10
+        )
+        slug_is_placeholder = (
+            self.slug and
+            self.slug.startswith('producto-')
+        )
+        return name_is_real and slug_is_placeholder
+
+    def _generate_unique_slug(self):
+        """
+        Genera un slug único. Si hay colisión, agrega el code como sufijo.
+        
+        Retorna:
+        - Slug único derivado del nombre
+        - Si hay colisión: slug-code
+        - Si falla todo: mantiene el slug actual
+        
+        Fase 2 - Smart Slug Regeneration
+        """
+        if not self.name:
+            return self.slug or 'producto'
+        
+        base_slug = slugify(self.name)
+        if not base_slug:
+            return self.slug or 'producto'
+
+        # Verificar colisión excluyendo el producto actual
+        qs = Product.objects.filter(slug=base_slug).exclude(pk=self.pk)
+        if not qs.exists():
+            return base_slug
+
+        # Colisión: agregar code como desambiguador
+        if self.code:
+            slug_with_code = f"{base_slug}-{slugify(self.code)}"
+            qs2 = Product.objects.filter(slug=slug_with_code).exclude(pk=self.pk)
+            if not qs2.exists():
+                return slug_with_code
+
+        # Fallback final: mantener slug actual para no romper nada
+        return self.slug
+    
     def save(self, *args, **kwargs):
         # Auto-generar nombre completo y slug
         if self.diameter and self.length:
@@ -97,10 +152,16 @@ class Product(models.Model):
             if f" {self.diameter} x {self.length}" not in self.name:
                 self.name = f"{self.name} {self.diameter} x {self.length}"
         
+        # --- SLUG LOGIC (Fase 2 - Smart Slug Regeneration) ---
         if not self.slug:
-            self.slug = slugify(self.name)
+            # Primera vez: generar slug único
+            self.slug = self._generate_unique_slug()
+        elif self._should_regenerate_slug():
+            # Slug es placeholder y nombre ya es real: sanar slug
+            self.slug = self._generate_unique_slug()
+        # Si slug existe y no es placeholder, mantenerlo para no romper URLs
             
-            # Calcular el porcentaje de descuento si hay precio de oferta
+        # Calcular el porcentaje de descuento si hay precio de oferta
         if self.is_on_sale and self.sale_price is not None and self.price > 0:
             self.discount_percentage = int(((self.price - self.sale_price) / self.price) * 100)
         else:
@@ -124,7 +185,8 @@ class Product(models.Model):
             process_product_image.delay(self.id, self.images.path)
         
     def get_url(self):
-        return reverse('store:product_detail', args=[self.category.slug, self.slug])
+        # Estructura plana de URL: /p/<slug>/
+        return reverse('store:product_detail', args=[self.slug])
     
     def get_absolute_url(self):
     #URL completa para META PIXEL y Google Merchant
