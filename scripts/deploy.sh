@@ -105,32 +105,36 @@ docker compose -f "$COMPOSE_FILE" restart "$CELERY_WORKER_CONTAINER" "$CELERY_BE
 ok "Servicios levantados"
 
 # ====================================================
-# 5.5 Optimización SEO de Slugs (si aplica)
+# 5.5 Optimización SEO de Slugs
 # ====================================================
-# Verificar si hay cambios en el modelo de productos (nuevos slugs inteligentes)
-if git diff HEAD~1 store/models.py | grep -q "_generate_unique_slug\|_should_regenerate_slug"; then
-    step "5.5 Regenerando slugs SEO (optimización inteligente)..."
-    
-    # Dry-run primero para validar
+step "5.5 Verificando estado de Slugs SEO..."
+
+# Ejecutar el script de verificación para ver el estado real de la BD
+exec_web python scripts/verify_slugs.py
+
+# Consultar al usuario si desea ejecutar la optimización interactiva
+echo ""
+read -p "¿Deseas ejecutar la regeneración de slugs SEO en PRODUCCIÓN ahora? (s/n): " -r
+echo
+if [[ $REPLY =~ ^[Ss]$ ]]; then
     echo "📋 Validando cambios (dry-run)..."
     exec_web python manage.py seo_optimize_slugs --dry-run
     
     echo ""
-    read -p "¿Aplicar cambios de slugs SEO en PRODUCCIÓN? (s/n): " -r
+    read -p "¿Confirmas aplicar estos cambios de slugs en PRODUCCIÓN? (s/n): " -r
     echo
     if [[ $REPLY =~ ^[Ss]$ ]]; then
         echo "⚙️  Aplicando regeneración de slugs..."
         exec_web python manage.py seo_optimize_slugs
         ok "Slugs regenerados"
         
-        # Verificar resultados
-        echo "📊 Verificando resultados..."
+        echo "📊 Verificando resultados finales..."
         exec_web python scripts/verify_slugs.py
     else
-        echo "⏭️  Regeneración de slugs omitida"
+        echo "⏭️  Regeneración de slugs cancelada"
     fi
 else
-    echo "ℹ️  Sin cambios en lógica de slugs"
+    echo "⏭️  Regeneración de slugs omitida"
 fi
 
 # ====================================================
