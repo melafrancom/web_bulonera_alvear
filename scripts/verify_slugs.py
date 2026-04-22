@@ -4,6 +4,10 @@ import os
 import sys
 import django
 
+# Asegurar que el directorio raíz del proyecto (/app) esté en sys.path
+# para que Python pueda encontrar el módulo 'web_bulonera'
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 # Prioridad: argumento CLI → variable de entorno → production por defecto
 settings = sys.argv[1] if len(sys.argv) > 1 else os.environ.get('DJANGO_SETTINGS_MODULE', 'web_bulonera.settings.production')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings)
