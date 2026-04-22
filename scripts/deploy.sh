@@ -32,6 +32,9 @@ NC='\033[0m'
 # ====================================================
 # Funciones auxiliares
 # ====================================================
+exec_web() {
+    docker compose -f "$COMPOSE_FILE" exec -T "$WEB_CONTAINER" "$@"
+}
 step() { echo -e "\n${YELLOW}━━━ $1 ━━━${NC}"; }
 ok()   { echo -e "${GREEN}✓ $1${NC}"; }
 fail() { echo -e "${RED}✗ $1${NC}"; }
@@ -109,22 +112,19 @@ if git diff HEAD~1 store/models.py | grep -q "_generate_unique_slug\|_should_reg
     
     # Dry-run primero para validar
     echo "📋 Validando cambios (dry-run)..."
-    docker compose -f "$COMPOSE_FILE" exec -T "$WEB_CONTAINER" \
-        python manage.py seo_optimize_slugs --dry-run
+    exec_web python manage.py seo_optimize_slugs --dry-run
     
     echo ""
     read -p "¿Aplicar cambios de slugs SEO en PRODUCCIÓN? (s/n): " -r
     echo
     if [[ $REPLY =~ ^[Ss]$ ]]; then
         echo "⚙️  Aplicando regeneración de slugs..."
-        docker compose -f "$COMPOSE_FILE" exec -T "$WEB_CONTAINER" \
-            python manage.py seo_optimize_slugs
+        exec_web python manage.py seo_optimize_slugs
         ok "Slugs regenerados"
         
         # Verificar resultados
         echo "📊 Verificando resultados..."
-        docker compose -f "$COMPOSE_FILE" exec -T "$WEB_CONTAINER" \
-            python scripts/verify_slugs.py
+        exec_web python scripts/verify_slugs.py
     else
         echo "⏭️  Regeneración de slugs omitida"
     fi
