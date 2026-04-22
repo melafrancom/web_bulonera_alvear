@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 """Verificar que los slugs fueron actualizados correctamente"""
 import os
+import sys
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'web_bulonera.settings.local')
+# Prioridad: argumento CLI → variable de entorno → production por defecto
+settings = sys.argv[1] if len(sys.argv) > 1 else os.environ.get('DJANGO_SETTINGS_MODULE', 'web_bulonera.settings.production')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings)
 django.setup()
 
 from store.models import Product

@@ -61,7 +61,8 @@ fi
 # 1. Git Pull
 # ====================================================
 step "1/8 Actualizando código..."
-git pull origin main
+git fetch origin main
+git reset --hard origin/main
 ok "Código actualizado"
 
 # ====================================================
