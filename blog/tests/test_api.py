@@ -105,6 +105,78 @@ class TestPostAPI:
         url = f'/api/v1/blog/posts/{blog_post_draft.id}/'
         response = client.get(url)
         assert response.status_code == 404
+    
+    def test_post_detail_api_increments_views(self, client, blog_post_article):
+        """
+        Verifica que GET /api/v1/blog/posts/{id}/ incrementa el contador de vistas.
+        Garantiza paridad funcional con BlogDetailView.
+        """
+        initial_views = blog_post_article.views_count
+        url = f'/api/v1/blog/posts/{blog_post_article.id}/'
+        
+        client.get(url)
+        
+        blog_post_article.refresh_from_db()
+        assert blog_post_article.views_count == initial_views + 1
+    
+    def test_post_related_endpoint_returns_200(self, client, blog_post_article):
+        """
+        Verifica que GET /api/v1/blog/posts/{id}/related/ retorna 200.
+        """
+        url = f'/api/v1/blog/posts/{blog_post_article.id}/related/'
+        response = client.get(url)
+        assert response.status_code == 200
+    
+    def test_post_related_endpoint_excludes_self(self, client, admin_user, blog_tag):
+        """
+        Verifica que el post relacionado no se incluye a sí mismo en el listado.
+        """
+        post1 = Post.objects.create(
+            title='Post Principal',
+            slug='post-principal',
+            content='Contenido',
+            author=admin_user,
+            is_published=True
+        )
+        post1.tags.add(blog_tag)
+        
+        url = f'/api/v1/blog/posts/{post1.id}/related/'
+        response = client.get(url)
+        data = response.json()
+        
+        related_ids = [p['id'] for p in data]
+        assert post1.id not in related_ids
+    
+    def test_post_related_endpoint_returns_posts_with_shared_tags(
+        self, client, admin_user, blog_tag
+    ):
+        """
+        Verifica que el endpoint retorna posts que comparten tags.
+        """
+        post1 = Post.objects.create(
+            title='Post A',
+            slug='post-a',
+            content='Contenido A',
+            author=admin_user,
+            is_published=True
+        )
+        post1.tags.add(blog_tag)
+        
+        post2 = Post.objects.create(
+            title='Post B',
+            slug='post-b',
+            content='Contenido B',
+            author=admin_user,
+            is_published=True
+        )
+        post2.tags.add(blog_tag)
+        
+        url = f'/api/v1/blog/posts/{post1.id}/related/'
+        response = client.get(url)
+        data = response.json()
+        
+        related_ids = [p['id'] for p in data]
+        assert post2.id in related_ids
 
 
 @pytest.mark.django_db
