@@ -108,7 +108,7 @@
       <!-- Metadata -->
       <div class="flex items-center justify-between flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
         <div class="flex items-center gap-4">
-          <span>📅 {{ post.published_date|date:"d \de F \de Y" }}</span>
+          <span>📅 {{ post.published_date|date:"j \d\e N \d\e Y" }}</span>
           <span>✏️ {{ post.author.get_full_name }}</span>
           <span>👁️ {{ post.views_count }} vistas</span>
         </div>

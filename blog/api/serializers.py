@@ -55,3 +55,22 @@ class PostDetailSerializer(serializers.ModelSerializer):
             'meta_title', 'meta_description', 'meta_keywords', 'social_metadata'
         ]
         read_only_fields = fields
+
+
+class PostRelatedSerializer(serializers.ModelSerializer):
+    """
+    Serializer liviano para posts relacionados.
+    Solo expone los campos necesarios para una card de preview.
+    No incluye content ni social_metadata (evita N+1 queries).
+    """
+    tags = PostTagSerializer(many=True, read_only=True)
+    post_type_display = serializers.CharField(source='get_post_type_display', read_only=True)
+
+    class Meta:
+        model = Post
+        fields = [
+            'id', 'title', 'slug', 'excerpt', 'post_type', 'post_type_display',
+            'image_url', 'webp_image_url', 'image_alt', 'published_date',
+            'views_count', 'tags'
+        ]
+        read_only_fields = fields
