@@ -158,6 +158,14 @@
                 
                 <span class="text-white/30">|</span>
                 
+                <!-- Link a Blog -->
+                <a href="{% url 'blog:post_list' %}" class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2">
+                    <i class="w-4 h-4 inline-block mr-2" data-lucide="newspaper"></i>
+                    Blog
+                </a>
+                
+                <span class="text-white/30">|</span>
+                
                 <!-- Links de Categorías -->
                 {% for category in links %}
                 <a href="{{ category.get_url }}" 
@@ -249,6 +257,12 @@
                    class="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium">
                     <i data-lucide="store" class="w-5 h-5"></i>
                     <span>Toda la Tienda</span>
+                </a>
+                
+                <a href="{% url 'blog:post_list' %}" @click="mobileOpen = false"
+                   class="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium">
+                    <i data-lucide="newspaper" class="w-5 h-5"></i>
+                    <span>Blog</span>
                 </a>
                 
                 <!-- Categorías -->

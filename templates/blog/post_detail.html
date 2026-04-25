@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ post.meta_title|default:post.title|truncatewords:10 }}{% endblock %}
+
+{% block meta_description %}{{ post.meta_description|default:post.excerpt|truncatewords:20 }}{% endblock %}
+
+{% block meta %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ post.title }}">
+<meta property="og:description" content="{{ post.excerpt|default:post.meta_description }}">
+{% if post.featured_image %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ post.featured_image.file.url }}">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+{% endif %}
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+<meta property="article:published_time" content="{{ post.published_date|date:'c' }}">
+<meta property="article:modified_time" content="{{ post.modified_date|date:'c' }}">
+<meta property="article:author" content="{{ post.author.get_full_name }}">
+{% for tag in post.tags.all %}
+<meta property="article:tag" content="{{ tag.name }}">
+{% endfor %}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ post.title }}">
+<meta name="twitter:description" content="{{ post.excerpt|default:post.meta_description }}">
+{% endblock %}
+
+{% block head_extra %}
+<link rel="preload" as="image" href="{{ post.image_url }}" type="image/jpeg">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "{{ post.title }}",
+  "description": "{{ post.excerpt|default:post.meta_description|escapejs }}",
+  "image": "{{ request.scheme }}://{{ request.get_host }}{{ post.image_url }}",
+  "datePublished": "{{ post.published_date|date:'c' }}",
+  "dateModified": "{{ post.modified_date|date:'c' }}",
+  "author": {
+    "@type": "Person",
+    "name": "{{ post.author.get_full_name }}"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Bulonera Alvear",
+    "url": "{{ SITE_URL }}"
+  }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<main class="min-h-screen bg-white dark:bg-slate-950">
+  <!-- Hero Image -->
+  {% if post.featured_image %}
+  <div class="w-full h-96 bg-gray-200 dark:bg-slate-800 overflow-hidden">
+    <picture>
+      <source srcset="{{ post.webp_image_url }}" type="image/webp">
+      <img src="{{ post.image_url }}"
+           alt="{{ post.image_alt }}"
+           class="w-full h-full object-cover"
+           loading="eager"
+           decoding="async"
+           width="1200"
+           height="400">
+    </picture>
+  </div>
+  {% endif %}
+
+  <!-- Article Content -->
+  <article class="max-w-4xl mx-auto px-4 py-12">
+    <!-- Header -->
+    <header class="mb-8 pb-8 border-b dark:border-slate-800">
+      <!-- Breadcrumb -->
+      <nav class="text-sm mb-4 text-gray-600 dark:text-gray-400">
+        <a href="{% url 'blog:post_list' %}" class="hover:text-blue-600 dark:hover:text-blue-400">Blog</a>
+        <span class="mx-2">/</span>
+        <span>{{ post.title|truncatewords:5 }}</span>
+      </nav>
+
+      <!-- Post Type & Platform Badges -->
+      <div class="flex gap-2 mb-4 flex-wrap">
+        <span class="text-xs font-semibold px-3 py-1 rounded-full {% if post.post_type == 'article' %}bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200{% else %}bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200{% endif %}">
+          {{ post.get_post_type_display }}
+        </span>
+        {% if post.social_metadata %}
+        <span class="text-xs font-semibold px-3 py-1 rounded-full bg-pink-100 dark:bg-pink-900 text-pink-800 dark:text-pink-200">
+          {{ post.social_metadata.get_platform_display }}
+        </span>
+        {% endif %}
+      </div>
+
+      <!-- Title -->
+      <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+        {{ post.title }}
+      </h1>
+
+      <!-- Excerpt -->
+      {% if post.excerpt %}
+      <p class="text-xl text-gray-600 dark:text-gray-400 mb-6">
+        {{ post.excerpt }}
+      </p>
+      {% endif %}
+
+      <!-- Metadata -->
+      <div class="flex items-center justify-between flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+        <div class="flex items-center gap-4">
+          <span>📅 {{ post.published_date|date:"d \de F \de Y" }}</span>
+          <span>✏️ {{ post.author.get_full_name }}</span>
+          <span>👁️ {{ post.views_count }} vistas</span>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      {% if post.tags.all %}
+      <div class="flex gap-2 flex-wrap mt-4">
+        {% for tag in post.tags.all %}
+        <a href="{% url 'blog:post_list' %}?tag={{ tag.slug }}"
+           class="text-xs bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 transition">
+          #{{ tag.name }}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </header>
+
+    <!-- Main Content (Prose Styling) -->
+    <div class="prose dark:prose-invert max-w-none mb-12">
+      {{ post.content|safe }}
+    </div>
+
+    <!-- Social Metadata / Embed -->
+    {% if post.social_metadata %}
+    {% include 'blog/includes/_social_embed.html' with social_meta=post.social_metadata %}
+    {% endif %}
+
+    <!-- Share & Actions -->
+    <div class="border-t dark:border-slate-800 pt-8 mt-8">
+      <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Compartir este artículo</h3>
+      <div class="flex gap-4 flex-wrap">
+        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm font-semibold">
+          Facebook
+        </a>
+        <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ post.title }}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition text-sm font-semibold">
+          X (Twitter)
+        </a>
+        <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-800 transition text-sm font-semibold">
+          LinkedIn
+        </a>
+      </div>
+    </div>
+  </article>
+
+  <!-- Related Posts -->
+  {% if related_posts %}
+  <section class="bg-gray-50 dark:bg-slate-900 py-12 border-t dark:border-slate-800">
+    <div class="max-w-6xl mx-auto px-4">
+      <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-8">Posts relacionados</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for related_post in related_posts %}
+        <article class="bg-white dark:bg-slate-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg dark:shadow-slate-900 transition-shadow">
+          {% if related_post.featured_image %}
+          <div class="h-40 bg-gray-200 dark:bg-slate-700 overflow-hidden">
+            <a href="{{ related_post.get_absolute_url }}" class="block h-full">
+              <picture>
+                <source srcset="{{ related_post.webp_image_url }}" type="image/webp">
+                <img src="{{ related_post.image_url }}"
+                     alt="{{ related_post.image_alt }}"
+                     class="w-full h-full object-cover hover:scale-105 transition-transform"
+                     loading="lazy"
+                     decoding="async"
+                     width="300"
+                     height="160">
+              </picture>
+            </a>
+          </div>
+          {% endif %}
+          
+          <div class="p-4">
+            <h3 class="font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">
+              <a href="{{ related_post.get_absolute_url }}" class="hover:text-blue-600 dark:hover:text-blue-400">
+                {{ related_post.title }}
+              </a>
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+              {{ related_post.excerpt }}
+            </p>
+            <a href="{{ related_post.get_absolute_url }}"
+               class="text-blue-600 dark:text-blue-400 text-sm font-semibold hover:underline">
+              Leer más →
+            </a>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+</main>
+{% endblock %}
+

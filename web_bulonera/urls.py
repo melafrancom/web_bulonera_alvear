@@ -25,6 +25,7 @@ from django.views.static import serve
 #local apps
 from . import views
 from store.sitemaps import ProductSitemap, CategorySitemap, SubCategorySitemap
+from blog.sitemaps import sitemaps as blog_sitemaps
 from store.web.views import views as store_views  # Fase 1 - SEO Refactoring
 
 # Sitemaps configuration
@@ -32,6 +33,7 @@ sitemaps = {
     'products': ProductSitemap,
     'categories': CategorySitemap,
     'subcategories': SubCategorySitemap,
+    **blog_sitemaps,  # Incluir blog-posts y blog-tags
 }
 
 urlpatterns = [
@@ -44,6 +46,7 @@ urlpatterns = [
     
     # Web URLs (Templates HTML)
     path('store/', include(('store.web.urls', 'store'))),
+    path('blog/', include(('blog.web.urls', 'blog'))),
     path('cart/', include(('cart.web.urls', 'cart'))),
     path('account/', include(('account.web.urls', 'account'))),
     path('orders/', include(('orders.web.urls', 'orders'))),
@@ -52,6 +55,7 @@ urlpatterns = [
     # API REST v1
     path('api/v1/store/', include('store.api.urls.urls')),
     path('api/v1/category/', include('category.api.urls.urls')),
+    path('api/v1/blog/', include('blog.api.urls.urls')),
     path('api/v1/cart/', include('cart.api.urls.urls')),
     path('api/v1/orders/', include('orders.api.urls.urls')),
     path('api/v1/account/', include('account.api.urls.urls')),

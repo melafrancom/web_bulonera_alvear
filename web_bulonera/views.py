@@ -120,11 +120,14 @@ def robots_txt(request):
 def llms_txt(request):
     """
     Vista dinámica que genera el archivo llms.txt según la especificación llmstxt.org.
-    Incluye información del negocio, categorías y páginas principales.
+    Incluye información del negocio, categorías, blog y páginas principales.
     """
     from category.models import Category
+    from blog.models import PostTag
     
     categories = Category.objects.all()
+    blog_tags = PostTag.objects.filter(posts__is_published=True).distinct()
+    
     lines = [
         "# Bulonera Alvear",
         "",
@@ -140,6 +143,7 @@ def llms_txt(request):
         "## Páginas principales",
         f"- [Catálogo completo]({SITE_URL}/store/): Todos los productos disponibles con precios y stock",
         f"- [Ofertas]({SITE_URL}/store/offers/): Productos en promoción",
+        f"- [Blog]({SITE_URL}/blog/): Artículos técnicos y novedades de ferretería",
         f"- [Contacto]({SITE_URL}/contact/): Formulario de contacto y datos de la empresa",
         f"- [Ubicación]({SITE_URL}/location/): Mapa y dirección física",
         f"- [Historia]({SITE_URL}/history/): Historia de la empresa",
@@ -154,6 +158,17 @@ def llms_txt(request):
             f"- [{cat.category_name}]({SITE_URL}/store/category/{cat.slug}/): "
             f"Productos de {cat.category_name.lower()}"
         )
+    
+    if blog_tags:
+        lines.extend([
+            "",
+            "## Tags del Blog",
+        ])
+        for tag in blog_tags:
+            lines.append(
+                f"- [{tag.name}]({SITE_URL}/blog/?tag={tag.slug}): "
+                f"Artículos sobre {tag.name.lower()}"
+            )
     
     lines.extend([
         "",

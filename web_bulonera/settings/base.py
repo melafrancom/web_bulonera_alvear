@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'django_celery_beat',
     'django_redis',
+    'django_filters',
     
     # LOCAL_APPS
     'web_bulonera',
@@ -68,6 +69,7 @@ INSTALLED_APPS = [
     'orders',
     'contact',
     'media_bank',
+    'blog',
 
 ]
 

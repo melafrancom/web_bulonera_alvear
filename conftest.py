@@ -11,6 +11,7 @@ from account.models import Account, UserProfile
 from category.models import Category, SubCategory
 from store.models import Product, ReviewRating
 from cart.models import Cart, CartItem
+from blog.models import Post, PostTag, SocialMetadata
 
 
 @pytest.fixture
@@ -120,3 +121,81 @@ def authenticated_api_client(api_client, user):
     """Cliente API autenticado."""
     api_client.force_authenticate(user=user)
     return api_client
+
+
+# ============================================================================
+# BLOG FIXTURES
+# ============================================================================
+
+@pytest.fixture
+def blog_tag(db_session):
+    """Crea un tag para blog de test."""
+    return PostTag.objects.create(
+        name='Guías Técnicas',
+        slug='guias-tecnicas'
+    )
+
+
+@pytest.fixture
+def blog_post_article(db_session, admin_user, blog_tag):
+    """Crea un post artículo publicado."""
+    from django.utils import timezone
+    post = Post.objects.create(
+        title='Cómo seleccionar tornillos correctamente',
+        slug='como-seleccionar-tornillos-correctamente',
+        content='<h2>Introducción</h2><p>En esta guía aprenderás a seleccionar el tornillo correcto...</p>',
+        excerpt='Aprende a elegir el tornillo perfecto para tu proyecto',
+        post_type='article',
+        meta_title='Guía: Cómo Seleccionar Tornillos | Bulonera Alvear',
+        meta_description='Descubre cómo seleccionar tornillos según normas DIN y materiales',
+        meta_keywords='tornillos, guía técnica, ferretería',
+        author=admin_user,
+        is_published=True,
+        published_date=timezone.now()
+    )
+    post.tags.add(blog_tag)
+    return post
+
+
+@pytest.fixture
+def blog_post_draft(db_session, admin_user):
+    """Crea un post en borrador (no publicado)."""
+    return Post.objects.create(
+        title='Post en Borrador - No Publicado',
+        slug='post-borrador-no-publicado',
+        content='<p>Contenido aún no publicado...</p>',
+        excerpt='Este es un borrador',
+        post_type='article',
+        author=admin_user,
+        is_published=False
+    )
+
+
+@pytest.fixture
+def blog_post_social_repost(db_session, admin_user, blog_tag):
+    """Crea un post tipo repost de red social."""
+    from django.utils import timezone
+    post = Post.objects.create(
+        title='Repost: Tornillos de última generación',
+        slug='repost-tornillos-ultima-generacion',
+        content='<p>Mira este increíble repost desde Instagram...</p>',
+        post_type='social_repost',
+        author=admin_user,
+        is_published=True,
+        published_date=timezone.now()
+    )
+    post.tags.add(blog_tag)
+    return post
+
+
+@pytest.fixture
+def social_metadata(db_session, blog_post_social_repost):
+    """Crea metadata de red social para un post."""
+    return SocialMetadata.objects.create(
+        post=blog_post_social_repost,
+        platform='instagram',
+        original_url='https://www.instagram.com/p/ABC123DEF456/',
+        embed_code='<iframe src="https://www.instagram.com/p/ABC123DEF456/embed/" width="320" height="400"></iframe>',
+        embed_url='https://www.instagram.com/p/ABC123DEF456/embed/'
+    )
+
