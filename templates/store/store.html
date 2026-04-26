@@ -264,6 +264,23 @@
                 
                 <!-- Paginación -->
                 {% include 'includes/partials/_pagination.html' with page_obj=products query_params=request.GET %}
+                
+                <!-- SEO Rich Description -->
+                {% if current_category and current_category.rich_description and not request.GET.page or request.GET.page == '1' %}
+                <section class="mt-12 prose prose-slate dark:prose-invert max-w-none">
+                    <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-4">
+                        Información sobre {{ current_category.category_name }}
+                    </h2>
+                    {{ current_category.rich_description|safe }}
+                </section>
+                {% elif current_subcategory and current_subcategory.rich_description and not request.GET.page or request.GET.page == '1' %}
+                <section class="mt-12 prose prose-slate dark:prose-invert max-w-none">
+                    <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-4">
+                        Información sobre {{ current_subcategory.subcategory_name }}
+                    </h2>
+                    {{ current_subcategory.rich_description|safe }}
+                </section>
+                {% endif %}
             </div>
         </div>
     </div>

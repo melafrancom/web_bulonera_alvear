@@ -17,6 +17,15 @@ class CategoryAdmin(admin.ModelAdmin):
     autocomplete_fields = ['image']
     readonly_fields = ['image_preview_method']
     
+    fieldsets = (
+        ("Información General", {"fields": ("category_name", "description", "slug", "image", "cat_image", "image_preview_method")}),
+        ("Contenido SEO (Texto Maestro)", {
+            "fields": ("rich_description",),
+            "description": "Texto HTML que aparece en la página de la categoría. Usar para tables de medidas y keywords."
+        }),
+        ("Metadatos SEO", {"fields": ("meta_title", "meta_description")}),
+    )
+    
     def image_preview_method(self, obj):
         """Preview readonly de la imagen seleccionada en el FK."""
         if obj.image and obj.image.file and obj.image.file.name:
@@ -34,6 +43,15 @@ class SubCategoryAdmin(admin.ModelAdmin):
     search_fields = ['subcategory_name', 'slug']  # Necesario para autocomplete_fields
     autocomplete_fields = ['image_asset']
     readonly_fields = ['image_preview_method']
+    
+    fieldsets = (
+        ("Información General", {"fields": ("subcategory_name", "category", "slug", "image_asset", "image", "image_preview_method")}),
+        ("Contenido SEO (Texto Maestro)", {
+            "fields": ("rich_description",),
+            "description": "Texto HTML que aparece en la página de la subcategoría."
+        }),
+        ("Metadatos SEO", {"fields": ("meta_title", "meta_description")}),
+    )
     
     def image_preview_method(self, obj):
         """Preview readonly de la imagen seleccionada en el FK."""

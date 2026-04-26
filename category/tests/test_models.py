@@ -38,6 +38,26 @@ class TestCategoryModel(TestCase):
                 category_name='Herramientas 2',
                 slug='herramientas'  # Slug duplicado
             )
+            
+    def test_category_meta_title_fallback_includes_resistencia(self):
+        """Verifica que el fallback de meta_title y meta_description incluya texto local."""
+        cat = Category.objects.create(
+            category_name='Bulones Especiales',
+            slug='bulones-especiales',
+            description='Bulones de alta resistencia.'
+        )
+        self.assertEqual(cat.meta_title, "Comprar Bulones Especiales en Resistencia | Stock | Bulonera Alvear")
+        self.assertIn("Bulones de alta resistencia.", cat.meta_description)
+        self.assertIn("Stock real en Bulonera Alvear", cat.meta_description)
+        
+    def test_category_rich_description_optional(self):
+        """Verifica que rich_description es un campo opcional y guarda contenido HTML."""
+        cat = Category.objects.create(
+            category_name='Tornillos',
+            slug='tornillos',
+            rich_description='<h2>Tornillos de todo tipo</h2><p>Texto SEO maestro.</p>'
+        )
+        self.assertEqual(cat.rich_description, '<h2>Tornillos de todo tipo</h2><p>Texto SEO maestro.</p>')
 
 
 @pytest.mark.django_db
@@ -76,6 +96,27 @@ class TestSubCategoryModel(TestCase):
         subcategories = self.category.subcategories.all()
         self.assertEqual(subcategories.count(), 1)
         self.assertEqual(subcategories.first(), self.subcategory)
+        
+    def test_subcategory_meta_title_fallback_includes_resistencia(self):
+        """Verifica que el fallback de meta_title y meta_description incluya texto local."""
+        sub = SubCategory.objects.create(
+            subcategory_name='Clavos',
+            slug='clavos',
+            category=self.category
+        )
+        self.assertEqual(sub.meta_title, "Comprar Clavos en Resistencia | Bulonera Alvear")
+        self.assertIn("clavos en Chaco", sub.meta_description)
+        self.assertIn("Av. Alvear 1301", sub.meta_description)
+        
+    def test_subcategory_rich_description_optional(self):
+        """Verifica que rich_description es un campo opcional y guarda contenido HTML."""
+        sub = SubCategory.objects.create(
+            subcategory_name='Tuercas',
+            slug='tuercas',
+            category=self.category,
+            rich_description='<p>Tuercas SEO.</p>'
+        )
+        self.assertEqual(sub.rich_description, '<p>Tuercas SEO.</p>')
 
 
 @pytest.mark.django_db

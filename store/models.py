@@ -168,13 +168,23 @@ class Product(models.Model):
             self.discount_percentage = None
             
         if not self.meta_title:
-            self.meta_title = self.name
+            self.meta_title = f"Comprar {self.name} en Resistencia | Bulonera Alvear"[:70]
 
-        if not self.meta_description and hasattr(self, 'description'):
-            self.meta_description = Truncator(self.description).chars(150)
+        if not self.meta_description:
+            self.meta_description = (
+                Truncator(self.description).chars(100) +
+                " Disponible en Bulonera Alvear, Resistencia, Chaco."
+                if self.description
+                else f"Comprá {self.name} en Bulonera Alvear. Stock en Resistencia, Chaco. Envíos a toda Argentina."
+            )[:160]
             
         if not self.meta_keywords and self.name:
             self.meta_keywords = ', '.join(self.name.lower().split())
+            
+        # Auto-fill image_alt si está vacío (SEO)
+        if not self.image_alt and self.name:
+            self.image_alt = self.name[:255]
+            
         # Guardar primero para tener el ID si es nuevo
         super().save(*args, **kwargs)
         
@@ -394,6 +404,12 @@ class ProductGallery(models.Model):
 
     def __str__(self):
         return self.product.name   
+
+    def save(self, *args, **kwargs):
+        # Auto-fill alt text para SEO si está vacío
+        if not self.alt and self.product and self.product.name:
+            self.alt = self.product.name[:255]
+        super().save(*args, **kwargs)
 
     @property
     def get_image_urls(self):

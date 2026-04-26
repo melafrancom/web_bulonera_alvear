@@ -58,7 +58,11 @@
             "price": "{{ price|floatformat:2 }}",
             "priceCurrency": "ARS",
             "availability": "{% if single_product.stock > 0 %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
-            "url": "{{ request.scheme }}://{{ request.get_host }}{{ single_product.get_url }}"
+            "url": "{{ request.scheme }}://{{ request.get_host }}{{ single_product.get_url }}",
+            "seller": {
+                "@type": "Organization",
+                "name": "Bulonera Alvear"
+            }
         },
         "image": "{{ request.scheme }}://{{ request.get_host }}{{ single_product.image_url }}"{% if single_product.gtin %},
         "gtin": "{{ single_product.gtin }}"{% endif %}{% if single_product.mpn %},

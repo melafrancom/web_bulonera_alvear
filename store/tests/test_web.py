@@ -19,9 +19,15 @@ class TestStoreViews:
         assert 'products' in response.context
 
     def test_store_view_with_category(self, client, category, product):
-        """Verifica que la vista filtra por categoría."""
+        """Verifica que la vista filtra por categoría y renderiza rich_description."""
+        category.rich_description = "<p>Contenido SEO maestro para categoría.</p>"
+        category.save()
+        
         response = client.get(reverse('store:products_by_category', args=[category.slug]))
         assert response.status_code == 200
+        content = response.content.decode('utf-8')
+        assert "<p>Contenido SEO maestro para categoría.</p>" in content
+        assert "Información sobre" in content
 
     def test_product_detail_view(self, client, product):
         """Verifica que la vista de detalle del producto carga con URL plana (Fase 1)."""
@@ -29,6 +35,16 @@ class TestStoreViews:
         response = client.get(reverse('store:product_detail', args=[product.slug]))
         assert response.status_code == 200
         assert response.context['single_product'] == product
+        
+    def test_product_detail_contains_jsonld_product_schema(self, client, product):
+        """Verifica que la vista inyecta JSON-LD Product Schema y contiene 'seller'."""
+        response = client.get(reverse('store:product_detail', args=[product.slug]))
+        assert response.status_code == 200
+        content = response.content.decode('utf-8')
+        assert '"@type": "Product"' in content
+        assert '"@type": "Offer"' in content
+        assert '"seller": {' in content
+        assert '"name": "Bulonera Alvear"' in content
 
     def test_product_detail_nonexistent_404(self, client):
         """Verifica que detalle de producto inexistente retorna 404."""

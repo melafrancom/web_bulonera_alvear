@@ -20,6 +20,15 @@ class Category(models.Model):
     # SEO Metadata fields (FASE 1.3 — Auditoría SEO)
     meta_title = models.CharField(max_length=70, blank=True, null=True, help_text="SEO Title (máx 70 caracteres)")
     meta_description = models.TextField(max_length=160, blank=True, null=True, help_text="SEO Description (máx 160 caracteres)")
+    rich_description = models.TextField(
+        "Descripción SEO Maestra",
+        blank=True,
+        help_text=(
+            "Texto HTML para SEO de categoría. Incluir: tabla de medidas, "
+            "aplicaciones, keywords long-tail. Ejemplo: 'Nuestros bulones G5 "
+            "están disponibles en medidas desde 1/4 hasta 1.1/2 pulgadas...'"
+        )
+    )
     # Nuevo FK a ImageAsset (Fase A)
     image = models.ForeignKey(
         'media_bank.ImageAsset',
@@ -40,10 +49,13 @@ class Category(models.Model):
     def save(self, *args, **kwargs):
         # Auto-fill meta_title si está vacío (FASE 1.3)
         if not self.meta_title:
-            self.meta_title = f"{self.category_name} | Bulonera Alvear"[:70]
+            self.meta_title = f"Comprar {self.category_name} en Resistencia | Stock | Bulonera Alvear"[:70]
         # Auto-fill meta_description si está vacío (FASE 1.3)
         if not self.meta_description:
-            self.meta_description = (self.description or f"Productos de {self.category_name} en Bulonera Alvear. Ferretería industrial en Resistencia, Chaco.")[:160]
+            if self.description:
+                self.meta_description = f"{self.description} Stock real en Bulonera Alvear, Resistencia, Chaco."[:160]
+            else:
+                self.meta_description = f"¿Buscás {self.category_name.lower()} en Resistencia, Chaco? Stock real en Bulonera Alvear. Envíos al NEA/NOA y a toda Argentina."[:160]
         super().save(*args, **kwargs)
     
     def get_url(self):
@@ -86,6 +98,11 @@ class SubCategory(models.Model):
     # SEO Metadata fields (FASE 1.3 — Auditoría SEO)
     meta_title = models.CharField(max_length=70, blank=True, null=True, help_text="SEO Title (máx 70 caracteres)")
     meta_description = models.TextField(max_length=160, blank=True, null=True, help_text="SEO Description (máx 160 caracteres)")
+    rich_description = models.TextField(
+        "Descripción SEO Maestra",
+        blank=True,
+        help_text="Texto HTML para SEO de subcategoría."
+    )
     # Nuevo FK a ImageAsset (Fase A)
     image_asset = models.ForeignKey(
         'media_bank.ImageAsset',
@@ -105,10 +122,13 @@ class SubCategory(models.Model):
     def save(self, *args, **kwargs):
         # Auto-fill meta_title si está vacío (FASE 1.3)
         if not self.meta_title:
-            self.meta_title = f"{self.subcategory_name} | Bulonera Alvear"[:70]
+            self.meta_title = f"Comprar {self.subcategory_name} en Resistencia | Bulonera Alvear"[:70]
         # Auto-fill meta_description si está vacío (FASE 1.3)
         if not self.meta_description:
-            self.meta_description = f"Productos de {self.subcategory_name} en {self.category.category_name}. Ferretería industrial en Resistencia, Chaco."[:160]
+            self.meta_description = (
+                f"¿Buscás {self.subcategory_name.lower()} en Chaco? En Bulonera Alvear, "
+                f"tu ferretería industrial en Av. Alvear 1301, Resistencia. Envíos a toda Argentina."
+            )[:160]
         super().save(*args, **kwargs)
 
     def get_faqs(self):

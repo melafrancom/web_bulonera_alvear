@@ -175,6 +175,44 @@ class TestProductModel:
         # NO debe contener /category/
         assert '/category/' not in url
 
+    def test_product_meta_description_fallback_includes_chaco(self, category):
+        """Verifica que el fallback de meta_description incluya texto de venta y locación local."""
+        product = Product.objects.create(
+            code='PROD-META-001',
+            name='Taladro Percutor DeWalt',
+            slug='taladro-percutor-dewalt',
+            price=150000.0,
+            stock=10,
+            category=category,
+            description="Taladro percutor de excelente calidad."
+        )
+        assert product.meta_title == "Comprar Taladro Percutor DeWalt en Resistencia | Bulonera Alvear"
+        assert "Disponible en Bulonera Alvear, Resistencia, Chaco." in product.meta_description
+        assert "Taladro percutor" in product.meta_description
+
+    def test_product_image_alt_fallback_uses_name(self, category):
+        """Verifica que si image_alt está vacío, use el nombre del producto."""
+        product = Product.objects.create(
+            code='PROD-ALT-001',
+            name='Sierra Circular Bosch',
+            slug='sierra-circular-bosch',
+            price=200000.0,
+            stock=5,
+            category=category
+        )
+        assert product.image_alt == 'Sierra Circular Bosch'
+        
+        # Verificar que respeta el valor si se proporciona explícitamente
+        product2 = Product.objects.create(
+            code='PROD-ALT-002',
+            name='Sierra Caladora',
+            slug='sierra-caladora',
+            price=150000.0,
+            stock=5,
+            category=category,
+            image_alt='Imagen de sierra caladora profesional'
+        )
+        assert product2.image_alt == 'Imagen de sierra caladora profesional'
 
 @pytest.mark.django_db
 class TestReviewRatingModel:
