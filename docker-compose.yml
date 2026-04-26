@@ -53,7 +53,7 @@ services:
     image: redis:7-alpine
     container_name: bulonera_web_redis
     ports:
-      - "6379:6379"
+      - "6382:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
@@ -120,7 +120,7 @@ services:
     container_name: bulonera_web_flower
     command: celery flower --broker=redis://bulonera_web_redis:6379/0 --port=5555 --basic_auth=admin:flower123
     ports:
-      - "5555:5555"
+      - "5557:5555"
     environment:
       CELERY_BROKER_URL: redis://bulonera_web_redis:6379/0
       CELERY_RESULT_BACKEND: redis://bulonera_web_redis:6379/1

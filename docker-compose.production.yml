@@ -3,7 +3,7 @@ services:
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Redis (caché y broker de Celery)
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  redis:
+  bulonera_web_redis:
     image: redis:7-alpine
     container_name: bulonera_web_redis
     restart: always
@@ -43,7 +43,7 @@ services:
       - ${BULONERA_SHARED_MEDIA_PATH:-/var/www/shared/media}:/app/media
       - ${BULONERA_LOG_PATH:-/var/www/bulonera/logs}:/app/logs
     depends_on:
-      redis:
+      bulonera_web_redis:
         condition: service_started
     restart: unless-stopped
     healthcheck:
@@ -109,7 +109,7 @@ services:
     ports:
       - "127.0.0.1:5556:5555" # Only expose to localhost
     depends_on:
-      - redis
+      - bulonera_web_redis
       - bulonera_web_celery_worker
     command: >
       celery --broker=${CELERY_BROKER_URL} flower
