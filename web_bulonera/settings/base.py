@@ -210,6 +210,8 @@ WHATSAPP_NUMBER = env('WHATSAPP_NUMBER')
 # Site URL y Meta Pixel (configurados por entorno en local.py/production.py)
 SITE_URL = env('SITE_URL')
 META_PIXEL_ID = env('META_PIXEL_ID', default='')
+GOOGLE_MAPS_EMBED_KEY = env('GOOGLE_MAPS_EMBED_KEY', default='')
+GOOGLE_PLACE_ID = env('GOOGLE_PLACE_ID', default='')
 # META_PIXEL_ENABLED y EMAIL_* configurados en local.py/production.py/test.py
 
 # IndexNow API Key for Bing notifications (FASE 1.4 — Auditoría SEO)

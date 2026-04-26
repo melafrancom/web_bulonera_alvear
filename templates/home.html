@@ -59,6 +59,9 @@
             {% elif section.section_type == 'banner_triple' %}
                 {% include 'includes/home/_banner_triple.html' %}
 
+            {% elif section.section_type == 'google_reviews' %}
+                {% include 'includes/home/_google_reviews.html' %}
+
             {% elif section.section_type == 'how_to_buy' %}
                 {% include 'includes/home/_how_to_buy.html' %}
             {% endif %}

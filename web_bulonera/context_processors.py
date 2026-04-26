@@ -15,6 +15,8 @@ def meta_settings(request):
         'EMAIL_TO_SEND_MESSAGES': getattr(settings, 'EMAIL_TO_SEND_MESSAGES', ''),
         'INDEXNOW_API_KEY': getattr(settings, 'INDEXNOW_API_KEY', ''),
         'DEBUG': settings.DEBUG,
+        'GOOGLE_MAPS_EMBED_KEY': getattr(settings, 'GOOGLE_MAPS_EMBED_KEY', ''),
+        'GOOGLE_PLACE_ID': getattr(settings, 'GOOGLE_PLACE_ID', ''),
     }
 def site_theme(request):
     """

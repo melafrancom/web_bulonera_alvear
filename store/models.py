@@ -670,6 +670,7 @@ class HomeSection(models.Model):
         ('banner_triple', 'Banner Triple (3 imágenes en fila)'),
         ('categories_featured', 'Grid de Categorías Destacadas'),
         ('categories_carousel', 'Carrusel de Categorías'),
+        ('google_reviews', 'Reseñas de Google (Widget Embed)'),
         ('how_to_buy', 'Sección Cómo Comprar'),
     ]
 
