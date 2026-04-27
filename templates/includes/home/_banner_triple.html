@@ -3,7 +3,7 @@
 <!-- Banner Triple Section - 3 banners en fila -->
 <section class="py-6 md:py-8 dark:bg-slate-900">
     <div class="container mx-auto px-4">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
             {% for banner in data.banners|slice:":3" %}
             <a href="{{ banner.get_link_url|default:'#' }}"
                {% if banner.open_new_tab %}target="_blank" rel="noopener"{% endif %}
@@ -53,22 +53,22 @@
                         {% endif %}
                         <img src="{{ banner.image_desktop_asset.file.url }}"
                              alt="{{ banner.alt_text }}"
-                             class="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-300 min-h-[280px] sm:min-h-[240px] md:min-h-[240px] lg:min-h-[280px]"
+                             class="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-300 min-h-[120px] sm:min-h-[140px] md:min-h-[200px] lg:min-h-[240px]"
                              loading="lazy">
                     {% elif banner.image_desktop %}
                         <img src="{{ banner.image_desktop.url }}"
                              alt="{{ banner.alt_text }}"
-                             class="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-300 min-h-[280px] sm:min-h-[240px] md:min-h-[240px] lg:min-h-[280px]"
+                             class="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-300 min-h-[120px] sm:min-h-[140px] md:min-h-[200px] lg:min-h-[240px]"
                              loading="lazy">
                     {% else %}
-                        <div class="w-full min-h-[280px] sm:min-h-[240px] md:min-h-[240px] lg:min-h-[280px] bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                        <div class="w-full min-h-[120px] sm:min-h-[140px] md:min-h-[200px] lg:min-h-[240px] bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
                             <span class="text-slate-500 dark:text-slate-400 text-xs">Sin imagen</span>
                         </div>
                     {% endif %}
                 </picture>
             </a>
             {% empty %}
-            <div class="bg-slate-200 dark:bg-slate-800 rounded-lg min-h-[280px] sm:min-h-[240px] md:min-h-[240px] lg:min-h-[280px] flex items-center justify-center border border-slate-300 dark:border-slate-700">
+            <div class="bg-slate-200 dark:bg-slate-800 rounded-lg min-h-[120px] sm:min-h-[140px] md:min-h-[200px] lg:min-h-[240px] flex items-center justify-center border border-slate-300 dark:border-slate-700">
                 <span class="text-slate-600 dark:text-slate-300 text-sm">Sin banner</span>
             </div>
             {% endfor %}
