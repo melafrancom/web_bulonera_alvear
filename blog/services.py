@@ -179,3 +179,37 @@ class BlogService:
         post.save()
         logger.info(f"Post {post.id} publicado. Fecha: {post.published_date}")
         return post
+
+    @staticmethod
+    def get_featured_products(post: Post, limit: int = 4) -> QuerySet:
+        """
+        Obtiene productos destacados para mostrar en el sidebar del blog.
+        Estrategia: busca productos por tags del post, fallback a más vendidos.
+
+        Args:
+            post: Post actual para buscar productos relacionados.
+            limit: Número máximo de productos a retornar.
+
+        Returns:
+            QuerySet de Product (de la app store).
+        """
+        from store.models import Product
+
+        # Buscar por keywords del post en nombre de producto
+        keywords = post.meta_keywords.split(',') if post.meta_keywords else []
+        keywords = [k.strip() for k in keywords if k.strip()]
+
+        if keywords:
+            q = Q()
+            for kw in keywords[:3]:  # Limitar a 3 keywords
+                q |= Q(name__icontains=kw)
+            products = Product.objects.filter(
+                q, is_available=True
+            ).order_by('-modified_date')[:limit]
+            if products.exists():
+                return products
+
+        # Fallback: productos más populares
+        return Product.objects.filter(
+            is_available=True
+        ).order_by('-modified_date')[:limit]

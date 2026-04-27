@@ -79,6 +79,9 @@ urlpatterns = [
     # PWA - Manifest (debe servirse desde la raíz con MIME correcto)
     path('manifest.json', serve, {'document_root': settings.STATIC_ROOT, 'path': 'images/manifest.json'}, name='manifest'),
     
+    # CKEditor uploader
+    path('ckeditor/', include('ckeditor_uploader.urls')),
+    
     # URLs para sitemaps y robots.txt
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path("robots.txt", views.robots_txt),

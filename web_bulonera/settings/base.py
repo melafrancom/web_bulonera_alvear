@@ -58,6 +58,8 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'django_redis',
     'django_filters',
+    'ckeditor',
+    'ckeditor_uploader',
     
     # LOCAL_APPS
     'web_bulonera',
@@ -322,4 +324,31 @@ SPECTACULAR_SETTINGS = {
         {'url': 'http://localhost:8002', 'description': 'Local'},
         {'url': 'https://buloneraalvear.online', 'description': 'Production'},
     ],
+}
+
+# ============================================================
+# CKEDITOR CONFIGURATION
+# ============================================================
+CKEDITOR_UPLOAD_PATH = 'blog/uploads/'
+CKEDITOR_IMAGE_BACKEND = 'pillow'
+CKEDITOR_RESTRICT_BY_USER = True
+
+CKEDITOR_CONFIGS = {
+    'blog': {
+        'toolbar': 'Custom',
+        'toolbar_Custom': [
+            ['Bold', 'Italic', 'Underline', 'Strike'],
+            ['Format', 'Styles'],
+            ['NumberedList', 'BulletedList', 'Blockquote'],
+            ['Link', 'Unlink'],
+            ['Image', 'Table', 'HorizontalRule'],
+            ['RemoveFormat', 'Source'],
+            ['Undo', 'Redo'],
+        ],
+        'height': 400,
+        'width': '100%',
+        'removePlugins': 'elementspath',
+        'extraAllowedContent': 'div(*); span(*); p(*); h2(*); h3(*); section(*)',
+        'format_tags': 'p;h2;h3;h4;pre',
+    },
 } 

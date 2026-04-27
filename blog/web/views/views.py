@@ -46,7 +46,8 @@ class BlogDetailView(DetailView):
         return post
     
     def get_context_data(self, **kwargs):
-        """Agrega posts relacionados al contexto"""
+        """Agrega posts relacionados y productos destacados al contexto"""
         ctx = super().get_context_data(**kwargs)
         ctx['related_posts'] = BlogService.get_related_posts(self.object, limit=3)
+        ctx['featured_products'] = BlogService.get_featured_products(self.object, limit=4)
         return ctx

@@ -128,9 +128,23 @@
     </header>
 
     <!-- Main Content (Prose Styling) -->
-    <div class="prose dark:prose-invert max-w-none mb-12">
+    <div class="
+      prose prose-lg dark:prose-invert
+      prose-headings:scroll-mt-20
+      prose-h2:text-primary-800 dark:prose-h2:text-blue-300
+      prose-a:text-primary-600 dark:prose-a:text-blue-400
+      prose-blockquote:border-l-accent-400
+      prose-img:rounded-xl prose-img:shadow-lg
+      max-w-none mb-12
+    " id="post-content">
       {{ post.content|safe }}
     </div>
+
+    <!-- CTA WhatsApp -->
+    {% include 'blog/includes/_cta_whatsapp.html' %}
+
+    <!-- Productos Destacados -->
+    {% include 'blog/includes/_sidebar_products.html' %}
 
     <!-- Social Metadata / Embed -->
     {% if post.social_metadata %}
@@ -210,5 +224,24 @@
   </section>
   {% endif %}
 </main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const article = document.getElementById('post-content');
+    if (!article) return;
+
+    const headings = article.querySelectorAll('h2, h3');
+    if (headings.length < 2) return;
+
+    // Generar IDs automáticos si no existen
+    headings.forEach((h, i) => {
+      if (!h.id) {
+        h.id = `section-${i}`;
+      }
+    });
+  });
+</script>
 {% endblock %}
 

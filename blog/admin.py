@@ -1,6 +1,7 @@
 """Blog Admin - Django admin configuration"""
 from django.contrib import admin
 from django.utils import timezone
+from ckeditor.widgets import CKEditorWidget
 from blog.models import Post, SocialMetadata, PostTag
 
 
@@ -73,6 +74,12 @@ class PostAdmin(admin.ModelAdmin):
         if not change:  # Si es nueva creación
             obj.author = request.user
         super().save_model(request, obj, form, change)
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        """Usar CKEditorWidget para el campo content"""
+        if db_field.name == 'content':
+            kwargs['widget'] = CKEditorWidget(config_name='blog')
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
 
 @admin.register(PostTag)

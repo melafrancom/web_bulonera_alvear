@@ -17,6 +17,9 @@ bulonera.sock
 .env.*
 !.env.example
 
+# Node
+node_modules/
+
 # Venv
 venv/
 env/

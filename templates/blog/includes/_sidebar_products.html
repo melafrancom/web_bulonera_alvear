@@ -1,0 +1,32 @@
+<!-- Blog Sidebar — Featured Products -->
+{% if featured_products %}
+<aside class="mt-12 p-6 bg-gray-50 dark:bg-slate-900 rounded-2xl border dark:border-slate-800">
+  <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+    <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+    </svg>
+    Productos Relacionados
+  </h3>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    {% for product in featured_products %}
+    <a href="{{ product.get_absolute_url }}"
+       class="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl hover:shadow-md transition group">
+      {% if product.image %}
+      <img src="{{ product.image.url }}" alt="{{ product.image_alt }}"
+           class="w-16 h-16 object-cover rounded-lg" loading="lazy" width="64" height="64">
+      {% endif %}
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-gray-900 dark:text-white truncate group-hover:text-primary-600 transition">
+          {{ product.name }}
+        </p>
+        {% if product.price %}
+        <p class="text-sm text-accent-600 dark:text-accent-400 font-bold">
+          ${{ product.price|floatformat:0 }}
+        </p>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</aside>
+{% endif %}
