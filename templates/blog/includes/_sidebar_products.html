@@ -7,7 +7,7 @@
     </svg>
     Productos Relacionados
   </h3>
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <div class="grid grid-cols-1 gap-4">
     {% for product in featured_products %}
     <a href="{{ product.get_absolute_url }}"
        class="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl hover:shadow-md transition group">
