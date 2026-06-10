@@ -155,9 +155,8 @@
             {% for category in links %}
             <a href="{% url 'store:products_by_category' category.slug %}" 
                class="flex flex-col items-center group">
-                <div class="relative w-20 h-20 md:w-24 md:h-24">
-                    <div class="w-full h-full dark:from-primary-900/30 dark:to-primary-800/30 group-hover:from-primary-200 group-hover:to-primary-300 dark:group-hover:from-primary-800/40 dark:group-hover:to-primary-700/40 transition-all duration-300 flex items-center justify-center" 
-                         style="clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);">
+                <div class="relative w-10 h-10 md:w-12 md:h-12">
+                    <div class="w-full h-full dark:from-primary-900/30 dark:to-primary-800/30 group-hover:from-primary-200 group-hover:to-primary-300 dark:group-hover:from-primary-800/40 dark:group-hover:to-primary-700/40 transition-all duration-300 flex items-center justify-center" >
                         {% if category.image or category.cat_image %}
                         <img src="{{ category.image_url }}" 
                              alt="{{ category.category_name }}" 

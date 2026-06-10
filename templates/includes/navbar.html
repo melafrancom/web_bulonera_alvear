@@ -25,12 +25,12 @@
                 <div class="flex items-center gap-6 text-slate-600 dark:text-slate-400">
                     <a href="{% url 'location' %}" class="flex items-center gap-2 hover:text-primary-600 transition-colors">
                         <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-                        <span>Resistencia, Chaco, Argentina</span>
+                        <span>Av. Alvear 1301, Resistencia, Chaco, Argentina</span>
                     </a>
                     <span class="text-slate-300 dark:text-slate-600">|</span>
-                    <a href="tel:{{ WHATSAPP_NUMBER }}" class="flex items-center gap-2 hover:text-primary-600 transition-colors">
-                        <i data-lucide="phone" class="w-3.5 h-3.5"></i>
-                        <span>{{ WHATSAPP_NUMBER }}</span>
+                    <a href="{% url 'nosotros' %}" class="flex items-center gap-2 hover:text-primary-600 transition-colors">
+                        <i data-lucide="info" class="w-3.5 h-3.5"></i>
+                        <span>Sobre Nosotros</span>
                     </a>
                 </div>
                 
