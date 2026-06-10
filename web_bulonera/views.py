@@ -61,6 +61,15 @@ def history(request):
     template_name = 'others/history.html'
     return render(request, template_name)
 
+def nosotros(request):
+    """Landing page 'Quiénes Somos' con catálogo rápido, USPs y specs técnicas."""
+    from category.models import Category
+    categories = Category.objects.all().order_by('category_name')
+    context = {
+        'categories': categories,
+    }
+    return render(request, 'others/nosotros.html', context)
+
 def offline(request):
     """Vista para la página offline de la PWA"""
     template_name = 'others/offline.html'
@@ -147,6 +156,7 @@ def llms_txt(request):
         f"- [Contacto]({SITE_URL}/contact/): Formulario de contacto y datos de la empresa",
         f"- [Ubicación]({SITE_URL}/location/): Mapa y dirección física",
         f"- [Historia]({SITE_URL}/history/): Historia de la empresa",
+        f"- [Nosotros]({SITE_URL}/nosotros/): Quiénes somos, catálogo, materiales y normas",
         f"- [Política de devolución]({SITE_URL}/return-policy/): Condiciones de devolución",
         f"- [Términos y condiciones]({SITE_URL}/terms-and-conditions/): Términos legales",
         "",

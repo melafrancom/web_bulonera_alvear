@@ -71,6 +71,7 @@ urlpatterns = [
     path('privacy-and-warranty/', views.privacyAndwarranty, name='privacy_and_warranty'),
     path('location/', views.location, name='location'),
     path('history/', views.history, name='history'),
+    path('nosotros/', views.nosotros, name='nosotros'),
     path('offline/', views.offline, name='offline'),
     
     # PWA - Service Worker (debe servirse desde la raíz, no /static/)

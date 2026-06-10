@@ -1,0 +1,488 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Bulonera Alvear — Ferretería Industrial y Bulonería en Resistencia, Chaco{% endblock %}
+{% block meta_description %}Más de 33 años de trayectoria en bulonería y ferretería industrial. Stock permanente, asesoramiento técnico y envíos a todo el país. Av. Alvear 1301, Resistencia, Chaco.{% endblock %}
+
+{% block meta %}
+    <meta property="og:title" content="Bulonera Alvear — Ferretería Industrial y Bulonería en Resistencia, Chaco">
+    <meta property="og:description" content="Más de 33 años de trayectoria en bulonería y ferretería industrial. Stock permanente, asesoramiento técnico y envíos a todo el país.">
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo-bulonera-alvear.png' %}">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Bulonera Alvear — Ferretería Industrial y Bulonería">
+    <meta name="twitter:description" content="Más de 33 años en bulonería y ferretería industrial en Resistencia, Chaco. Envíos a todo el país.">
+{% endblock %}
+
+{% block head_extra %}
+<!-- JSON-LD AboutPage Schema -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": "Quiénes Somos — Bulonera Alvear",
+    "description": "Más de 33 años de trayectoria en bulonería y ferretería industrial en Resistencia, Chaco.",
+    "url": "{{ request.build_absolute_uri }}",
+    "mainEntity": {
+        "@type": "HardwareStore",
+        "name": "Bulonera Alvear",
+        "url": "https://buloneraalvear.online"
+    }
+}
+</script>
+<!-- JSON-LD BreadcrumbList -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Inicio",
+            "item": "{{ request.scheme }}://{{ request.get_host }}/"
+        },
+        {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Nosotros",
+            "item": "{{ request.build_absolute_uri }}"
+        }
+    ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<div class="bg-soft-bg dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+  <div class="container mx-auto px-4 py-3">
+    <nav class="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
+      <a href="{% url 'home' %}" class="text-slate-600 dark:text-slate-400 hover:text-[#1B3A5C] dark:hover:text-[#9ac1f0] transition-colors">
+        <i data-lucide="home" class="w-4 h-4"></i>
+      </a>
+      <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+      <span class="text-slate-900 dark:text-white font-medium">Nosotros</span>
+    </nav>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 1: HERO                                -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="relative bg-gradient-to-br from-[#1B3A5C] via-[#1B3A5C] to-[#0f2540] py-16 md:py-24 overflow-hidden">
+  <!-- Subtle pattern overlay -->
+  <div class="absolute inset-0 opacity-[0.04]" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23ffffff&quot; fill-opacity=&quot;1&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+  
+  <div class="container mx-auto px-4 relative z-10">
+    <div class="max-w-4xl">
+      <h1 class="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-wide text-white leading-tight mb-6">
+        Bulonera Alvear — Especialistas en Bulonería y Ferretería Industrial en Resistencia, Chaco
+      </h1>
+      <p class="text-lg md:text-xl text-[#9ac1f0] leading-relaxed max-w-3xl">
+        Más de 33 años proveyendo tornillos, bulones, herramientas y materiales de ferretería a constructoras, talleres y familias de todo el Chaco y Argentina.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-4">
+        <a href="https://wa.me/543624733431?text=Hola%2C%20quiero%20consultar%20sobre%20productos"
+           target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+           id="hero-cta-whatsapp">
+          <i data-lucide="message-circle" class="w-5 h-5"></i>
+          Consultanos por WhatsApp
+        </a>
+        <a href="{% url 'store:store' %}"
+           class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-6 py-3 rounded-lg border border-white/20 transition-colors"
+           id="hero-cta-catalogo">
+          <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+          Ver Catálogo en la tienda
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 2: QUIÉNES SOMOS (Narrativa)           -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="py-12 md:py-16 bg-white dark:bg-slate-900">
+  <div class="container mx-auto px-4">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-2xl md:text-3xl font-semibold tracking-wide text-slate-900 dark:text-white mb-8">
+        Quiénes Somos
+      </h2>
+      <div class="space-y-5 text-slate-700 dark:text-slate-300 leading-relaxed text-base md:text-lg">
+        <p>
+          No somos una ferretería generalista: somos especialistas en bulonería y fijaciones industriales, con un catálogo que abarca desde tornillos estándar hasta soluciones específicas para proyectos de construcción, metalmecánica y agro. Esa especialización nos permite asesorar técnicamente a cada cliente, recomendar el producto correcto para cada aplicación y mantener stock permanente de las líneas más demandadas. También podemos hacer fabricar la medida que necesites.
+        </p>
+        <p>
+          Nuestros clientes incluyen constructoras, talleres metalúrgicos, electricistas, carpinteros metálicos, cooperativas agrícolas y familias que encaran proyectos de construcción o reparación. Cada uno encuentra en Bulonera Alvear no solo un proveedor, sino un socio que entiende las exigencias de su trabajo y se compromete con plazos y calidad.
+        </p>
+        <p>
+          Desde nuestro local en <strong>Av. Alvear 1301, Resistencia</strong>, atendemos de lunes a viernes de 8:00 a 20:00 y sábados de 8:00 a 13:00. Realizamos envíos a todo el país.
+        </p>
+        <p>
+          Para conocer un poco más de nuestra historia, visita:
+          <a href="{% url 'history' %}" class="text-[#1B3A5C] dark:text-[#9ac1f0] underline hover:no-underline"> Historia de Bulonera Alvear</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 3: CATÁLOGO RÁPIDO (Links a categorías)-->
+<!-- ═══════════════════════════════════════════════ -->
+{% if categories %}
+<section class="py-12 md:py-16 bg-slate-50 dark:bg-slate-800/50">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-10">
+      <h2 class="text-2xl md:text-3xl font-semibold tracking-wide text-slate-900 dark:text-white mb-3">
+        Nuestro Catálogo
+      </h2>
+      <p class="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+        Disponemos de una línea completa de bulonería, tornillería, herramientas y materiales de ferretería. Si no encontrás lo que necesitás, <a href="https://wa.me/543624733431" target="_blank" rel="noopener noreferrer" class="text-[#1B3A5C] dark:text-[#9ac1f0] underline hover:no-underline">consultanos</a>.
+      </p>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      {% for cat in categories %}
+      <a href="{% url 'store:products_by_category' cat.slug %}"
+         class="group bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 text-center hover:border-[#4A6FA5] dark:hover:border-[#9ac1f0] hover:shadow-md transition-all"
+         id="cat-link-{{ cat.slug }}">
+        {% if cat.cat_image %}
+        <img src="{{ cat.cat_image.url }}" 
+             alt="{{ cat.category_name }}" 
+             class="w-12 h-12 mx-auto mb-3 object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+             loading="lazy" width="48" height="48">
+        {% else %}
+        <div class="w-12 h-12 mx-auto mb-3 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
+          <i data-lucide="package" class="w-6 h-6 text-slate-400"></i>
+        </div>
+        {% endif %}
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#1B3A5C] dark:group-hover:text-white transition-colors">
+          {{ cat.category_name }}
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 4: POR QUÉ ELEGIRNOS (6 USPs)         -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="py-12 md:py-16 bg-white dark:bg-slate-900">
+  <div class="container mx-auto px-4">
+    <h2 class="text-2xl md:text-3xl font-semibold tracking-wide text-slate-900 dark:text-white mb-10 text-center">
+      Por Qué Trabajar con Bulonera Alvear
+    </h2>
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+
+      <!-- USP 1 -->
+      <div class="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div class="w-12 h-12 bg-[#1B3A5C] rounded-lg flex items-center justify-center mb-4">
+          <i data-lucide="wrench" class="w-6 h-6 text-white"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">33+ Años de Trayectoria</h3>
+        <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+          Más de tres décadas en el rubro nos dan un conocimiento profundo del mercado de fijaciones y ferretería: sabemos qué producto funciona para cada aplicación y qué calidad resiste cada ambiente de trabajo.
+        </p>
+      </div>
+
+      <!-- USP 2 -->
+      <div class="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div class="w-12 h-12 bg-[#1B3A5C] rounded-lg flex items-center justify-center mb-4">
+          <i data-lucide="package-check" class="w-6 h-6 text-white"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Stock Real y Disponibilidad</h3>
+        <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+          Mantenemos inventario permanente de las líneas más solicitadas. Trabajamos con proveedores nacionales para garantizar reposición rápida y cumplir con los plazos que cada obra exige.
+        </p>
+      </div>
+
+      <!-- USP 3 -->
+      <div class="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div class="w-12 h-12 bg-[#1B3A5C] rounded-lg flex items-center justify-center mb-4">
+          <i data-lucide="users" class="w-6 h-6 text-white"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Asesoramiento Técnico sin Costo</h3>
+        <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+          Antes de vender, escuchamos. Analizamos el proyecto, la aplicación y las condiciones de trabajo para recomendar la solución correcta. Esa consulta evita errores costosos y reemplazos prematuros.
+        </p>
+      </div>
+
+      <!-- USP 4 -->
+      <div class="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div class="w-12 h-12 bg-[#1B3A5C] rounded-lg flex items-center justify-center mb-4">
+          <i data-lucide="shield-check" class="w-6 h-6 text-white"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Calidad Certificada</h3>
+        <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+          Trabajamos con proveedores que garantizan trazabilidad y cumplimiento de normas DIN, ISO, ANSI y ASTM. Cada producto en nuestro catálogo está respaldado por la calidad que un proyecto serio demanda.
+        </p>
+      </div>
+
+      <!-- USP 5 -->
+      <div class="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div class="w-12 h-12 bg-[#1B3A5C] rounded-lg flex items-center justify-center mb-4">
+          <i data-lucide="truck" class="w-6 h-6 text-white"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Envíos a Todo el País</h3>
+        <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+          Desde Resistencia coordinamos despachos a todo el Chaco y al interior de Argentina. Trabajamos con transportes de carga y logística express según urgencia y volumen.
+        </p>
+      </div>
+
+      <!-- USP 6 -->
+      <div class="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div class="w-12 h-12 bg-[#1B3A5C] rounded-lg flex items-center justify-center mb-4">
+          <i data-lucide="map-pin" class="w-6 h-6 text-white"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Local Propio en Resistencia</h3>
+        <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+          Ubicados en Av. Alvear 1301, con atención presencial de lunes a viernes 8–20hs y sábados 8–13hs. Vení, consultá y llevate lo que necesitás con asesoramiento cara a cara.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 5: CTA INTERMEDIO                      -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="py-10 bg-[#1B3A5C]">
+  <div class="container mx-auto px-4 text-center">
+    <p class="text-lg md:text-xl text-white font-medium mb-6">
+      ¿Necesitás cotizar bulonería o ferretería para tu proyecto? Consultanos sin compromiso:
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="https://wa.me/543624733431?text=Hola%2C%20necesito%20cotizar%20productos"
+         target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+         id="mid-cta-whatsapp">
+        <i data-lucide="message-circle" class="w-5 h-5"></i>
+        WhatsApp
+      </a>
+      <a href="{% url 'contact:contact' %}"
+         class="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#1B3A5C] font-semibold px-6 py-3 rounded-lg transition-colors"
+         id="mid-cta-presupuesto">
+        <i data-lucide="mail" class="w-5 h-5"></i>
+        Solicitar Presupuesto
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 6: SECTORES QUE ATENDEMOS              -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="py-12 md:py-16 bg-white dark:bg-slate-900">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-10">
+      <h2 class="text-2xl md:text-3xl font-semibold tracking-wide text-slate-900 dark:text-white mb-3">
+        Sectores que Abastecemos
+      </h2>
+      <p class="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+        Nuestra experiencia abarca un amplio espectro de industrias, cada una con requerimientos específicos en materiales, normas y tratamientos superficiales.
+      </p>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+
+      <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+        <i data-lucide="building-2" class="w-5 h-5 text-[#4A6FA5] flex-shrink-0"></i>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Construcción y Obras</span>
+      </div>
+
+      <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+        <i data-lucide="cog" class="w-5 h-5 text-[#4A6FA5] flex-shrink-0"></i>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Metalmecánica</span>
+      </div>
+
+      <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+        <i data-lucide="tractor" class="w-5 h-5 text-[#4A6FA5] flex-shrink-0"></i>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Agro e Implementos</span>
+      </div>
+
+      <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+        <i data-lucide="car" class="w-5 h-5 text-[#4A6FA5] flex-shrink-0"></i>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Industria Automotriz</span>
+      </div>
+
+      <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+        <i data-lucide="ruler" class="w-5 h-5 text-[#4A6FA5] flex-shrink-0"></i>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Carpintería Metálica</span>
+      </div>
+
+      <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+        <i data-lucide="settings" class="w-5 h-5 text-[#4A6FA5] flex-shrink-0"></i>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Mantenimiento Industrial</span>
+      </div>
+
+      <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+        <i data-lucide="zap" class="w-5 h-5 text-[#4A6FA5] flex-shrink-0"></i>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Instalaciones Eléctricas</span>
+      </div>
+
+      <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+        <i data-lucide="layers" class="w-5 h-5 text-[#4A6FA5] flex-shrink-0"></i>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Construcción en Seco</span>
+      </div>
+
+      <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+        <i data-lucide="home" class="w-5 h-5 text-[#4A6FA5] flex-shrink-0"></i>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Estructuras Metálicas</span>
+      </div>
+
+      <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+        <i data-lucide="droplets" class="w-5 h-5 text-[#4A6FA5] flex-shrink-0"></i>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Plomería y Sanitarios</span>
+      </div>
+
+      <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+        <i data-lucide="hammer" class="w-5 h-5 text-[#4A6FA5] flex-shrink-0"></i>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Talleres y Herrería</span>
+      </div>
+
+      <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+        <i data-lucide="warehouse" class="w-5 h-5 text-[#4A6FA5] flex-shrink-0"></i>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Industria Alimentaria</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 7: MATERIALES Y NORMAS                 -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="py-12 md:py-16 bg-slate-50 dark:bg-slate-800/50">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-10">
+      <h2 class="text-2xl md:text-3xl font-semibold tracking-wide text-slate-900 dark:text-white mb-3">
+        Materiales y Normas con los que Trabajamos
+      </h2>
+      <p class="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+        La selección del material y la norma correcta es tan importante como elegir el tipo de fijación. Asesoramos a cada cliente en función de las condiciones de servicio: temperatura, ambiente corrosivo, cargas dinámicas y requerimientos de torque.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+
+      <!-- Materiales -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 bg-[#1B3A5C]/10 dark:bg-[#4A6FA5]/20 rounded-lg flex items-center justify-center">
+            <i data-lucide="atom" class="w-5 h-5 text-[#1B3A5C] dark:text-[#9ac1f0]"></i>
+          </div>
+          <h3 class="font-semibold text-slate-900 dark:text-white">Materiales Disponibles</h3>
+        </div>
+        <ul class="space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
+          <li>Acero SAE 1008/1010, 1026, 1038/1040, 4140</li>
+          <li>Acero inoxidable AISI 304 (A2-70)</li>
+          <li>Acero inoxidable AISI 316 (A4-80)</li>
+          <li>Bronce y latón</li>
+          <li>Aluminio</li>
+          <li>Nylon 6.6 y polipropileno</li>
+        </ul>
+      </div>
+
+      <!-- Tratamientos -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 bg-[#1B3A5C]/10 dark:bg-[#4A6FA5]/20 rounded-lg flex items-center justify-center">
+            <i data-lucide="flask-conical" class="w-5 h-5 text-[#1B3A5C] dark:text-[#9ac1f0]"></i>
+          </div>
+          <h3 class="font-semibold text-slate-900 dark:text-white">Tratamientos Superficiales</h3>
+        </div>
+        <ul class="space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
+          <li>Zincado electrolítico (bicromatizado)</li>
+          <li>Galvanizado por inmersión en caliente</li>
+          <li>Dacromet</li>
+          <li>Zinc-Níquel</li>
+          <li>Dorrltech</li>
+          <li>Zinc laminar</li>
+        </ul>
+      </div>
+
+      <!-- Normas -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 bg-[#1B3A5C]/10 dark:bg-[#4A6FA5]/20 rounded-lg flex items-center justify-center">
+            <i data-lucide="file-check" class="w-5 h-5 text-[#1B3A5C] dark:text-[#9ac1f0]"></i>
+          </div>
+          <h3 class="font-semibold text-slate-900 dark:text-white">Normas que Manejamos</h3>
+        </div>
+        <ul class="space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
+          <li><strong>DIN</strong> — Deutsche Institut für Normung</li>
+          <li><strong>ISO</strong> — International Organization for Standardization</li>
+          <li><strong>ANSI</strong> — American National Standards Institute</li>
+          <li><strong>ASTM</strong> — American Society for Testing and Materials</li>
+        </ul>
+      </div>
+
+      <!-- Grados y Resistencia -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 bg-[#1B3A5C]/10 dark:bg-[#4A6FA5]/20 rounded-lg flex items-center justify-center">
+            <i data-lucide="gauge" class="w-5 h-5 text-[#1B3A5C] dark:text-[#9ac1f0]"></i>
+          </div>
+          <h3 class="font-semibold text-slate-900 dark:text-white">Grados y Clases de Resistencia</h3>
+        </div>
+        <ul class="space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
+          <li>Acero carbono: <strong>G2 / G5 / G8</strong> (rosca pulgada)</li>
+          <li>Acero carbono: <strong>8.8 / 10.9 / 12.9</strong> (rosca métrica)</li>
+          <li>Estructural: <strong>ASTM A325 / A490</strong></li>
+          <li>Alta temperatura: <strong>ASTM A193 B7 / A194 2H</strong></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 8: CTA FINAL                           -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="py-12 md:py-16 bg-gradient-to-br from-[#1B3A5C] to-[#0f2540]">
+  <div class="container mx-auto px-4 text-center">
+    <h2 class="text-2xl md:text-3xl font-semibold tracking-wide text-white mb-4">
+      ¿Necesitás un Proveedor de Bulonería y Ferretería Confiable?
+    </h2>
+    <p class="text-[#9ac1f0] text-lg max-w-2xl mx-auto mb-8">
+      Si estás evaluando proveedores, necesitás cotizar un volumen específico o tenés una consulta técnica, nuestro equipo está disponible para asesorarte sin compromiso. Visitanos en nuestro local o contactanos:
+    </p>
+    <div class="flex flex-wrap justify-center gap-4 mb-8">
+      <a href="https://wa.me/543624733431?text=Hola%2C%20quiero%20consultar%20precios%20y%20stock"
+         target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3.5 rounded-lg transition-colors text-lg"
+         id="final-cta-whatsapp">
+        <i data-lucide="message-circle" class="w-5 h-5"></i>
+        WhatsApp
+      </a>
+      <a href="{% url 'contact:contact' %}"
+         class="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#1B3A5C] font-semibold px-8 py-3.5 rounded-lg transition-colors text-lg"
+         id="final-cta-presupuesto">
+        <i data-lucide="mail" class="w-5 h-5"></i>
+        Solicitar Presupuesto
+      </a>
+    </div>
+    <div class="flex flex-wrap justify-center gap-6 text-sm text-slate-300">
+      <span class="inline-flex items-center gap-2">
+        <i data-lucide="map-pin" class="w-4 h-4"></i>
+        Av. Alvear 1301, Resistencia, Chaco
+      </span>
+      <span class="inline-flex items-center gap-2">
+        <i data-lucide="clock" class="w-4 h-4"></i>
+        Lun–Vie 8:00–20:00 · Sáb 8:00–13:00
+      </span>
+      <a href="tel:+543624733431" class="inline-flex items-center gap-2 hover:text-white transition-colors">
+        <i data-lucide="phone" class="w-4 h-4"></i>
+        +54 362 4733431
+      </a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
