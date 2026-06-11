@@ -5,14 +5,72 @@
 {% block title %}Nuestra Historia | Bulonera Alvear{% endblock %}
 {% block meta_description %}Más de 33 años de trayectoria en Resistencia, Chaco. Conoce la historia, misión y visión de Bulonera Alvear.{% endblock %}
 
+{% block meta %}
+    <meta property="og:title" content="Nuestra Historia | Bulonera Alvear">
+    <meta property="og:description" content="Más de 33 años de trayectoria en Resistencia, Chaco. Conoce la historia, misión y visión de Bulonera Alvear.">
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo-bulonera-alvear.png' %}">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Nuestra Historia | Bulonera Alvear">
+    <meta name="twitter:description" content="Más de 33 años de trayectoria en Resistencia, Chaco. Conoce la historia, misión y visión de Bulonera Alvear.">
+{% endblock %}
+
+{% block head_extra %}
+<!-- JSON-LD AboutPage / History Schema -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": "Nuestra Historia — Bulonera Alvear",
+    "description": "Más de 33 años de trayectoria en Resistencia, Chaco. Conoce la historia, misión y visión de Bulonera Alvear.",
+    "url": "{{ request.build_absolute_uri }}",
+    "mainEntity": {
+        "@type": "HardwareStore",
+        "name": "Bulonera Alvear",
+        "url": "https://buloneraalvear.online"
+    }
+}
+</script>
+<!-- JSON-LD BreadcrumbList -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Inicio",
+            "item": "{{ request.scheme }}://{{ request.get_host }}/"
+        },
+        {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Nosotros",
+            "item": "{{ request.scheme }}://{{ request.get_host }}/nosotros/"
+        },
+        {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Historia",
+            "item": "{{ request.build_absolute_uri }}"
+        }
+    ]
+}
+</script>
+{% endblock %}
+
 {% block content %}
 
 <!-- Breadcrumb -->
 <div class="bg-soft-bg dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
   <div class="container mx-auto px-4 py-3">
-    <nav class="flex items-center gap-2 text-sm">
-      <a href="{% url 'home' %}" class="text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+    <nav class="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
+      <a href="{% url 'home' %}" class="text-slate-600 dark:text-slate-400 hover:text-[#1B3A5C] dark:hover:text-[#9ac1f0] transition-colors">
         <i data-lucide="home" class="w-4 h-4"></i>
+      </a>
+      <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+      <a href="{% url 'nosotros' %}" class="text-slate-600 dark:text-slate-400 hover:text-[#1B3A5C] dark:hover:text-[#9ac1f0] transition-colors">
+        Nosotros
       </a>
       <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
       <span class="text-slate-900 dark:text-white font-medium">Historia</span>
@@ -20,48 +78,66 @@
   </div>
 </div>
 
+<!-- Header Section (Hero) -->
+<section class="relative bg-gradient-to-br from-[#1B3A5C] via-[#1B3A5C] to-[#0f2540] py-12 md:py-16 overflow-hidden">
+  <!-- Subtle pattern overlay -->
+  <div class="absolute inset-0 opacity-[0.04]" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23ffffff&quot; fill-opacity=&quot;1&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+  
+  <div class="container mx-auto px-4 relative z-10 text-center md:text-left">
+    <div class="max-w-4xl">
+      <span class="text-sm font-semibold tracking-wider text-[#9ac1f0] uppercase mb-2 block">Trayectoria y Valores</span>
+      <h1 class="text-3xl md:text-4xl font-semibold tracking-wide text-white leading-tight">
+        Nuestra Historia, Misión y Visión
+      </h1>
+      <p class="mt-4 text-base md:text-lg text-[#E2ECF6]/90 leading-relaxed max-w-2xl">
+        Conocé el camino que recorrimos a lo largo de más de tres décadas y los principios que guían nuestro compromiso diario con el desarrollo de la región.
+      </p>
+    </div>
+  </div>
+</section>
+
 <!-- Main Content -->
-<section class="py-8 md:py-12 bg-white dark:bg-slate-900">
+<section class="py-12 md:py-16 bg-white dark:bg-slate-900">
   <div class="container mx-auto px-4">
-    <div class="grid lg:grid-cols-3 gap-8">
+    <div class="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
       
       <!-- Info Column -->
       <div class="lg:col-span-2 space-y-8">
         
         <!-- Historia -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 md:p-8">
-          <div class="flex items-start gap-4 mb-4">
-            <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-              <img src="{% static 'images/vision.png' %}" alt="Historia" class="w-10 h-10 object-contain">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-[#E2ECF6] dark:border-slate-700 p-6 md:p-8 hover:shadow-md transition-shadow">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-12 h-12 bg-[#1B3A5C]/10 dark:bg-[#9ac1f0]/10 text-[#1B3A5C] dark:text-[#9ac1f0] rounded-lg flex items-center justify-center flex-shrink-0">
+              <i data-lucide="history" class="w-6 h-6"></i>
             </div>
             <div>
-              <h1 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Historia</h1>
+              <h2 class="text-2xl font-semibold text-slate-900 dark:text-white">Historia</h2>
             </div>
           </div>
-          <div class="prose dark:prose-invert max-w-none">
-            <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+          <div class="space-y-4 text-slate-700 dark:text-slate-300 leading-relaxed">
+            <p>
               Hace más de tres décadas que Bulonera Alvear forma parte del desarrollo y crecimiento de la ciudad de Resistencia y la región.
             </p>
-            <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+            <p>
               Fundada en sus inicios por Marta Krugger, una empresaria visionaria y comprometida, la empresa fue tomando forma como referente en la provisión de bulonería y ferretería. En 2007, la conducción pasó a manos de Miguel Ángel Mela, quien había sido durante años su colaborador de confianza.
             </p>
-            <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+            <p>
               Desde entonces, continuamos con el mismo espíritu de servicio, acompañando a clientes, emprendedores, industrias y familias en la concreción de proyectos de todo tipo: desde la construcción de un hogar hasta el desarrollo de grandes obras.
             </p>
-            <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+            <p>
               Hoy, después de 33 años de trayectoria, nos enorgullece seguir siendo un aliado estratégico para quienes buscan productos confiables, atención cercana y compromiso real con sus necesidades.
             </p>
           </div>
         </div>
         
         <!-- Misión -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 md:p-8">
-          <div class="flex items-start gap-4 mb-4">
-            <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-              <img src="{% static 'images/mision.png' %}" alt="Misión" class="w-10 h-10 object-contain">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-[#E2ECF6] dark:border-slate-700 p-6 md:p-8 hover:shadow-md transition-shadow">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-12 h-12 bg-[#1B3A5C]/10 dark:bg-[#9ac1f0]/10 text-[#1B3A5C] dark:text-[#9ac1f0] rounded-lg flex items-center justify-center flex-shrink-0">
+              <i data-lucide="target" class="w-6 h-6"></i>
             </div>
             <div>
-              <h2 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Misión</h2>
+              <h2 class="text-2xl font-semibold text-slate-900 dark:text-white">Misión</h2>
             </div>
           </div>
           <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -71,13 +147,13 @@
         </div>
         
         <!-- Visión -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 md:p-8">
-          <div class="flex items-start gap-4 mb-4">
-            <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-              <img src="{% static 'images/objetivos.png' %}" alt="Visión" class="w-10 h-10 object-contain">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-[#E2ECF6] dark:border-slate-700 p-6 md:p-8 hover:shadow-md transition-shadow">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-12 h-12 bg-[#1B3A5C]/10 dark:bg-[#9ac1f0]/10 text-[#1B3A5C] dark:text-[#9ac1f0] rounded-lg flex items-center justify-center flex-shrink-0">
+              <i data-lucide="eye" class="w-6 h-6"></i>
             </div>
             <div>
-              <h2 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Visión</h2>
+              <h2 class="text-2xl font-semibold text-slate-900 dark:text-white">Visión</h2>
             </div>
           </div>
           <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -88,14 +164,47 @@
         
       </div>
       
-      <!-- Logo Column -->
-      <div class="lg:col-span-1">
-        <div class="bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 rounded-xl shadow-sm border border-primary-200 dark:border-primary-800 p-8 sticky top-24">
+      <!-- Logo / Info Sidebar Column -->
+      <div class="lg:col-span-1 space-y-6">
+        <!-- Sticky Card -->
+        <div class="bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 p-6 md:p-8 sticky top-24 space-y-6">
           <div class="flex flex-col items-center text-center">
-            <img src="{% static 'images/logo02.png' %}" alt="Bulonera Alvear Logo" class="w-full max-w-xs mb-6">
-            <p class="text-lg font-semibold text-primary-900 dark:text-primary-100 italic">
-              Construyendo el futuro, tornillo a tornillo.
+            <div class="p-4 bg-[#1B3A5C] rounded-xl shadow-sm border border-[#1B3A5C] dark:border-slate-700 mb-6 w-full flex justify-center">
+              <img src="{% static 'images/logo02.png' %}" alt="Bulonera Alvear Logo" class="w-full max-w-[200px]" loading="lazy">
+            </div>
+            <p class="text-base font-medium text-slate-700 dark:text-slate-300 italic mb-2">
+              "Construyendo el futuro, tornillo a tornillo."
             </p>
+          </div>
+          
+          <hr class="border-slate-200 dark:border-slate-700">
+          
+          <!-- Contact / Info details -->
+          <div class="space-y-4 text-sm">
+            <h3 class="font-semibold text-slate-900 dark:text-white uppercase tracking-wider text-xs">Datos del Local</h3>
+            <div class="flex items-start gap-3">
+              <i data-lucide="map-pin" class="w-4 h-4 text-[#4A6FA5] flex-shrink-0 mt-0.5"></i>
+              <span class="text-slate-600 dark:text-slate-400">Av. Alvear 1301, Resistencia, Chaco</span>
+            </div>
+            <div class="flex items-start gap-3">
+              <i data-lucide="clock" class="w-4 h-4 text-[#4A6FA5] flex-shrink-0 mt-0.5"></i>
+              <span class="text-slate-600 dark:text-slate-400">Lun–Vie 8:00–20:00<br>Sáb 8:00–13:00</span>
+            </div>
+            <div class="flex items-start gap-3">
+              <i data-lucide="phone" class="w-4 h-4 text-[#4A6FA5] flex-shrink-0 mt-0.5"></i>
+              <a href="tel:+543624733431" class="text-slate-600 dark:text-slate-400 hover:text-[#1B3A5C] dark:hover:text-[#9ac1f0] transition-colors">
+                +54 362 4733431
+              </a>
+            </div>
+          </div>
+          
+          <hr class="border-slate-200 dark:border-slate-700">
+          
+          <div>
+            <a href="{% url 'nosotros' %}" class="flex items-center justify-center gap-2 w-full bg-[#1B3A5C] hover:bg-[#4A6FA5] text-white font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm" id="sidebar-cta-nosotros">
+              <i data-lucide="info" class="w-4 h-4"></i>
+              Ver Quiénes Somos
+            </a>
           </div>
         </div>
       </div>
@@ -104,5 +213,31 @@
   </div>
 </section>
 
-{% endblock %}
+<!-- Bottom CTA Band -->
+<section class="py-12 md:py-16 bg-gradient-to-br from-[#1B3A5C] to-[#0f2540]">
+  <div class="container mx-auto px-4 text-center">
+    <h2 class="text-2xl md:text-3xl font-semibold tracking-wide text-white mb-4">
+      ¿Necesitás asesoramiento o cotización?
+    </h2>
+    <p class="text-[#9ac1f0] text-lg max-w-2xl mx-auto mb-8">
+      Ponte en contacto con nuestro equipo de atención comercial hoy mismo. Te responderemos a la brevedad.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="https://wa.me/543624733431?text=Hola%2C%20necesito%20hacer%20una%20consulta"
+         target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3.5 rounded-lg transition-colors text-lg"
+         id="history-cta-whatsapp">
+        <i data-lucide="message-circle" class="w-5 h-5"></i>
+        Consultar por WhatsApp
+      </a>
+      <a href="{% url 'contact:contact' %}"
+         class="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#1B3A5C] font-semibold px-8 py-3.5 rounded-lg transition-colors text-lg"
+         id="history-cta-contacto">
+        <i data-lucide="mail" class="w-5 h-5"></i>
+        Escribinos un Mensaje
+      </a>
+    </div>
+  </div>
+</section>
 
+{% endblock %}
