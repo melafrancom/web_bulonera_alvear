@@ -9,16 +9,16 @@ class SiteTheme(models.Model):
     name = models.CharField(max_length=50, default="Default")
 
     # Color Primario (botones, navbar, links)
-    primary_50  = models.CharField(max_length=7, default='#EFF6FF')
-    primary_100 = models.CharField(max_length=7, default='#DBEAFE')
-    primary_200 = models.CharField(max_length=7, default='#BFDBFE')
-    primary_300 = models.CharField(max_length=7, default='#93C5FD')
-    primary_400 = models.CharField(max_length=7, default='#60A5FA')
-    primary_500 = models.CharField(max_length=7, default='#3B82F6')
-    primary_600 = models.CharField(max_length=7, default='#2563EB')  # ← botones
-    primary_700 = models.CharField(max_length=7, default='#1D4ED8')  # ← hover
-    primary_800 = models.CharField(max_length=7, default='#1E40AF')  # ← DEFAULT
-    primary_900 = models.CharField(max_length=7, default='#1E3A8A')  # ← navbar
+    primary_50  = models.CharField(max_length=7, default='#E2ECF6')  # Gris Nieve Azulado
+    primary_100 = models.CharField(max_length=7, default='#C5D9ED')
+    primary_200 = models.CharField(max_length=7, default='#9AC1F0')  # Celeste Pastel
+    primary_300 = models.CharField(max_length=7, default='#7BAEE0')
+    primary_400 = models.CharField(max_length=7, default='#5B95D0')
+    primary_500 = models.CharField(max_length=7, default='#4A6FA5')  # Acero Claro
+    primary_600 = models.CharField(max_length=7, default='#3A5F8F')
+    primary_700 = models.CharField(max_length=7, default='#2A4F79')
+    primary_800 = models.CharField(max_length=7, default='#1B3A5C')  # Azul Marino BA (DEFAULT)
+    primary_900 = models.CharField(max_length=7, default='#122840')
 
     # Color Acento (estrellas, badges de oferta)
     accent_400  = models.CharField(max_length=7, default='#FBBF24')
@@ -37,8 +37,8 @@ class SiteTheme(models.Model):
     topbar_text    = models.CharField(max_length=7, default='#475569', verbose_name="Topbar — Texto")
 
     # ---------- SUBTITLE BAR ----------
-    subbar_from    = models.CharField(max_length=7, default='#1D4ED8', verbose_name="Barra de Título — Color inicial")
-    subbar_to      = models.CharField(max_length=7, default='#1E3A8A', verbose_name="Barra de Título — Color final")
+    subbar_from    = models.CharField(max_length=7, default='#1B3A5C', verbose_name="Barra de Título — Color inicial")
+    subbar_to      = models.CharField(max_length=7, default='#122840', verbose_name="Barra de Título — Color final")
     subbar_opacity = models.PositiveSmallIntegerField(default=100, verbose_name="Barra de Título — Opacidad (%)")
 
     # ---------- FOOTER ----------

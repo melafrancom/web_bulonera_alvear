@@ -58,8 +58,8 @@
         <div class="flex gap-2 overflow-x-auto pb-2">
             <template x-for="(img, idx) in images" :key="idx">
                 <button @click="showImage(idx)" 
-                        :class="current === idx ? 'ring-2 ring-blue-600 dark:ring-blue-500' : 'ring-1 ring-slate-200 dark:ring-slate-700'"
-                        class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden transition-all duration-200 hover:ring-2 hover:ring-blue-400">
+                        :class="current === idx ? 'ring-2 ring-primary-600 dark:ring-primary-400' : 'ring-1 ring-slate-200 dark:ring-slate-700'"
+                        class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden transition-all duration-200 hover:ring-2 hover:ring-primary-400">
                     <picture>
                         <source :srcset="img.thumb" type="image/webp">
                         <img :src="img.img" 

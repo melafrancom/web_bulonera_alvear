@@ -36,7 +36,7 @@
                 <a href="{{ product.get_url }}"
                    class="group flex-shrink-0 snap-start
                           w-[42%] sm:w-[30%] md:w-[23%] lg:w-[22%]">
-                    <div class="bg-white dark:bg-slate-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all h-full flex flex-col border-0 dark:border dark:border-slate-700">
+                    <div class="bg-white dark:bg-slate-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all h-full flex flex-col border-0 dark:border dark:border-slate-700">
                         
                         <!-- Product Image -->
                         <div class="aspect-square relative overflow-hidden bg-slate-100 dark:bg-slate-700">
@@ -44,7 +44,7 @@
                             <picture>
                                 <source srcset="{{ product.webp_image_url }}" type="image/webp">
                                 <img src="{{ product.image_url }}" alt="{{ product.name }}" 
-                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                     loading="lazy">
                             </picture>
                             {% else %}
@@ -54,7 +54,7 @@
                             
                             <!-- Badge: On Sale -->
                             {% if product.is_on_sale %}
-                            <div class="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">
+                            <div class="absolute top-2 right-2 bg-[#D42B1E] text-white px-2 py-1 rounded text-xs font-bold">
                                 -{{ product.discount_percentage }}%
                             </div>
                             {% endif %}
@@ -72,7 +72,7 @@
                                 <span class="text-xs line-through text-slate-500">
                                     ${{ product.price|floatformat:0 }}
                                 </span>
-                                <span class="text-base md:text-lg font-bold text-red-600">
+                                <span class="text-base md:text-lg font-bold text-[#D42B1E]">
                                     ${{ product.sale_price|floatformat:0 }}
                                 </span>
                                 {% else %}
@@ -124,15 +124,17 @@
             <!-- Navigation Buttons (Desktop Only) -->
             {% if data.products %}
             <button @click="prev()" 
+                    aria-label="Productos anteriores"
                     class="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 p-2 md:p-3 
-                           bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl rounded-full 
+                           bg-white dark:bg-slate-800 shadow-md hover:shadow-lg rounded-full 
                            text-slate-900 dark:text-white transition-all z-10 hidden md:flex items-center justify-center
                            hover:bg-slate-50 dark:hover:bg-slate-700">
                 <i data-lucide="chevron-left" class="w-5 h-5 md:w-6 md:h-6"></i>
             </button>
             <button @click="next()" 
+                    aria-label="Productos siguientes"
                     class="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 p-2 md:p-3 
-                           bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl rounded-full 
+                           bg-white dark:bg-slate-800 shadow-md hover:shadow-lg rounded-full 
                            text-slate-900 dark:text-white transition-all z-10 hidden md:flex items-center justify-center
                            hover:bg-slate-50 dark:hover:bg-slate-700">
                 <i data-lucide="chevron-right" class="w-5 h-5 md:w-6 md:h-6"></i>

@@ -7,7 +7,7 @@
 <!--   cta_wa_text → label botón WhatsApp       -->
 <!--   cta_btn_text → label botón Presupuesto  -->
 <!-- ═══════════════════════════════════════════ -->
-<section class="py-10 bg-[#1B3A5C]">
+<section class="py-10 bg-[#1B3A5C] dark:bg-slate-900 border-y border-white/5 dark:border-slate-800">
   <div class="container mx-auto px-4 text-center">
     <p class="text-lg md:text-xl text-white font-medium mb-6">
       {% if cta_text %}{{ cta_text }}{% else %}¿Necesitás cotizar bulonería o ferretería para tu proyecto? Consultanos sin compromiso:{% endif %}
@@ -15,13 +15,13 @@
     <div class="flex flex-wrap justify-center gap-4">
       <a href="https://wa.me/543624733431?text=Hola%2C%20necesito%20cotizar%20productos"
          target="_blank" rel="noopener noreferrer"
-         class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+         class="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20BD5C] text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg"
          id="cta-band-whatsapp">
         <i data-lucide="message-circle" class="w-5 h-5"></i>
         {% if cta_wa_text %}{{ cta_wa_text }}{% else %}WhatsApp{% endif %}
       </a>
       <a href="{% url 'contact:contact' %}"
-         class="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#1B3A5C] font-semibold px-6 py-3 rounded-lg transition-colors"
+         class="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#1B3A5C] font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 dark:border dark:border-slate-700"
          id="cta-band-presupuesto">
         <i data-lucide="mail" class="w-5 h-5"></i>
         {% if cta_btn_text %}{{ cta_btn_text }}{% else %}Solicitar Presupuesto{% endif %}

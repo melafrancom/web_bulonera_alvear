@@ -53,12 +53,12 @@ Note: Requires parent template to load: static, custom_filters, store_filters, h
         }
     }
 }" 
-class="bg-white dark:bg-slate-800 rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden group">
+class="bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden group">
     
     <!-- Product Image -->
     <a href="{{ product.get_url }}" class="block relative aspect-square overflow-hidden bg-slate-100 dark:bg-slate-700">
         {% if product.discount_percentage %}
-        <span class="absolute top-2 right-2 z-10 px-2 py-1 text-xs font-bold text-white bg-accent-500 rounded-full">
+        <span class="absolute top-2 right-2 z-10 px-2 py-1 text-xs font-bold text-white bg-[#D42B1E] rounded-full">
             -{{ product.discount_percentage }}%
         </span>
         {% endif %}
@@ -68,7 +68,7 @@ class="bg-white dark:bg-slate-800 rounded-xl shadow-md hover:shadow-xl transitio
             <source srcset="{{ product.webp_image_url }}" type="image/webp">
             <img src="{{ product.image_url }}" 
                  alt="{{ product.name }}{% if product.brand %} - {{ product.brand }}{% endif %}{% if product.material %} {{ product.material }}{% endif %}"
-                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                  loading="lazy"
                  width="300"
                  height="300">
@@ -76,7 +76,7 @@ class="bg-white dark:bg-slate-800 rounded-xl shadow-md hover:shadow-xl transitio
         {% else %}
         <img src="{% static 'images/placeholder.png' %}" 
              alt="sin imagen"
-             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
              loading="lazy"
              width="300"
              height="300">
@@ -95,7 +95,7 @@ class="bg-white dark:bg-slate-800 rounded-xl shadow-md hover:shadow-xl transitio
         <div class="mb-3">
             {% if product.sale_price %}
             <div class="flex items-center gap-2">
-                <span class="text-lg md:text-xl font-bold text-green-600 dark:text-green-400">
+                <span class="text-lg md:text-xl font-bold text-[#D42B1E]">
                     {{ product.sale_price|argentina_currency }}
                 </span>
                 <span class="text-sm text-slate-400 line-through">
@@ -129,19 +129,21 @@ class="bg-white dark:bg-slate-800 rounded-xl shadow-md hover:shadow-xl transitio
         <div class="flex items-center gap-2 mb-3">
             <button @click="decrease()" 
                     type="button"
-                    class="flex items-center justify-center w-8 h-8 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors">
-                <i data-lucide="minus" class="w-4 h-4"></i>
+                    aria-label="Disminuir cantidad"
+                    class="flex items-center justify-center w-11 h-11 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors">
+                <i data-lucide="minus" class="w-5 h-5"></i>
             </button>
             <input x-model.number="qty" 
                    type="number" 
                    :max="max"
                    min="1"
                    @change="qty = Math.max(1, Math.min(parseInt($event.target.value) || 1, max))"
-                   class="w-16 text-center text-sm font-medium text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                   class="w-16 h-11 text-center text-sm font-medium text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
             <button @click="increase()" 
                     type="button"
-                    class="flex items-center justify-center w-8 h-8 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors">
-                <i data-lucide="plus" class="w-4 h-4"></i>
+                    aria-label="Aumentar cantidad"
+                    class="flex items-center justify-center w-11 h-11 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors">
+                <i data-lucide="plus" class="w-5 h-5"></i>
             </button>
         </div>
         
@@ -149,7 +151,7 @@ class="bg-white dark:bg-slate-800 rounded-xl shadow-md hover:shadow-xl transitio
         <button @click="addToCart()" 
                 :disabled="adding"
                 type="button"
-                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-primary-800 hover:bg-primary-500 dark:bg-primary-700 dark:hover:bg-primary-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             <template x-if="!adding">
                 <i data-lucide="shopping-cart" class="w-4 h-4"></i>
             </template>

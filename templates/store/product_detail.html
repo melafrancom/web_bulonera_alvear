@@ -143,7 +143,7 @@
             <!-- Sidebar: Promociones -->
             <aside class="lg:col-span-2">
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden sticky top-4">
-                    <div class="bg-blue-600 dark:bg-blue-700 text-white px-4 py-3">
+                    <div class="bg-primary-800 dark:bg-primary-700 text-white px-4 py-3">
                         <h3 class="font-semibold text-sm flex items-center gap-2">
                             <i data-lucide="tag" class="w-4 h-4"></i>
                             Promociones
@@ -152,7 +152,7 @@
                     <div class="p-3 space-y-3 max-h-[600px] overflow-y-auto">
                         {% for product in sale_products %}
                         <a href="{{ product.get_url }}" class="block group">
-                            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-2 transition-all duration-200 hover:shadow-md hover:scale-105">
+                            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-2 transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
                                 <div class="relative aspect-square mb-2 bg-white dark:bg-slate-800 rounded overflow-hidden">
                                     <img src="{{ product.image_url }}" 
                                          alt="{{ product.name }}"
@@ -247,7 +247,7 @@
                                 {% csrf_token %}
                                 
                                 <!-- Product Name -->
-                                <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                                <h1 class="text-3xl font-heading font-semibold tracking-wide text-slate-900 dark:text-white mb-2">
                                     {{ single_product.name }}
                                 </h1>
                                 
@@ -343,7 +343,7 @@
                                     
                                     <!-- Add to Cart Button -->
                                     <button type="submit" 
-                                            class="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6">
+                                            class="w-full bg-primary-800 hover:bg-primary-500 dark:bg-primary-700 dark:hover:bg-primary-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6">
                                         <i data-lucide="shopping-cart" class="w-5 h-5"></i>
                                         <span>Agregar al Carrito</span>
                                     </button>
@@ -374,14 +374,14 @@
                                         <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                                             Dimensiones disponibles:
                                         </h4>
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {% if dimensions.diameters %}
                                             <div>
                                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                                     Diámetro:
                                                 </label>
-                                                <select x-model="diameter" 
-                                                        class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                <select x-model="diameter" @change="applyDimensions()"
+                                                        class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                                                     {% for diameter in dimensions.diameters %}
                                                     <option value="{{ diameter }}">{{ diameter }}</option>
                                                     {% endfor %}
@@ -394,8 +394,8 @@
                                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                                     Largo:
                                                 </label>
-                                                <select x-model="length" 
-                                                        class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                <select x-model="length" @change="applyDimensions()"
+                                                        class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                                                     {% for length in dimensions.lengths %}
                                                     <option value="{{ length }}">{{ length }}</option>
                                                     {% endfor %}
@@ -403,10 +403,6 @@
                                             </div>
                                             {% endif %}
                                         </div>
-                                        <button type="button" @click="applyDimensions()" 
-                                                class="w-full bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
-                                            Aplicar Dimensiones
-                                        </button>
                                     </div>
                                     {% endif %}
                                 {% endif %}
@@ -417,7 +413,7 @@
 
                 <!-- Technical Specifications -->
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mt-6">
-                    <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-4 pb-3 border-b border-slate-200 dark:border-slate-700">
+                    <h3 class="text-2xl font-heading font-semibold tracking-wide text-slate-900 dark:text-white mb-4 pb-3 border-b border-slate-200 dark:border-slate-700">
                         Características Técnicas
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
@@ -500,7 +496,7 @@
                 <!-- Description -->
                 {% if single_product.description %}
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mt-6">
-                    <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-4 pb-3 border-b border-slate-200 dark:border-slate-700">
+                    <h3 class="text-2xl font-heading font-semibold tracking-wide text-slate-900 dark:text-white mb-4 pb-3 border-b border-slate-200 dark:border-slate-700">
                         Descripción
                     </h3>
                     <div class="text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-line">
@@ -512,13 +508,14 @@
                 <!-- FAQs -->
                 {% if product_faqs %}
                 <div x-data="{ openFaq: 0 }" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mt-6">
-                    <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+                    <h3 class="text-2xl font-heading font-semibold tracking-wide text-slate-900 dark:text-white mb-4">
                         Preguntas Frecuentes sobre este producto
                     </h3>
                     <div class="space-y-3">
                         {% for faq in product_faqs %}
                         <div class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
                             <button @click="openFaq = openFaq === {{ forloop.counter0 }} ? null : {{ forloop.counter0 }}" 
+                                    :aria-expanded="openFaq === {{ forloop.counter0 }} ? 'true' : 'false'"
                                     class="w-full px-4 py-3 text-left bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center justify-between">
                                 <span class="font-semibold text-slate-900 dark:text-white">{{ faq.question }}</span>
                                 <i data-lucide="chevron-down" 
@@ -538,7 +535,7 @@
 
                 <!-- Reviews Section -->
                 <div x-data="{ rating: 0, hover: 0 }" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mt-6">
-                    <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">
+                    <h3 class="text-2xl font-heading font-semibold tracking-wide text-slate-900 dark:text-white mb-6">
                         Escribe tu reseña o comentario
                     </h3>
                     
@@ -572,7 +569,7 @@
                                 Título del comentario:
                             </label>
                             <input type="text" name="subject" 
-                                   class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                    required>
                         </div>
                         
@@ -582,7 +579,7 @@
                                 Comentario:
                             </label>
                             <textarea name="review" rows="4" 
-                                      class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                      class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                       placeholder="Escribe aquí tu reseña"
                                       required></textarea>
                         </div>
@@ -591,7 +588,7 @@
                         {% if user.is_authenticated %}
                             {% if orderproduct %}
                                 <button type="submit" 
-                                        class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200">
+                                        class="bg-primary-800 hover:bg-primary-500 dark:bg-primary-700 dark:hover:bg-primary-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200">
                                     Enviar reseña
                                 </button>
                             {% else %}
@@ -603,10 +600,10 @@
                                 </div>
                             {% endif %}
                         {% else %}
-                            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                                <p class="text-blue-700 dark:text-blue-400">
+                            <div class="bg-primary-50 dark:bg-primary-950/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4">
+                                <p class="text-primary-700 dark:text-primary-400">
                                     Para enviar un comentario debes estar registrado. 
-                                    <a href="{% url 'account:login' %}" class="font-semibold underline hover:text-blue-800 dark:hover:text-blue-300">
+                                    <a href="{% url 'account:login' %}" class="font-semibold underline hover:text-primary-800 dark:hover:text-primary-300">
                                         Inicia Sesión
                                     </a>
                                 </p>
@@ -620,7 +617,7 @@
                 <!-- Reviews List -->
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mt-6">
                     <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-2xl font-bold text-slate-900 dark:text-white">
+                        <h3 class="text-2xl font-heading font-semibold tracking-wide text-slate-900 dark:text-white">
                             Reseñas de compradores verificados
                         </h3>
                         <div class="flex items-center gap-2">

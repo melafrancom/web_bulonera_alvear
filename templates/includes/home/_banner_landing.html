@@ -6,7 +6,7 @@
         {% for banner in data.banners|slice:":1" %}
         <a href="{{ banner.get_link_url|default:'#' }}"
            {% if banner.open_new_tab %}target="_blank" rel="noopener"{% endif %}
-           class="block rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group">
+           class="block rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all group">
             <picture>
                 {# ── MOBILE < 640px (portrait) ── #}
                 {% if banner.image_mobile_asset %}

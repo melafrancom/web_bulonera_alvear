@@ -7,6 +7,9 @@
     @open-modal.window="if ($event.detail === 'mediosPagoModal') open = true"
     x-show="open" 
     x-cloak
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="medios-pago-title"
     class="fixed inset-0 z-50 overflow-y-auto"
     style="display: none;">
     <!-- Backdrop -->
@@ -21,12 +24,12 @@
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
-            class="relative bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl shadow-2xl max-w-md w-full p-6 text-white">
+            class="relative bg-gradient-to-br from-primary-800 to-primary-900 dark:from-slate-800 dark:to-slate-900 rounded-xl shadow-lg max-w-md w-full p-6 text-white border border-white/10">
             
             <!-- Header -->
             <div class="flex items-center justify-between mb-6">
-                <h5 class="text-2xl font-bold">MEDIOS DE PAGO</h5>
-                <button @click="open = false" class="p-1 hover:bg-white/10 rounded-lg transition-colors">
+                <h5 id="medios-pago-title" class="text-2xl font-bold">MEDIOS DE PAGO</h5>
+                <button @click="open = false" aria-label="Cerrar modal" class="p-1 hover:bg-white/10 rounded-lg transition-colors">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
@@ -42,21 +45,21 @@
             <div class="space-y-3 mb-6">
                 <div class="flex items-center gap-3 p-4 bg-white/10 hover:bg-white/20 rounded-lg transition-colors cursor-pointer">
                     <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                        <i data-lucide="banknote" class="w-6 h-6 text-indigo-600"></i>
+                        <i data-lucide="banknote" class="w-6 h-6 text-primary-800"></i>
                     </div>
                     <span class="text-lg font-semibold">Efectivo</span>
                 </div>
                 
                 <div class="flex items-center gap-3 p-4 bg-white/10 hover:bg-white/20 rounded-lg transition-colors cursor-pointer">
                     <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                        <i data-lucide="arrow-left-right" class="w-6 h-6 text-indigo-600"></i>
+                        <i data-lucide="arrow-left-right" class="w-6 h-6 text-primary-800"></i>
                     </div>
                     <span class="text-lg font-semibold">Transferencia</span>
                 </div>
                 
                 <div class="flex items-center gap-3 p-4 bg-white/10 hover:bg-white/20 rounded-lg transition-colors cursor-pointer">
                     <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                        <i data-lucide="credit-card" class="w-6 h-6 text-indigo-600"></i>
+                        <i data-lucide="credit-card" class="w-6 h-6 text-primary-800"></i>
                     </div>
                     <span class="text-lg font-semibold">Débito/crédito</span>
                 </div>
@@ -75,6 +78,9 @@
     @open-modal.window="if ($event.detail === 'enviosModal') open = true"
     x-show="open" 
     x-cloak
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="envios-title"
     class="fixed inset-0 z-50 overflow-y-auto"
     style="display: none;">
     <!-- Backdrop -->
@@ -89,12 +95,12 @@
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
-            class="relative bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl shadow-2xl max-w-2xl w-full p-6 text-white">
+            class="relative bg-gradient-to-br from-primary-800 to-primary-900 dark:from-slate-800 dark:to-slate-900 rounded-xl shadow-lg max-w-2xl w-full p-6 text-white border border-white/10">
             
             <!-- Header -->
             <div class="flex items-center justify-between mb-6">
-                <h5 class="text-2xl font-bold">ENVÍOS</h5>
-                <button @click="open = false" class="p-1 hover:bg-white/10 rounded-lg transition-colors">
+                <h5 id="envios-title" class="text-2xl font-bold">ENVÍOS</h5>
+                <button @click="open = false" aria-label="Cerrar modal" class="p-1 hover:bg-white/10 rounded-lg transition-colors">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>

@@ -255,19 +255,19 @@
                         </h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                             {% for product in group %}
-                            <a href="{{ product.get_url }}" class="group bg-white dark:bg-slate-800 rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all">
+                            <a href="{{ product.get_url }}" class="group bg-white dark:bg-slate-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all">
                                 <div class="aspect-square relative overflow-hidden">
                                     {% if product.image or product.images %}
                                     <picture>
                                         <source srcset="{{ product.webp_image_url }}" type="image/webp">
                                         <img src="{{ product.image_url }}" alt="{{ product.name }}" 
                                             width="400" height="400"
-                                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" loading="lazy">
+                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
                                     </picture>
                                     {% else %}
                                     <img src="{% static 'images/placeholder.png' %}" alt="sin imagen" 
                                         width="400" height="400"
-                                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                                     {% endif %}
                                 </div>
                                 <div class="p-2 md:p-3">
@@ -305,14 +305,14 @@
                         </h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                             {% for product in group %}
-                            <a href="{{ product.get_url }}" class="group bg-white dark:bg-slate-800 rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all">
+                            <a href="{{ product.get_url }}" class="group bg-white dark:bg-slate-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all">
                                 <div class="aspect-square relative overflow-hidden">
                                     {% if product.images %}
                                     <picture>
                                         <source srcset="{{ product.webp_image_url }}" type="image/webp">
                                         <img src="{{ product.image_url }}" alt="{{ product.name }}" 
                                             width="400" height="400"
-                                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" loading="lazy">
+                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
                                     </picture>
                                     {% else %}
                                     <img src="{% static 'images/placeholder.png' %}" alt="sin imagen" 
@@ -339,10 +339,12 @@
             <!-- Navigation Arrows -->
             {% if carousel_count > 1 %}
             <button @click="prev()" 
+                    aria-label="Diapositiva anterior"
                     class="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-2 md:p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all z-10">
                 <i data-lucide="chevron-left" class="w-5 h-5 md:w-6 md:h-6 text-white"></i>
             </button>
             <button @click="next()" 
+                    aria-label="Diapositiva siguiente"
                     class="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-2 md:p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all z-10">
                 <i data-lucide="chevron-right" class="w-5 h-5 md:w-6 md:h-6 text-white"></i>
             </button>
@@ -351,6 +353,7 @@
             <div class="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex gap-1 md:gap-2 z-10">
                 <template x-for="i in {{ carousel_count }}" :key="i">
                     <button @click="goTo(i - 1)" 
+                            :aria-label="'Ir a la diapositiva ' + i"
                             class="w-2 h-2 rounded-full transition-all"
                             :class="currentSlide === i - 1 ? 'bg-white w-6 md:w-8' : 'bg-white/50'">
                     </button>
