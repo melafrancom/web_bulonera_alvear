@@ -700,6 +700,11 @@ class HomeSectionAdmin(admin.ModelAdmin):
         ('Configuración General', {
             'fields': ('title', 'section_type', 'position', 'is_active', 'highlight_color')
         }),
+        ('Banda CTA (solo si section_type = cta_band)', {
+            'fields': ('cta_text',),
+            'classes': ('collapse',),
+            'description': 'Texto del llamado a la acción. Si se deja vacío, se usa el campo "Título" como texto.'
+        }),
         ('Fuente de Productos (solo para carruseles)', {
             'fields': ('source_type', 'category', 'max_products'),
             'classes': ('collapse',),

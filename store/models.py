@@ -672,6 +672,7 @@ class HomeSection(models.Model):
         ('categories_carousel', 'Carrusel de Categorías'),
         ('google_reviews', 'Reseñas de Google (Widget Embed)'),
         ('how_to_buy', 'Sección Cómo Comprar'),
+        ('cta_band', 'Banda CTA (Llamada a la Acción)'),
     ]
 
     SOURCE_TYPES = [
@@ -699,6 +700,13 @@ class HomeSection(models.Model):
     position = models.PositiveSmallIntegerField(default=0,
         help_text="Orden de aparición (menor = más arriba)")
     is_active = models.BooleanField(default=True)
+    # Texto para la banda CTA (solo aplica si section_type = 'cta_band')
+    cta_text = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        help_text="Texto del llamado a la acción (solo para 'Banda CTA'). Ej: ¿Necesitás cotizar? Consultanos sin compromiso."
+    )
     # Estilo visual opcional
     highlight_color = models.CharField(max_length=30, blank=True,
         help_text="Color de fondo especial (ej: 'bg-amber-50' para ofertas). Dejar vacío = default.")

@@ -973,6 +973,9 @@ class HomeSectionService:
         elif section.section_type == 'google_reviews':
             return {'google_data': GoogleReviewsService.get_cached_reviews()}
 
+        elif section.section_type == 'cta_band':
+            return {'cta_text': section.cta_text or section.title or ''}
+
         return {}
 
     @staticmethod

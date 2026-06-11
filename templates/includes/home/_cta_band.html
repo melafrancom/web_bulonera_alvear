@@ -1,0 +1,31 @@
+{% load static %}
+<!-- ═══════════════════════════════════════════ -->
+<!-- PARTIAL: _cta_band.html                    -->
+<!-- CTA Intermedio reutilizable               -->
+<!-- Variables opcionales:                     -->
+<!--   cta_text  → texto principal              -->
+<!--   cta_wa_text → label botón WhatsApp       -->
+<!--   cta_btn_text → label botón Presupuesto  -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="py-10 bg-[#1B3A5C]">
+  <div class="container mx-auto px-4 text-center">
+    <p class="text-lg md:text-xl text-white font-medium mb-6">
+      {% if cta_text %}{{ cta_text }}{% else %}¿Necesitás cotizar bulonería o ferretería para tu proyecto? Consultanos sin compromiso:{% endif %}
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="https://wa.me/543624733431?text=Hola%2C%20necesito%20cotizar%20productos"
+         target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+         id="cta-band-whatsapp">
+        <i data-lucide="message-circle" class="w-5 h-5"></i>
+        {% if cta_wa_text %}{{ cta_wa_text }}{% else %}WhatsApp{% endif %}
+      </a>
+      <a href="{% url 'contact:contact' %}"
+         class="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#1B3A5C] font-semibold px-6 py-3 rounded-lg transition-colors"
+         id="cta-band-presupuesto">
+        <i data-lucide="mail" class="w-5 h-5"></i>
+        {% if cta_btn_text %}{{ cta_btn_text }}{% else %}Solicitar Presupuesto{% endif %}
+      </a>
+    </div>
+  </div>
+</section>

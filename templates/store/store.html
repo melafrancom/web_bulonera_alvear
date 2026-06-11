@@ -202,6 +202,11 @@
 {% endif %}
 {% endif %}
 
+<!-- CTA Intermedio — solo en página 1 del catálogo -->
+{% if not products.number or products.number == 1 %}
+{% include 'includes/home/_cta_band.html' with cta_text="¿No encontrás lo que buscás? Consultanos — tenemos más de lo que está en la web:" cta_wa_text="Consultar por WhatsApp" cta_btn_text="Pedir Presupuesto" %}
+{% endif %}
+
 <!-- Main Content: Filtros + Productos -->
 <section class="py-8 md:py-12 bg-soft-bg dark:bg-slate-900">
     <div class="container mx-auto px-4">

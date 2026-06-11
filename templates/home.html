@@ -64,10 +64,13 @@
 
             {% elif section.section_type == 'how_to_buy' %}
                 {% include 'includes/home/_how_to_buy.html' %}
+
+            {% elif section.section_type == 'cta_band' %}
+                {% include 'includes/home/_cta_band.html' with cta_text=data.cta_text %}
+
             {% endif %}
         {% endwith %}
     {% endfor %}
-
     {% include 'includes/home/_modal.html' %}
     <!-- Estilos CSS para scrollbar oculto -->
     <style>
