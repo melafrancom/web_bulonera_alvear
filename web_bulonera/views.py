@@ -188,3 +188,13 @@ def llms_txt(request):
     ])
     
     return HttpResponse("\n".join(lines), content_type="text/markdown; charset=utf-8")
+
+
+def ads_txt(request):
+    """
+    Vista que sirve el archivo ads.txt para Google AdSense.
+    """
+    publisher_id = getattr(settings, 'ADSENSE_PUBLISHER_ID', 'pub-4242043087380150')
+    line = f"google.com, {publisher_id}, DIRECT, f08c47fec0942fa0"
+    return HttpResponse(line, content_type="text/plain")
+

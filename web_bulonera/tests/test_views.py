@@ -81,3 +81,31 @@ class TestRobotsTxtView(TestCase):
         
         assert 'Llms-Txt:' in content
         assert '/llms.txt' in content
+
+
+class TestAdsTxtView(TestCase):
+    """Tests para la vista ads.txt"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_ads_txt_status_200(self):
+        """Verifica que ads.txt retorna 200."""
+        response = self.client.get('/ads.txt')
+        assert response.status_code == 200
+
+    def test_ads_txt_content_type(self):
+        """Verifica que el content-type es text/plain."""
+        response = self.client.get('/ads.txt')
+        assert 'text/plain' in response['Content-Type']
+
+    def test_ads_txt_contains_ad_records(self):
+        """Verifica que contiene los registros correctos de AdSense."""
+        response = self.client.get('/ads.txt')
+        content = response.content.decode('utf-8')
+        
+        assert 'google.com' in content
+        assert 'pub-4242043087380150' in content
+        assert 'DIRECT' in content
+        assert 'f08c47fec0942fa0' in content
+

@@ -219,6 +219,10 @@ GOOGLE_PLACE_ID = env('GOOGLE_PLACE_ID', default='')
 # IndexNow API Key for Bing notifications (FASE 1.4 — Auditoría SEO)
 INDEXNOW_API_KEY = env('INDEXNOW_API_KEY', default='')
 
+# Google AdSense
+ADSENSE_PUBLISHER_ID = env('ADSENSE_PUBLISHER_ID', default='pub-4242043087380150')
+
+
 # Logging Configuration
 from pathlib import Path
 
