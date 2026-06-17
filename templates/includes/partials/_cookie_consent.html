@@ -1,0 +1,218 @@
+{% comment %}
+Cookie Consent Banner — Cumplimiento AdSense + GDPR/LGPD
+Guarda preferencia en localStorage. Controla la carga de scripts de
+terceros (Analytics, GTM, Meta Pixel, Clarity, AdSense).
+{% endcomment %}
+
+<div x-data="cookieConsent()"
+     x-show="showBanner"
+     x-cloak
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0 translate-y-4"
+     x-transition:enter-end="opacity-100 translate-y-0"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100 translate-y-0"
+     x-transition:leave-end="opacity-0 translate-y-4"
+     class="fixed bottom-0 inset-x-0 z-[60] p-4 md:p-6"
+     role="dialog"
+     aria-label="Configuración de cookies"
+     style="display: none;">
+
+    <div class="container mx-auto max-w-4xl">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-5 md:p-6">
+
+            <!-- Header -->
+            <div class="flex items-start gap-3 mb-4">
+                <div class="flex-shrink-0 w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
+                    <i data-lucide="cookie" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-heading font-semibold text-slate-900 dark:text-white">
+                        Configuración de Cookies
+                    </h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                        Utilizamos cookies propias y de terceros para analítica, publicidad personalizada y mejorar tu experiencia de navegación. Podés aceptar todas, solo las esenciales, o configurar tus preferencias.
+                        <a href="{% url 'privacy_and_warranty' %}"
+                           class="text-primary-600 dark:text-primary-400 hover:underline font-medium">
+                            Más información
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Expandable: Cookie details -->
+            <div x-show="showDetails"
+                 x-collapse
+                 class="mb-4">
+                <div class="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-3 border border-slate-200 dark:border-slate-700">
+
+                    <!-- Essential cookies (always on) -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                                <i data-lucide="shield-check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
+                                Esenciales
+                            </p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                Necesarias para el funcionamiento del sitio (sesión, carrito, CSRF).
+                            </p>
+                        </div>
+                        <span class="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full">
+                            Siempre activas
+                        </span>
+                    </div>
+
+                    <hr class="border-slate-200 dark:border-slate-700">
+
+                    <!-- Analytics cookies -->
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                                <i data-lucide="bar-chart-3" class="w-4 h-4 text-primary-600 dark:text-primary-400"></i>
+                                Analíticas
+                            </p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                Google Analytics, Microsoft Clarity. Nos ayudan a entender cómo usás el sitio.
+                            </p>
+                        </div>
+                        <div class="relative">
+                            <input type="checkbox" x-model="preferences.analytics" class="sr-only peer">
+                            <div class="w-10 h-6 bg-slate-300 dark:bg-slate-600 peer-checked:bg-primary-600 rounded-full transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm peer-checked:translate-x-4 transition-transform"></div>
+                        </div>
+                    </label>
+
+                    <hr class="border-slate-200 dark:border-slate-700">
+
+                    <!-- Advertising cookies -->
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                                <i data-lucide="megaphone" class="w-4 h-4 text-accent-600 dark:text-accent-400"></i>
+                                Publicidad
+                            </p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                Google AdSense, Meta Pixel. Permiten mostrar anuncios relevantes.
+                            </p>
+                        </div>
+                        <div class="relative">
+                            <input type="checkbox" x-model="preferences.advertising" class="sr-only peer">
+                            <div class="w-10 h-6 bg-slate-300 dark:bg-slate-600 peer-checked:bg-primary-600 rounded-full transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm peer-checked:translate-x-4 transition-transform"></div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                <!-- Toggle details -->
+                <button @click="showDetails = !showDetails"
+                        type="button"
+                        class="order-3 sm:order-1 text-sm text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors px-4 py-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <span x-text="showDetails ? 'Ocultar detalle' : 'Configurar cookies'"></span>
+                </button>
+
+                <div class="flex-1 hidden sm:block"></div>
+
+                <!-- Reject non-essential -->
+                <button @click="rejectAll()"
+                        type="button"
+                        class="order-2 text-sm font-semibold text-slate-700 dark:text-slate-300 px-5 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors">
+                    Solo esenciales
+                </button>
+
+                <!-- Accept (all or selection if details are open) -->
+                <button @click="showDetails ? savePreferences() : acceptAll()"
+                        type="button"
+                        class="order-1 sm:order-3 text-sm font-semibold text-white px-5 py-2.5 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors">
+                    <span x-text="showDetails ? 'Guardar preferencias' : 'Aceptar todas'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function cookieConsent() {
+    return {
+        showBanner: false,
+        showDetails: false,
+        preferences: {
+            analytics: true,
+            advertising: true,
+        },
+
+        init() {
+            const stored = localStorage.getItem('ba_cookie_consent');
+            if (!stored) {
+                // First visit: show the banner
+                this.showBanner = true;
+            } else {
+                // Returning visitor: load scripts according to saved prefs
+                const prefs = JSON.parse(stored);
+                this.preferences = prefs;
+                this._activateScripts(prefs);
+            }
+        },
+
+        acceptAll() {
+            this.preferences = { analytics: true, advertising: true };
+            this._save();
+        },
+
+        rejectAll() {
+            this.preferences = { analytics: false, advertising: false };
+            this._save();
+        },
+
+        savePreferences() {
+            this._save();
+        },
+
+        _save() {
+            localStorage.setItem('ba_cookie_consent', JSON.stringify(this.preferences));
+            this.showBanner = false;
+            this._activateScripts(this.preferences);
+        },
+
+        _activateScripts(prefs) {
+            // Analytics: GA + Clarity
+            if (prefs.analytics) {
+                document.querySelectorAll('script[data-consent="analytics"]').forEach(el => {
+                    const s = document.createElement('script');
+                    if (el.dataset.src) {
+                        s.src = el.dataset.src;
+                        s.async = true;
+                    } else {
+                        s.textContent = el.textContent;
+                    }
+                    document.head.appendChild(s);
+                    el.remove();
+                });
+            }
+
+            // Advertising: AdSense + Meta Pixel
+            if (prefs.advertising) {
+                document.querySelectorAll('script[data-consent="advertising"]').forEach(el => {
+                    const s = document.createElement('script');
+                    if (el.dataset.src) {
+                        s.src = el.dataset.src;
+                        s.async = true;
+                        if (el.dataset.crossorigin) s.crossOrigin = el.dataset.crossorigin;
+                    } else {
+                        s.textContent = el.textContent;
+                    }
+                    document.head.appendChild(s);
+                    el.remove();
+                });
+            }
+
+            // Re-init Lucide icons for any new icons rendered
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+    };
+}
+</script>

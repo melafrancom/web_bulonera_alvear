@@ -58,9 +58,41 @@
     
 
     
-    <!-- Meta Pixel Base Code -->
+    <!-- ═══════════════════════════════════════════════════════
+         TRACKING SCRIPTS — Gated behind Cookie Consent
+         These use type="text/plain" so the browser ignores them.
+         The cookie consent banner JS activates them when the user accepts.
+         ═══════════════════════════════════════════════════════ -->
+
+    <!-- Google Analytics (gtag.js) — analytics consent -->
+    <script type="text/plain" data-consent="analytics" data-src="https://www.googletagmanager.com/gtag/js?id=G-23Z5V711SL"></script>
+    <script type="text/plain" data-consent="analytics">
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-23Z5V711SL');
+    </script>
+    
+    <!-- Google Tag Manager — analytics consent -->
+    <script type="text/plain" data-consent="analytics">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-PV9JS873');
+    </script>
+    
+    <!-- Microsoft Clarity — analytics consent -->
+    <script type="text/plain" data-consent="analytics">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "sn4w0req7v");
+    </script>
+
+    <!-- Meta Pixel — advertising consent -->
     {% if META_PIXEL_ENABLED %}
-    <script>
+    <script type="text/plain" data-consent="advertising">
         !function(f,b,e,v,n,t,s)
         {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
         n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -72,38 +104,18 @@
         fbq('init', '{{ META_PIXEL_ID }}');
         fbq('track', 'PageView');
     </script>
-    <noscript>
-        <img height="1" width="1" style="display:none"
-        src="https://www.facebook.com/tr?id={{ META_PIXEL_ID }}&ev=PageView&noscript=1"/>
-    </noscript>
     {% endif %}
-    
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-23Z5V711SL"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-23Z5V711SL');
+
+    <!-- Google AdSense — advertising consent -->
+    <script type="text/plain" data-consent="advertising"
+        data-src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4242043087380150"
+        data-crossorigin="anonymous">
     </script>
-    
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-PV9JS873');
-    </script>
-    
-    <!-- Clarity -->
-    <script type="text/javascript">
-        (function(c,l,a,r,i,t,y){
-            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-        })(window, document, "clarity", "script", "sn4w0req7v");
-    </script>
-    
+
+    <!-- ═══════════════════════════════════════════════════════
+         JSON-LD SCHEMAS — These are NOT tracking, always load
+         ═══════════════════════════════════════════════════════ -->
+
     <!-- JSON-LD Organization Schema (FASE 2.2 — Auditoría SEO) -->
     <script type="application/ld+json">
     {
@@ -185,19 +197,22 @@
         }
     }
     </script>
-    <!-- AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4242043087380150"
-        crossorigin="anonymous">
-    </script>
     {% block head_extra %}{% endblock %}
 </head>
 
 <body class="bg-soft-bg dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased">
-    <!-- Google Tag Manager (noscript) -->
-    <noscript>
-        <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PV9JS873"
-        height="0" width="0" style="display:none;visibility:hidden"></iframe>
-    </noscript>
+    <!-- GTM noscript: only rendered if user previously accepted analytics cookies -->
+    <script>
+        (function() {
+            var consent = localStorage.getItem('ba_cookie_consent');
+            if (consent) {
+                var prefs = JSON.parse(consent);
+                if (prefs.analytics) {
+                    document.write('<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PV9JS873" height="0" width="0" style="display:none;visibility:hidden"><\/iframe><\/noscript>');
+                }
+            }
+        })();
+    </script>
     
     <!-- Navbar -->
     {% include 'includes/navbar.html' %}
@@ -215,6 +230,9 @@
     
     <!-- PWA Install Prompt -->
     {% include 'includes/partials/_pwa_install.html' %}
+    
+    <!-- Cookie Consent Banner -->
+    {% include 'includes/partials/_cookie_consent.html' %}
     
     <!-- Initialize Lucide Icons -->
     <script>
