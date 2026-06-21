@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.safestring import mark_safe
 
 #local
-from .models import Category, SubCategory, FeaturedCategory
+from .models import Category, SubCategory, FeaturedCategory, NavbarItem
 
 class SubCategoryInline(admin.TabularInline):
     model = SubCategory
@@ -13,6 +13,7 @@ class SubCategoryInline(admin.TabularInline):
 class CategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('category_name',)}
     list_display = ('category_name', 'slug')
+    search_fields = ['category_name', 'slug']
     inlines = [SubCategoryInline]
     autocomplete_fields = ['image']
     readonly_fields = ['image_preview_method']
@@ -69,8 +70,17 @@ class FeaturedCategoryAdmin(admin.ModelAdmin):
     list_editable = ('position', 'is_active')
     list_filter = ('is_active',)
 
+class NavbarItemAdmin(admin.ModelAdmin):
+    list_display = ('label', 'item_type', 'category', 'custom_url', 'position', 'is_active')
+    list_editable = ('position', 'is_active')
+    list_filter = ('item_type', 'is_active')
+    search_fields = ('label', 'custom_url')
+    autocomplete_fields = ['category']
+
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(SubCategory, SubCategoryAdmin)
 admin.site.register(FeaturedCategory, FeaturedCategoryAdmin)
+admin.site.register(NavbarItem, NavbarItemAdmin)
+
 
 

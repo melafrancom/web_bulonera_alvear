@@ -65,6 +65,16 @@ class CategoryService:
         """
         return CategoryService.get_all_categories()
 
+    @staticmethod
+    def get_navbar_items() -> QuerySet:
+        """
+        Obtiene los items activos de la barra de navegación (Capa 3).
+        Precarga la categoría relacionada para evitar consultas N+1.
+        """
+        from .models import NavbarItem
+        return NavbarItem.objects.filter(is_active=True).select_related('category').order_by('position')
+
+
 
 class SubCategoryService:
     """Servicio para manejo de subcategorías"""

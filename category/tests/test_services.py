@@ -78,6 +78,19 @@ class TestCategoryService(TestCase):
         categories = CategoryService.get_categories_for_menu()
         self.assertEqual(categories.count(), 2)
 
+    def test_get_navbar_items(self):
+        """Test: Obtener items de navegación ordenados y activos"""
+        from category.models import NavbarItem
+        NavbarItem.objects.create(label='Item 2', item_type='custom', custom_url='/2/', position=2, is_active=True)
+        NavbarItem.objects.create(label='Item 1', item_type='custom', custom_url='/1/', position=1, is_active=True)
+        NavbarItem.objects.create(label='Item Inactivo', item_type='custom', custom_url='/3/', position=3, is_active=False)
+        
+        items = CategoryService.get_navbar_items()
+        self.assertEqual(items.count(), 2)
+        self.assertEqual(items[0].label, 'Item 1')
+        self.assertEqual(items[1].label, 'Item 2')
+
+
 
 @pytest.mark.django_db
 class TestSubCategoryService(TestCase):

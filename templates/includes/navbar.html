@@ -7,6 +7,8 @@
     darkMode: localStorage.getItem('dark-mode') === 'true',
     categoriesOpen: false,
     cartCount: {{ cart_count|default:0 }},
+    activeCategory: '{% if links %}{{ links.0.slug }}{% endif %}',
+    megaMenuOpen: false,
     
     toggleDark() {
         this.darkMode = !this.darkMode;
@@ -149,41 +151,126 @@
         ════════════════════════════════════════════════════════════ -->
     <nav class="hidden lg:block bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-800 dark:to-primary-900 backdrop-blur-lg">
         <div class="container mx-auto px-4">
-            <div class="flex items-center gap-8 py-2.5 overflow-x-auto scrollbar-hide">
-                <!-- Link a Tienda completa -->
-                <a href="{% url 'store:store' %}" class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2">
-                    <i class="w-4 h-4 inline-block mr-2" data-lucide="store"></i>
-                    Toda la Tienda
-                </a>
-                
-                <span class="text-white/30">|</span>
-                
-                <!-- Link a Blog -->
-                <a href="{% url 'blog:post_list' %}" class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2">
-                    <i class="w-4 h-4 inline-block mr-2" data-lucide="newspaper"></i>
-                    Blog
-                </a>
-                
-                <span class="text-white/30">|</span>
-                
-                <!-- Links de Categorías -->
-                {% for category in links %}
-                <a href="{{ category.get_url }}" 
-                   class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2 whitespace-nowrap">
-                    {{ category.category_name }}
-                </a>
-                {% if not forloop.last %}
-                <span class="text-white/20">•</span>
+            <div class="flex items-center gap-8 py-2.5 overflow-visible">
+                {% if navbar_items %}
+                    {% for item in navbar_items %}
+                        {% if item.item_type == 'mega_menu' %}
+                            <!-- Mega Menú Trigger -->
+                            <div class="relative flex-shrink-0"
+                                 @mouseenter="megaMenuOpen = true"
+                                 @mouseleave="megaMenuOpen = false"
+                                 @click.away="megaMenuOpen = false">
+                                 <button class="flex items-center text-white text-sm font-medium hover:text-primary-100 transition-colors py-2 whitespace-nowrap">
+                                     {% if item.icon %}
+                                     <i class="w-4 h-4 inline-block mr-2" data-lucide="{{ item.icon }}"></i>
+                                     {% else %}
+                                     <i class="w-4 h-4 inline-block mr-2" data-lucide="menu"></i>
+                                     {% endif %}
+                                     <span>{{ item.label }}</span>
+                                     <i class="w-4 h-4 ml-1 transition-transform duration-200" :class="megaMenuOpen ? 'rotate-180' : ''" data-lucide="chevron-down"></i>
+                                 </button>
+                                 
+                                 <!-- Mega-menú desplegable -->
+                                 <div x-show="megaMenuOpen"
+                                      x-transition:enter="transition ease-out duration-200"
+                                      x-transition:enter-start="opacity-0 translate-y-1"
+                                      x-transition:enter-end="opacity-100 translate-y-0"
+                                      x-transition:leave="transition ease-in duration-150"
+                                      x-transition:leave-start="opacity-100 translate-y-0"
+                                      x-transition:leave-end="opacity-0 translate-y-1"
+                                      class="absolute left-0 mt-0.5 w-[560px] bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden flex text-slate-800 dark:text-slate-100"
+                                      style="display: none;">
+                                      
+                                      <!-- Column 1: Categorías (Left) -->
+                                      <div class="w-1/2 border-r border-slate-100 dark:border-slate-800 p-4 bg-slate-50 dark:bg-slate-900/50">
+                                          <h4 class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 px-3">Categorías</h4>
+                                          <div class="space-y-1 max-h-[350px] overflow-y-auto pr-2">
+                                              {% for cat in links %}
+                                              <a href="{{ cat.get_url }}"
+                                                 class="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                                 :class="activeCategory === '{{ cat.slug }}' ? 'bg-primary-50 dark:bg-primary-950/30 text-primary-700 dark:text-primary-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'"
+                                                 @mouseenter="activeCategory = '{{ cat.slug }}'">
+                                                 <span>{{ cat.category_name }}</span>
+                                                 <i class="w-4 h-4 text-slate-400 dark:text-slate-500" data-lucide="chevron-right"></i>
+                                              </a>
+                                              {% endfor %}
+                                          </div>
+                                      </div>
+                                      
+                                      <!-- Column 2: Subcategorías (Right) -->
+                                      <div class="w-1/2 p-4 bg-white dark:bg-slate-900">
+                                          <h4 class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 px-3">Subcategorías</h4>
+                                          <div class="max-h-[350px] overflow-y-auto px-3">
+                                              {% for cat in links %}
+                                              <div x-show="activeCategory === '{{ cat.slug }}'" class="space-y-2">
+                                                  {% if cat.subcategories.all %}
+                                                      {% for subcat in cat.subcategories.all %}
+                                                      <a href="{{ subcat.get_url }}" class="block py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                                                          {{ subcat.subcategory_name }}
+                                                      </a>
+                                                      {% endfor %}
+                                                  {% else %}
+                                                      <p class="text-xs text-slate-400 dark:text-slate-500 italic py-2">No hay subcategorías</p>
+                                                  {% endif %}
+                                              </div>
+                                              {% endfor %}
+                                          </div>
+                                      </div>
+                                 </div>
+                            </div>
+                        {% else %}
+                            <!-- Categoría simple o Link personalizado -->
+                            <a href="{{ item.get_url }}" 
+                               {% if item.open_new_tab %}target="_blank" rel="noopener noreferrer"{% endif %}
+                               class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2 whitespace-nowrap">
+                                {% if item.icon %}
+                                <i class="w-4 h-4 inline-block mr-2" data-lucide="{{ item.icon }}"></i>
+                                {% endif %}
+                                {{ item.label }}
+                            </a>
+                        {% endif %}
+                        
+                        {% if not forloop.last %}
+                        <span class="text-white/20">•</span>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <!-- Fallback to original layout -->
+                    <!-- Link a Tienda completa -->
+                    <a href="{% url 'store:store' %}" class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2">
+                        <i class="w-4 h-4 inline-block mr-2" data-lucide="store"></i>
+                        Toda la Tienda
+                    </a>
+                    
+                    <span class="text-white/30">|</span>
+                    
+                    <!-- Link a Blog -->
+                    <a href="{% url 'blog:post_list' %}" class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2">
+                        <i class="w-4 h-4 inline-block mr-2" data-lucide="newspaper"></i>
+                        Blog
+                    </a>
+                    
+                    <span class="text-white/30">|</span>
+                    
+                    <!-- Links de Categorías -->
+                    {% for category in links %}
+                    <a href="{{ category.get_url }}" 
+                       class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2 whitespace-nowrap">
+                        {{ category.category_name }}
+                    </a>
+                    {% if not forloop.last %}
+                    <span class="text-white/20">•</span>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    <span class="text-white/30">|</span>
+                    
+                    <!-- Ofertas (si las hay) -->
+                    <a href="{% url 'store:store' %}?promo=active" class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2 whitespace-nowrap">
+                        <i class="w-4 h-4 inline-block mr-2 text-accent-400" data-lucide="zap"></i>
+                        Ofertas
+                    </a>
                 {% endif %}
-                {% endfor %}
-                
-                <span class="text-white/30">|</span>
-                
-                <!-- Ofertas (si las hay) -->
-                <a href="{% url 'store:store' %}?promo=active" class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2 whitespace-nowrap">
-                    <i class="w-4 h-4 inline-block mr-2 text-accent-400" data-lucide="zap"></i>
-                    Ofertas
-                </a>
             </div>
         </div>
     </nav>
@@ -265,17 +352,69 @@
                     <span>Blog</span>
                 </a>
                 
-                <!-- Categorías -->
-                <div class="pt-4 border-t border-slate-200 dark:border-slate-700">
-                    <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                        Categorías
-                    </p>
-                    {% for category in links %}
-                    <a href="{{ category.get_url }}" @click="mobileOpen = false"
-                       class="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                        {{ category.category_name }}
-                    </a>
-                    {% endfor %}
+                <!-- Categorías Accordion (Mobile) -->
+                <div class="pt-4 border-t border-slate-200 dark:border-slate-700" 
+                     x-data="{ mobileCatsOpen: false }">
+                     
+                    <button @click="mobileCatsOpen = !mobileCatsOpen"
+                            class="flex items-center justify-between w-full px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium">
+                        <span class="flex items-center gap-3 text-slate-900 dark:text-white">
+                            <i data-lucide="folder" class="w-5 h-5 text-slate-500"></i>
+                            <span>Categorías</span>
+                        </span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 transition-transform duration-200" :class="mobileCatsOpen ? 'rotate-180' : ''"></i>
+                    </button>
+                    
+                    <!-- Nivel 1: Lista de Categorías -->
+                    <div x-show="mobileCatsOpen"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 max-h-0"
+                         x-transition:enter-end="opacity-100 max-h-[1000px]"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 max-h-[1000px]"
+                         x-transition:leave-end="opacity-0 max-h-0"
+                         class="pl-4 pr-2 space-y-1 overflow-hidden"
+                         style="display: none;">
+                         
+                        {% for category in links %}
+                        <div x-data="{ subOpen: false }">
+                            <div class="flex items-center justify-between w-full hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg pr-2">
+                                <a href="{{ category.get_url }}" @click="mobileOpen = false"
+                                   class="flex-1 block px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                    {{ category.category_name }}
+                                </a>
+                                {% if category.subcategories.all %}
+                                <button @click.stop="subOpen = !subOpen" 
+                                        class="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md text-slate-500 dark:text-slate-400"
+                                        aria-label="Expandir subcategorías">
+                                    <i data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" :class="subOpen ? 'rotate-180' : ''"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Nivel 2: Lista de Subcategorías -->
+                            {% if category.subcategories.all %}
+                            <div x-show="subOpen"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 max-h-0"
+                                 x-transition:enter-end="opacity-100 max-h-[500px]"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 max-h-[500px]"
+                                 x-transition:leave-end="opacity-0 max-h-0"
+                                 class="pl-6 pr-2 space-y-1 overflow-hidden border-l border-slate-100 dark:border-slate-800 ml-3 mt-1"
+                                 style="display: none;">
+                                 
+                                {% for subcat in category.subcategories.all %}
+                                <a href="{{ subcat.get_url }}" @click="mobileOpen = false"
+                                   class="block px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                                    {{ subcat.subcategory_name }}
+                                </a>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
                 
                 <!-- Ofertas -->

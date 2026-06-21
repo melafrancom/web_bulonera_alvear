@@ -7,26 +7,180 @@
             {{ section.title }}
         </h3>
         
-        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-4">
-            {% for category in all_categories %}
-            <a href="{% url 'store:products_by_category' category.slug %}" class="group">
-                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-lg transition-all overflow-hidden p-4 md:p-6 h-full flex flex-col items-center justify-center gap-3">
-                    <!-- Imagen o icono -->
-                    {% if category.image or category.cat_image %}
-                    <img src="{{ category.image_url }}" alt="{{ category.category_name }}" 
-                        class="w-12 h-12 md:w-16 md:h-16 object-contain group-hover:scale-110 transition-transform">
-                    {% else %}
-                    <i data-lucide="folder" class="w-12 h-12 md:w-16 md:h-16 text-primary-600 dark:text-primary-400 group-hover:scale-110 transition-transform"></i>
-                    {% endif %}
+        {% if section.section_type == 'categories_featured' %}
+            <!-- Carousel layout for featured categories -->
+            <div x-data="{
+                el: null,
+                autoplayInterval: null,
+                currentDot: 0,
+                totalDots: 0,
+                itemsPerPage: 1,
+                
+                init() {
+                    this.el = this.$refs.track;
+                    if (!this.el) return;
                     
-                    <!-- Nombre -->
-                    <p class="text-xs md:text-sm font-medium text-center text-slate-700 dark:text-slate-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2">
-                        {{ category.category_name }}
-                    </p>
+                    this.updateDimensions();
+                    window.addEventListener('resize', () => this.updateDimensions());
+                    
+                    this.startAutoplay();
+                    this.el.addEventListener('scroll', () => this.updateCurrentDot());
+                },
+                
+                updateDimensions() {
+                    if (!this.el) return;
+                    const width = window.innerWidth;
+                    if (width >= 1024) {
+                        this.itemsPerPage = 6;
+                    } else if (width >= 768) {
+                        this.itemsPerPage = 4;
+                    } else {
+                        this.itemsPerPage = 3;
+                    }
+                    const totalItems = this.el.children.length;
+                    this.totalDots = Math.ceil(totalItems / this.itemsPerPage);
+                    this.updateCurrentDot();
+                },
+                
+                updateCurrentDot() {
+                    if (!this.el) return;
+                    const scrollLeft = this.el.scrollLeft;
+                    const maxScroll = this.el.scrollWidth - this.el.clientWidth;
+                    if (maxScroll <= 0) {
+                        this.currentDot = 0;
+                        return;
+                    }
+                    const percent = scrollLeft / maxScroll;
+                    this.currentDot = Math.min(
+                        Math.round(percent * (this.totalDots - 1)),
+                        this.totalDots - 1
+                    );
+                },
+                
+                startAutoplay() {
+                    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    if (prefersReduced) return;
+                    
+                    this.stopAutoplay();
+                    this.autoplayInterval = setInterval(() => {
+                        this.next();
+                    }, 4000);
+                },
+                
+                stopAutoplay() {
+                    if (this.autoplayInterval) {
+                        clearInterval(this.autoplayInterval);
+                        this.autoplayInterval = null;
+                    }
+                },
+                
+                next() {
+                    if (!this.el) return;
+                    const maxScroll = this.el.scrollWidth - this.el.clientWidth;
+                    if (this.el.scrollLeft >= maxScroll - 5) {
+                        this.el.scrollTo({ left: 0, behavior: 'smooth' });
+                    } else {
+                        this.el.scrollBy({ left: this.el.clientWidth * 0.8, behavior: 'smooth' });
+                    }
+                },
+                
+                prev() {
+                    if (!this.el) return;
+                    if (this.el.scrollLeft <= 5) {
+                        this.el.scrollTo({ left: this.el.scrollWidth, behavior: 'smooth' });
+                    } else {
+                        this.el.scrollBy({ left: -this.el.clientWidth * 0.8, behavior: 'smooth' });
+                    }
+                },
+                
+                goToDot(index) {
+                    if (!this.el) return;
+                    const targetScroll = (this.el.scrollWidth - this.el.clientWidth) * (index / (this.totalDots - 1));
+                    this.el.scrollTo({ left: targetScroll, behavior: 'smooth' });
+                    this.currentDot = index;
+                }
+            }" 
+            class="relative"
+            @mouseenter="stopAutoplay()"
+            @mouseleave="startAutoplay()">
+                
+                <!-- Scroll Track -->
+                <div x-ref="track"
+                     class="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth">
+                    {% for category in data.categories|default:all_categories %}
+                    <a href="{% url 'store:products_by_category' category.slug %}" 
+                       class="group flex-shrink-0 snap-start w-[30%] sm:w-[22%] md:w-[15%]">
+                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden p-4 md:p-6 h-full flex flex-col items-center justify-center gap-3 border border-slate-100 dark:border-slate-800">
+                            <!-- Imagen o icono -->
+                            {% if category.image or category.cat_image %}
+                            <img src="{{ category.image_url }}" alt="{{ category.category_name }}" 
+                                class="w-12 h-12 md:w-16 md:h-16 object-contain group-hover:scale-105 transition-transform duration-300">
+                            {% else %}
+                            <i data-lucide="folder" class="w-12 h-12 md:w-16 md:h-16 text-primary-600 dark:text-primary-400 group-hover:scale-105 transition-transform duration-300"></i>
+                            {% endif %}
+                            
+                            <!-- Nombre -->
+                            <p class="text-xs md:text-sm font-medium text-center text-slate-700 dark:text-slate-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2">
+                                {{ category.category_name }}
+                            </p>
+                        </div>
+                    </a>
+                    {% endfor %}
                 </div>
-            </a>
-            {% endfor %}
-        </div>
+                
+                <!-- Navigation Arrows (Desktop Only) -->
+                <button @click="prev()" 
+                        x-show="totalDots > 1"
+                        aria-label="Categorías anteriores"
+                        class="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 p-2 md:p-3 
+                               bg-white dark:bg-slate-800 shadow-md hover:shadow-lg rounded-full 
+                               text-slate-900 dark:text-white transition-all z-10 hidden md:flex items-center justify-center
+                               hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700">
+                    <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                </button>
+                <button @click="next()" 
+                        x-show="totalDots > 1"
+                        aria-label="Categorías siguientes"
+                        class="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 p-2 md:p-3 
+                               bg-white dark:bg-slate-800 shadow-md hover:shadow-lg rounded-full 
+                               text-slate-900 dark:text-white transition-all z-10 hidden md:flex items-center justify-center
+                               hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700">
+                    <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                </button>
+                
+                <!-- Indicator Dots -->
+                <div x-show="totalDots > 1" class="flex justify-center gap-1.5 mt-4">
+                    <template x-for="(item, index) in Array.from({length: totalDots})" :key="index">
+                        <button @click="goToDot(index)" 
+                                class="w-2 h-2 rounded-full transition-all duration-300"
+                                :class="currentDot === index ? 'bg-primary-600 dark:bg-primary-400 w-4' : 'bg-slate-300 dark:bg-slate-700 hover:bg-slate-400'"
+                                aria-label="Ir a diapositiva"></button>
+                    </template>
+                </div>
+            </div>
+        {% else %}
+            <!-- Static Grid layout for categories -->
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-4">
+                {% for category in data.categories|default:all_categories %}
+                <a href="{% url 'store:products_by_category' category.slug %}" class="group">
+                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-lg transition-all overflow-hidden p-4 md:p-6 h-full flex flex-col items-center justify-center gap-3 border border-slate-100 dark:border-slate-800">
+                        <!-- Imagen o icono -->
+                        {% if category.image or category.cat_image %}
+                        <img src="{{ category.image_url }}" alt="{{ category.category_name }}" 
+                            class="w-12 h-12 md:w-16 md:h-16 object-contain group-hover:scale-105 transition-transform duration-300">
+                        {% else %}
+                        <i data-lucide="folder" class="w-12 h-12 md:w-16 md:h-16 text-primary-600 dark:text-primary-400 group-hover:scale-105 transition-transform duration-300"></i>
+                        {% endif %}
+                        
+                        <!-- Nombre -->
+                        <p class="text-xs md:text-sm font-medium text-center text-slate-700 dark:text-slate-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2">
+                            {{ category.category_name }}
+                        </p>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        {% endif %}
     </div>
 </section>
 <!-- ========================= SECTION TODAS LAS CATEGORÍAS END ========================= -->

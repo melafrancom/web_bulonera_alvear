@@ -159,3 +159,57 @@ class TestFeaturedCategoryModel(TestCase):
         featured_list = list(FeaturedCategory.objects.all())
         self.assertEqual(featured_list[0], featured2)  # position=0 primero
         self.assertEqual(featured_list[1], self.featured)  # position=1 segundo
+
+
+@pytest.mark.django_db
+class TestNavbarItemModel(TestCase):
+    """Tests para el modelo NavbarItem"""
+    
+    def setUp(self):
+        from category.models import NavbarItem
+        self.category = Category.objects.create(
+            category_name='Herramientas',
+            slug='herramientas'
+        )
+        self.item_cat = NavbarItem.objects.create(
+            label='Herramientas de mano',
+            item_type='category',
+            category=self.category,
+            position=1,
+            is_active=True
+        )
+        self.item_custom = NavbarItem.objects.create(
+            label='Google',
+            item_type='custom',
+            custom_url='https://google.com',
+            position=2,
+            is_active=True
+        )
+        self.item_mega = NavbarItem.objects.create(
+            label='Menu Completo',
+            item_type='mega_menu',
+            position=0,
+            is_active=True
+        )
+
+    def test_navbar_item_creation(self):
+        self.assertEqual(self.item_cat.label, 'Herramientas de mano')
+        self.assertEqual(self.item_cat.item_type, 'category')
+        self.assertEqual(self.item_cat.category, self.category)
+
+    def test_navbar_item_str_representation(self):
+        self.assertEqual(str(self.item_cat), 'Herramientas de mano (Categoría del sistema)')
+        self.assertEqual(str(self.item_custom), 'Google (Link personalizado)')
+
+    def test_navbar_item_get_url(self):
+        self.assertEqual(self.item_cat.get_url(), self.category.get_url())
+        self.assertEqual(self.item_custom.get_url(), 'https://google.com')
+        self.assertEqual(self.item_mega.get_url(), '#')
+
+    def test_navbar_item_ordering(self):
+        from category.models import NavbarItem
+        items = list(NavbarItem.objects.all())
+        self.assertEqual(items[0], self.item_mega)  # position 0
+        self.assertEqual(items[1], self.item_cat)   # position 1
+        self.assertEqual(items[2], self.item_custom) # position 2
+

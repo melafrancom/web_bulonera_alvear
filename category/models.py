@@ -164,3 +164,53 @@ class FeaturedCategory(models.Model):
     def __str__(self):
         return self.category.category_name
 
+
+class NavbarItem(models.Model):
+    """Item configurable para la barra de navegación (Capa 3)."""
+    
+    ITEM_TYPE_CHOICES = [
+        ('category', 'Categoría del sistema'),
+        ('custom', 'Link personalizado'),
+        ('mega_menu', 'Mega-menú de categorías'),
+    ]
+    
+    label = models.CharField(max_length=60)
+    item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
+    category = models.ForeignKey(
+        Category,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='navbar_items',
+        help_text="Solo si el tipo es 'Categoría del sistema'"
+    )
+    custom_url = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Solo si el tipo es 'Link personalizado' (ej: /blog/ o URL completa)"
+    )
+    icon = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Nombre de icono Lucide (ej: 'newspaper')"
+    )
+    position = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    open_new_tab = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['position']
+        verbose_name = 'Item de Navegación'
+        verbose_name_plural = 'Items de Navegación'
+        
+    def __str__(self):
+        return f"{self.label} ({self.get_item_type_display()})"
+        
+    def get_url(self):
+        if self.item_type == 'category' and self.category:
+            return self.category.get_url()
+        elif self.item_type == 'custom':
+            return self.custom_url
+        return '#'
+
+
