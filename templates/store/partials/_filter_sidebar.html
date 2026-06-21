@@ -37,21 +37,105 @@ class="space-y-4">
                class="w-5 h-5 text-slate-600 dark:text-slate-400 transition-transform duration-250"
                :class="filters.categories ? 'rotate-180' : ''"></i>
         </button>
-        
         <div x-show="filters.categories" 
              x-collapse
              class="border-t border-slate-200 dark:border-slate-700">
             <div class="p-3 space-y-1.5">
+                {% if active_category %}
+                <!-- Retornar a todas las categorías y desplegable de otras categorías -->
+                <div x-data="{ openAll: false }" class="mb-2">
+                    <div class="flex items-center justify-between w-full hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-lg pr-1">
+                        <a href="{% url 'store:store' %}" 
+                           class="flex-grow block py-2 px-3 text-sm text-slate-700 dark:text-slate-300 hover:text-primary-650 dark:hover:text-primary-450 transition-colors flex items-center gap-2 font-medium">
+                            <i data-lucide="chevron-left" class="w-4 h-4 text-slate-400"></i>
+                            <span>Todas las categorías</span>
+                        </a>
+                        <button @click.prevent="openAll = !openAll" 
+                                class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md text-slate-500 transition-transform duration-200"
+                                :class="openAll ? 'rotate-180' : ''"
+                                aria-label="Ver otras categorías">
+                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    
+                    <div x-show="openAll" 
+                         x-collapse
+                         class="ml-4 mt-1 pl-2 border-l border-slate-200 dark:border-slate-700 space-y-1">
+                        {% for category in links %}
+                            {% if category != active_category %}
+                            <div x-data="{ openSub: false }">
+                                <div class="flex items-center justify-between w-full hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-lg pr-1">
+                                    <a href="{{ category.get_url }}" 
+                                       class="flex-grow block py-1.5 px-3 text-sm text-slate-600 dark:text-slate-400 hover:text-primary-650 dark:hover:text-primary-450 transition-colors">
+                                        {{ category.category_name }}
+                                    </a>
+                                    {% if category.subcategories.all %}
+                                    <button @click.prevent="openSub = !openSub" 
+                                            class="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500 transition-transform duration-200"
+                                            :class="openSub ? 'rotate-180' : ''"
+                                            aria-label="Expandir subcategorías">
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                {% if category.subcategories.all %}
+                                <div x-show="openSub" 
+                                     x-collapse
+                                     class="ml-4 mt-1 pl-2 border-l border-slate-200 dark:border-slate-700 space-y-1">
+                                    {% for sub in category.subcategories.all %}
+                                    <a href="{{ sub.get_url }}" 
+                                       class="block py-1 px-3 text-xs text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded transition-colors">
+                                        {{ sub.subcategory_name }}
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Mostrar únicamente la categoría activa expandida -->
+                <div x-data="{ open: true }">
+                    <div class="flex items-center justify-between w-full rounded-lg pr-1 {% if not subcategory %}bg-red-50/50 dark:bg-red-950/15 border border-red-200/40 dark:border-red-900/40{% else %}bg-primary-50/50 dark:bg-primary-950/20{% endif %}">
+                        <a href="{{ active_category.get_url }}" 
+                           class="flex-grow block py-2 px-3 text-sm font-semibold {% if not subcategory %}text-red-650 dark:text-red-400{% else %}text-primary-650 dark:text-primary-400{% endif %}">
+                            {{ active_category.category_name }}
+                        </a>
+                    </div>
+                    
+                    {% if active_category.subcategories.all %}
+                    <div x-show="open" 
+                         class="ml-4 mt-1 pl-2 border-l border-slate-200 dark:border-slate-700 space-y-1">
+                        {% for sub in active_category.subcategories.all %}
+                        {% if sub == subcategory %}
+                        <a href="{{ sub.get_url }}" 
+                           class="block py-1.5 px-3 text-sm text-red-650 dark:text-red-400 font-semibold bg-red-50/50 dark:bg-red-950/15 rounded-lg border border-red-200/40 dark:border-red-900/40 transition-colors">
+                            {{ sub.subcategory_name }}
+                        </a>
+                        {% else %}
+                        <a href="{{ sub.get_url }}" 
+                           class="block py-1.5 px-3 text-sm text-slate-650 dark:text-slate-400 hover:text-primary-650 dark:hover:text-primary-450 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-lg transition-colors">
+                            {{ sub.subcategory_name }}
+                        </a>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <!-- Ninguna categoría seleccionada: mostrar listado normal -->
                 <a href="{% url 'store:store' %}" 
-                   class="block py-2 px-3 text-sm {% if not current_category and not subcategory %}bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50{% endif %} rounded-lg transition-colors">
+                   class="block py-2 px-3 text-sm bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400 font-semibold rounded-lg transition-colors">
                     Todas las categorías
                 </a>
                 
                 {% for category in links %}
-                <div x-data="{ open: {% if category == current_category or category == subcategory.category %}true{% else %}false{% endif %} }">
+                <div x-data="{ open: false }">
                     <div class="flex items-center justify-between w-full hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-lg pr-1">
                         <a href="{{ category.get_url }}" 
-                           class="flex-grow block py-2 px-3 text-sm font-medium {% if category == current_category or category == subcategory.category %}text-primary-600 dark:text-primary-400 font-semibold{% else %}text-slate-700 dark:text-slate-300{% endif %} hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                           class="flex-grow block py-2 px-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
                             {{ category.category_name }}
                         </a>
                         {% if category.subcategories.all %}
@@ -69,22 +153,16 @@ class="space-y-4">
                          x-collapse
                          class="ml-4 mt-1 pl-2 border-l border-slate-200 dark:border-slate-700 space-y-1">
                         {% for sub in category.subcategories.all %}
-                        {% if sub == subcategory %}
-                        <a href="{{ sub.get_url }}" 
-                           class="block py-1.5 px-3 text-sm text-primary-600 dark:text-primary-400 font-semibold bg-primary-50 dark:bg-primary-950/20 rounded-lg transition-colors">
-                            {{ sub.subcategory_name }}
-                        </a>
-                        {% else %}
                         <a href="{{ sub.get_url }}" 
                            class="block py-1.5 px-3 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-lg transition-colors">
                             {{ sub.subcategory_name }}
                         </a>
-                        {% endif %}
                         {% endfor %}
                     </div>
                     {% endif %}
                 </div>
                 {% endfor %}
+                {% endif %}
             </div>
         </div>
     </div>

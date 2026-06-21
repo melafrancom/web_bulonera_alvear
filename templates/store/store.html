@@ -232,8 +232,8 @@
                     <!-- Categoría Estándar -->
                     <a href="{% url 'store:products_by_category' cat.slug %}" 
                        class="group flex-shrink-0 snap-start w-[30%] sm:w-[22%] md:w-[18%] lg:w-[12%]">
-                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md hover:border-primary-500 transition-all overflow-hidden p-4 h-full flex flex-col items-center justify-center gap-3 border border-slate-200 dark:border-slate-800">
-                            <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 rounded-lg group-hover:bg-primary-50 dark:group-hover:bg-primary-950/30 transition-colors">
+                        <div class="dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md hover:border-primary-500 transition-all overflow-hidden p-4 h-full flex flex-col items-center justify-center gap-3 border border-slate-200 dark:border-slate-800">
+                            <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center dark:bg-slate-800/50 rounded-lg group-hover:bg-primary-50 dark:group-hover:bg-primary-950/30 transition-colors">
                                 {% if cat.image or cat.cat_image %}
                                 <img src="{{ cat.image_url }}" alt="{{ cat.category_name }}" 
                                     class="w-12 h-12 md:w-16 md:h-16 object-contain group-hover:scale-105 transition-transform duration-300">
@@ -285,7 +285,7 @@
 
 <!-- Carrusel de Subcategorías (Solo visible si hay categoría activa) -->
 {% if active_category and carousel_subcategories %}
-<section class="py-5 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800/80">
+<section class="py-5 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800/80">
     <div class="container mx-auto px-4">
         <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
             Subcategorías de {{ active_category.category_name }}
@@ -378,8 +378,8 @@
                     <!-- Subcategoría Estándar -->
                     <a href="{{ sub.get_url }}" 
                        class="group flex-shrink-0 snap-start w-[30%] sm:w-[22%] md:w-[18%] lg:w-[12%]">
-                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md hover:border-primary-500 transition-all overflow-hidden p-3 h-full flex flex-col items-center justify-center gap-2 border border-slate-200 dark:border-slate-800">
-                            <div class="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 rounded-lg group-hover:bg-primary-50 dark:group-hover:bg-primary-950/30 transition-colors">
+                        <div class="dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md hover:border-primary-500 transition-all overflow-hidden p-3 h-full flex flex-col items-center justify-center gap-2 border border-slate-200 dark:border-slate-800">
+                            <div class="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center dark:bg-slate-800/50 rounded-lg group-hover:bg-primary-50 dark:group-hover:bg-primary-950/30 transition-colors">
                                 {% if sub.image %}
                                 <img src="{{ sub.image_url }}" alt="{{ sub.subcategory_name }}" 
                                     class="w-10 h-10 md:w-12 md:h-12 object-contain group-hover:scale-105 transition-transform duration-300">
