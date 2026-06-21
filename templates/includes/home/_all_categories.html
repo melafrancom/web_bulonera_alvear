@@ -30,13 +30,10 @@
                 updateDimensions() {
                     if (!this.el) return;
                     const width = window.innerWidth;
-                    if (width >= 1024) {
-                        this.itemsPerPage = 6;
-                    } else if (width >= 768) {
-                        this.itemsPerPage = 4;
-                    } else {
-                        this.itemsPerPage = 3;
-                    }
+                    if (width >= 1280) this.itemsPerPage = 8;
+                    else if (width >= 1024) this.itemsPerPage = 6;
+                    else if (width >= 768) this.itemsPerPage = 4;
+                    else this.itemsPerPage = 3;
                     const totalItems = this.el.children.length;
                     this.totalDots = Math.ceil(totalItems / this.itemsPerPage);
                     this.updateCurrentDot();
@@ -100,24 +97,26 @@
                     this.currentDot = index;
                 }
             }" 
-            class="relative"
+            class="relative group/carousel"
             @mouseenter="stopAutoplay()"
             @mouseleave="startAutoplay()">
                 
                 <!-- Scroll Track -->
                 <div x-ref="track"
-                     class="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth">
+                     class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth">
                     {% for category in data.categories|default:all_categories %}
                     <a href="{% url 'store:products_by_category' category.slug %}" 
-                       class="group flex-shrink-0 snap-start w-[30%] sm:w-[22%] md:w-[15%]">
-                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden p-4 md:p-6 h-full flex flex-col items-center justify-center gap-3 border border-slate-100 dark:border-slate-800">
-                            <!-- Imagen o icono -->
-                            {% if category.image or category.cat_image %}
-                            <img src="{{ category.image_url }}" alt="{{ category.category_name }}" 
-                                class="w-12 h-12 md:w-16 md:h-16 object-contain group-hover:scale-105 transition-transform duration-300">
-                            {% else %}
-                            <i data-lucide="folder" class="w-12 h-12 md:w-16 md:h-16 text-primary-600 dark:text-primary-400 group-hover:scale-105 transition-transform duration-300"></i>
-                            {% endif %}
+                       class="group flex-shrink-0 snap-start w-[30%] sm:w-[22%] md:w-[18%] lg:w-[12%]">
+                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md hover:border-primary-500 transition-all overflow-hidden p-4 h-full flex flex-col items-center justify-center gap-3 border border-slate-200 dark:border-slate-800">
+                            <!-- Imagen o icono encapsulado en contenedor premium -->
+                            <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center dark:bg-slate-800/50 rounded-lg group-hover:bg-primary-50 dark:group-hover:bg-primary-950/30 transition-colors">
+                                {% if category.image or category.cat_image %}
+                                <img src="{{ category.image_url }}" alt="{{ category.category_name }}" 
+                                    class="w-12 h-12 md:w-16 md:h-16 object-contain group-hover:scale-105 transition-transform duration-300">
+                                {% else %}
+                                <i data-lucide="folder" class="w-10 h-10 md:w-12 md:h-12 text-primary-600 dark:text-primary-400 group-hover:scale-105 transition-transform duration-300"></i>
+                                {% endif %}
+                            </div>
                             
                             <!-- Nombre -->
                             <p class="text-xs md:text-sm font-medium text-center text-slate-700 dark:text-slate-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2">
@@ -148,12 +147,12 @@
                     <i data-lucide="chevron-right" class="w-5 h-5"></i>
                 </button>
                 
-                <!-- Indicator Dots -->
-                <div x-show="totalDots > 1" class="flex justify-center gap-1.5 mt-4">
+                <!-- Indicator Dots (Rojo de la Marca para el Dot Activo) -->
+                <div x-show="totalDots > 1" class="flex justify-center gap-1.5 mt-2">
                     <template x-for="(item, index) in Array.from({length: totalDots})" :key="index">
                         <button @click="goToDot(index)" 
-                                class="w-2 h-2 rounded-full transition-all duration-300"
-                                :class="currentDot === index ? 'bg-primary-600 dark:bg-primary-400 w-4' : 'bg-slate-300 dark:bg-slate-700 hover:bg-slate-400'"
+                                class="w-2 h-2 rounded-full transition-all duration-350"
+                                :class="currentDot === index ? 'bg-red-500 w-4' : 'bg-slate-300 dark:bg-slate-700 hover:bg-slate-400'"
                                 aria-label="Ir a diapositiva"></button>
                     </template>
                 </div>
