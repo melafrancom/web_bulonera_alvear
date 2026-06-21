@@ -54,7 +54,6 @@ class SiteThemeAdmin(admin.ModelAdmin):
                 ('primary_50', 'primary_100', 'primary_200'),
                 ('primary_300', 'primary_400', 'primary_500'),
             ),
-            'classes': ('collapse',),
         }),
         ('🟡 Color Acento', {
             'description': 'Usado en estrellas de rating y badges de oferta.',

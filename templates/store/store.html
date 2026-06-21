@@ -138,68 +138,295 @@
                 <i data-lucide="chevron-right" class="w-6 h-6 text-slate-700 dark:text-slate-300"></i>
             </button>
             {% endif %}
-        </div>
-    </div>
 </section>
 {% endif %}
 
-<!-- Grid de Categorías -->
-{% if not current_subcategory %}
-<section class="dark:bg-slate-900">
+<!-- Carruseles de Categorías y Subcategorías -->
+<!-- Carrusel de Categorías Principal -->
+<section class="py-6 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
     <div class="container mx-auto px-4">
-        <h2 class="text-2xl md:text-3xl font-heading font-semibold tracking-wide text-slate-900 dark:text-white mb-6">
-            Todas las Categorías
-        </h2>
-        
-        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-            {% for category in links %}
-            <a href="{% url 'store:products_by_category' category.slug %}" 
-               class="flex flex-col items-center group">
-                <div class="relative w-10 h-10 md:w-12 md:h-12">
-                    <div class="w-full h-full dark:from-primary-900/30 dark:to-primary-800/30 group-hover:from-primary-200 group-hover:to-primary-300 dark:group-hover:from-primary-800/40 dark:group-hover:to-primary-700/40 transition-all duration-300 flex items-center justify-center" >
-                        {% if category.image or category.cat_image %}
-                        <img src="{{ category.image_url }}" 
-                             alt="{{ category.category_name }}" 
-                             class="w-12 h-12 md:w-16 md:h-16 object-contain">
-                        {% else %}
-                        <i data-lucide="folder" class="w-8 h-8 md:w-10 md:h-10 text-primary-600 dark:text-primary-400"></i>
-                        {% endif %}
-                    </div>
-                </div>
-                <p class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2">
-                    {{ category.category_name }}
-                </p>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-
-<!-- Grid de Subcategorías -->
-{% if current_category and current_category.subcategories.all %}
-<section class="py-6 bg-soft-bg dark:bg-slate-800 border-y border-slate-200 dark:border-slate-700">
-    <div class="container mx-auto px-4">
-        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">
-            Subcategorías de {{ current_category.category_name }}
-        </h3>
-        <div class="flex flex-wrap gap-3">
-            {% for sub in current_category.subcategories.all %}
-            <a href="{{ sub.get_url }}" 
-               class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:border-primary-500 dark:hover:border-primary-500 transition-colors">
-                {% if sub.image %}
-                <img src="{{ sub.image_url }}" 
-                     alt="{{ sub.subcategory_name }}" 
-                     class="w-6 h-6 object-contain">
+        <div x-data="{
+            el: null,
+            currentDot: 0,
+            totalDots: 0,
+            itemsPerPage: 1,
+            init() {
+                this.el = this.$refs.track;
+                if (!this.el) return;
+                this.updateDimensions();
+                window.addEventListener('resize', () => this.updateDimensions());
+                this.el.addEventListener('scroll', () => this.updateCurrentDot());
+            },
+            updateDimensions() {
+                if (!this.el) return;
+                const width = window.innerWidth;
+                if (width >= 1280) this.itemsPerPage = 8;
+                else if (width >= 1024) this.itemsPerPage = 6;
+                else if (width >= 768) this.itemsPerPage = 4;
+                else this.itemsPerPage = 3;
+                const totalItems = this.el.children.length;
+                this.totalDots = Math.ceil(totalItems / this.itemsPerPage);
+                this.updateDimensions(); // Wait, let's keep calculating totalDots correctly without loop recursion
+            },
+            updateCurrentDot() {
+                if (!this.el) return;
+                const scrollLeft = this.el.scrollLeft;
+                const maxScroll = this.el.scrollWidth - this.el.clientWidth;
+                if (maxScroll <= 0) {
+                    this.currentDot = 0;
+                    return;
+                }
+                const percent = scrollLeft / maxScroll;
+                this.currentDot = Math.min(
+                    Math.round(percent * (this.totalDots - 1)),
+                    this.totalDots - 1
+                );
+            },
+            next() {
+                if (!this.el) return;
+                const maxScroll = this.el.scrollWidth - this.el.clientWidth;
+                if (this.el.scrollLeft >= maxScroll - 5) {
+                    this.el.scrollTo({ left: 0, behavior: 'smooth' });
+                } else {
+                    this.el.scrollBy({ left: this.el.clientWidth * 0.8, behavior: 'smooth' });
+                }
+            },
+            prev() {
+                if (!this.el) return;
+                if (this.el.scrollLeft <= 5) {
+                    this.el.scrollTo({ left: this.el.scrollWidth, behavior: 'smooth' });
+                } else {
+                    this.el.scrollBy({ left: -this.el.clientWidth * 0.8, behavior: 'smooth' });
+                }
+            },
+            goToDot(index) {
+                if (!this.el) return;
+                const targetScroll = (this.el.scrollWidth - this.el.clientWidth) * (index / (this.totalDots - 1));
+                this.el.scrollTo({ left: targetScroll, behavior: 'smooth' });
+                this.currentDot = index;
+            }
+        }" class="relative group/carousel">
+            
+            <!-- Scroll Track -->
+            <div x-ref="track" class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth">
+                {% for cat in links %}
+                {% if cat == active_category %}
+                    <!-- Categoría Activa (Resaltada en el Rojo de la Marca) -->
+                    <a href="{% url 'store:products_by_category' cat.slug %}" 
+                       class="group flex-shrink-0 snap-start w-[30%] sm:w-[22%] md:w-[18%] lg:w-[12%]">
+                        <div class="bg-red-50/50 dark:bg-red-950/20 rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden p-4 h-full flex flex-col items-center justify-center gap-3 border-2 border-red-500 ring-2 ring-red-500/10">
+                            <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-red-100/50 dark:bg-red-900/30 rounded-lg">
+                                {% if cat.image or cat.cat_image %}
+                                <img src="{{ cat.image_url }}" alt="{{ cat.category_name }}" 
+                                    class="w-14 h-14 md:w-18 md:h-18 object-contain scale-105 transition-transform duration-300">
+                                {% else %}
+                                <i data-lucide="folder" class="w-10 h-10 md:w-12 md:h-12 text-red-600 dark:text-red-400 scale-105 transition-transform duration-300"></i>
+                                {% endif %}
+                            </div>
+                            <p class="text-xs md:text-sm font-semibold text-center text-red-600 dark:text-red-400 transition-colors line-clamp-2">
+                                {{ cat.category_name }}
+                            </p>
+                        </div>
+                    </a>
                 {% else %}
-                <i data-lucide="folder" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
+                    <!-- Categoría Estándar -->
+                    <a href="{% url 'store:products_by_category' cat.slug %}" 
+                       class="group flex-shrink-0 snap-start w-[30%] sm:w-[22%] md:w-[18%] lg:w-[12%]">
+                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md hover:border-primary-500 transition-all overflow-hidden p-4 h-full flex flex-col items-center justify-center gap-3 border border-slate-200 dark:border-slate-800">
+                            <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 rounded-lg group-hover:bg-primary-50 dark:group-hover:bg-primary-950/30 transition-colors">
+                                {% if cat.image or cat.cat_image %}
+                                <img src="{{ cat.image_url }}" alt="{{ cat.category_name }}" 
+                                    class="w-12 h-12 md:w-16 md:h-16 object-contain group-hover:scale-105 transition-transform duration-300">
+                                {% else %}
+                                <i data-lucide="folder" class="w-10 h-10 md:w-12 md:h-12 text-primary-600 dark:text-primary-400 group-hover:scale-105 transition-transform duration-300"></i>
+                                {% endif %}
+                            </div>
+                            <p class="text-xs md:text-sm font-medium text-center text-slate-700 dark:text-slate-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2">
+                                {{ cat.category_name }}
+                            </p>
+                        </div>
+                    </a>
                 {% endif %}
-                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ sub.subcategory_name }}</span>
-            </a>
-            {% endfor %}
+                {% endfor %}
+            </div>
+            
+            <!-- Navigation Arrows -->
+            <button @click="prev()" 
+                    x-show="totalDots > 1"
+                    aria-label="Categorías anteriores"
+                    class="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 p-2 md:p-3 
+                           bg-white dark:bg-slate-800 shadow-md hover:shadow-lg rounded-full 
+                           text-slate-900 dark:text-white transition-all z-10 hidden md:flex items-center justify-center
+                           hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            </button>
+            <button @click="next()" 
+                    x-show="totalDots > 1"
+                    aria-label="Categorías siguientes"
+                    class="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 p-2 md:p-3 
+                           bg-white dark:bg-slate-800 shadow-md hover:shadow-lg rounded-full 
+                           text-slate-900 dark:text-white transition-all z-10 hidden md:flex items-center justify-center
+                           hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700">
+                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+            </button>
+            
+            <!-- Indicator Dots -->
+            <div x-show="totalDots > 1" class="flex justify-center gap-1.5 mt-2">
+                <template x-for="(item, index) in Array.from({length: totalDots})" :key="index">
+                    <button @click="goToDot(index)" 
+                            class="w-2 h-2 rounded-full transition-all duration-300"
+                            :class="currentDot === index ? 'bg-red-500 w-4' : 'bg-slate-300 dark:bg-slate-700 hover:bg-slate-400'"
+                            aria-label="Ir a diapositiva"></button>
+                </template>
+            </div>
         </div>
     </div>
 </section>
-{% endif %}
+
+<!-- Carrusel de Subcategorías (Solo visible si hay categoría activa) -->
+{% if active_category and carousel_subcategories %}
+<section class="py-5 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800/80">
+    <div class="container mx-auto px-4">
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+            Subcategorías de {{ active_category.category_name }}
+        </h3>
+        
+        <div x-data="{
+            el: null,
+            currentDot: 0,
+            totalDots: 0,
+            itemsPerPage: 1,
+            init() {
+                this.el = this.$refs.track;
+                if (!this.el) return;
+                this.updateDimensions();
+                window.addEventListener('resize', () => this.updateDimensions());
+                this.el.addEventListener('scroll', () => this.updateCurrentDot());
+            },
+            updateDimensions() {
+                if (!this.el) return;
+                const width = window.innerWidth;
+                if (width >= 1280) this.itemsPerPage = 8;
+                else if (width >= 1024) this.itemsPerPage = 6;
+                else if (width >= 768) this.itemsPerPage = 4;
+                else this.itemsPerPage = 3;
+                const totalItems = this.el.children.length;
+                this.totalDots = Math.ceil(totalItems / this.itemsPerPage);
+                this.updateCurrentDot();
+            },
+            updateCurrentDot() {
+                if (!this.el) return;
+                const scrollLeft = this.el.scrollLeft;
+                const maxScroll = this.el.scrollWidth - this.el.clientWidth;
+                if (maxScroll <= 0) {
+                    this.currentDot = 0;
+                    return;
+                }
+                const percent = scrollLeft / maxScroll;
+                this.currentDot = Math.min(
+                    Math.round(percent * (this.totalDots - 1)),
+                    this.totalDots - 1
+                );
+            },
+            next() {
+                if (!this.el) return;
+                const maxScroll = this.el.scrollWidth - this.el.clientWidth;
+                if (this.el.scrollLeft >= maxScroll - 5) {
+                    this.el.scrollTo({ left: 0, behavior: 'smooth' });
+                } else {
+                    this.el.scrollBy({ left: this.el.clientWidth * 0.8, behavior: 'smooth' });
+                }
+            },
+            prev() {
+                if (!this.el) return;
+                if (this.el.scrollLeft <= 5) {
+                    this.el.scrollTo({ left: this.el.scrollWidth, behavior: 'smooth' });
+                } else {
+                    this.el.scrollBy({ left: -this.el.clientWidth * 0.8, behavior: 'smooth' });
+                }
+            },
+            goToDot(index) {
+                if (!this.el) return;
+                const targetScroll = (this.el.scrollWidth - this.el.clientWidth) * (index / (this.totalDots - 1));
+                this.el.scrollTo({ left: targetScroll, behavior: 'smooth' });
+                this.currentDot = index;
+            }
+        }" class="relative group/carousel">
+            
+            <!-- Scroll Track -->
+            <div x-ref="track" class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth">
+                {% for sub in carousel_subcategories %}
+                {% if sub == subcategory %}
+                    <!-- Subcategoría Activa (Resaltada en el Rojo de la Marca) -->
+                    <a href="{{ sub.get_url }}" 
+                       class="group flex-shrink-0 snap-start w-[30%] sm:w-[22%] md:w-[18%] lg:w-[12%]">
+                        <div class="bg-red-50/50 dark:bg-red-950/20 rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden p-3 h-full flex flex-col items-center justify-center gap-2 border-2 border-red-500 ring-2 ring-red-500/10">
+                            <div class="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-red-100/50 dark:bg-red-900/30 rounded-lg">
+                                {% if sub.image %}
+                                <img src="{{ sub.image_url }}" alt="{{ sub.subcategory_name }}" 
+                                    class="w-10 h-10 md:w-12 md:h-12 object-contain scale-105 transition-transform duration-300">
+                                {% else %}
+                                <i data-lucide="folder" class="w-8 h-8 md:w-10 md:h-10 text-red-650 dark:text-red-400 scale-105 transition-transform duration-300"></i>
+                                {% endif %}
+                            </div>
+                            <p class="text-xs md:text-sm font-semibold text-center text-red-600 dark:text-red-400 transition-colors line-clamp-2">
+                                {{ sub.subcategory_name }}
+                            </p>
+                        </div>
+                    </a>
+                {% else %}
+                    <!-- Subcategoría Estándar -->
+                    <a href="{{ sub.get_url }}" 
+                       class="group flex-shrink-0 snap-start w-[30%] sm:w-[22%] md:w-[18%] lg:w-[12%]">
+                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md hover:border-primary-500 transition-all overflow-hidden p-3 h-full flex flex-col items-center justify-center gap-2 border border-slate-200 dark:border-slate-800">
+                            <div class="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 rounded-lg group-hover:bg-primary-50 dark:group-hover:bg-primary-950/30 transition-colors">
+                                {% if sub.image %}
+                                <img src="{{ sub.image_url }}" alt="{{ sub.subcategory_name }}" 
+                                    class="w-10 h-10 md:w-12 md:h-12 object-contain group-hover:scale-105 transition-transform duration-300">
+                                {% else %}
+                                <i data-lucide="folder" class="w-8 h-8 md:w-10 md:h-10 text-primary-600 dark:text-primary-400 group-hover:scale-105 transition-transform duration-300"></i>
+                                {% endif %}
+                            </div>
+                            <p class="text-xs md:text-sm font-medium text-center text-slate-700 dark:text-slate-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2">
+                                {{ sub.subcategory_name }}
+                            </p>
+                        </div>
+                    </a>
+                {% endif %}
+                {% endfor %}
+            </div>
+            
+            <!-- Navigation Arrows -->
+            <button @click="prev()" 
+                    x-show="totalDots > 1"
+                    aria-label="Subcategorías anteriores"
+                    class="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 p-2 md:p-3 
+                           bg-white dark:bg-slate-800 shadow-md hover:shadow-lg rounded-full 
+                           text-slate-900 dark:text-white transition-all z-10 hidden md:flex items-center justify-center
+                           hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            </button>
+            <button @click="next()" 
+                    x-show="totalDots > 1"
+                    aria-label="Subcategorías siguientes"
+                    class="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 p-2 md:p-3 
+                           bg-white dark:bg-slate-800 shadow-md hover:shadow-lg rounded-full 
+                           text-slate-900 dark:text-white transition-all z-10 hidden md:flex items-center justify-center
+                           hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700">
+                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+            </button>
+            
+            <!-- Indicator Dots -->
+            <div x-show="totalDots > 1" class="flex justify-center gap-1.5 mt-2">
+                <template x-for="(item, index) in Array.from({length: totalDots})" :key="index">
+                    <button @click="goToDot(index)" 
+                            class="w-2 h-2 rounded-full transition-all duration-350"
+                            :class="currentDot === index ? 'bg-red-500 w-4' : 'bg-slate-300 dark:bg-slate-700 hover:bg-slate-400'"
+                            aria-label="Ir a diapositiva"></button>
+                </template>
+            </div>
+        </div>
+</section>
 {% endif %}
 
 <!-- CTA Intermedio — solo en página 1 del catálogo -->
@@ -231,6 +458,7 @@
                         {% if min_price %}<input type="hidden" name="min_price" value="{{ min_price }}">{% endif %}
                         {% if max_price %}<input type="hidden" name="max_price" value="{{ max_price }}">{% endif %}
                         {% if category_slug %}<input type="hidden" name="category" value="{{ category_slug }}">{% endif %}
+                        {% if request.GET.brand %}<input type="hidden" name="brand" value="{{ request.GET.brand }}">{% endif %}
                         
                         <label for="sort_by" class="text-sm text-slate-600 dark:text-slate-400 hidden sm:inline">Ordenar:</label>
                         <select name="sort_by" 

@@ -40,6 +40,11 @@ def store(request, category_slug=None, subcategory_slug=None):
         category = get_object_or_404(Category, slug=category_slug)
         products = products.filter(category=category)
         subcategories = SubCategory.objects.filter(category=category)
+        
+    # Filtrar por subcategoría si existe
+    if subcategory_slug:
+        subcategory = get_object_or_404(SubCategory, category=category, slug=subcategory_slug)
+        products = products.filter(subcategories=subcategory)
     
     # Obtener productos en oferta
     sale_products = ProductService.get_sale_products(category=category, subcategory=subcategory)
@@ -86,6 +91,13 @@ def store(request, category_slug=None, subcategory_slug=None):
     # Agrupar productos en oferta para carrusel
     sale_products_groups = CarouselService.get_sale_products_groups(sale_products)
     
+    # Pre-resolver categoría activa y lista de subcategorías para el carrusel de store.html (evita fallos de lookup en template)
+    active_category = category
+    if not active_category and subcategory:
+        active_category = subcategory.category
+    
+    carousel_subcategories = active_category.subcategories.all() if active_category else None
+    
     context = {
         'products': paged_products,
         'product_count': product_count,
@@ -97,17 +109,26 @@ def store(request, category_slug=None, subcategory_slug=None):
         'brands': brands,
         'subcategories': subcategories,
         'category_slug': category_slug,
+        'subcategory_slug': subcategory_slug,
         'current_category': category,
+        'category': category,
         'current_subcategory': subcategory,
+        'subcategory': subcategory,
+        'active_category': active_category,
+        'carousel_subcategories': carousel_subcategories,
         'sale_products_groups': sale_products_groups,
         'show_sale_carousel': not (category_slug or subcategory_slug),
         'breadcrumb_items': [
             {'name': 'Inicio', 'url': '/'},
-            {'name': category.category_name if category else 'Catálogo', 'url': None}
+            {'name': category.category_name, 'url': category.get_url()},
+            {'name': subcategory.subcategory_name, 'url': None}
+        ] if subcategory else ([
+            {'name': 'Inicio', 'url': '/'},
+            {'name': category.category_name, 'url': None}
         ] if category else [
             {'name': 'Inicio', 'url': '/'},
             {'name': 'Catálogo', 'url': None}
-        ],
+        ]),
     }
     
     return render(request, 'store/store.html', context)
@@ -116,16 +137,7 @@ def store(request, category_slug=None, subcategory_slug=None):
 def products_by_subcategory(request, category_slug, subcategory_slug):
     """Vista de productos por subcategoría"""
     try:
-        subcategory = SubCategory.objects.get(category__slug=category_slug, slug=subcategory_slug)
-        products = ProductService.get_products_by_subcategory(subcategory_slug, category_slug)
-        
-        context = {
-            'products': products,
-            'product_count': products.count(),
-            'subcategory': subcategory,
-            'subcategories': subcategory.category.subcategories.all(),
-        }
-        return render(request, 'store/store.html', context)
+        return store(request, category_slug=category_slug, subcategory_slug=subcategory_slug)
     except Exception as e:
         logger.error(f"Error en products_by_subcategory: {e}")
         raise
