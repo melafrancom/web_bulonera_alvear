@@ -69,11 +69,19 @@ def place_order(request):
     else:
         form = OrderForm()
     
+    # Breadcrumb
+    breadcrumb_items = [
+        {'name': 'Inicio', 'url': '/'},
+        {'name': 'Carrito', 'url': '/cart/'},
+        {'name': 'Checkout', 'url': None}
+    ]
+    
     context = {
         'form': form,
         'cart_items': cart_items,
         'total': total,
         'quantity': quantity,
+        'breadcrumb_items': breadcrumb_items,
     }
     
     return render(request, 'cart/checkout.html', context)

@@ -43,7 +43,7 @@ class Order(models.Model):
     address_line_2 = models.CharField(max_length=100)
     country = models.CharField(max_length=50)  # Agregado mio
     city = models.CharField(max_length=50)  # Agregado mio
-    state = models.CharField(max_length=5)  # QUE ES CODIGO POSTAL EN CHECKOUT.HTML
+    state = models.CharField(max_length=10)  # QUE ES CODIGO POSTAL EN CHECKOUT.HTML
     
     ip = models.CharField(max_length=25, blank=True)
     is_ordered = models.BooleanField(default=False)

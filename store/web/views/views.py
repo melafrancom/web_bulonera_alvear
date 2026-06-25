@@ -356,7 +356,7 @@ def search(request):
     return render(request, 'store/store.html', context)
 
 
-@login_required(login_url='login')
+@login_required(login_url='account:login')
 def submit_review(request, product_id):
     """Vista para enviar review"""
     url = request.META.get('HTTP_REFERER')

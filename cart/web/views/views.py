@@ -9,6 +9,7 @@ import logging
 from cart.services import CartService
 from cart.models import CartItem
 from store.models import Product, Variation
+from orders.web.forms import OrderForm
 
 logger = logging.getLogger(__name__)
 
@@ -173,7 +174,7 @@ def get_cart_data(request):
     })
 
 
-@login_required(login_url='login')
+@login_required(login_url='account:login')
 def checkout(request):
     """
     Vista de checkout (requiere autenticación).
@@ -190,7 +191,17 @@ def checkout(request):
         {'name': 'Checkout', 'url': None}
     ]
     
+    # Pre-populate form initial data
+    initial_data = {
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'email': user.email,
+        'phone': getattr(user, 'phone', ''),
+    }
+    form = OrderForm(initial=initial_data)
+    
     context = {
+        'form': form,
         'cart_items': cart_data['items'],
         'total': cart_data['total'],
         'quantity': cart_data['quantity'],

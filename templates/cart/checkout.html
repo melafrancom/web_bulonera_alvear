@@ -28,18 +28,27 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8"
              x-data="{
                  formData: {
-                     first_name: '',
-                     last_name: '',
-                     email: '',
-                     phone: '',
-                     address_line_1: '',
-                     address_line_2: '',
-                     country: 'Argentina',
-                     city: '',
-                     state: '',
-                     order_note: ''
+                     first_name: '{{ form.first_name.value|default:request.user.first_name|escapejs }}',
+                     last_name: '{{ form.last_name.value|default:request.user.last_name|escapejs }}',
+                     email: '{{ form.email.value|default:request.user.email|escapejs }}',
+                     phone: '{{ form.phone.value|default:request.user.phone|default:""|escapejs }}',
+                     address_line_1: '{{ form.address_line_1.value|default:""|escapejs }}',
+                     address_line_2: '{{ form.address_line_2.value|default:""|escapejs }}',
+                     country: '{{ form.country.value|default:"Argentina"|escapejs }}',
+                     city: '{{ form.city.value|default:""|escapejs }}',
+                     state: '{{ form.state.value|default:""|escapejs }}',
+                     order_note: '{{ form.order_note.value|default:""|escapejs }}'
                  },
-                 errors: {},
+                 errors: {
+                     {% if form.first_name.errors %}first_name: '{{ form.first_name.errors.0|escapejs }}',{% endif %}
+                     {% if form.last_name.errors %}last_name: '{{ form.last_name.errors.0|escapejs }}',{% endif %}
+                     {% if form.email.errors %}email: '{{ form.email.errors.0|escapejs }}',{% endif %}
+                     {% if form.phone.errors %}phone: '{{ form.phone.errors.0|escapejs }}',{% endif %}
+                     {% if form.address_line_1.errors %}address_line_1: '{{ form.address_line_1.errors.0|escapejs }}',{% endif %}
+                     {% if form.country.errors %}country: '{{ form.country.errors.0|escapejs }}',{% endif %}
+                     {% if form.city.errors %}city: '{{ form.city.errors.0|escapejs }}',{% endif %}
+                     {% if form.state.errors %}state: '{{ form.state.errors.0|escapejs }}',{% endif %}
+                 },
                  
                  validateField(field) {
                      if (field === 'email') {
@@ -82,7 +91,15 @@
                             Dirección de Envío
                         </h2>
                         
-                        <form action="{% url 'orders:place_orders' %}" method="post" class="space-y-4">
+                        {% if form.non_field_errors %}
+                            <div class="mb-4 p-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300">
+                                {% for error in form.non_field_errors %}
+                                    <p class="text-sm font-medium">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <form id="checkout-form" action="{% url 'orders:place_orders' %}" method="post" class="space-y-4">
                             {% csrf_token %}
                             
                             <!-- Row 1: Nombre y Apellido -->
@@ -225,6 +242,7 @@
                                            x-model="formData.state"
                                            @blur="validateField('state')"
                                            required
+                                           maxlength="10"
                                            placeholder="1234"
                                            class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                            :class="errors.state ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">

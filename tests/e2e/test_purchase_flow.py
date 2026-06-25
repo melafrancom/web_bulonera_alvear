@@ -485,3 +485,56 @@ class TestPurchaseFlowEdgeCases:
         # El format debería ser YYYYMMDD + id (números solamente)
         assert order.order_number[8:].isdigit(), \
             f"Parte numérica del order_number debe ser dígitos: {order.order_number}"
+
+    def test_state_field_accepts_8_characters_postal_code(self, client_with_user, user, product):
+        """
+        Validamos que el campo state (Código Postal) acepta códigos postales argentinos de 8 caracteres.
+        """
+        # Arrange
+        CartItem.objects.create(
+            user=user,
+            product=product,
+            quantity=1,
+            is_active=True,
+            purchase_price=product.price
+        )
+        data = ORDER_FORM_DATA.copy()
+        data['state'] = 'C1024AAA'  # 8 chars (Argentina new zip code format)
+        
+        # Act
+        response = client_with_user.post(
+            reverse('orders:place_orders'),
+            data
+        )
+        
+        # Assert - El post debe redirigir (302) porque es exitoso y crear la orden
+        assert response.status_code == 302
+        assert Order.objects.filter(user=user, state='C1024AAA').exists()
+
+    def test_state_field_fails_if_exceeds_10_characters(self, client_with_user, user, product):
+        """
+        Validamos que el campo state (Código Postal) falla validación si supera los 10 caracteres.
+        """
+        # Arrange
+        CartItem.objects.create(
+            user=user,
+            product=product,
+            quantity=1,
+            is_active=True,
+            purchase_price=product.price
+        )
+        data = ORDER_FORM_DATA.copy()
+        data['state'] = 'Buenos Aires'  # 12 chars (excede 10)
+        
+        # Act
+        response = client_with_user.post(
+            reverse('orders:place_orders'),
+            data
+        )
+        
+        # Assert - Re-renderiza la página con código 200 porque falló la validación
+        assert response.status_code == 200
+        # No se debe crear la orden en BD con ese estado inválido
+        assert not Order.objects.filter(user=user, state='Buenos Aires').exists()
+        # Debe incluir el error del form
+        assert 'state' in response.context['form'].errors
