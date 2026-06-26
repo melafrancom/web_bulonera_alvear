@@ -40,7 +40,7 @@ class Order(models.Model):
     phone = models.CharField(max_length=25)
     email = models.EmailField(max_length=50)
     address_line_1 = models.CharField(max_length=100)
-    address_line_2 = models.CharField(max_length=100)
+    address_line_2 = models.CharField(max_length=100, blank=True)
     country = models.CharField(max_length=50)  # Agregado mio
     city = models.CharField(max_length=50)  # Agregado mio
     state = models.CharField(max_length=10)  # QUE ES CODIGO POSTAL EN CHECKOUT.HTML

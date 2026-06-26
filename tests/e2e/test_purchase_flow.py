@@ -538,3 +538,36 @@ class TestPurchaseFlowEdgeCases:
         assert not Order.objects.filter(user=user, state='Buenos Aires').exists()
         # Debe incluir el error del form
         assert 'state' in response.context['form'].errors
+
+    def test_address_line_2_empty_does_not_block_order(self, client_with_user, user, product):
+        """
+        Validamos que address_line_2 vacío NO bloquea la orden.
+        
+        Este campo es opcional en la UI ('Piso, depto, etc.') y debe ser
+        blank=True en el modelo. Antes de este fix, dejarlo vacío causaba
+        un error genérico "Por favor corrige los errores en el formulario"
+        sin indicar qué campo fallaba — especialmente crítico en mobile
+        donde los usuarios tienden a omitir campos opcionales.
+        """
+        # Arrange
+        CartItem.objects.create(
+            user=user,
+            product=product,
+            quantity=1,
+            is_active=True,
+            purchase_price=product.price
+        )
+        data = ORDER_FORM_DATA.copy()
+        data['address_line_2'] = ''  # Campo opcional vacío
+        
+        # Act
+        response = client_with_user.post(
+            reverse('orders:place_orders'),
+            data
+        )
+        
+        # Assert - Debe redirigir (302) porque la orden se creó exitosamente
+        assert response.status_code == 302, \
+            f"Esperado 302 pero obtuvo {response.status_code}. address_line_2 vacío no debería bloquear la orden."
+        assert Order.objects.filter(user=user).exists()
+
