@@ -16,3 +16,6 @@ staticfiles
 logs
 *.log
 node_modules
+graphify-out/
+.obsidian/
+*.canvas

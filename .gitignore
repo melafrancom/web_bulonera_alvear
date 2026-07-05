@@ -81,3 +81,8 @@ AUDIT_BLOG_APP.md
 BLOG_FINAL_SUMMARY.md
 BLOG_QUICK_START.md
 IMPLEMENTATION_BLOG_WALKTHROUGH.md
+
+# Graphify & Obsidian temp files
+graphify-out/
+.obsidian/
+*.canvas
