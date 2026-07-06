@@ -2,10 +2,17 @@ from django.conf import settings
 from django.core.cache import cache
 from .models import SiteTheme
 
+from datetime import date, timedelta
+
 def meta_settings(request):
     """
     Inyecta configuraciones globales en todos los templates.
     """
+    # Solo inyectar rating si hay datos verificados en la cache de Redis (cero riesgo de penalización)
+    google_data = cache.get('google_places_reviews_data')
+    rating = google_data.get('rating') if google_data else None
+    reviews_count = google_data.get('total') if google_data else None
+
     return {
         'META_PIXEL_ENABLED': getattr(settings, 'META_PIXEL_ENABLED', False),
         'META_PIXEL_ID': getattr(settings, 'META_PIXEL_ID', ''),
@@ -17,6 +24,11 @@ def meta_settings(request):
         'DEBUG': settings.DEBUG,
         'GOOGLE_MAPS_EMBED_KEY': getattr(settings, 'GOOGLE_MAPS_EMBED_KEY', ''),
         'GOOGLE_PLACE_ID': getattr(settings, 'GOOGLE_PLACE_ID', ''),
+        
+        # Variables dinámicas seguras
+        'GOOGLE_BUSINESS_RATING': rating,
+        'GOOGLE_BUSINESS_REVIEWS_COUNT': reviews_count,
+        'PRICE_VALID_UNTIL': (date.today() + timedelta(days=30)).isoformat()
     }
 def site_theme(request):
     """

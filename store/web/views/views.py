@@ -98,7 +98,18 @@ def store(request, category_slug=None, subcategory_slug=None):
     
     carousel_subcategories = active_category.subcategories.all() if active_category else None
     
+    # Cargar FAQs relacionadas a la categoría o subcategoría activa (Sprint 3: Tarea 3.4)
+    faqs = None
+    if subcategory:
+        faqs = FAQService.get_faqs_by_subcategory(subcategory.id)[:6]
+    if not faqs and category:
+        faqs = FAQService.get_faqs_by_category(category.id)[:6]
+    if not faqs:
+        from store.models import FAQ
+        faqs = FAQ.objects.filter(is_active=True, subcategory__isnull=True)[:4]
+    
     context = {
+        'faqs': faqs,
         'products': paged_products,
         'product_count': product_count,
         'min_price': min_price,

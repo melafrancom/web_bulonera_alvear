@@ -99,11 +99,13 @@
                                 {% endif %}
                                 <img src="{{ image.image_asset.file.url }}" alt="{{ image.title }}" 
                                     width="1920" height="480"
-                                    class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                                    class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
+                                    fetchpriority="{% if forloop.first %}high{% else %}low{% endif %}">
                             {% else %}
                                 <img src="{{ image.image_url }}" alt="{{ image.title }}" 
                                     width="1920" height="480"
-                                    class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                                    class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
+                                    fetchpriority="{% if forloop.first %}high{% else %}low{% endif %}">
                             {% endif %}
                         </picture>
                     </a>
@@ -151,11 +153,13 @@
                                 {% endif %}
                                 <img src="{{ image.image_asset.file.url }}" alt="{{ image.title }}" 
                                     width="1920" height="480"
-                                    class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                                    class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
+                                    fetchpriority="{% if forloop.first %}high{% else %}low{% endif %}">
                             {% else %}
                                 <img src="{{ image.image_url }}" alt="{{ image.title }}" 
                                     width="1920" height="480"
-                                    class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                                    class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
+                                    fetchpriority="{% if forloop.first %}high{% else %}low{% endif %}">
                             {% endif %}
                         </picture>
                     </a>
@@ -202,11 +206,13 @@
                             {% endif %}
                             <img src="{{ image.image_asset.file.url }}" alt="{{ image.title }}" 
                                 width="1920" height="480"
-                                class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                                class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
+                                fetchpriority="{% if forloop.first %}high{% else %}low{% endif %}">
                         {% else %}
                             <img src="{{ image.image_url }}" alt="{{ image.title }}" 
                                 width="1920" height="480"
-                                class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                                class="w-full h-full object-cover" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
+                                fetchpriority="{% if forloop.first %}high{% else %}low{% endif %}">
                         {% endif %}
                     </picture>
                     {% endif %}

@@ -59,6 +59,24 @@ class TestCategoryModel(TestCase):
         )
         self.assertEqual(cat.rich_description, '<h2>Tornillos de todo tipo</h2><p>Texto SEO maestro.</p>')
 
+    def test_category_get_seo_title(self):
+        """Verifica el método get_seo_title en Category."""
+        # Caso 1: Tiene meta_title explícito
+        cat_with_meta = Category.objects.create(
+            category_name='Cat 1', slug='cat-1', meta_title='Título Especial'
+        )
+        self.assertEqual(cat_with_meta.get_seo_title(), 'Título Especial')
+
+        # Caso 2: Sin meta_title (genera fallback truncado dinámicamente)
+        cat_no_meta = Category.objects.create(
+            category_name='Herramientas Eléctricas Pesadas',
+            slug='cat-long'
+        )
+        cat_no_meta.meta_title = ""
+        seo_title = cat_no_meta.get_seo_title()
+        self.assertTrue(len(seo_title) <= 60)
+        self.assertTrue(seo_title.endswith(" ❘ Bulonera Alvear"))
+
 
 @pytest.mark.django_db
 class TestSubCategoryModel(TestCase):
@@ -117,6 +135,25 @@ class TestSubCategoryModel(TestCase):
             rich_description='<p>Tuercas SEO.</p>'
         )
         self.assertEqual(sub.rich_description, '<p>Tuercas SEO.</p>')
+
+    def test_subcategory_get_seo_title(self):
+        """Verifica el método get_seo_title en SubCategory."""
+        # Caso 1: Tiene meta_title explícito
+        sub_with_meta = SubCategory.objects.create(
+            subcategory_name='Sub 1', slug='sub-1', category=self.category, meta_title='Título Especial Sub'
+        )
+        self.assertEqual(sub_with_meta.get_seo_title(), 'Título Especial Sub')
+
+        # Caso 2: Sin meta_title (genera fallback truncado dinámicamente)
+        sub_no_meta = SubCategory.objects.create(
+            subcategory_name='Destornilladores Articulados Bremen',
+            slug='sub-long',
+            category=self.category
+        )
+        sub_no_meta.meta_title = ""
+        seo_title = sub_no_meta.get_seo_title()
+        self.assertTrue(len(seo_title) <= 60)
+        self.assertTrue(seo_title.endswith(" ❘ Bulonera Alvear"))
 
 
 @pytest.mark.django_db

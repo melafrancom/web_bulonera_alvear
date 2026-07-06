@@ -202,6 +202,37 @@ class Product(models.Model):
     #URL completa para META PIXEL y Google Merchant
         return self.get_url()
 
+    def get_structured_properties(self) -> list:
+        """
+        Genera la lista de PropertyValue para JSON-LD sin riesgo de JSON inválido.
+        Filtra campos vacíos y mapea de acuerdo al esquema oficial de base de datos.
+        """
+        properties = []
+        field_mapping = [
+            ('grade', 'Grado de Resistencia'),
+            ('norm', 'Norma Técnica'),
+            ('thread_formats', 'Tipo de Rosca'),
+            ('diameter', 'Diámetro'),
+            ('length', 'Largo'),
+            ('material', 'Material'),
+        ]
+        
+        for field_name, display_name in field_mapping:
+            value = getattr(self, field_name, None)
+            if value and str(value).strip():
+                properties.append({
+                    '@type': 'PropertyValue',
+                    'name': display_name,
+                    'value': str(value).strip()
+                })
+        
+        properties.append({
+            '@type': 'PropertyValue',
+            'name': 'Disponibilidad Local',
+            'value': 'Stock en Resistencia, Chaco con entrega inmediata al NEA'
+        })
+        return properties
+
     def __str__(self):
         return self.name
     

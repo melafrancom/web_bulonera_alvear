@@ -60,6 +60,23 @@ class Category(models.Model):
     
     def get_url(self):
         return reverse('store:products_by_category', args=[self.slug])
+
+    def get_seo_title(self) -> str:
+        """
+        Retorna el meta_title si existe. De lo contrario, genera un título 
+        localizado limitado a un máximo de 60 caracteres.
+        """
+        if self.meta_title:
+            return self.meta_title
+        
+        base = f"{self.category_name} en Resistencia"
+        suffix = " ❘ Bulonera Alvear"
+        max_base = 60 - len(suffix)
+        
+        if len(base) > max_base:
+            base = base[:max_base-1] + "…"
+            
+        return base + suffix
     
     @property
     def image_url(self):
@@ -147,6 +164,23 @@ class SubCategory(models.Model):
     
     def get_url(self):
         return reverse('store:products_by_subcategory', args=[self.category.slug, self.slug])
+
+    def get_seo_title(self) -> str:
+        """
+        Retorna el meta_title si existe. De lo contrario, genera un título 
+        localizado limitado a un máximo de 60 caracteres.
+        """
+        if self.meta_title:
+            return self.meta_title
+        
+        base = f"{self.subcategory_name} en Resistencia"
+        suffix = " ❘ Bulonera Alvear"
+        max_base = 60 - len(suffix)
+        
+        if len(base) > max_base:
+            base = base[:max_base-1] + "…"
+            
+        return base + suffix
     
     def __str__(self):
         return self.subcategory_name

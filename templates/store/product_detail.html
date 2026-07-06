@@ -37,63 +37,110 @@
 
 {% block head_extra %}
     <!-- LCP Preload (FASE 3.6) -->
-    <link rel="preload" as="image" href="{{ single_product.webp_image_url }}" type="image/webp">
+    <link rel="preload" as="image" href="{{ single_product.webp_image_url }}" type="image/webp" fetchpriority="high">
     
-    <!-- JSON-LD Product Schema -->
+    <!-- JSON-LD Product Schema (Sprint 3: Tarea 3.3) -->
     <script type="application/ld+json">
     {
-        "@context": "https://schema.org",
-        "@type": "Product",
-        "name": "{{ single_product.name|escapejs }}",
-        "sku": "{{ single_product.code }}",
-        "description": "{{ single_product.description|escapejs|truncatewords:50 }}",
-        {% if single_product.brand %}
-        "brand": {
-            "@type": "Brand",
-            "name": "{{ single_product.brand|escapejs }}"
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "{{ request.scheme }}://{{ request.get_host }}{{ single_product.get_url }}"
+      },
+      "name": "{{ single_product.name|escapejs }}",
+      "image": [
+        "{{ request.scheme }}://{{ request.get_host }}{{ single_product.image_url }}"
+      ],
+      "description": "{{ single_product.meta_description|default:single_product.description|escapejs|truncatewords:80 }}",
+      "sku": "{{ single_product.code }}",
+      "mpn": "{{ single_product.mpn|default:single_product.code }}",
+      {% if single_product.gtin %}
+      "gtin13": "{{ single_product.gtin }}",
+      {% endif %}
+      "brand": {
+        "@type": "Brand",
+        "name": "{{ single_product.brand|default:'Genérica'|escapejs }}"
+      },
+      "manufacturer": {
+        "@type": "Organization",
+        "name": "{{ single_product.brand|default:'Genérica'|escapejs }}"
+      },
+      "category": "{{ single_product.category.category_name|escapejs }}",
+      "material": "{{ single_product.material|default:''|escapejs }}",
+      "color": "{{ single_product.colour|default:''|escapejs }}",
+      "additionalProperty": [
+        {% for prop in single_product.get_structured_properties %}
+        {
+          "@type": "PropertyValue",
+          "name": "{{ prop.name|escapejs }}",
+          "value": "{{ prop.value|escapejs }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ],
+      "offers": {
+        "@type": "Offer",
+        "url": "{{ request.scheme }}://{{ request.get_host }}{{ single_product.get_url }}",
+        "priceCurrency": "ARS",
+        {% if price and price > 0 %}
+        "price": "{{ price|floatformat:2 }}",
+        {% else %}
+        "price": "0",
+        "priceSpecification": {
+          "@type": "PriceSpecification",
+          "price": "0",
+          "priceCurrency": "ARS",
+          "valueAddedTaxIncluded": true,
+          "description": "Precio sujeto a cotización. Consultá disponibilidad y precio por WhatsApp."
         },
         {% endif %}
-        "offers": {
-            "@type": "Offer",
-            "price": "{{ price|floatformat:2 }}",
-            "priceCurrency": "ARS",
-            "availability": "{% if single_product.stock > 0 %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
-            "url": "{{ request.scheme }}://{{ request.get_host }}{{ single_product.get_url }}",
-            "seller": {
-                "@type": "Organization",
-                "name": "Bulonera Alvear"
-            }
+        "priceValidUntil": "{{ PRICE_VALID_UNTIL }}",
+        "itemCondition": "https://schema.org/NewCondition",
+        "availability": "{% if single_product.stock > 0 %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
+        "seller": {
+          "@type": "HardwareStore",
+          "name": "Bulonera Alvear",
+          "@id": "https://buloneraalvear.online/#organization"
         },
-        "image": "{{ request.scheme }}://{{ request.get_host }}{{ single_product.image_url }}"{% if single_product.gtin %},
-        "gtin": "{{ single_product.gtin }}"{% endif %}{% if single_product.mpn %},
-        "mpn": "{{ single_product.mpn }}"{% endif %}{% if single_product.averageReview %},
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "{{ single_product.averageReview|floatformat:1 }}",
-            "reviewCount": "{{ single_product.countReview }}"
-        }{% endif %}
+        "shippingDetails": {
+          "@type": "OfferShippingDetails",
+          "shippingDestination": {
+            "@type": "DefinedRegion",
+            "addressCountry": "AR",
+            "addressRegion": ["Chaco", "Corrientes", "Formosa", "Misiones"]
+          },
+          "deliveryTime": {
+            "@type": "ShippingDeliveryTime",
+            "handlingTime": {
+              "@type": "QuantitativeValue",
+              "minValue": 0,
+              "maxValue": 1,
+              "unitCode": "DAY"
+            },
+            "transitTime": {
+              "@type": "QuantitativeValue",
+              "minValue": 1,
+              "maxValue": 3,
+              "unitCode": "DAY"
+            }
+          }
+        }
+      }
+      {% if sale_products %},
+      "isRelatedTo": [
+        {% for related in sale_products|slice:":3" %}
+        {
+          "@type": "Product",
+          "name": "{{ related.name|escapejs }}",
+          "url": "{{ request.scheme }}://{{ request.get_host }}{{ related.get_url }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ]
+      {% endif %}
     }
     </script>
     
-    <!-- JSON-LD BreadcrumbList Schema (FASE 3.4) -->
-    {% if breadcrumb_items %}
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-            {% for item in breadcrumb_items %}
-            {
-                "@type": "ListItem",
-                "position": {{ forloop.counter }},
-                "name": "{{ item.name }}",
-                "item": "{{ request.scheme }}://{{ request.get_host }}{{ item.url }}"
-            }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ]
-    }
-    </script>
-    {% endif %}
+    
     
     <!-- JSON-LD FAQPage Schema (FASE 3.5) -->
     {% if product_faqs %}
@@ -405,6 +452,18 @@
                                         </div>
                                     </div>
                                     {% endif %}
+                                {% endif %}
+
+                                <!-- WhatsApp Consult Button (Sprint 4: Tarea 4.3) -->
+                                {% if WHATSAPP_NUMBER %}
+                                <a href="https://wa.me/{{ WHATSAPP_NUMBER }}?text=Hola%20Bulonera%20Alvear%2C%20quiero%20consultar%20por%20el%20producto%20{{ single_product.name|urlencode }}%20(C%C3%B3digo%3A%20{{ single_product.code|urlencode }})."
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6"
+                                   id="whatsapp-product-consult-btn">
+                                    <i data-lucide="message-circle" class="w-5 h-5"></i>
+                                    <span>Consultar por WhatsApp</span>
+                                </a>
                                 {% endif %}
                             </form>
                         </div>

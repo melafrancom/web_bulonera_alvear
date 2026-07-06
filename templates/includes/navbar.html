@@ -23,17 +23,28 @@
     <nav class="hidden lg:block bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
         <div class="container mx-auto px-4">
             <div class="flex items-center justify-between py-2 text-xs">
-                <!-- Left: Ubicación + Teléfono -->
+                <!-- Left: Ubicación + Teléfono + Horarios (Sprint 4: Tarea 4.2) -->
                 <div class="flex items-center gap-6 text-slate-600 dark:text-slate-400">
                     <a href="{% url 'location' %}" class="flex items-center gap-2 hover:text-primary-600 transition-colors">
                         <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-                        <span>Av. Alvear 1301, Resistencia, Chaco, Argentina</span>
+                        <span>Av. Alvear 1301, Resistencia, Chaco</span>
                     </a>
+                    <span class="text-slate-300 dark:text-slate-600">|</span>
+                    <span class="flex items-center gap-2">
+                        <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                        <span>Lun–Vie 8:00–19:30 · Sáb 8:00–13:00</span>
+                    </span>
                     <span class="text-slate-300 dark:text-slate-600">|</span>
                     <a href="{% url 'nosotros' %}" class="flex items-center gap-2 hover:text-primary-600 transition-colors">
                         <i data-lucide="info" class="w-3.5 h-3.5"></i>
                         <span>Sobre Nosotros</span>
+                    {% if WHATSAPP_NUMBER %}
+                    <span class="text-slate-300 dark:text-slate-600">|</span>
+                    <a href="https://wa.me/{{ WHATSAPP_NUMBER }}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 hover:text-green-600 dark:hover:text-green-400 transition-colors font-semibold text-primary-800 dark:text-[#9ac1f0]">
+                        <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                        <span>WhatsApp: +54 362 4733431</span>
                     </a>
+                    {% endif %}
                 </div>
                 
                 <!-- Right: Dark Mode + Login/Cuenta -->

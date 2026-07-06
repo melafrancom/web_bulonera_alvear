@@ -214,6 +214,39 @@ class TestProductModel:
         )
         assert product2.image_alt == 'Imagen de sierra caladora profesional'
 
+    def test_product_get_structured_properties(self, category):
+        """Verifica que get_structured_properties retorne los campos correctos."""
+        product = Product.objects.create(
+            code='PROD-PROP-001',
+            name='Bulón Cabeza Hexagonal Bremen',
+            slug='bulon-bremen',
+            price=150.0,
+            stock=100,
+            category=category,
+            grade='8.8',
+            norm='DIN 933',
+            thread_formats='Rosca Métrica M12',
+            diameter='12mm',
+            length='50mm',
+            material='Acero Carbono Templado'
+        )
+        props = product.get_structured_properties()
+        
+        # Debe contener la propiedad de disponibilidad local
+        self_local_availability = [p for p in props if p['name'] == 'Disponibilidad Local']
+        assert len(self_local_availability) == 1
+        assert self_local_availability[0]['value'] == 'Stock en Resistencia, Chaco con entrega inmediata al NEA'
+        
+        # Debe contener el grado
+        grade_prop = [p for p in props if p['name'] == 'Grado de Resistencia']
+        assert len(grade_prop) == 1
+        assert grade_prop[0]['value'] == '8.8'
+        
+        # Debe contener la norma
+        norm_prop = [p for p in props if p['name'] == 'Norma Técnica']
+        assert len(norm_prop) == 1
+        assert norm_prop[0]['value'] == 'DIN 933'
+
 @pytest.mark.django_db
 class TestReviewRatingModel:
     """Tests del modelo ReviewRating."""

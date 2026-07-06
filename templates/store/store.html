@@ -5,14 +5,15 @@
 {% load humanize %}
 
 {% block title %}
-{% if category %}{{ category.category_name }} | Bulonera Alvear
-{% elif subcategory %}{{ subcategory.subcategory_name }} | Bulonera Alvear
-{% else %}Catálogo de Productos | Bulonera Alvear{% endif %}
+{% if category %}{{ category.get_seo_title }}
+{% elif subcategory %}{{ subcategory.get_seo_title }}
+{% else %}Catálogo de Productos ❘ Bulonera Alvear{% endif %}{% if products.number > 1 %} - Página {{ products.number }}{% endif %}
 {% endblock %}
 
 {% block meta_description %}
-{% if category %}Productos de {{ category.category_name }} en Bulonera Alvear. Ferretería industrial en Resistencia, Chaco.{% if products.number > 1 %} Página {{ products.number }}.{% endif %}
-{% else %}Catálogo completo de productos de ferretería industrial. Tornillos, tuercas, herramientas y más.{% if products.number > 1 %} Página {{ products.number }}.{% endif %}{% endif %}
+{% if category %}{{ category.meta_description }}{% if products.number > 1 %} - Página {{ products.number }}{% endif %}
+{% elif subcategory %}{{ subcategory.meta_description }}{% if products.number > 1 %} - Página {{ products.number }}{% endif %}
+{% else %}Catálogo completo de productos de ferretería industrial en Resistencia, Chaco. Tornillos, tuercas y fijaciones.{% if products.number > 1 %} Página {{ products.number }}.{% endif %}{% endif %}
 {% endblock %}
 
 {% block meta %}
@@ -44,43 +45,67 @@
     <link rel="next" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ products.next_page_number }}">
     {% endif %}
 
-    <!-- CollectionPage Schema (FASE 2.1 — Auditoría SEO) -->
+    <!-- CollectionPage Schema (Sprint 3: Tarea 3.5) -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
-        "name": "{% if category %}{{ category.category_name }}{% elif subcategory %}{{ subcategory.subcategory_name }}{% else %}Catálogo de Productos{% endif %}",
-        "description": "{% if category %}{{ category.meta_description|default:'Productos de '|add:category.category_name }}{% else %}Catálogo completo de productos de ferretería industrial{% endif %}",
-        "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}",
-        "mainEntity": {
-            "@type": "ItemList",
-            "numberOfItems": {{ products.paginator.count }},
-            "itemListElement": [
-                {% for product in products %}
-                {
-                    "@type": "ListItem",
-                    "position": {{ forloop.counter }},
-                    "url": "{{ request.scheme }}://{{ request.get_host }}{{ product.get_url }}",
-                    "name": "{{ product.name|escapejs }}"
-                }{% if not forloop.last %},{% endif %}
-                {% endfor %}
-            ]
-        },
-        "isPartOf": {
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-                {% for breadcrumb in breadcrumb_items %}
-                {
-                    "@type": "ListItem",
-                    "position": {{ forloop.counter }},
-                    "name": "{{ breadcrumb.name }}",
-                    "item": "{{ request.scheme }}://{{ request.get_host }}{{ breadcrumb.url }}"
-                }{% if not forloop.last %},{% endif %}
-                {% endfor %}
-            ]
-        }
+        "name": "{% if category %}{{ category.get_seo_title }}{% elif subcategory %}{{ subcategory.get_seo_title }}{% else %}Catálogo de Productos ❘ Bulonera Alvear{% endif %}",
+        "description": "{% if category %}{{ category.meta_description }}{% elif subcategory %}{{ subcategory.meta_description }}{% else %}Catálogo completo de productos de ferretería industrial{% endif %}",
+        "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
     }
     </script>
+
+    <!-- ItemList Schema (Sprint 3: Tarea 3.5) -->
+    {% if products %}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "{% if category %}{{ category.category_name }}{% elif subcategory %}{{ subcategory.subcategory_name }}{% else %}Catálogo de Productos{% endif %} — Bulonera Alvear",
+      "description": "Listado de productos en stock en Resistencia, Chaco.",
+      "numberOfItems": {{ products.paginator.count|default:products|length }},
+      "itemListElement": [
+        {% for product in products %}
+        {% if forloop.counter <= 10 %}
+        {
+          "@type": "ListItem",
+          "position": {{ forloop.counter }},
+          "item": {
+            "@type": "Product",
+            "name": "{{ product.name|escapejs }}",
+            "url": "{{ request.scheme }}://{{ request.get_host }}{{ product.get_url }}",
+            "image": "{{ request.scheme }}://{{ request.get_host }}{{ product.image_url }}"
+          }
+        }{% if not forloop.last and forloop.counter < 10 %},{% endif %}
+        {% endif %}
+        {% endfor %}
+      ]
+    }
+    </script>
+    {% endif %}
+
+    <!-- JSON-LD FAQPage Schema (Sprint 3: Tarea 3.4) -->
+    {% if faqs %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {% for faq in faqs %}
+            {
+                "@type": "Question",
+                "name": "{{ faq.question|escapejs }}",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "{{ faq.answer|escapejs|truncatewords:100 }}"
+                }
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+    }
+    </script>
+    {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -89,9 +114,9 @@
 <section class="py-4 bg-soft-bg dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
     <div class="container mx-auto px-4">
         <h1 class="text-2xl md:text-3xl font-heading font-semibold tracking-wide text-slate-900 dark:text-white mb-3">
-            {% if category %}Productos en {{ category.category_name }}
-            {% elif subcategory %}Productos en {{ subcategory.subcategory_name }}
-            {% else %}Encuentra los mejores productos de Bulonera Alvear
+            {% if category %}{{ category.category_name }} en Resistencia, Chaco
+            {% elif subcategory %}{{ subcategory.subcategory_name }} en Resistencia, Chaco
+            {% else %}Catálogo de Ferretería Industrial y Bulonería
             {% endif %}
         </h1>
         
@@ -512,11 +537,37 @@
                     </h2>
                     {{ current_subcategory.rich_description|safe }}
                 </section>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</section>
+                 {% endif %}
+
+                 <!-- FAQ Contextual Section (Sprint 3: Tarea 3.4) -->
+                 {% if faqs %}
+                 <section class="mt-12 border-t border-slate-200 dark:border-slate-700 pt-8">
+                     <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6 font-heading">
+                         Preguntas Frecuentes Relacionadas
+                     </h3>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6" x-data="{ activeFaq: null }">
+                         {% for faq in faqs %}
+                         <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-slate-50/50 dark:bg-slate-800/40">
+                             <h4 class="font-semibold text-slate-800 dark:text-slate-100 flex justify-between items-center cursor-pointer text-sm md:text-base font-heading" 
+                                 @click="activeFaq = (activeFaq === {{ forloop.counter0 }} ? null : {{ forloop.counter0 }})">
+                                 <span>{{ faq.question }}</span>
+                                 <i data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': activeFaq === {{ forloop.counter0 }} }"></i>
+                             </h4>
+                             <div x-show="activeFaq === {{ forloop.counter0 }}" 
+                                  x-collapse
+                                  class="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-sans" 
+                                  style="display: none;">
+                                 {{ faq.answer }}
+                             </div>
+                         </div>
+                         {% endfor %}
+                     </div>
+                 </section>
+                 {% endif %}
+             </div>
+         </div>
+     </div>
+ </section>
 
 <!-- Carrito Flotante -->
 {% include 'includes/partials/_floating_cart.html' %}

@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="msvalidate.01" content="{{INDEXNOW_API_KEY}}" />
-    <title>{% block title %}Bulonera Alvear - Ferretería Industrial Online{% endblock %}</title>
-    <meta name="description" content="{% block meta_description %}Ferretería industrial en Resistencia, Chaco. Tornillos, tuercas, herramientas y más. Envíos a todo el país.{% endblock %}">
+    <title>{% block title %}Bulonera Alvear ❘ Ferretería Industrial y Bulonería en Resistencia, Chaco{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Ferretería industrial y bulonería en Resistencia, Chaco. Stock real de herramientas manuales, eléctricas, fijaciones y tornillos. ¡Pedí cotización!{% endblock %}">
     <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
     
     <!-- Favicons -->
@@ -38,14 +38,53 @@
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     {% block meta %}{% endblock %}
     
-    <!-- Barlow (títulos) & Inter (datos/body) — Brand Book -->
+    <!-- Preconnect and DNS Prefetch (Sprint 1) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://www.clarity.ms">
+    <link rel="dns-prefetch" href="https://connect.facebook.net">
+
+    <!-- Barlow (títulos) & Inter (datos/body) — Brand Book -->
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- TailwindCSS v3 CDN with Typography Plugin -->
-    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-    {% include 'includes/_theme.html' %}
+    <!-- Critical CSS (Sprint 1: F1.0) -->
+    <style>
+        :root {
+            --primary: #1e40af;
+            --navbar-bg: rgba(27, 58, 92, 1.00);
+            --soft-bg: #e2ecf6;
+        }
+        body {
+            background-color: var(--soft-bg);
+            color: #0f172a;
+            font-family: 'Inter', system-ui, sans-serif;
+            margin: 0;
+        }
+        .dark body {
+            background-color: #0f172a;
+            color: #f1f5f9;
+        }
+        .sticky-nav-placeholder {
+            height: 72px;
+        }
+        @media (min-width: 1024px) {
+            .sticky-nav-placeholder {
+                height: 120px;
+            }
+        }
+    </style>
+
+    {% if DEBUG %}
+        <!-- TailwindCSS v3 CDN with Typography Plugin for Development -->
+        <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+        {% include 'includes/_theme.html' %}
+    {% else %}
+        <!-- TailwindCSS Precompilado para Producción (Sprint 1: F1.1) -->
+        <link rel="stylesheet" href="{% static 'css/tailwind.min.css' %}">
+    {% endif %}
     
     <!-- Alpine.js Plugins -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
@@ -54,7 +93,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://unpkg.com/lucide@latest"></script>
     
 
     
@@ -116,87 +155,171 @@
          JSON-LD SCHEMAS — These are NOT tracking, always load
          ═══════════════════════════════════════════════════════ -->
 
-    <!-- JSON-LD Organization Schema (FASE 2.2 — Auditoría SEO) -->
+    <!-- JSON-LD LocalBusiness & HardwareStore (Entidad Unificada — Sprint 2: F2.2) -->
     <script type="application/ld+json">
     {
-        "@context": "https://schema.org",
-        "@type": "HardwareStore",
-        "name": "Bulonera Alvear",
-        "legalName": "Bulonera Alvear",
-        "url": "https://buloneraalvear.online",
-        "logo": "https://buloneraalvear.online{% static 'images/logo-bulonera-alvear.png' %}",
-        "description": "Ferretería industrial online en Resistencia, Chaco. Tornillos, tuercas, herramientas y más. Envíos a todo Argentina.",
-        "phone": "+54 3624733431",
-        "email": "contacto@buloneraalvear.online",
-        "address": {
-            "@type": "PostalAddress",
-            "streetAddress": "Av. Alvear 1301",
-            "addressLocality": "Resistencia",
-            "addressRegion": "Chaco",
-            "postalCode": "3500",
-            "addressCountry": "AR"
+      "@context": "https://schema.org",
+      "@type": ["HardwareStore", "LocalBusiness"],
+      "@id": "https://buloneraalvear.online/#organization",
+      "name": "Bulonera Alvear",
+      "alternateName": "Bulonería Alvear Resistencia",
+      "legalName": "Bulonera Alvear",
+      "description": "Ferretería industrial y bulonería técnica especializada en Resistencia, Chaco. Stock permanente de bulones, fijaciones, herramientas manuales y eléctricas, abrasivos y soldadura.",
+      "url": "https://buloneraalvear.online",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://buloneraalvear.online/static/images/logo-bulonera-alvear.png",
+        "width": 300,
+        "height": 300
+      },
+      "image": [
+        "https://buloneraalvear.online/static/images/logo-bulonera-alvear.png",
+        "https://buloneraalvear.online/static/images/fachada-bulonera-alvear.webp"
+      ],
+      "telephone": "+543624733431",
+      "email": "contacto@buloneraalvear.online",
+      "priceRange": "$$",
+      "currenciesAccepted": "ARS",
+      "inLanguage": "es-AR",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Av. Alvear 1301",
+        "addressLocality": "Resistencia",
+        "addressRegion": "Chaco",
+        "postalCode": "H3500",
+        "addressCountry": "AR"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": -27.44710512606706,
+        "longitude": -59.00549753201314
+      },
+      "hasMap": "https://www.google.com/maps/?cid=5589626616767849255",
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          "opens": "08:00",
+          "closes": "19:30"
         },
-        "geo": {
-            "@type": "GeoCoordinates",
-            "latitude": "-27.4802",
-            "longitude": "-58.9814"
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Saturday",
+          "opens": "08:00",
+          "closes": "13:00"
+        }
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+543624733431",
+        "contactType": "sales",
+        "areaServed": "AR",
+        "availableLanguage": "Spanish"
+      },
+      "areaServed": [
+        {
+          "@type": "State",
+          "name": "Chaco",
+          "sameAs": "https://es.wikipedia.org/wiki/Provincia_del_Chaco"
         },
-        "contactPoint": {
-            "@type": "ContactPoint",
-            "contactType": "Sales",
-            "telephone": "+54 3624733431",
-            "contactOption": "TollFree"
+        {
+          "@type": "State",
+          "name": "Corrientes",
+          "sameAs": "https://es.wikipedia.org/wiki/Provincia_de_Corrientes"
         },
-        "areaServed": [
-            {
-                "@type": "Country",
-                "name": "Argentina"
-            },
-            {
-                "@type": "State",
-                "name": "Chaco"
-            }
-        ],
-        "openingHoursSpecification": [
-            {
-                "@type": "OpeningHoursSpecification",
-                "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-                "opens": "08:00",
-                "closes": "18:00"
-            },
-            {
-                "@type": "OpeningHoursSpecification",
-                "dayOfWeek": "Saturday",
-                "opens": "09:00",
-                "closes": "13:00"
-            }
-        ],
-        "sameAs": [
-            "https://www.facebook.com/buloneraalvear",
-            "https://www.instagram.com/buloneraalvear",
-            "https://www.linkedin.com/company/bulonera-alvear"
-        ],
-        "priceRange": "$$"
+        {
+          "@type": "State",
+          "name": "Formosa",
+          "sameAs": "https://es.wikipedia.org/wiki/Provincia_de_Formosa"
+        },
+        {
+          "@type": "State",
+          "name": "Misiones",
+          "sameAs": "https://es.wikipedia.org/wiki/Provincia_de_Misiones"
+        }
+      ],
+      "paymentAccepted": ["Cash", "Credit Card", "Debit Card", "Bank Transfer", "Mercado Pago"],
+      "sameAs": [
+        "https://www.facebook.com/buloneraalveaar",
+        "https://www.instagram.com/buloneraalvear"
+      ],
+      "knowsAbout": [
+        "Bulonería industrial",
+        "Fijaciones mecánicas",
+        "Herramientas manuales profesionales",
+        "Herramientas eléctricas",
+        "Abrasivos industriales",
+        "EPP y Seguridad",
+        "Soldadura y consumibles",
+        "Anclajes químicos y mecánicos"
+      ],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Catálogo de Ferretería Industrial Bulonera Alvear",
+        "itemListElement": [
+          { "@type": "OfferCatalog", "name": "Bulonería y Tornillería" },
+          { "@type": "OfferCatalog", "name": "Herramientas Manuales" },
+          { "@type": "OfferCatalog", "name": "Herramientas Eléctricas" },
+          { "@type": "OfferCatalog", "name": "Fijaciones y Anclajes" },
+          { "@type": "OfferCatalog", "name": "Abrasivos y Discos de Corte" },
+          { "@type": "OfferCatalog", "name": "Soldadura y Consumibles" },
+          { "@type": "OfferCatalog", "name": "EPP - Seguridad Industrial" }
+        ]
+      }
+      {% if GOOGLE_BUSINESS_RATING and GOOGLE_BUSINESS_REVIEWS_COUNT %}
+      ,"aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "{{ GOOGLE_BUSINESS_RATING }}",
+        "reviewCount": "{{ GOOGLE_BUSINESS_REVIEWS_COUNT }}",
+        "bestRating": "5"
+      }
+      {% endif %}
     }
     </script>
 
-    <!-- JSON-LD WebSite Schema with SearchAction (FASE 2.2) -->
+    <!-- JSON-LD WebSite & SearchAction Schema (Sprint 2: F2.5) -->
     <script type="application/ld+json">
     {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Bulonera Alvear",
-        "url": "https://buloneraalvear.online",
-        "potentialAction": {
-            "@type": "SearchAction",
-            "target": {
-                "@type": "EntryPoint",
-                "urlTemplate": "https://buloneraalvear.online/store/search/?keyword={search_term_string}"
-            },
-            "query-input": "required name=search_term_string"
-        }
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": "https://buloneraalvear.online/#website",
+      "name": "Bulonera Alvear",
+      "alternateName": "Bulonería Alvear - Ferretería Industrial Resistencia",
+      "url": "https://buloneraalvear.online",
+      "publisher": {
+        "@id": "https://buloneraalvear.online/#organization"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://buloneraalvear.online/store/search/?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      },
+      "inLanguage": "es-AR"
     }
     </script>
+
+    <!-- JSON-LD BreadcrumbList Schema (Sprint 2: F2.4) -->
+    {% if breadcrumb_items %}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {% for item in breadcrumb_items %}
+        {
+          "@type": "ListItem",
+          "position": {{ forloop.counter }},
+          "name": "{{ item.name|escapejs }}",
+          "item": "{{ request.scheme }}://{{ request.get_host }}{{ item.url }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }
+    </script>
+    {% endif %}
     {% block head_extra %}{% endblock %}
 </head>
 
@@ -261,6 +384,79 @@
         }
     </script>
     
+    <!-- Floating WhatsApp CTA (Sprint 4: Tarea 4.1) -->
+    {% if WHATSAPP_NUMBER %}
+    <a href="https://wa.me/{{ WHATSAPP_NUMBER }}?text=Hola%20Bulonera%20Alvear%2C%20quiero%20hacer%20una%20consulta."
+       target="_blank"
+       rel="noopener noreferrer"
+       class="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 bg-[#25D366] hover:bg-[#20BA56] text-white rounded-full shadow-2xl transition-all duration-300 hover:scale-110 focus:ring-4 focus:ring-green-300 focus:outline-none"
+       aria-label="Contactar por WhatsApp"
+       id="floating-whatsapp-btn">
+        <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.504-5.727-1.465L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.884-6.97C16.38 2.016 13.906.993 11.28.991c-5.436 0-9.86 4.37-9.864 9.8.002 1.765.485 3.488 1.402 5.01L1.815 21.9l6.23-1.636zM17.487 14.4c-.33-.165-1.951-.963-2.253-1.073-.302-.11-.522-.165-.742.165-.22.33-.852 1.073-1.045 1.293-.193.22-.385.247-.715.082-1.393-.698-2.435-1.222-3.39-2.868-.25-.43.25-.399.715-1.327.082-.165.04-.31-.02-.475-.06-.165-.522-1.265-.715-1.727-.188-.454-.378-.393-.52-.401-.133-.007-.287-.008-.44-.008-.153 0-.403.057-.613.287-.21.23-.8.78-.8 1.9s.815 2.2 1.025 2.48c.21.28 1.625 2.482 3.935 3.482.55.238 1.062.38 1.43.498.552.176 1.054.15 1.45.092.44-.064 1.95-.797 2.225-1.566.275-.77.275-1.43.193-1.566-.083-.135-.303-.22-.633-.385z"/>
+        </svg>
+    </a>
+    {% endif %}
+
+    <!-- Conversion Tracking Script (Sprint 5: Tarea 5.1) -->
+    <script>
+        function trackWhatsAppClick(ctaId, sku = '') {
+            try {
+                // Tracking event for Meta Pixel
+                if (typeof fbq === 'function') {
+                    fbq('trackCustom', 'WhatsAppContact', {
+                        content_name: 'WhatsApp Click',
+                        content_category: 'Lead Generation',
+                        cta_id: ctaId,
+                        product_sku: sku
+                    });
+                }
+                
+                // Tracking event for GA4
+                if (typeof gtag === 'function') {
+                    gtag('event', 'generate_lead', {
+                        'event_category': 'Engagement',
+                        'event_label': ctaId,
+                        'value': 1.0,
+                        'currency': 'ARS',
+                        'items': sku ? [{ 'item_id': sku }] : []
+                    });
+                }
+            } catch (e) {
+                console.warn('Analytics tracking error:', e);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set up click listeners on all WhatsApp buttons
+            const selectors = [
+                '#floating-whatsapp-btn',
+                '#whatsapp-product-consult-btn',
+                '#cta-band-whatsapp',
+                '#hero-cta-whatsapp',
+                '#final-cta-whatsapp',
+                '#history-cta-whatsapp'
+            ];
+            
+            selectors.forEach(selector => {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(el => {
+                    el.addEventListener('click', (e) => {
+                        const href = el.getAttribute('href') || '';
+                        let sku = '';
+                        try {
+                            if (href.includes('?text=')) {
+                                const urlParams = new URLSearchParams(href.split('?')[1]);
+                                sku = urlParams.get('text') || '';
+                            }
+                        } catch (err) {}
+                        trackWhatsAppClick(selector, sku);
+                    });
+                });
+            });
+        });
+    </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>
