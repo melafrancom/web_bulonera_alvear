@@ -12,7 +12,7 @@
         this.messages = this.messages.filter(m => m.id !== id);
     }
 }" 
-@message.window="addMessage($event.detail.text, $event.detail.type)"
+@show-toast.window="addMessage($event.detail.text, $event.detail.type)"
 class="fixed top-20 right-4 z-50 space-y-2 max-w-md">
     
     <template x-for="message in messages" :key="message.id">
@@ -54,7 +54,7 @@ class="fixed top-20 right-4 z-50 space-y-2 max-w-md">
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         {% for message in messages %}
-        window.dispatchEvent(new CustomEvent('message', {
+        window.dispatchEvent(new CustomEvent('show-toast', {
             detail: {
                 text: '{{ message|escapejs }}',
                 type: '{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}'

@@ -178,7 +178,9 @@
                                      <i class="w-4 h-4 inline-block mr-2" data-lucide="menu"></i>
                                      {% endif %}
                                      <span>{{ item.label }}</span>
-                                     <i class="w-4 h-4 ml-1 transition-transform duration-200" :class="megaMenuOpen ? 'rotate-180' : ''" data-lucide="chevron-down"></i>
+                                     <span class="inline-block transition-transform duration-200" :class="megaMenuOpen ? 'rotate-180' : ''">
+                                         <i class="w-4 h-4 ml-1" data-lucide="chevron-down"></i>
+                                     </span>
                                  </button>
                                  
                                  <!-- Mega-menú desplegable -->
@@ -373,7 +375,9 @@
                             <i data-lucide="folder" class="w-5 h-5 text-slate-500"></i>
                             <span>Categorías</span>
                         </span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 transition-transform duration-200" :class="mobileCatsOpen ? 'rotate-180' : ''"></i>
+                        <span class="inline-block transition-transform duration-200" :class="mobileCatsOpen ? 'rotate-180' : ''">
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500"></i>
+                        </span>
                     </button>
                     
                     <!-- Nivel 1: Lista de Categorías -->
@@ -398,7 +402,9 @@
                                 <button @click.stop="subOpen = !subOpen" 
                                         class="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md text-slate-500 dark:text-slate-400"
                                         aria-label="Expandir subcategorías">
-                                    <i data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" :class="subOpen ? 'rotate-180' : ''"></i>
+                                    <span class="inline-block transition-transform duration-200" :class="subOpen ? 'rotate-180' : ''">
+                                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500"></i>
+                                    </span>
                                 </button>
                                 {% endif %}
                             </div>

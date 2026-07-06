@@ -33,9 +33,9 @@ class="space-y-4">
                 :aria-expanded="filters.categories ? 'true' : 'false'"
                 class="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
             <h3 class="text-base font-bold text-slate-900 dark:text-white">Categorías</h3>
-            <i data-lucide="chevron-down" 
-               class="w-5 h-5 text-slate-600 dark:text-slate-400 transition-transform duration-250"
-               :class="filters.categories ? 'rotate-180' : ''"></i>
+            <span class="inline-block transition-transform duration-250" :class="filters.categories ? 'rotate-180' : ''">
+                <i data-lucide="chevron-down" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
+            </span>
         </button>
         <div x-show="filters.categories" 
              x-collapse
@@ -174,9 +174,9 @@ class="space-y-4">
                 :aria-expanded="filters.brands ? 'true' : 'false'"
                 class="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
             <h3 class="text-base font-bold text-slate-900 dark:text-white">Marcas</h3>
-            <i data-lucide="chevron-down" 
-               class="w-5 h-5 text-slate-600 dark:text-slate-400 transition-transform duration-255"
-               :class="filters.brands ? 'rotate-180' : ''"></i>
+            <span class="inline-block transition-transform duration-255" :class="filters.brands ? 'rotate-180' : ''">
+                <i data-lucide="chevron-down" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
+            </span>
         </button>
         
         <div x-show="filters.brands" 
@@ -216,9 +216,9 @@ class="space-y-4">
                 :aria-expanded="filters.prices ? 'true' : 'false'"
                 class="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
             <h3 class="text-base font-bold text-slate-900 dark:text-white">Precios</h3>
-            <i data-lucide="chevron-down" 
-               class="w-5 h-5 text-slate-600 dark:text-slate-400 transition-transform duration-255"
-               :class="filters.prices ? 'rotate-180' : ''"></i>
+            <span class="inline-block transition-transform duration-255" :class="filters.prices ? 'rotate-180' : ''">
+                <i data-lucide="chevron-down" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
+            </span>
         </button>
         
         <div x-show="filters.prices" 

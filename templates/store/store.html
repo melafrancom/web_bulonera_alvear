@@ -551,7 +551,9 @@
                              <h4 class="font-semibold text-slate-800 dark:text-slate-100 flex justify-between items-center cursor-pointer text-sm md:text-base font-heading" 
                                  @click="activeFaq = (activeFaq === {{ forloop.counter0 }} ? null : {{ forloop.counter0 }})">
                                  <span>{{ faq.question }}</span>
-                                 <i data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': activeFaq === {{ forloop.counter0 }} }"></i>
+                                 <span class="inline-block transition-transform duration-200" :class="{ 'rotate-180': activeFaq === {{ forloop.counter0 }} }">
+                                     <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 dark:text-slate-400"></i>
+                                 </span>
                              </h4>
                              <div x-show="activeFaq === {{ forloop.counter0 }}" 
                                   x-collapse
