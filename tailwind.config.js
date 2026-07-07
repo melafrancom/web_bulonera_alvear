@@ -8,22 +8,38 @@ module.exports = {
     './static/js/**/*.js',
   ],
   darkMode: 'class',
+  safelist: [
+    'bg-navbar-bg',
+    'text-navbar-text',
+    'bg-primary-600',
+    'bg-primary-700',
+    'bg-primary-800',
+    'from-primary-600',
+    'to-primary-700',
+    'to-primary-800',
+    'dark:from-primary-800',
+    'dark:to-primary-900',
+  ],
   theme: {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#1E40AF',
-          50: '#EFF6FF',
-          100: '#DBEAFE',
-          200: '#BFDBFE',
-          300: '#93C5FD',
-          400: '#60A5FA',
-          500: '#3B82F6',
-          600: '#2563EB',
-          700: '#1D4ED8',
-          800: '#1E40AF',
-          900: '#1E3A8A',
+          DEFAULT: 'var(--color-primary-800, #1E40AF)',
+          50: 'var(--color-primary-50, #EFF6FF)',
+          100: 'var(--color-primary-100, #DBEAFE)',
+          200: 'var(--color-primary-200, #BFDBFE)',
+          300: 'var(--color-primary-300, #93C5FD)',
+          400: 'var(--color-primary-400, #60A5FA)',
+          500: 'var(--color-primary-500, #3B82F6)',
+          600: 'var(--color-primary-600, #2563EB)',
+          700: 'var(--color-primary-700, #1D4ED8)',
+          800: 'var(--color-primary-800, #1E40AF)',
+          900: 'var(--color-primary-900, #1E3A8A)',
         },
+        'navbar-bg': 'var(--color-navbar-bg, #1B3A5C)',
+        'navbar-text': 'var(--color-navbar-text, #ffffff)',
+        // Color de fondo suave para light mode
+        'soft-bg': 'var(--color-soft-bg, #F0F9FF)',
         accent: {
           DEFAULT: '#F59E0B',
           50: '#FFFBEB',
@@ -37,8 +53,6 @@ module.exports = {
           800: '#92400E',
           900: '#78350F',
         },
-        // Color de fondo suave para light mode
-        'soft-bg': '#F0F9FF', // Celeste muy muy claro (blue-50 más suave)
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

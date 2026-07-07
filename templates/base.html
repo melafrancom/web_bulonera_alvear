@@ -41,8 +41,6 @@
     <!-- Preconnect and DNS Prefetch (Sprint 1) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://unpkg.com">
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
     <link rel="dns-prefetch" href="https://www.clarity.ms">
     <link rel="dns-prefetch" href="https://connect.facebook.net">
@@ -53,9 +51,32 @@
     <!-- Critical CSS (Sprint 1: F1.0) -->
     <style>
         :root {
-            --primary: #1e40af;
-            --navbar-bg: rgba(27, 58, 92, 1.00);
-            --soft-bg: #e2ecf6;
+            {% if site_theme %}
+            --color-primary-50: {{ site_theme.primary_50|default:'#EFF6FF' }};
+            --color-primary-100: {{ site_theme.primary_100|default:'#DBEAFE' }};
+            --color-primary-200: {{ site_theme.primary_200|default:'#BFDBFE' }};
+            --color-primary-300: {{ site_theme.primary_300|default:'#93C5FD' }};
+            --color-primary-400: {{ site_theme.primary_400|default:'#60A5FA' }};
+            --color-primary-500: {{ site_theme.primary_500|default:'#3B82F6' }};
+            --color-primary-600: {{ site_theme.primary_600|default:'#2563EB' }};
+            --color-primary-700: {{ site_theme.primary_700|default:'#1D4ED8' }};
+            --color-primary-800: {{ site_theme.primary_800|default:'#1E40AF' }};
+            --color-primary-900: {{ site_theme.primary_900|default:'#1E3A8A' }};
+            --color-navbar-bg: rgba({{ site_theme.navbar_bg_rgb|default:'27, 58, 92' }}, {{ site_theme.navbar_opacity_dec|default:'1.00' }});
+            --color-navbar-text: {{ site_theme.navbar_text|default:'#ffffff' }};
+            --color-soft-bg: {{ site_theme.soft_bg|default:'#F0F9FF' }};
+            {% else %}
+            --color-primary-600: #2563EB;
+            --color-primary-700: #1D4ED8;
+            --color-primary-800: #1E40AF;
+            --color-navbar-bg: rgba(27, 58, 92, 1.00);
+            --color-navbar-text: #ffffff;
+            --color-soft-bg: #F0F9FF;
+            {% endif %}
+            
+            --primary: var(--color-primary-800);
+            --navbar-bg: var(--color-navbar-bg);
+            --soft-bg: var(--color-soft-bg);
         }
         body {
             background-color: var(--soft-bg);
@@ -87,13 +108,13 @@
     {% endif %}
     
     <!-- Alpine.js Plugins -->
-    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="{% static 'js/vendor/collapse.min.js' %}"></script>
     
     <!-- Alpine.js (interactividad) -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="{% static 'js/vendor/alpine.min.js' %}"></script>
     
     <!-- Lucide Icons -->
-    <script defer src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="{% static 'js/vendor/lucide.min.js' %}"></script>
     
 
     
@@ -168,12 +189,12 @@
       "url": "https://buloneraalvear.online",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://buloneraalvear.online/static/images/logo-bulonera-alvear.png",
+        "url": "https://buloneraalvear.online/static/images/logo-bulonera-alvear.webp",
         "width": 300,
         "height": 300
       },
       "image": [
-        "https://buloneraalvear.online/static/images/logo-bulonera-alvear.png",
+        "https://buloneraalvear.online/static/images/logo-bulonera-alvear.webp",
         "https://buloneraalvear.online/static/images/fachada-bulonera-alvear.webp"
       ],
       "telephone": "+543624733431",
@@ -359,17 +380,21 @@
     
     <!-- Initialize Lucide Icons -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof lucide !== 'undefined') {
+        function initLucide() {
+            if (window.lucide) {
                 lucide.createIcons();
             }
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initLucide);
+        } else {
+            initLucide();
+        }
         
         // Re-initialize icons after Alpine updates DOM
         document.addEventListener('alpine:initialized', () => {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+            initLucide();
         });
     </script>
     

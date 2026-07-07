@@ -121,7 +121,8 @@ def robots_txt(request):
         "",
         f"Sitemap: {SITE_URL}/sitemap.xml",
         "",
-        f"Llms-Txt: {SITE_URL}/llms.txt"
+        "# LLM Discovery (non-standard, informational)",
+        f"# Llms-Txt: {SITE_URL}/llms.txt"
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")
 

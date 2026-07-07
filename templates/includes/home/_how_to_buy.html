@@ -7,7 +7,15 @@
         <div class="grid md:grid-cols-2 gap-8 mb-12">
             <div class="flex flex-col justify-center">
                 <div class="mb-6">
-                    <img src="{% static 'images/logo-bulonera-alvear.png' %}" alt="Bulonera Alvear" class="h-16 md:h-20 w-auto">
+                    <picture>
+                        <source srcset="{% static 'images/logo-bulonera-alvear.webp' %}" type="image/webp">
+                        <img src="{% static 'images/logo-bulonera-alvear.png' %}" 
+                             alt="Bulonera Alvear" 
+                             class="h-16 md:h-20 w-auto"
+                             width="240"
+                             height="80"
+                             loading="lazy">
+                    </picture>
                 </div>
                 <h2 class="text-3xl md:text-4xl font-bold text-white mb-3">
                     Cómo comprar:

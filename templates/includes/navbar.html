@@ -87,9 +87,16 @@
                 
                 <!-- Logo (Izquierda) -->
                 <a href="{% url 'home' %}" class="flex-shrink-0">
-                    <img src="{% static 'images/logo-bulonera-alvear.png' %}" 
-                         alt="Bulonera Alvear" 
-                         class="h-12 lg:h-14 w-auto transition-transform hover:scale-105">
+                    <picture>
+                        <source srcset="{% static 'images/logo-bulonera-alvear.webp' %}" type="image/webp">
+                        <img src="{% static 'images/logo-bulonera-alvear.png' %}" 
+                             alt="Bulonera Alvear" 
+                             class="h-12 lg:h-14 w-auto transition-transform hover:scale-105"
+                             width="180"
+                             height="60"
+                             loading="eager"
+                             fetchpriority="high">
+                    </picture>
                 </a>
                 
                 <!-- Búsqueda Centrada (Desktop) -->
@@ -101,8 +108,9 @@
                                class="w-full px-5 py-2.5 pl-12 pr-14 bg-slate-50 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-full focus:outline-none focus:ring-0 focus:border-primary-500 transition-all">
                         <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
                         <button type="submit" 
-                                class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-full transition-colors">
-                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                                class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-full transition-colors"
+                                aria-label="Buscar en el catálogo">
+                            <i data-lucide="arrow-right" class="w-4 h-4" aria-hidden="true"></i>
                         </button>
                     </div>
                 </form>
@@ -125,8 +133,10 @@
                     </button>
                     
                     <!-- Carrito -->
-                    <a href="{% url 'cart:cart' %}" class="relative flex flex-col items-center justify-center gap-1 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors group">
-                        <i data-lucide="shopping-cart" class="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-primary-600 transition-colors"></i>
+                    <a href="{% url 'cart:cart' %}" 
+                       class="relative flex flex-col items-center justify-center gap-1 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors group"
+                       aria-label="Carrito de compras">
+                        <i data-lucide="shopping-cart" class="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-primary-600 transition-colors" aria-hidden="true"></i>
                         <span class="hidden md:block text-xs text-slate-600 dark:text-slate-400 group-hover:text-primary-600 transition-colors">Carrito</span>
                         <span x-show="cartCount > 0" 
                               x-text="cartCount"
@@ -137,9 +147,9 @@
                     <!-- Mobile Menu Button -->
                     <button @click="mobileOpen = !mobileOpen" 
                             class="lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                            aria-label="Toggle menu">
-                        <i x-show="!mobileOpen" data-lucide="menu" class="w-6 h-6"></i>
-                        <i x-show="mobileOpen" data-lucide="x" class="w-6 h-6"></i>
+                            aria-label="Abrir menú de navegación móvil">
+                        <i x-show="!mobileOpen" data-lucide="menu" class="w-6 h-6" aria-hidden="true"></i>
+                        <i x-show="mobileOpen" data-lucide="x" class="w-6 h-6" aria-hidden="true"></i>
                     </button>
                 </div>
             </div>
@@ -318,12 +328,22 @@
         
         <div class="p-6">
             <!-- Cerrar -->
-            <button @click="mobileOpen = false" class="absolute top-4 right-4 p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
-                <i data-lucide="x" class="w-6 h-6"></i>
+            <button @click="mobileOpen = false" 
+                    class="absolute top-4 right-4 p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+                    aria-label="Cerrar menú de navegación móvil">
+                <i data-lucide="x" class="w-6 h-6" aria-hidden="true"></i>
             </button>
             
             <!-- Logo -->
-            <img src="{% static 'images/logo-bulonera-alvear.png' %}" alt="Bulonera Alvear" class="h-11 mb-6">
+            <picture>
+                <source srcset="{% static 'images/logo-bulonera-alvear.webp' %}" type="image/webp">
+                <img src="{% static 'images/logo-bulonera-alvear.png' %}" 
+                     alt="Bulonera Alvear" 
+                     class="h-11 w-auto mb-6"
+                     width="132"
+                     height="44"
+                     loading="eager">
+            </picture>
             
             <!-- Usuario Info -->
             <div class="mb-6 pb-6 border-b border-slate-200 dark:border-slate-700">
