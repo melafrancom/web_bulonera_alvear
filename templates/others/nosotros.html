@@ -84,13 +84,15 @@
         Más de 33 años proveyendo tornillos, bulones, herramientas y materiales de ferretería a constructoras, talleres y familias de todo el Chaco y Argentina.
       </p>
       <div class="mt-8 flex flex-wrap gap-4">
-        <a href="https://wa.me/543624733431?text=Hola%2C%20quiero%20consultar%20sobre%20productos"
+        {% if WHATSAPP_NUMBER %}
+        <a href="https://wa.me/{{ WHATSAPP_NUMBER }}?text=Hola%2C%20quiero%20consultar%20sobre%20productos"
            target="_blank" rel="noopener noreferrer"
            class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
            id="hero-cta-whatsapp">
           <i data-lucide="message-circle" class="w-5 h-5"></i>
           Consultanos por WhatsApp
         </a>
+        {% endif %}
         <a href="{% url 'store:store' %}"
            class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-6 py-3 rounded-lg border border-white/20 transition-colors"
            id="hero-cta-catalogo">
@@ -119,7 +121,10 @@
           Nuestros clientes incluyen constructoras, talleres metalúrgicos, electricistas, carpinteros metálicos, cooperativas agrícolas y familias que encaran proyectos de construcción o reparación. Cada uno encuentra en Bulonera Alvear no solo un proveedor, sino un socio que entiende las exigencias de su trabajo y se compromete con plazos y calidad.
         </p>
         <p>
-          Desde nuestro local en <strong>Av. Alvear 1301, Resistencia</strong>, atendemos de lunes a viernes de 8:00 a 20:00 y sábados de 8:00 a 13:00. Realizamos envíos a todo el país.
+          Desde nuestro local en <strong>Av. Alvear 1301, Resistencia</strong>, atendemos de lunes a viernes de 08:00 a 20:00 (horario de corrido) y sábados de 08:00 a 13:00 y de 16:00 a 18:30 (horario de invierno). Realizamos envíos a todo el país a través de transportes líderes como Niclis, Snaider, Vía Cargo y Andreani.
+        </p>
+        <p class="text-sm text-slate-500 border-l-4 border-slate-300 dark:border-slate-700 pl-4 py-1 mt-6">
+          <strong>Información fiscal de la empresa:</strong> Razón Social: <em>MELA MIGUEL ANGEL</em> | CUIT: <em>20180545574</em> | Condición IVA: <em>Responsable Inscripto</em> (Establecido desde 2008 / Actividad principal de ferretería y bulonería desde 2013).
         </p>
         <p>
           Para conocer un poco más de nuestra historia, visita:

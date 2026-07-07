@@ -33,6 +33,7 @@
     <!-- Main Image -->
     <div class="relative bg-white dark:bg-slate-800 rounded-xl overflow-hidden aspect-square">
         <img x-ref="mainImg" 
+             src="{{ product.webp_image_url }}"
              :src="images[current].webp" 
              :alt="images[current].alt"
              class="w-full h-full object-contain"

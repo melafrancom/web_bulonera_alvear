@@ -103,14 +103,16 @@
                     </li>
                     <li class="flex items-start gap-3">
                         <i data-lucide="mail" class="w-5 h-5 text-primary-400 flex-shrink-0 mt-0.5"></i>
-                        <a href="mailto:{{ EMAIL_TO_SEND_MESSAGES }}" class="text-sm hover:text-white transition-colors">
+                        <a href="mailto:{{ CONTACT_EMAIL }}" class="text-sm hover:text-white transition-colors">
                             {{ CONTACT_EMAIL }}
                         </a>
                     </li>
                     <li class="flex items-start gap-3">
                         <i data-lucide="clock" class="w-5 h-5 text-primary-400 flex-shrink-0 mt-0.5"></i>
-                        <span class="text-sm">Lun - Vie: 8:00 - 20:00</span>
-                        <span class="text-sm">Sab: 8:00 - 18:30</span>
+                        <div class="flex flex-col text-sm text-slate-400">
+                            <span>Lun - Vie: 08:00 - 20:00 (Corrido)</span>
+                            <span>Sáb: 08:00 - 13:00 y 16:00 - 18:30</span>
+                        </div>
                     </li>
                 </ul>
             </div>
@@ -121,13 +123,18 @@
     <div class="border-t border-slate-800">
         <div class="container mx-auto px-4 py-6">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-400">
-                <p>
-                    © {{ current_year|default:"2026" }} Bulonera Alvear. Todos los derechos reservados.
-                </p>
+                <div class="space-y-1 text-center md:text-left">
+                    <p>
+                        © {{ current_year|default:"2026" }} Bulonera Alvear. Todos los derechos reservados.
+                    </p>
+                    <p class="text-xs text-slate-500">
+                        MELA MIGUEL ANGEL | CUIT: 20180545574 | Responsable Inscripto IVA
+                    </p>
+                </div>
                 <p class="flex items-center gap-2">
                     <span>Actualizado a</span>
                     <i data-lucide="bolt" class="w-4 h-4 text-red-500 fill-current"></i>
-                    <span>06-2026, en Chaco, Argentina</span>
+                    <span>07-2026, en Chaco, Argentina</span>
                 </p>
             </div>
         </div>

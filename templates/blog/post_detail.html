@@ -29,7 +29,11 @@
 {% endblock %}
 
 {% block head_extra %}
-<link rel="preload" as="image" href="{{ post.image_url }}" type="image/jpeg">
+{% if post.webp_image_url %}
+<link rel="preload" as="image" href="{{ post.webp_image_url }}" type="image/webp" fetchpriority="high">
+{% else %}
+<link rel="preload" as="image" href="{{ post.image_url }}" type="image/jpeg" fetchpriority="high">
+{% endif %}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",

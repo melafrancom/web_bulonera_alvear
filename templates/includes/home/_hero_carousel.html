@@ -51,7 +51,7 @@
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
                 class="absolute inset-0"
-                style="display: none;">
+                {% if not forloop.first %}style="display: none;"{% endif %}>
                 
                 <!-- Background Image -->
                 <div class="absolute inset-0">

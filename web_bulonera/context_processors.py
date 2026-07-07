@@ -20,6 +20,7 @@ def meta_settings(request):
         'CURRENCY': getattr(settings, 'CURRENCY', 'USD'),
         'WHATSAPP_NUMBER': getattr(settings, 'WHATSAPP_NUMBER', ''),
         'EMAIL_TO_SEND_MESSAGES': getattr(settings, 'EMAIL_TO_SEND_MESSAGES', ''),
+        'CONTACT_EMAIL': getattr(settings, 'CONTACT_EMAIL', ''),
         'INDEXNOW_API_KEY': getattr(settings, 'INDEXNOW_API_KEY', ''),
         'DEBUG': settings.DEBUG,
         'GOOGLE_MAPS_EMBED_KEY': getattr(settings, 'GOOGLE_MAPS_EMBED_KEY', ''),

@@ -17,9 +17,31 @@
 {% endblock %}
 
 {% block head_extra %}
-    <!-- Preload hero image for LCP -->
-    {% if carousel_images.0.image %}
-    <link rel="preload" as="image" href="{{ carousel_images.0.image_url }}">
+    <!-- Preload hero image for LCP (Fase 16 - SXO Optimization) -->
+    {% if carousel_images %}
+        {% with first_slide=carousel_images.0 %}
+            {# Mobile WebP #}
+            {% if first_slide.image_mobile_asset and first_slide.image_mobile_asset.get_webp_url %}
+                <link rel="preload" as="image" href="{{ first_slide.image_mobile_asset.get_webp_url }}" media="(max-width: 639px)" fetchpriority="high">
+            {% elif first_slide.image_mobile %}
+                <link rel="preload" as="image" href="{{ first_slide.mobile_image_url }}" media="(max-width: 639px)" fetchpriority="high">
+            {% endif %}
+
+            {# Tablet WebP #}
+            {% if first_slide.image_tablet_asset and first_slide.image_tablet_asset.get_webp_url %}
+                <link rel="preload" as="image" href="{{ first_slide.image_tablet_asset.get_webp_url }}" media="(min-width: 640px) and (max-width: 1023px)" fetchpriority="high">
+            {% endif %}
+
+            {# Large Desktop WebP #}
+            {% if first_slide.image_large_asset and first_slide.image_large_asset.get_webp_url %}
+                <link rel="preload" as="image" href="{{ first_slide.image_large_asset.get_webp_url }}" media="(min-width: 1536px)" fetchpriority="high">
+            {% endif %}
+
+            {# Standard Desktop WebP #}
+            {% if first_slide.webp_image_url %}
+                <link rel="preload" as="image" href="{{ first_slide.webp_image_url }}" media="(min-width: 1024px) and (max-width: 1535px)" fetchpriority="high">
+            {% endif %}
+        {% endwith %}
     {% endif %}
 {% endblock %}
 

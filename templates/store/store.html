@@ -145,7 +145,7 @@
                      x-transition:enter-start="opacity-0 translate-x-4"
                      x-transition:enter-end="opacity-100 translate-x-0"
                      class="grid grid-cols-2 md:grid-cols-4 gap-4"
-                     style="display: none;">
+                     {% if not forloop.first %}style="display: none;"{% endif %}>
                     {% for product in group %}
                     {% include 'store/partials/_product_grid_item.html' with product=product %}
                     {% endfor %}
