@@ -29,6 +29,7 @@ def meta_settings(request):
         # Variables dinámicas seguras
         'GOOGLE_BUSINESS_RATING': rating,
         'GOOGLE_BUSINESS_REVIEWS_COUNT': reviews_count,
+        'PRICE_VALID_FROM': date.today().isoformat(),
         'PRICE_VALID_UNTIL': (date.today() + timedelta(days=30)).isoformat()
     }
 def site_theme(request):

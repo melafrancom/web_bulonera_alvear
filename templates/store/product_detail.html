@@ -39,7 +39,9 @@
     <!-- LCP Preload (FASE 3.6) -->
     <link rel="preload" as="image" href="{{ single_product.webp_image_url }}" type="image/webp" fetchpriority="high">
     
-    <!-- JSON-LD Product Schema (Sprint 3: Tarea 3.3) -->
+    {% load l10n %}
+    {% localize off %}
+    <!-- JSON-LD Product Schema (Sprint 3: Tarea 3.3 - Correcciones GSC) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org/",
@@ -60,11 +62,11 @@
       {% endif %}
       "brand": {
         "@type": "Brand",
-        "name": "{{ single_product.brand|default:'Genérica'|escapejs }}"
+        "name": "{{ single_product.brand|default:'Bulonera Alvear'|escapejs }}"
       },
       "manufacturer": {
         "@type": "Organization",
-        "name": "{{ single_product.brand|default:'Genérica'|escapejs }}"
+        "name": "{{ single_product.brand|default:'Bulonera Alvear'|escapejs }}"
       },
       "category": "{{ single_product.category.category_name|escapejs }}",
       "material": "{{ single_product.material|default:''|escapejs }}",
@@ -82,18 +84,22 @@
         "@type": "Offer",
         "url": "{{ request.scheme }}://{{ request.get_host }}{{ single_product.get_url }}",
         "priceCurrency": "ARS",
+        {% if not single_product.gtin %}
+        "identifierExists": false,
+        {% endif %}
         {% if price and price > 0 %}
         "price": "{{ price|floatformat:2 }}",
         {% else %}
-        "price": "0",
+        "price": "0.00",
         "priceSpecification": {
           "@type": "PriceSpecification",
-          "price": "0",
+          "price": "0.00",
           "priceCurrency": "ARS",
           "valueAddedTaxIncluded": true,
           "description": "Precio sujeto a cotización. Consultá disponibilidad y precio por WhatsApp."
         },
         {% endif %}
+        "validFrom": "{{ PRICE_VALID_FROM }}",
         "priceValidUntil": "{{ PRICE_VALID_UNTIL }}",
         "itemCondition": "https://schema.org/NewCondition",
         "availability": "{% if single_product.stock > 0 %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
@@ -102,8 +108,21 @@
           "name": "Bulonera Alvear",
           "@id": "https://buloneraalvear.online/#organization"
         },
+        "hasMerchantReturnPolicy": {
+          "@type": "MerchantReturnPolicy",
+          "applicableCountry": "AR",
+          "returnPolicyCategory": "https://schema.org/MerchantReturnPolicyFinancialProductOrService",
+          "merchantReturnDays": 30,
+          "returnMethod": "https://schema.org/ReturnInStore",
+          "returnFees": "https://schema.org/FreeReturn"
+        },
         "shippingDetails": {
           "@type": "OfferShippingDetails",
+          "shippingRate": {
+            "@type": "MonetaryAmount",
+            "value": "0.00",
+            "currency": "ARS"
+          },
           "shippingDestination": {
             "@type": "DefinedRegion",
             "addressCountry": "AR",
@@ -139,6 +158,7 @@
       {% endif %}
     }
     </script>
+    {% endlocalize %}
     
     
     
