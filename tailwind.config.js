@@ -11,6 +11,8 @@ module.exports = {
   safelist: [
     'bg-navbar-bg',
     'text-navbar-text',
+    'bg-footer-bg',
+    'text-footer-text',
     'bg-primary-600',
     'bg-primary-700',
     'bg-primary-800',
@@ -38,6 +40,8 @@ module.exports = {
         },
         'navbar-bg': 'var(--color-navbar-bg, #1B3A5C)',
         'navbar-text': 'var(--color-navbar-text, #ffffff)',
+        'footer-bg': 'var(--color-footer-bg, #0F172A)',
+        'footer-text': 'var(--color-footer-text, #CBD5E1)',
         // Color de fondo suave para light mode
         'soft-bg': 'var(--color-soft-bg, #F0F9FF)',
         accent: {

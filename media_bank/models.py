@@ -120,4 +120,35 @@ class ImageAsset(models.Model):
             if os.path.isfile(full_path):
                 return f'/media/{candidate}'
         
+        # Fallback defensivo: si no existe, intentar generar el WebP sincrónicamente
+        try:
+            from store.utils import (
+                ImageProcessor,
+                CarouselImageProcessor,
+                BannerImageProcessor,
+                CategoryImageProcessor
+            )
+            
+            processor_map = {
+                ImageType.PRODUCT: lambda: ImageProcessor(self.file.path).process_image(),
+                ImageType.CAROUSEL: lambda: CarouselImageProcessor(self.file.path).process_image(),
+                ImageType.BANNER: lambda: BannerImageProcessor(self.file.path).process_image(),
+                ImageType.CATEGORY: lambda: CategoryImageProcessor(self.file.path).process_image(),
+                ImageType.SUBCATEGORY: lambda: CategoryImageProcessor(self.file.path).process_image(is_subcategory=True),
+            }
+            
+            processor_fn = processor_map.get(self.image_type)
+            if processor_fn:
+                processor_fn()
+                # Volver a verificar la existencia del primer candidato (estándar nuevo)
+                if candidates:
+                    first_candidate = candidates[0]
+                    full_path = os.path.join(settings.MEDIA_ROOT, first_candidate)
+                    if os.path.isfile(full_path):
+                        return f'/media/{first_candidate}'
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error generando WebP sincrónicamente en get_webp_url para asset {self.id}: {e}")
+        
         return None

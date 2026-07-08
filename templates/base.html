@@ -64,6 +64,8 @@
             --color-primary-900: {{ site_theme.primary_900|default:'#1E3A8A' }};
             --color-navbar-bg: rgba({{ site_theme.navbar_bg_rgb|default:'27, 58, 92' }}, {{ site_theme.navbar_opacity_dec|default:'1.00' }});
             --color-navbar-text: {{ site_theme.navbar_text|default:'#ffffff' }};
+            --color-footer-bg: rgba({{ site_theme.footer_bg_rgb|default:'15, 23, 42' }}, {{ site_theme.footer_opacity_dec|default:'1.00' }});
+            --color-footer-text: {{ site_theme.footer_text|default:'#CBD5E1' }};
             --color-soft-bg: {{ site_theme.soft_bg|default:'#F0F9FF' }};
             {% else %}
             --color-primary-600: #2563EB;
@@ -71,11 +73,14 @@
             --color-primary-800: #1E40AF;
             --color-navbar-bg: rgba(27, 58, 92, 1.00);
             --color-navbar-text: #ffffff;
+            --color-footer-bg: rgba(15, 23, 42, 1.00);
+            --color-footer-text: #CBD5E1;
             --color-soft-bg: #F0F9FF;
             {% endif %}
             
             --primary: var(--color-primary-800);
             --navbar-bg: var(--color-navbar-bg);
+            --footer-bg: var(--color-footer-bg);
             --soft-bg: var(--color-soft-bg);
         }
         body {

@@ -327,6 +327,23 @@ class Product(models.Model):
                 )
                 if os.path.isfile(candidate):
                     return f"/media/photos/products/webp/{subdir}{base_name}.webp"
+            
+            # Fallback: intentar generar el WebP sincrónicamente
+            try:
+                from store.utils import ImageProcessor
+                ImageProcessor(self.images.path).process_image()
+                candidate = os.path.join(
+                    settings.MEDIA_ROOT, 
+                    'photos', 'products', 'webp', 
+                    f"{base_name}.webp"
+                )
+                if os.path.isfile(candidate):
+                    return f"/media/photos/products/webp/{base_name}.webp"
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error generando WebP sincrónicamente para producto legacy {self.id}: {e}")
+                
         return '/static/images/placeholder.png'
     
     # Métodos para obtener las dimensiones disponibles para el producto
