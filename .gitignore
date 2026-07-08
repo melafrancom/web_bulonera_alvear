@@ -83,6 +83,7 @@ BLOG_QUICK_START.md
 IMPLEMENTATION_BLOG_WALKTHROUGH.md
 
 # Graphify & Obsidian temp files
+# Ignorar configuración de Obsidian
 graphify-out/
 .obsidian/
 *.canvas
