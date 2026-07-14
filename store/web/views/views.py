@@ -250,6 +250,7 @@ def product_detail(request, product_slug):
         
         # Determinar precio a mostrar
         display_price = single_product.sale_price if single_product.is_on_sale and single_product.sale_price else single_product.price
+        price_str = f"{display_price:.2f}"
         
         # Actualizar precio en meta_pixel_data si hay oferta
         if single_product.is_on_sale and single_product.sale_price:
@@ -273,6 +274,7 @@ def product_detail(request, product_slug):
             'product_gallery': product_gallery,
             'meta_pixel_data': meta_pixel_data,
             'price': display_price,
+            'price_str': price_str,
             'CURRENCY': CURRENCY,
             'dimensions': dimensions,
             'dimension_variants_json': dimension_variants_json,

@@ -235,9 +235,9 @@ def order_detail(request, order_number):
         
         # Breadcrumb
         breadcrumb_items = [
-            {'name': 'Inicio', 'url': 'home'},
-            {'name': 'Mi Cuenta', 'url': 'account:dashboard'},
-            {'name': 'Mis Órdenes', 'url': 'account:my_orders'},
+            {'name': 'Inicio', 'url': '/'},
+            {'name': 'Mi Cuenta', 'url': reverse('account:dashboard')},
+            {'name': 'Mis Órdenes', 'url': reverse('account:my_orders')},
             {'name': f'Orden {order_number}', 'url': None},
         ]
         

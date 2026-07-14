@@ -24,7 +24,7 @@
     <meta property="product:brand" content="{{ single_product.brand|default:'Bulonera Alvear' }}">
     <meta property="product:availability" content="{% if single_product.is_available and single_product.stock > 0 %}in stock{% else %}out of stock{% endif %}">
     <meta property="product:condition" content="{{ single_product.condition|default:'new' }}">
-    <meta property="product:price:amount" content="{{ price|floatformat:2 }}">
+    <meta property="product:price:amount" content="{{ price_str }}">
     <meta property="product:price:currency" content="{{ CURRENCY }}">
     <meta property="product:retailer_item_id" content="{{ single_product.code }}">
     
@@ -88,7 +88,7 @@
         "identifierExists": false,
         {% endif %}
         {% if price and price > 0 %}
-        "price": "{{ price|floatformat:2 }}",
+        "price": "{{ price_str }}",
         {% else %}
         "price": "0.00",
         "priceSpecification": {
@@ -111,7 +111,7 @@
         "hasMerchantReturnPolicy": {
           "@type": "MerchantReturnPolicy",
           "applicableCountry": "AR",
-          "returnPolicyCategory": "https://schema.org/MerchantReturnPolicyFinancialProductOrService",
+          "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
           "merchantReturnDays": 30,
           "returnMethod": "https://schema.org/ReturnInStore",
           "returnFees": "https://schema.org/FreeReturn"
@@ -132,14 +132,14 @@
             "@type": "ShippingDeliveryTime",
             "handlingTime": {
               "@type": "QuantitativeValue",
-              "minValue": 0,
-              "maxValue": 1,
+              "minValue": 1,
+              "maxValue": 3,
               "unitCode": "DAY"
             },
             "transitTime": {
               "@type": "QuantitativeValue",
-              "minValue": 1,
-              "maxValue": 3,
+              "minValue": 4,
+              "maxValue": 7,
               "unitCode": "DAY"
             }
           }

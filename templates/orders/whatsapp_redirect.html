@@ -229,7 +229,7 @@ function whatsappRedirect() {
 <script type="text/plain" data-consent="advertising">
   window.renderOptIn = function() {
     var deliveryDate = new Date();
-    deliveryDate.setDate(deliveryDate.getDate() + 7); // Hoy + 7 días (definido por el usuario)
+    deliveryDate.setDate(deliveryDate.getDate() + 10); // Hoy + 10 días (alineado con config de Google Merchant)
     var estimatedDateStr = deliveryDate.toISOString().split('T')[0];
 
     window.gapi.load('surveyoptin', function() {

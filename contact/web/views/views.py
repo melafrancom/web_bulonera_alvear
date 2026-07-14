@@ -45,7 +45,7 @@ def contact_view(request):
     
     # Breadcrumb
     breadcrumb_items = [
-        {'name': 'Inicio', 'url': 'home'},
+        {'name': 'Inicio', 'url': '/'},
         {'name': 'Contacto', 'url': None},
     ]
     

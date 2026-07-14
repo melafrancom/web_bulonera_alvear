@@ -71,12 +71,8 @@
         {
           "@type": "ListItem",
           "position": {{ forloop.counter }},
-          "item": {
-            "@type": "Product",
-            "name": "{{ product.name|escapejs }}",
-            "url": "{{ request.scheme }}://{{ request.get_host }}{{ product.get_url }}",
-            "image": "{{ request.scheme }}://{{ request.get_host }}{{ product.image_url }}"
-          }
+          "name": "{{ product.name|escapejs }}",
+          "url": "{{ request.scheme }}://{{ request.get_host }}{{ product.get_url }}"
         }{% if not forloop.last and forloop.counter < 10 %},{% endif %}
         {% endif %}
         {% endfor %}

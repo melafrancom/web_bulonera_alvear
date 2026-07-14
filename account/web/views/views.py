@@ -2,6 +2,7 @@
 import urllib.parse
 import logging
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
 
@@ -191,7 +192,7 @@ def my_orders(request):
     # Breadcrumb
     breadcrumb_items = [
         {'name': 'Inicio', 'url': '/'},
-        {'name': 'Dashboard', 'url': 'account:dashboard'},
+        {'name': 'Dashboard', 'url': reverse('account:dashboard')},
         {'name': 'Mis Órdenes', 'url': None}
     ]
     
@@ -223,7 +224,7 @@ def edit_profile(request):
     # Breadcrumb
     breadcrumb_items = [
         {'name': 'Inicio', 'url': '/'},
-        {'name': 'Dashboard', 'url': 'account:dashboard'},
+        {'name': 'Dashboard', 'url': reverse('account:dashboard')},
         {'name': 'Editar Perfil', 'url': None}
     ]
     
@@ -264,7 +265,7 @@ def change_password(request):
     # Breadcrumb
     breadcrumb_items = [
         {'name': 'Inicio', 'url': '/'},
-        {'name': 'Dashboard', 'url': 'account:dashboard'},
+        {'name': 'Dashboard', 'url': reverse('account:dashboard')},
         {'name': 'Cambiar Contraseña', 'url': None}
     ]
     
