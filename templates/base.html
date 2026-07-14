@@ -177,6 +177,19 @@
         data-crossorigin="anonymous">
     </script>
 
+    <!-- Google Customer Reviews Badge — advertising consent -->
+    <script id="merchantWidgetScript" type="text/plain" data-consent="advertising"
+        data-src="https://www.gstatic.com/shopping/merchant/merchantwidget.js" defer>
+    </script>
+    <script type="text/plain" data-consent="advertising">
+        merchantWidgetScript.addEventListener('load', function () {
+            merchantwidget.start({
+                "merchant_id": 5427791461,
+                "position": "BOTTOM_LEFT"
+            });
+        });
+    </script>
+
     <!-- ═══════════════════════════════════════════════════════
          JSON-LD SCHEMAS — These are NOT tracking, always load
          ═══════════════════════════════════════════════════════ -->

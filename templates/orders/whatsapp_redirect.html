@@ -76,14 +76,39 @@
 </div>
 
 <script>
+// 1. Inyección de dataLayer de e-commerce de compra de forma inmediata
+window.dataLayer = window.dataLayer || [];
+window.dataLayer.push({
+  'event': 'purchase',
+  'ecommerce': {
+    'transaction_id': '{{ order.order_number }}',
+    'value': {{ order.order_total|default:0.0 }},
+    'currency': 'ARS',
+    'items': [
+      {% for item in ordered_products %}
+      {
+        'item_id': '{{ item.product.code }}',
+        'item_name': '{{ item.product.name|escapejs }}',
+        'item_category': '{{ item.product.category.category_name|escapejs }}',
+        'price': {{ item.purchase_price }},
+        'quantity': {{ item.quantity }}
+      }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+});
+
 function whatsappRedirect() {
   return {
-    countdown: 5,
+    countdown: 7, // Subimos a 7s para dar tiempo al delay de 3s del cookie consent y envío del tag
     whatsappLink: "{{ whatsapp_link }}",
     countdownInterval: null,
+    trackingInterval: null,
+    purchaseTracked: false,
     
     init() {
       this.startCountdown();
+      this.startTrackingAttempts();
     },
     
     startCountdown() {
@@ -97,26 +122,128 @@ function whatsappRedirect() {
       }, 1000);
     },
     
-    openWhatsApp() {
-      const whatsappWindow = window.open(this.whatsappLink, "_blank");
+    // Intenta disparar los tags nativos de gtag y fbq que cargan con delay asíncrono
+    startTrackingAttempts() {
+      let attempts = 0;
+      this.trackingInterval = setInterval(() => {
+        attempts++;
+        if (this.trackPurchase() || attempts >= 14) { // 14 intentos = 7 segundos
+          clearInterval(this.trackingInterval);
+        }
+      }, 500);
+    },
+    
+    trackPurchase() {
+      if (this.purchaseTracked) return true;
       
-      if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed == 'undefined') {
-        alert("Por favor, permite las ventanas emergentes para abrir WhatsApp automáticamente");
-      } else {
-        setTimeout(() => {
-          window.location.href = "{% url 'account:my_orders' %}";
-        }, 1500);
+      let trackedGtag = false;
+      let trackedFbq = false;
+      
+      // GA4 Purchase Event direct call (si ya cargó)
+      if (typeof gtag === 'function') {
+        try {
+          gtag('event', 'purchase', {
+            'transaction_id': '{{ order.order_number }}',
+            'value': {{ order.order_total|default:0.0 }},
+            'currency': 'ARS',
+            'items': [
+              {% for item in ordered_products %}
+              {
+                'item_id': '{{ item.product.code }}',
+                'item_name': '{{ item.product.name|escapejs }}',
+                'price': {{ item.purchase_price }},
+                'quantity': {{ item.quantity }}
+              }{% if not forloop.last %},{% endif %}
+              {% endfor %}
+            ]
+          });
+          trackedGtag = true;
+        } catch (e) {
+          console.warn('Gtag e-commerce purchase error:', e);
+        }
       }
+      
+      // Meta Pixel Purchase Event direct call (si ya cargó)
+      if (typeof fbq === 'function') {
+        try {
+          fbq('track', 'Purchase', {
+            'value': {{ order.order_total|default:0.0 }},
+            'currency': 'ARS',
+            'content_type': 'product',
+            'contents': [
+              {% for item in ordered_products %}
+              {
+                'id': '{{ item.product.code }}',
+                'quantity': {{ item.quantity }}
+              }{% if not forloop.last %},{% endif %}
+              {% endfor %}
+            ]
+          });
+          trackedFbq = true;
+        } catch (e) {
+          console.warn('Facebook Pixel Purchase error:', e);
+        }
+      }
+      
+      // Consideramos rastreado si al menos uno corrió
+      if (trackedGtag || trackedFbq) {
+        this.purchaseTracked = true;
+        return true;
+      }
+      return false;
+    },
+    
+    openWhatsApp() {
+      clearInterval(this.trackingInterval);
+      this.trackPurchase(); // Intento final de último segundo
+      
+      // Esperar 300ms para asegurar la transmisión de red del beacon
+      setTimeout(() => {
+        const whatsappWindow = window.open(this.whatsappLink, "_blank");
+        
+        if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed == 'undefined') {
+          alert("Por favor, permite las ventanas emergentes para abrir WhatsApp automáticamente");
+        } else {
+          setTimeout(() => {
+            window.location.href = "{% url 'account:my_orders' %}";
+          }, 1500);
+        }
+      }, 300);
     },
     
     handleWhatsAppClick() {
       clearInterval(this.countdownInterval);
+      clearInterval(this.trackingInterval);
+      this.trackPurchase(); // Intento final de último segundo
+      
+      // Esperar 300ms para asegurar la transmisión de red del beacon antes de redirigir la pestaña
       setTimeout(() => {
         window.location.href = "{% url 'account:my_orders' %}";
-      }, 1500);
+      }, 1200);
     }
   }
 }
 </script>
+
+<!-- Google Customer Reviews Opt-in — advertising consent -->
+<script type="text/plain" data-consent="advertising">
+  window.renderOptIn = function() {
+    var deliveryDate = new Date();
+    deliveryDate.setDate(deliveryDate.getDate() + 7); // Hoy + 7 días (definido por el usuario)
+    var estimatedDateStr = deliveryDate.toISOString().split('T')[0];
+
+    window.gapi.load('surveyoptin', function() {
+      window.gapi.surveyoptin.render({
+        "merchant_id": 5427791461,
+        "order_id": "{{ order.order_number|escapejs }}",
+        "email": "{{ order.email|escapejs }}",
+        "delivery_country": "{{ order.country|default:'AR'|escapejs }}",
+        "estimated_delivery_date": estimatedDateStr
+      });
+    });
+  }
+</script>
+<script type="text/plain" data-consent="advertising"
+    data-src="https://apis.google.com/js/platform.js?onload=renderOptIn" async defer></script>
 {% endblock %}
 

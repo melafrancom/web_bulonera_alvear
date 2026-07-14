@@ -260,16 +260,27 @@ def order_detail(request, order_number):
 
 
 @login_required
+def orders_index(request):
+    """
+    Vista raíz de órdenes.
+    Redirige al dashboard de órdenes del usuario.
+    """
+    return redirect('account:my_orders')
+
+
+@login_required
 def whatsapp_redirect(request):
     """
     Vista de redirección a WhatsApp.
     Genera el mensaje y link de WhatsApp para la orden.
     """
     order_number = request.GET.get('order_number')
+    if not order_number:
+        messages.warning(request, "Orden no encontrada")
+        return redirect('account:my_orders')
     
     try:
-        order = get_object_or_404(
-            Order,
+        order = Order.objects.get(
             order_number=order_number,
             user=request.user
         )
@@ -277,14 +288,18 @@ def whatsapp_redirect(request):
         # Generar link de WhatsApp
         whatsapp_link = WhatsAppService.generate_whatsapp_link(order)
         
+        # Recuperar productos para el tracking de conversión
+        ordered_products = OrderProduct.objects.filter(order=order)
+        
         context = {
             'order': order,
             'whatsapp_link': whatsapp_link,
-            'order_number': order_number
+            'order_number': order_number,
+            'ordered_products': ordered_products,
         }
         
         return render(request, 'orders/whatsapp_redirect.html', context)
         
     except Order.DoesNotExist:
-        messages.error(request, "Orden no encontrada")
-        return redirect('cart:cart')
+        messages.warning(request, "Orden no encontrada")
+        return redirect('account:my_orders')

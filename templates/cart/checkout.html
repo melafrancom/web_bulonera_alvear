@@ -384,3 +384,28 @@
 {% include 'includes/partials/_floating_cart.html' %}
 
 {% endblock %}
+
+{% block extra_js %}
+<script>
+// Evento begin_checkout de e-commerce de forma inmediata
+window.dataLayer = window.dataLayer || [];
+window.dataLayer.push({
+  'event': 'begin_checkout',
+  'ecommerce': {
+    'value': {{ total|default:0.0 }},
+    'currency': 'ARS',
+    'items': [
+      {% for item in cart_items %}
+      {
+        'item_id': '{{ item.product.code }}',
+        'item_name': '{{ item.product.name|escapejs }}',
+        'item_category': '{{ item.product.category.category_name|escapejs }}',
+        'price': {{ item.purchase_price }},
+        'quantity': {{ item.quantity }}
+      }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+});
+</script>
+{% endblock %}

@@ -186,6 +186,7 @@ function cookieConsent() {
                 if (prefs.analytics) {
                     document.querySelectorAll('script[data-consent="analytics"]').forEach(el => {
                         const s = document.createElement('script');
+                        if (el.id) s.id = el.id;
                         if (el.dataset.src) {
                             s.src = el.dataset.src;
                             s.async = true;
@@ -201,6 +202,7 @@ function cookieConsent() {
                 if (prefs.advertising) {
                     document.querySelectorAll('script[data-consent="advertising"]').forEach(el => {
                         const s = document.createElement('script');
+                        if (el.id) s.id = el.id;
                         if (el.dataset.src) {
                             s.src = el.dataset.src;
                             s.async = true;
