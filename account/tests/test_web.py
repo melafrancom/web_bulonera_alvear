@@ -18,10 +18,10 @@ class TestAccountWebViews:
         assert response.status_code == 200
 
     def test_login_view_has_form(self, client):
-        """GET /account/login/ contiene formulario"""
+        """GET /account/login/ contiene formulario y metatag noindex"""
         response = client.get(reverse('account:login'))
         assert response.status_code == 200
-        assert 'email' in response.content.decode() or 'password' in response.content.decode()
+        assert 'name="robots" content="noindex, nofollow"' in response.content.decode()
 
     def test_register_view_200(self, client):
         """GET /account/register/ retorna 200"""

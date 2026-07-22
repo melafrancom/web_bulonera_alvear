@@ -67,7 +67,23 @@ class Account(AbstractBaseUser):
     
     def full_name(self):
         return f'{self.first_name} {self.last_name}'
-    
+
+    def get_full_name(self) -> str:
+        """Alias de compatibilidad canónica para full_name()."""
+        return self.full_name()
+
+    def get_geo_summary(self) -> str:
+        """Genera un resumen seguro de cliente para consumo del ecosistema."""
+        return (
+            f"### Cliente Registrado: {self.full_name()}\n"
+            f"- **Ubicación Principal:** Resistencia, Chaco\n"
+            f"- **Cuenta:** {self.email}\n"
+        )
+
+    def get_voice_summary(self) -> str:
+        """Genera una respuesta fluida para lectura por asistentes de voz (AEO)."""
+        return f"Cliente registrado {self.full_name()} en Bulonera Alvear."
+
     def __str__(self):
         return self.email
     

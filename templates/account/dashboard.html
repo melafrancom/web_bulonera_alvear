@@ -6,6 +6,10 @@
 
 {% block meta_description %}Accede a tu dashboard personal, órdenes y perfil en Bulonera Alvear.{% endblock %}
 
+{% block meta %}
+<meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
 {% block content %}
 <!-- Dashboard Section -->
 <section class="py-8 bg-slate-50 dark:bg-slate-900 min-h-screen">
@@ -14,14 +18,20 @@
         <!-- Breadcrumb -->
         {% include 'includes/partials/_breadcrumb.html' with items=breadcrumb_items %}
         
-        <!-- Page Title -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">
-                Bienvenido, {{ user.first_name }}
-            </h1>
-            <p class="text-slate-600 dark:text-slate-400 mt-2">
-                Aquí puedes ver tus órdenes, perfil y configuración
-            </p>
+        <!-- Page Title & SXO Trust Badge -->
+        <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900 dark:text-white">
+                    Bienvenido, {{ user.first_name }}
+                </h1>
+                <p class="text-slate-600 dark:text-slate-400 mt-1">
+                    Aquí puedes ver tus órdenes, perfil y configuración
+                </p>
+            </div>
+            <div class="bg-blue-50 dark:bg-slate-800 border-l-4 border-blue-600 p-3 rounded text-xs text-blue-900 dark:text-blue-200">
+                <span class="font-bold">Cliente Verificado Bulonera Alvear</span><br>
+                <span>Despachos prioritarios y atención técnica directa desde Av. Alvear 1301, Resistencia.</span>
+            </div>
         </div>
         
         <!-- Dashboard Content -->

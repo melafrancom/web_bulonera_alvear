@@ -42,14 +42,16 @@ class TestAccountModel:
     
     def test_user_full_name(self):
         """Test método full_name"""
-        user = Account.objects.create_user(
-            first_name='María',
-            last_name='González',
-            username='mariagonzalez',
-            email='maria@example.com',
-            password='testpass123'
-        )
-        assert user.full_name() == 'María González'
+        user = Account(first_name='Juan', last_name='Pérez')
+        assert user.full_name() == 'Juan Pérez'
+        assert user.get_full_name() == 'Juan Pérez'
+
+    def test_user_geo_and_voice_summaries(self):
+        """Verifica la generación de resúmenes seguros GEO y AEO de usuario"""
+        user = Account(first_name='Carlos', last_name='Gómez', email='carlos@example.com')
+        assert 'Carlos Gómez' in user.get_geo_summary()
+        assert 'carlos@example.com' in user.get_geo_summary()
+        assert 'Carlos Gómez' in user.get_voice_summary()
     
     def test_user_str(self):
         """Test representación string del usuario"""
