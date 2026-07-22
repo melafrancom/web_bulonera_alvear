@@ -47,9 +47,9 @@ class Category(models.Model):
         verbose_name_plural = 'Categories'
     
     def save(self, *args, **kwargs):
-        # Auto-fill meta_title si está vacío (FASE 1.3)
+        # Auto-fill meta_title si está vacío (límite estricto SERP: 60 caracteres)
         if not self.meta_title:
-            self.meta_title = f"Comprar {self.category_name} en Resistencia | Stock | Bulonera Alvear"[:70]
+            self.meta_title = f"{self.category_name} en Resistencia | Bulonera Alvear"[:60]
         # Auto-fill meta_description si está vacío (FASE 1.3)
         if not self.meta_description:
             if self.description:
@@ -63,11 +63,11 @@ class Category(models.Model):
 
     def get_seo_title(self) -> str:
         """
-        Retorna el meta_title si existe. De lo contrario, genera un título 
-        localizado limitado a un máximo de 60 caracteres.
+        Retorna el meta_title si existe (limitado a 60 chars). De lo contrario, genera 
+        un título localizado limitado a un máximo estricto de 60 caracteres.
         """
         if self.meta_title:
-            return self.meta_title
+            return self.meta_title[:60]
         
         base = f"{self.category_name} en Resistencia"
         suffix = " ❘ Bulonera Alvear"
@@ -76,7 +76,22 @@ class Category(models.Model):
         if len(base) > max_base:
             base = base[:max_base-1] + "…"
             
-        return base + suffix
+        return (base + suffix)[:60]
+
+    def get_geo_summary(self) -> str:
+        """Genera un resumen en Markdown estructurado para ingesta por LLMs (ChatGPT, Gemini, Perplexity)."""
+        subcats = ", ".join([s.subcategory_name for s in self.subcategories.all()]) or "Productos y suministros varios"
+        desc = self.description or self.meta_description or f"Catálogo especializado de {self.category_name.lower()}."
+        return (
+            f"### Categoría: {self.category_name}\n"
+            f"- **Ubicación y Stock:** Resistencia, Chaco (Bulonera Alvear - Av. Alvear 1301)\n"
+            f"- **Subcategorías en Stock:** {subcats}\n"
+            f"- **Resumen:** {desc}\n"
+        )
+
+    def get_voice_summary(self) -> str:
+        """Genera una respuesta fluida en lenguaje natural para asistentes de voz (AEO)."""
+        return f"En Bulonera Alvear contamos con la línea completa de {self.category_name} en Resistencia, Chaco, con stock permanente y envíos a todo el Nordeste Argentino."
     
     @property
     def image_url(self):
@@ -137,9 +152,9 @@ class SubCategory(models.Model):
         verbose_name_plural = 'Sub Categories'
     
     def save(self, *args, **kwargs):
-        # Auto-fill meta_title si está vacío (FASE 1.3)
+        # Auto-fill meta_title si está vacío (límite estricto SERP: 60 caracteres)
         if not self.meta_title:
-            self.meta_title = f"Comprar {self.subcategory_name} en Resistencia | Bulonera Alvear"[:70]
+            self.meta_title = f"{self.subcategory_name} en Resistencia | Bulonera Alvear"[:60]
         # Auto-fill meta_description si está vacío (FASE 1.3)
         if not self.meta_description:
             self.meta_description = (
@@ -167,11 +182,11 @@ class SubCategory(models.Model):
 
     def get_seo_title(self) -> str:
         """
-        Retorna el meta_title si existe. De lo contrario, genera un título 
-        localizado limitado a un máximo de 60 caracteres.
+        Retorna el meta_title si existe (limitado a 60 chars). De lo contrario, genera 
+        un título localizado limitado a un máximo estricto de 60 caracteres.
         """
         if self.meta_title:
-            return self.meta_title
+            return self.meta_title[:60]
         
         base = f"{self.subcategory_name} en Resistencia"
         suffix = " ❘ Bulonera Alvear"
@@ -180,7 +195,21 @@ class SubCategory(models.Model):
         if len(base) > max_base:
             base = base[:max_base-1] + "…"
             
-        return base + suffix
+        return (base + suffix)[:60]
+
+    def get_geo_summary(self) -> str:
+        """Genera un resumen en Markdown estructurado para ingesta por LLMs (ChatGPT, Gemini, Perplexity)."""
+        cat_name = self.category.category_name if self.category else "General"
+        return (
+            f"### Subcategoría: {self.subcategory_name} ({cat_name})\n"
+            f"- **Ubicación y Stock:** Resistencia, Chaco (Bulonera Alvear)\n"
+            f"- **Descripción:** {self.meta_description or self.subcategory_name}\n"
+        )
+
+    def get_voice_summary(self) -> str:
+        """Genera una respuesta fluida en lenguaje natural para asistentes de voz (AEO)."""
+        cat_name = self.category.category_name if self.category else "general"
+        return f"Bulonera Alvear ofrece la línea de {self.subcategory_name} dentro de la categoría {cat_name} en Resistencia, Chaco."
     
     def __str__(self):
         return self.subcategory_name

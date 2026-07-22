@@ -74,6 +74,39 @@ class CategoryService:
         from .models import NavbarItem
         return NavbarItem.objects.filter(is_active=True).select_related('category').order_by('position')
 
+    @staticmethod
+    def get_category_hierarchy_dict() -> List[dict]:
+        """
+        Exporta la estructura de categorías y subcategorías como un diccionario
+        enriquecido optimizado para AIO, GEO y generación de metadatos/sitemaps.
+        """
+        categories = CategoryService.get_all_categories()
+        hierarchy = []
+        for cat in categories:
+            hierarchy.append({
+                'id': cat.id,
+                'name': cat.category_name,
+                'slug': cat.slug,
+                'url': cat.get_url(),
+                'seo_title': cat.get_seo_title(),
+                'meta_description': cat.meta_description,
+                'geo_summary': cat.get_geo_summary(),
+                'voice_summary': cat.get_voice_summary(),
+                'subcategories': [
+                    {
+                        'id': sub.id,
+                        'name': sub.subcategory_name,
+                        'slug': sub.slug,
+                        'url': sub.get_url(),
+                        'seo_title': sub.get_seo_title(),
+                        'geo_summary': sub.get_geo_summary(),
+                        'voice_summary': sub.get_voice_summary(),
+                    }
+                    for sub in cat.subcategories.all()
+                ]
+            })
+        return hierarchy
+
 
 
 class SubCategoryService:

@@ -90,6 +90,18 @@ class TestCategoryService(TestCase):
         self.assertEqual(items[0].label, 'Item 1')
         self.assertEqual(items[1].label, 'Item 2')
 
+    def test_get_category_hierarchy_dict(self):
+        """Test: Exportación de jerarquía estructurada de categorías y subcategorías para GEO/AIO"""
+        hierarchy = CategoryService.get_category_hierarchy_dict()
+        self.assertIsInstance(hierarchy, list)
+        self.assertEqual(len(hierarchy), 2)
+        
+        herramientas = next(item for item in hierarchy if item['name'] == 'Herramientas')
+        self.assertEqual(len(herramientas['subcategories']), 2)
+        self.assertIn('geo_summary', herramientas)
+        self.assertIn('voice_summary', herramientas)
+        self.assertIn('subcategories', herramientas)
+
 
 
 @pytest.mark.django_db

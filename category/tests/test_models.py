@@ -40,13 +40,14 @@ class TestCategoryModel(TestCase):
             )
             
     def test_category_meta_title_fallback_includes_resistencia(self):
-        """Verifica que el fallback de meta_title y meta_description incluya texto local."""
+        """Verifica que el fallback de meta_title esté limitado a 60 chars e incluya texto local."""
         cat = Category.objects.create(
             category_name='Bulones Especiales',
             slug='bulones-especiales',
             description='Bulones de alta resistencia.'
         )
-        self.assertEqual(cat.meta_title, "Comprar Bulones Especiales en Resistencia | Stock | Bulonera Alvear")
+        self.assertLessEqual(len(cat.meta_title), 60)
+        self.assertEqual(cat.meta_title, "Bulones Especiales en Resistencia | Bulonera Alvear")
         self.assertIn("Bulones de alta resistencia.", cat.meta_description)
         self.assertIn("Stock real en Bulonera Alvear", cat.meta_description)
         
@@ -58,6 +59,20 @@ class TestCategoryModel(TestCase):
             rich_description='<h2>Tornillos de todo tipo</h2><p>Texto SEO maestro.</p>'
         )
         self.assertEqual(cat.rich_description, '<h2>Tornillos de todo tipo</h2><p>Texto SEO maestro.</p>')
+
+    def test_category_geo_and_voice_summaries(self):
+        """Verifica la generación de resúmenes GEO y AEO de categoría."""
+        cat = Category.objects.create(
+            category_name='Fijaciones',
+            slug='fijaciones',
+            description='Anclajes y tarugos.'
+        )
+        geo_summary = cat.get_geo_summary()
+        voice_summary = cat.get_voice_summary()
+        
+        self.assertIn("### Categoría: Fijaciones", geo_summary)
+        self.assertIn("Resistencia, Chaco", geo_summary)
+        self.assertIn("En Bulonera Alvear contamos con la línea completa de Fijaciones", voice_summary)
 
     def test_category_get_seo_title(self):
         """Verifica el método get_seo_title en Category."""
@@ -116,15 +131,29 @@ class TestSubCategoryModel(TestCase):
         self.assertEqual(subcategories.first(), self.subcategory)
         
     def test_subcategory_meta_title_fallback_includes_resistencia(self):
-        """Verifica que el fallback de meta_title y meta_description incluya texto local."""
+        """Verifica que el fallback de meta_title esté limitado a 60 chars e incluya texto local."""
         sub = SubCategory.objects.create(
             subcategory_name='Clavos',
             slug='clavos',
             category=self.category
         )
-        self.assertEqual(sub.meta_title, "Comprar Clavos en Resistencia | Bulonera Alvear")
+        self.assertLessEqual(len(sub.meta_title), 60)
+        self.assertEqual(sub.meta_title, "Clavos en Resistencia | Bulonera Alvear")
         self.assertIn("clavos en Chaco", sub.meta_description)
         self.assertIn("Av. Alvear 1301", sub.meta_description)
+
+    def test_subcategory_geo_and_voice_summaries(self):
+        """Verifica la generación de resúmenes GEO y AEO de subcategoría."""
+        sub = SubCategory.objects.create(
+            subcategory_name='Anclajes Mecánicos',
+            slug='anclajes-mecanicos',
+            category=self.category
+        )
+        geo_summary = sub.get_geo_summary()
+        voice_summary = sub.get_voice_summary()
+        
+        self.assertIn("### Subcategoría: Anclajes Mecánicos", geo_summary)
+        self.assertIn("Bulonera Alvear ofrece la línea de Anclajes Mecánicos", voice_summary)
         
     def test_subcategory_rich_description_optional(self):
         """Verifica que rich_description es un campo opcional y guarda contenido HTML."""
