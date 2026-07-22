@@ -1,7 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Página no encontrada (404) | Bulonera Alvear{% endblock %}
+{% block title %}Página no encontrada (404) — Bulonera Alvear{% endblock %}
+
+{% block meta %}
+<meta name="robots" content="noindex, nofollow">
+{% endblock %}
 
 {% block content %}
 <section class="min-h-screen flex items-center justify-center bg-soft-bg dark:bg-slate-900 py-12 px-4">
@@ -23,9 +27,23 @@
             Página no encontrada
         </h2>
         
-        <p class="text-lg text-slate-600 dark:text-slate-400 mb-8 max-w-md mx-auto">
-            Lo sentimos, la página que buscas no existe o ha sido movida.
+        <p class="text-lg text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
+            Lo sentimos, la página que buscas no existe o ha sido movida. ¡Busca el producto que necesitas en nuestro catálogo!
         </p>
+
+        <!-- SXO Search Form -->
+        <form action="{% url 'store:search' %}" method="GET" class="max-w-md mx-auto mb-8 flex gap-2">
+            <input type="text" 
+                   name="keyword" 
+                   placeholder="Buscar bulones, herramientas, discos..." 
+                   required
+                   class="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <button type="submit" 
+                    class="px-5 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium text-sm rounded-lg transition-colors flex items-center gap-1">
+                <i data-lucide="search" class="w-4 h-4"></i>
+                Buscar
+            </button>
+        </form>
         
         <!-- Actions -->
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
