@@ -61,7 +61,39 @@ class ImageAsset(models.Model):
     def save(self, *args, **kwargs):
         if not self.name and self.file:
             self.name = os.path.splitext(os.path.basename(self.file.name))[0]
+        if not self.alt_text and self.name:
+            self.alt_text = f"{self.name} - Bulonera Alvear"
         super().save(*args, **kwargs)
+
+    def get_seo_alt_text(self, context_name: str = '') -> str:
+        """Retorna un texto alternativo contextualizado para SEO."""
+        if context_name:
+            return f"{context_name} - Bulonera Alvear Resistencia"
+        return self.alt_text or f"{self.name} - Bulonera Alvear Resistencia"
+
+    def get_geo_summary(self) -> str:
+        """Genera un resumen estructurado en Markdown de la imagen para citación por LLMs."""
+        url = self.get_webp_url() or self.image_url
+        return (
+            f"### Imagen Asset: {self.name}\n"
+            f"- **Tipo:** {self.get_image_type_display()}\n"
+            f"- **Alt Text:** {self.alt_text or self.name}\n"
+            f"- **URL WebP/Optimizado:** {url}\n"
+        )
+
+    def get_voice_summary(self) -> str:
+        """Genera una respuesta fluida para lectura por asistentes de voz (AEO)."""
+        return f"Imagen {self.name} de {self.get_image_type_display().lower()} en Bulonera Alvear."
+
+    def get_schema_data(self, site_url: str = '') -> dict:
+        """Retorna una representación formateada para Schema.org ImageObject."""
+        url = f"{site_url}{self.image_url}" if site_url and not self.image_url.startswith('http') else self.image_url
+        return {
+            "@type": "ImageObject",
+            "name": self.name,
+            "caption": self.alt_text or self.name,
+            "contentUrl": url,
+        }
 
     def __str__(self):
         return self.name or str(self.file)

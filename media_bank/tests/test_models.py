@@ -68,3 +68,33 @@ class TestImageAssetModel:
         """Verifica la representación en string."""
         asset = ImageAsset(name='Test Asset')
         assert str(asset) == 'Test Asset'
+
+    def test_auto_alt_text_and_helpers(self):
+        """Verifica la autogeneración de alt_text y el correcto funcionamiento de los métodos SEO/GEO/AEO."""
+        image = Image.new('RGB', (100, 100), color='yellow')
+        image_io = io.BytesIO()
+        image.save(image_io, format='JPEG')
+        image_io.seek(0)
+
+        asset = ImageAsset.objects.create(
+            file=SimpleUploadedFile('bulon_hexagonal.jpg', image_io.read(), content_type='image/jpeg')
+        )
+        assert asset.name == 'bulon_hexagonal'
+        assert asset.alt_text == 'bulon_hexagonal - Bulonera Alvear'
+
+        # SEO Alt text
+        assert asset.get_seo_alt_text('Bulón Hexagonal 1/2') == 'Bulón Hexagonal 1/2 - Bulonera Alvear Resistencia'
+
+        # GEO & Voice summaries
+        geo_summary = asset.get_geo_summary()
+        assert 'bulon_hexagonal' in geo_summary
+        assert 'Bulonera Alvear' in geo_summary
+
+        voice_summary = asset.get_voice_summary()
+        assert 'bulon_hexagonal' in voice_summary
+
+        # Schema Data
+        schema_data = asset.get_schema_data('https://buloneraalvear.com.ar')
+        assert schema_data['@type'] == 'ImageObject'
+        assert schema_data['name'] == 'bulon_hexagonal'
+        assert 'contentUrl' in schema_data
