@@ -6,7 +6,8 @@
 {% block meta_description %}{{ post.meta_description|default:post.excerpt|truncatewords:20 }}{% endblock %}
 
 {% block meta %}
-<link rel="canonical" href="{{ request.build_absolute_uri }}">
+<link rel="canonical" href="{{ canonical_url|default:request.build_absolute_uri }}">
+
 <meta property="og:type" content="article">
 <meta property="og:title" content="{{ post.title }}">
 <meta property="og:description" content="{{ post.excerpt|default:post.meta_description }}">
@@ -34,6 +35,10 @@
 {% else %}
 <link rel="preload" as="image" href="{{ post.image_url }}" type="image/jpeg" fetchpriority="high">
 {% endif %}
+
+<!-- Schemas AEO & Voice Search -->
+{% include 'seo/speakable_schema_template.html' with speakable_css='[".blog-takeaways", ".article-content h2"]' %}
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -115,9 +120,10 @@
 
           <!-- Metadata -->
           <div class="flex items-center justify-between flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 flex-wrap">
               <span>📅 {{ post.published_date|date:"j \d\e N \d\e Y" }}</span>
               <span>✏️ {{ post.author.get_full_name }}</span>
+              <span>⏱️ Lectura: {{ post.reading_time_minutes }} min</span>
               <span>👁️ {{ post.views_count }} vistas</span>
             </div>
           </div>
@@ -134,6 +140,18 @@
           </div>
           {% endif %}
         </header>
+
+        <!-- AIO Executive Summary / Key Takeaways Box -->
+        {% if post.excerpt %}
+        <aside class="blog-takeaways bg-blue-50 dark:bg-slate-900 border-l-4 border-blue-600 p-4 rounded-r mb-8">
+          <h4 class="font-bold text-blue-900 dark:text-blue-200 text-sm uppercase tracking-wider mb-1 flex items-center gap-2">
+            💡 Puntos Clave / Resumen Ejecutivo
+          </h4>
+          <p class="text-gray-800 dark:text-gray-200 text-sm leading-relaxed">
+            {{ post.excerpt }}
+          </p>
+        </aside>
+        {% endif %}
 
         <!-- Main Content (Prose Styling) -->
         <div class="prose prose-lg dark:prose-invert max-w-none mb-12" id="post-content">

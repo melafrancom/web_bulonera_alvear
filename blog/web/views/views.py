@@ -23,6 +23,7 @@ class BlogListView(ListView):
         ctx = super().get_context_data(**kwargs)
         ctx['tags'] = BlogService.get_all_tags()
         ctx['active_tag'] = self.request.GET.get('tag', '')
+        ctx['canonical_url'] = self.request.build_absolute_uri(self.request.path)
         return ctx
 
 
@@ -50,4 +51,5 @@ class BlogDetailView(DetailView):
         ctx = super().get_context_data(**kwargs)
         ctx['related_posts'] = BlogService.get_related_posts(self.object, limit=3)
         ctx['featured_products'] = BlogService.get_featured_products(self.object, limit=4)
+        ctx['canonical_url'] = self.request.build_absolute_uri(self.object.get_absolute_url())
         return ctx

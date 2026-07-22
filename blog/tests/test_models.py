@@ -63,13 +63,32 @@ class TestPost:
         assert post2.slug != post1.slug or post2.id != post1.id
     
     def test_post_meta_title_auto_fill(self, db_session, admin_user):
-        """Verifica que meta_title se completa automáticamente"""
+        """Verifica que meta_title se completa automáticamente con límite de 60 caracteres"""
+        long_title = 'Título Extenso de Post de Blog para Probar la Restricción de 60 Caracteres SERP'
         post = Post.objects.create(
-            title='Mi Título Largo que se truncará para Meta',
+            title=long_title,
             content='Contenido',
             author=admin_user
         )
-        assert post.meta_title == post.title[:70]
+        assert len(post.meta_title) <= 60
+        assert post.meta_title == long_title[:60]
+
+    def test_post_reading_time_and_summaries(self, db_session, admin_user):
+        """Verifica el cálculo de tiempo de lectura y resúmenes GEO/AEO"""
+        post = Post.objects.create(
+            title='Guía de Selección de Bulones de Alta Resistencia',
+            content='word ' * 450,  # 450 palabras -> 2 min
+            excerpt='Resumen para la guía técnica.',
+            author=admin_user
+        )
+        assert post.reading_time_minutes == 2
+        
+        geo_summary = post.get_geo_summary()
+        voice_summary = post.get_voice_summary()
+        
+        assert 'Guía de Selección de Bulones' in geo_summary
+        assert 'Resumen para la guía técnica.' in geo_summary
+        assert 'Artículo técnico' in voice_summary
     
     def test_post_meta_description_from_excerpt(self, db_session, admin_user):
         """Verifica que meta_description se completa desde excerpt"""

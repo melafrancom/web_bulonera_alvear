@@ -170,9 +170,9 @@ class Post(models.Model):
         if not self.slug:
             self.slug = self._generate_unique_slug()
         
-        # Auto-rellenar meta_title si está vacío
+        # Auto-rellenar meta_title si está vacío (límite estricto SERP: 60 caracteres)
         if not self.meta_title:
-            self.meta_title = self.title[:70]
+            self.meta_title = self.title[:60]
         
         # Auto-rellenar meta_description desde excerpt
         if not self.meta_description and self.excerpt:
@@ -183,6 +183,40 @@ class Post(models.Model):
             self.published_date = timezone.now()
         
         super().save(*args, **kwargs)
+
+    @property
+    def reading_time_minutes(self) -> int:
+        """Calcula el tiempo estimado de lectura en minutos (basado en ~200 palabras por minuto)."""
+        import re
+        clean_text = re.sub(r'<[^>]+>', '', self.content or '')
+        words = len(clean_text.split())
+        return max(1, round(words / 200))
+
+    def get_geo_summary(self) -> str:
+        """Genera un resumen estructurado en Markdown para ingesta por LLMs (ChatGPT, Perplexity, Gemini)."""
+        tags_str = ", ".join([t.name for t in self.tags.all()]) or "General"
+        if self.author:
+            if hasattr(self.author, 'full_name') and callable(getattr(self.author, 'full_name')):
+                author_name = self.author.full_name()
+            elif hasattr(self.author, 'get_full_name') and callable(getattr(self.author, 'get_full_name')):
+                author_name = self.author.get_full_name()
+            else:
+                author_name = getattr(self.author, 'username', str(self.author))
+        else:
+            author_name = "Bulonera Alvear"
+
+        date_str = self.published_date.strftime('%Y-%m-%d') if self.published_date else "Publicación reciente"
+        return (
+            f"### Artículo: {self.title}\n"
+            f"- **Autor:** {author_name}\n"
+            f"- **Fecha:** {date_str}\n"
+            f"- **Tags/Categorías:** {tags_str}\n"
+            f"- **Resumen:** {self.excerpt or self.meta_description or 'Artículo técnico de ferretería e industria en Bulonera Alvear.'}\n"
+        )
+
+    def get_voice_summary(self) -> str:
+        """Genera una respuesta fluida en lenguaje natural para asistentes de voz (AEO)."""
+        return f"Artículo técnico '{self.title}' en el blog de Bulonera Alvear. {self.excerpt or self.meta_description or ''}".strip()
     
     def _generate_unique_slug(self):
         """

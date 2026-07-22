@@ -6,7 +6,7 @@
 {% block meta_description %}Lee nuestros artículos sobre ferretería, bulonería industrial y guías técnicas. Contenido especializado para profesionales y emprendedores.{% endblock %}
 
 {% block meta %}
-<link rel="canonical" href="{{ request.build_absolute_uri }}">
+<link rel="canonical" href="{{ canonical_url|default:request.build_absolute_uri }}">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Blog - Bulonera Alvear">
 <meta property="og:description" content="Artículos técnicos, guías y novedades sobre ferretería industrial">
