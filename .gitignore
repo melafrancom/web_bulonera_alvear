@@ -91,3 +91,4 @@ docs/*
 !docs/communities/
 !docs/communities/*
 docs\communities
+docs/

@@ -140,6 +140,7 @@ def store(request, category_slug=None, subcategory_slug=None):
             {'name': 'Inicio', 'url': '/'},
             {'name': 'Catálogo', 'url': None}
         ]),
+        'canonical_url': f"{SITE_URL}{request.path}",
     }
     
     return render(request, 'store/store.html', context)
@@ -281,6 +282,7 @@ def product_detail(request, product_slug):
             'sale_products': sale_products,
             'product_faqs': product_faqs,
             'breadcrumb_items': breadcrumb_items,
+            'canonical_url': f"{SITE_URL}{single_product.get_url()}",
         }
         
         return render(request, 'store/product_detail.html', context)

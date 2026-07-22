@@ -37,6 +37,9 @@
 {% endblock %}
 
 {% block head_extra %}
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ canonical_url|default:request.build_absolute_uri }}">
+
     <!-- Pagination rel tags -->
     {% if products.has_previous %}
     <link rel="prev" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ products.previous_page_number }}">
@@ -81,27 +84,8 @@
     </script>
     {% endif %}
 
-    <!-- JSON-LD FAQPage Schema (Sprint 3: Tarea 3.4) -->
-    {% if faqs %}
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-            {% for faq in faqs %}
-            {
-                "@type": "Question",
-                "name": "{{ faq.question|escapejs }}",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "{{ faq.answer|escapejs|truncatewords:100 }}"
-                }
-            }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ]
-    }
-    </script>
-    {% endif %}
+    <!-- Standardized FAQ Schema -->
+    {% include 'seo/faq_schema_template.html' %}
 {% endblock %}
 
 {% block content %}

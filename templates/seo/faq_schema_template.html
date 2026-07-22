@@ -1,24 +1,24 @@
-{# ===========================================================================
-   FAQ Schema Template — Bulonera Alvear
-   ===========================================================================
-   Inyectar dentro de {% block head_extra %} en páginas con FAQs.
-   
-   Variable esperada en contexto de la vista:
-   - faqs : list[dict] — Cada dict con keys 'question' (str) y 'answer' (str)
-   
-   Ejemplo de uso en la vista (views.py):
-     context['faqs'] = [
-         {'question': '¿Hacen envíos al interior?', 'answer': 'Sí, realizamos envíos a todo el país mediante transporte y correo. Consulte por disponibilidad y costos.'},
-         {'question': '¿Tienen stock disponible?', 'answer': 'Contamos con stock permanente de las medidas más solicitadas. Para medidas especiales, consulte plazo de entrega.'},
-         {'question': '¿Cuáles son los medios de pago?', 'answer': 'Aceptamos efectivo, transferencia bancaria, Mercado Pago y tarjetas de crédito/débito.'},
-     ]
-   
-   Ejemplo de uso en el template:
-     {% block head_extra %}
-       {{ block.super }}
-       {% include 'seo/faq_schema.html' %}
-     {% endblock %}
-   ========================================================================== #}
+{% comment %}
+===========================================================================
+FAQ Schema Template — Bulonera Alvear
+===========================================================================
+Inyectar dentro de {% block head_extra %} en páginas con FAQs.
+
+Variable esperada en contexto de la vista:
+- faqs : list[dict] — Cada dict con keys 'question' (str) y 'answer' (str)
+
+Ejemplo de uso en la vista (views.py):
+  context['faqs'] = [
+      {'question': '¿Hacen envíos al interior?', 'answer': 'Sí, realizamos envíos a todo el país mediante transporte y correo.'},
+  ]
+
+Ejemplo de uso en el template:
+  {% block head_extra %}
+    {{ block.super }}
+    {% include 'seo/faq_schema_template.html' %}
+  {% endblock %}
+===========================================================================
+{% endcomment %}
 
 {% if faqs %}
 <script type="application/ld+json">
