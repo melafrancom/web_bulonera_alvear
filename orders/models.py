@@ -56,7 +56,31 @@ class Order(models.Model):
 
     def full_address(self):
         return f'{self.address_line_1} {self.address_line_2}'
-    
+
+    def get_status_badge_class(self) -> str:
+        """Retorna clases de Tailwind CSS para la insignia de estado del pedido."""
+        badge_map = {
+            'New': 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border-blue-300',
+            'Accepted': 'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border-amber-300',
+            'Completed': 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300',
+            'Cancelled': 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-300',
+        }
+        return badge_map.get(self.status, 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200')
+
+    def get_voice_summary(self) -> str:
+        """Genera una respuesta en lenguaje natural para asistentes de voz (AEO)."""
+        return f"Pedido #{self.order_number} en Bulonera Alvear. Estado actual: {self.get_status_display()}."
+
+    def get_geo_summary(self) -> str:
+        """Genera un resumen seguro en Markdown sin información personal sensible."""
+        date_str = self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else 'Reciente'
+        return (
+            f"### Pedido #{self.order_number}\n"
+            f"- **Estado:** {self.get_status_display()}\n"
+            f"- **Origen/Despacho:** Bulonera Alvear (Av. Alvear 1301, Resistencia, Chaco)\n"
+            f"- **Fecha:** {date_str}\n"
+        )
+
     def __str__(self):
         return self.first_name
     

@@ -28,6 +28,12 @@ class TestOrderWebViews:
         except:
             pass
 
+    def test_order_complete_template_has_noindex(self, client):
+        """Verifica que el template order_complete.html incluya noindex, nofollow"""
+        from django.template.loader import render_to_string
+        rendered = render_to_string('orders/order_complete.html', {'order_number': '12345'})
+        assert 'name="robots" content="noindex, nofollow"' in rendered
+
 
 @pytest.mark.django_db
 class TestCheckoutViews:

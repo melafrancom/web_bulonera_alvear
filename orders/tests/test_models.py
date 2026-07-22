@@ -43,6 +43,25 @@ class TestOrderModel:
         
         assert order.status == 'New'
 
+    def test_order_status_badge_and_summaries(self, user):
+        """Verifica badge classes y resúmenes GEO/AEO de Order"""
+        order = Order.objects.create(
+            user=user,
+            first_name='Test',
+            last_name='User',
+            phone='123',
+            email='test@test.com',
+            address_line_1='Test',
+            country='AR',
+            city='BA',
+            state='1000',
+            order_number='20240101001',
+            status='Completed'
+        )
+        assert 'bg-green-100' in order.get_status_badge_class()
+        assert 'Pedido #20240101001' in order.get_voice_summary()
+        assert 'Bulonera Alvear' in order.get_geo_summary()
+
     def test_order_is_ordered_default_false(self, user):
         """Order.is_ordered es False por defecto"""
         order = Order.objects.create(
