@@ -45,3 +45,9 @@ class TestContactOptionModel(TestCase):
     def test_contact_created_at_auto_set(self):
         """Test: created_at se asigna automáticamente"""
         self.assertIsNotNone(self.contact.created_at)
+
+    def test_contact_geo_and_voice_summaries(self):
+        """Test: Resúmenes GEO y AEO de ContactOption"""
+        self.assertIn("Juan Pérez", self.contact.get_geo_summary())
+        self.assertIn("Consulta sobre producto", self.contact.get_geo_summary())
+        self.assertIn("Juan Pérez", self.contact.get_voice_summary())

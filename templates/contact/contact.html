@@ -1,9 +1,54 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Contacto y Presupuestos en Resistencia, Chaco | Bulonera Alvear{% endblock %}
+{% block title %}Contacto y Ubicación — Bulonera Alvear Resistencia{% endblock %}
 
 {% block head_extra %}
+{% if canonical_url %}
+<link rel="canonical" href="{{ canonical_url }}">
+{% endif %}
+
+<!-- Schema.org LocalBusiness & HardwareStore for Local GEO/AEO -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HardwareStore",
+  "name": "Bulonera Alvear",
+  "image": "https://buloneraalvear.com.ar/static/images/logo.png",
+  "@id": "https://buloneraalvear.com.ar/#hardwarestore",
+  "url": "https://buloneraalvear.com.ar/contact/",
+  "telephone": "+54-362-443-4000",
+  "priceRange": "$$",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Av. Alvear 1301",
+    "addressLocality": "Resistencia",
+    "addressRegion": "Chaco",
+    "postalCode": "H3500",
+    "addressCountry": "AR"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": -27.4560,
+    "longitude": -58.9950
+  },
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "opens": "07:30",
+      "closes": "19:30"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "Saturday",
+      "opens": "07:30",
+      "closes": "12:30"
+    }
+  ]
+}
+</script>
+
 <!-- JSON-LD FAQPage Schema for Contact page -->
 <script type="application/ld+json">
 {
@@ -45,6 +90,7 @@
   ]
 }
 </script>
+{% include 'seo/speakable_schema_template.html' %}
 {% endblock %}
 
 {% block content %}
@@ -58,9 +104,13 @@
       <h1 class="text-4xl font-bold text-slate-900 dark:text-white mb-4">
         Ponte en Contacto
       </h1>
-      <p class="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+      <p class="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-4">
         ¿Tienes preguntas o necesitas ayuda? Estamos aquí para asistirte. Completa el formulario y nos pondremos en contacto pronto.
       </p>
+      <div class="inline-block bg-blue-50 dark:bg-slate-800 border-l-4 border-blue-600 p-3 rounded text-sm text-blue-900 dark:text-blue-200 max-w-xl mx-auto text-left">
+        <span class="font-bold">📍 Casa Central Resistencia, Chaco</span> — Av. Alvear 1301.<br>
+        <span>Respuestas por WhatsApp en menos de 15 minutos en horario comercial. Envíos directos al NEA y todo el país.</span>
+      </div>
     </div>
 
     <!-- Main Content Grid -->

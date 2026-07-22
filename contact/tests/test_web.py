@@ -22,6 +22,15 @@ class TestContactWebViews(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'form')  # La template debe tener el formulario
         self.assertTemplateUsed(response, 'contact/contact.html')
+
+    def test_contact_view_has_canonical_and_localbusiness_schema(self):
+        """Verifica que /contact/ incluya rel=canonical y el Schema LocalBusiness/HardwareStore"""
+        response = self.client.get(reverse('contact:contact'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('rel="canonical"', content)
+        self.assertIn('"@type": "HardwareStore"', content)
+        self.assertIn('Resistencia', content)
     
     def test_contact_view_post_success_email(self):
         """Test: POST /contact/ con método email"""

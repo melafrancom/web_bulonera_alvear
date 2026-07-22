@@ -51,10 +51,12 @@ def contact_view(request):
     
     # Datos para el contexto
     from django.conf import settings
+    canonical_url = request.build_absolute_uri(reverse('contact:contact'))
     context = {
         'form': form,
         'whatsapp_number': getattr(settings, 'WHATSAPP_NUMBER', None),
         'breadcrumb_items': breadcrumb_items,
+        'canonical_url': canonical_url,
     }
     
     return render(request, 'contact/contact.html', context)
