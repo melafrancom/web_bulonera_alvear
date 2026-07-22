@@ -6,6 +6,10 @@
 
 {% block meta_description %}Revisa tu carrito de compras y procede al pago de forma segura.{% endblock %}
 
+{% block meta %}
+<meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
 {% block content %}
 <!-- Cart Section -->
 <section class="py-8 bg-slate-50 dark:bg-slate-900 min-h-screen">
@@ -14,16 +18,22 @@
         <!-- Breadcrumb -->
         {% include 'includes/partials/_breadcrumb.html' with items=breadcrumb_items %}
         
-        <!-- Page Title -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">
-                Carrito de Compras
-            </h1>
-            {% if cart_items %}
-            <p class="text-slate-600 dark:text-slate-400 mt-2">
-                Tienes {{ quantity }} producto{{ quantity|pluralize }} en tu carrito
-            </p>
-            {% endif %}
+        <!-- Page Title & SXO Trust Badge -->
+        <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900 dark:text-white">
+                    Carrito de Compras
+                </h1>
+                {% if cart_items %}
+                <p class="text-slate-600 dark:text-slate-400 mt-1">
+                    Tienes {{ quantity }} producto{{ quantity|pluralize }} en tu carrito
+                </p>
+                {% endif %}
+            </div>
+            <div class="bg-blue-50 dark:bg-slate-800 border-l-4 border-blue-600 p-3 rounded text-xs text-blue-900 dark:text-blue-200">
+                <span class="font-bold">Despacho Asegurado Bulonera Alvear</span><br>
+                <span>Stock verificado en Av. Alvear 1301, Resistencia. Envíos rápidos al NEA y garantía oficial.</span>
+            </div>
         </div>
         
         <!-- Empty State -->

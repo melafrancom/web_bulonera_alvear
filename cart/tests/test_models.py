@@ -27,6 +27,12 @@ class TestCartModel(TestCase):
         cart = Cart.objects.create(cart_id='test-session-123')
         self.assertEqual(str(cart), 'test-session-123')
 
+    def test_cart_geo_and_voice_summaries(self):
+        """Test: Resúmenes GEO y AEO de Cart y CartItem"""
+        cart = Cart.objects.create(cart_id='test-session-456')
+        self.assertIn('test-session-456', cart.get_geo_summary())
+        self.assertIn('Bulonera Alvear', cart.get_voice_summary())
+
 
 @pytest.mark.django_db
 class TestCartItemModel(TestCase):
