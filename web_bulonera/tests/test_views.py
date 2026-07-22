@@ -95,15 +95,17 @@ class TestAdsTxtView(TestCase):
         assert response.status_code == 200
 
     def test_ads_txt_content_type(self):
-        """Verifica que el content-type es text/plain."""
+        """Verifica que el content-type es text/plain con charset utf-8."""
         response = self.client.get('/ads.txt')
         assert 'text/plain' in response['Content-Type']
+        assert 'utf-8' in response['Content-Type'].lower()
 
     def test_ads_txt_contains_ad_records(self):
-        """Verifica que contiene los registros correctos de AdSense."""
+        """Verifica que contiene los registros correctos de AdSense y cabecera IAB."""
         response = self.client.get('/ads.txt')
         content = response.content.decode('utf-8')
         
+        assert '# Authorized Digital Sellers' in content
         assert 'google.com' in content
         assert 'pub-4242043087380150' in content
         assert 'DIRECT' in content

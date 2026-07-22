@@ -269,9 +269,17 @@ def llms_txt(request):
 
 def ads_txt(request):
     """
-    Vista que sirve el archivo ads.txt para Google AdSense.
+    Vista que sirve el archivo ads.txt para Google AdSense conforme al estándar IAB Tech Lab.
     """
     publisher_id = getattr(settings, 'ADSENSE_PUBLISHER_ID', 'pub-4242043087380150')
-    line = f"google.com, {publisher_id}, DIRECT, f08c47fec0942fa0"
-    return HttpResponse(line, content_type="text/plain")
+    lines = [
+        "# Authorized Digital Sellers - Bulonera Alvear",
+        f"google.com, {publisher_id}, DIRECT, f08c47fec0942fa0",
+    ]
+    
+    extra_lines = getattr(settings, 'ADS_TXT_EXTRA_LINES', [])
+    if extra_lines:
+        lines.extend(extra_lines)
+
+    return HttpResponse("\n".join(lines), content_type="text/plain; charset=utf-8")
 
