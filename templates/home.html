@@ -43,12 +43,16 @@
             {% endif %}
         {% endwith %}
     {% endif %}
+
+    <!-- Schemas (AEO / Voice / FAQ) -->
+    {% include 'seo/faq_schema_template.html' %}
+    {% include 'seo/speakable_schema_template.html' %}
 {% endblock %}
 
 
 {% block content %}
     <!-- Semantic geolocalized H1 (Sprint 2: F2.0) -->
-    <h1 class="sr-only">Bulonera Alvear | Ferretería Industrial y Bulonería Técnica en Resistencia, Chaco</h1>
+    <h1 class="text-center text-gray-800 text-sm md:text-base font-semibold py-2">Bulonera Alvear | Ferretería Industrial y Bulonería Técnica en Resistencia, Chaco</h1>
 
     <!-- Hero Carousel - Sección fija -->
     {% include 'includes/home/_hero_carousel.html' %}

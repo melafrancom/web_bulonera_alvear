@@ -87,3 +87,7 @@ IMPLEMENTATION_BLOG_WALKTHROUGH.md
 graphify-out/
 .obsidian/
 *.canvas
+docs/*
+!docs/communities/
+!docs/communities/*
+docs\communities

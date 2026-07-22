@@ -1,0 +1,28 @@
+{# ===========================================================================
+   Speakable Schema Template — Bulonera Alvear
+   ===========================================================================
+   Inyectar dentro de {% block head_extra %} en páginas con contenido apto 
+   para lectura por asistentes de voz (Google Assistant, Siri, Alexa).
+   
+   Variables esperadas en contexto de la vista (opcionales con fallback):
+   - page_url            : str        — URL absoluta de la página (ej: request.build_absolute_uri)
+   - speakable_css       : list[str]  — Lista de selectores CSS (ej: [".product-description-intro", ".faq-answer"])
+   
+   Ejemplo de uso en el template:
+     {% block head_extra %}
+       {{ block.super }}
+       {% include 'seo/speakable_schema.html' with speakable_css='[".product-description-intro", ".faq-answer"]' %}
+     {% endblock %}
+   ========================================================================== #}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": "{{ request.build_absolute_uri }}",
+  "speakable": {
+    "@type": "SpeakableSpecification",
+    "cssSelector": {{ speakable_css|default:'[".product-description-intro", ".faq-answer", ".category-intro"]'|safe }}
+  }
+}
+</script>
