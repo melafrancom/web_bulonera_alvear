@@ -10,8 +10,9 @@ def meta_settings(request):
     """
     # Solo inyectar rating si hay datos verificados en la cache de Redis (cero riesgo de penalización)
     google_data = cache.get('google_places_reviews_data')
-    rating = google_data.get('rating') if google_data else None
-    reviews_count = google_data.get('total') if google_data else None
+    is_valid = isinstance(google_data, dict)
+    rating = google_data.get('rating') if is_valid else None
+    reviews_count = google_data.get('total') if is_valid else None
 
     return {
         'META_PIXEL_ENABLED': getattr(settings, 'META_PIXEL_ENABLED', False),

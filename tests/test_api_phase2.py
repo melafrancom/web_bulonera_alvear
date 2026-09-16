@@ -128,11 +128,33 @@ class TestAPIPhase2:
         assert response.status_code == status.HTTP_200_OK
     
     def test_api_schema_available(self):
-        """Test GET /api/schema/ (OpenAPI schema)"""
-        response = self.client.get('/api/schema/')
-        assert response.status_code == status.HTTP_200_OK
+        """Test GET /api/schema/ requires admin (SEC-011)"""
+        # Arrange & Act - anonymous request
+        anon_response = self.client.get('/api/schema/')
+        # Assert
+        assert anon_response.status_code == status.HTTP_403_FORBIDDEN
+
+        # Arrange - admin user
+        self.user.is_staff = True
+        self.user.save()
+        self.client.force_authenticate(user=self.user)
+        # Act
+        auth_response = self.client.get('/api/schema/')
+        # Assert
+        assert auth_response.status_code == status.HTTP_200_OK
     
     def test_api_docs_available(self):
-        """Test GET /api/docs/ (Swagger UI)"""
-        response = self.client.get('/api/docs/')
-        assert response.status_code == status.HTTP_200_OK
+        """Test GET /api/docs/ requires admin (SEC-011)"""
+        # Arrange & Act - anonymous request
+        anon_response = self.client.get('/api/docs/')
+        # Assert
+        assert anon_response.status_code == status.HTTP_403_FORBIDDEN
+
+        # Arrange - admin user
+        self.user.is_staff = True
+        self.user.save()
+        self.client.force_authenticate(user=self.user)
+        # Act
+        auth_response = self.client.get('/api/docs/')
+        # Assert
+        assert auth_response.status_code == status.HTTP_200_OK

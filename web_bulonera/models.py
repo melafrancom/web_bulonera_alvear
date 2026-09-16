@@ -1,5 +1,8 @@
 from django.db import models
 from django.core.cache import cache
+import logging
+
+logger = logging.getLogger('django')
 
 class SiteTheme(models.Model):
     """
@@ -104,6 +107,10 @@ class SiteTheme(models.Model):
     def save(self, *args, **kwargs):
         # Asegurar que sea singleton
         if not self.pk and SiteTheme.objects.exists():
+            logger.warning(
+                "Intento bloqueado de crear segunda instancia de SiteTheme. "
+                "Use SiteTheme.objects.first() para editar el tema existente."
+            )
             return
         super().save(*args, **kwargs)
         # Invalidar caché al guardar

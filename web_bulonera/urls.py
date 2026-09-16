@@ -19,6 +19,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
+from django.contrib.admin.views.decorators import staff_member_required
+from ckeditor_uploader import views as ckeditor_views
 from django.contrib.sitemaps.views import sitemap
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.views.static import serve
@@ -80,15 +82,20 @@ urlpatterns = [
     # PWA - Manifest (debe servirse desde la raíz con MIME correcto)
     path('manifest.json', serve, {'document_root': settings.STATIC_ROOT, 'path': 'images/manifest.json'}, name='manifest'),
     
-    # CKEditor uploader
-    path('ckeditor/', include('ckeditor_uploader.urls')),
+    # CKEditor uploader — SEC-001: solo staff autenticado
+    path('ckeditor/upload/', staff_member_required(ckeditor_views.upload), name='ckeditor_upload'),
+    path('ckeditor/browse/', staff_member_required(ckeditor_views.browse), name='ckeditor_browse'),
     
     # URLs para sitemaps y robots.txt
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path("robots.txt", views.robots_txt),
     path("llms.txt", views.llms_txt),
     path("ads.txt", views.ads_txt),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+# SEC-005: Explicitación defensiva (static() ya retorna [] con DEBUG=False)
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
 # Error handlers

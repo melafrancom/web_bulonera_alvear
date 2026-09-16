@@ -323,7 +323,7 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'Bulonera Alvear API',
     'DESCRIPTION': 'API REST para la tienda online de Bulonera Alvear',
     'VERSION': '1.0.0',
-    'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAdminUser'],
     'SERVERS': [
         {'url': 'http://localhost:8002', 'description': 'Local'},
         {'url': 'https://buloneraalvear.online', 'description': 'Production'},
@@ -336,6 +336,9 @@ SPECTACULAR_SETTINGS = {
 CKEDITOR_UPLOAD_PATH = 'blog/uploads/'
 CKEDITOR_IMAGE_BACKEND = 'pillow'
 CKEDITOR_RESTRICT_BY_USER = True
+# SEC-002: Solo imágenes (bloquea SVG, HTML, scripts, ejecutables)
+CKEDITOR_ALLOW_NONIMAGE_FILES = False
+CKEDITOR_UPLOAD_SLUGIFY_FILENAME = True
 
 CKEDITOR_CONFIGS = {
     'blog': {
