@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseRedirect
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 
 import logging
 
@@ -54,11 +55,16 @@ def add_cart(request, product_id):
             }, status=404)
         return redirect('store:store')
     
-    # Obtener cantidad
-    if request.method == 'POST':
-        quantity = int(request.POST.get('quantity', 1))
-    else:
-        quantity = int(request.GET.get('qty', 1))
+    # SEC-108: Validar cantidad contra DoS e input inválido
+    raw_quantity = request.POST.get('quantity') if request.method == 'POST' else request.GET.get('qty')
+    try:
+        quantity = int(raw_quantity) if raw_quantity is not None else 1
+        if quantity < 1:
+            quantity = 1
+        elif quantity > 1000:
+            quantity = 1000
+    except (ValueError, TypeError):
+        quantity = 1
     
     # Obtener variaciones del POST
     variations = []
@@ -92,12 +98,15 @@ def add_cart(request, product_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success'})
         else:
-            # Redirigir a la página anterior
+            # SEC-103: Redirigir a la página anterior de forma segura (prevención Open Redirect)
             referer_url = request.META.get('HTTP_REFERER')
-            if referer_url:
+            if referer_url and url_has_allowed_host_and_scheme(
+                url=referer_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure(),
+            ):
                 return HttpResponseRedirect(referer_url)
-            else:
-                return redirect('store:store')
+            return redirect('store:store')
                 
     except ValueError as e:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':

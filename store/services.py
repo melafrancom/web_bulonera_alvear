@@ -629,6 +629,11 @@ class SearchService:
         if not keyword:
             return Product.objects.filter(is_available=True)
         
+        # SEC-109: Sanitizar y limitar longitud de palabra clave para prevenir DoS / ReDoS
+        keyword = keyword.strip()[:100]
+        if not keyword:
+            return Product.objects.filter(is_available=True)
+        
         # Expandir búsqueda a múltiples campos: código, nombre, descripción, marca
         return Product.objects.filter(
             Q(code__icontains=keyword) |
@@ -787,8 +792,8 @@ class FeedService:
     
     @staticmethod
     def get_facebook_feed_data() -> List[Dict]:
-        """Obtiene datos para feed de Facebook"""
-        products = Product.objects.filter(is_available=True)
+        """Obtiene datos para feed de Facebook (optimizado con chunks y select_related)"""
+        products = Product.objects.filter(is_available=True).select_related('category').iterator(chunk_size=200)
         feed_data = []
         
         for product in products:
@@ -803,8 +808,8 @@ class FeedService:
     
     @staticmethod
     def get_google_merchant_feed_data() -> List[Dict]:
-        """Obtiene datos para feed de Google Merchant"""
-        products = Product.objects.filter(is_available=True)
+        """Obtiene datos para feed de Google Merchant (optimizado con chunks y select_related)"""
+        products = Product.objects.filter(is_available=True).select_related('category').iterator(chunk_size=200)
         feed_data = []
         
         for product in products:

@@ -6,6 +6,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.conf import settings
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 import csv
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom.minidom import parseString
@@ -303,48 +305,7 @@ def product_detail(request, product_slug):
             {'error_message': 'Ha ocurrido un error al cargar el producto'},
             status=500
         )
-        display_price = single_product.sale_price if single_product.is_on_sale and single_product.sale_price else single_product.price
-        
-        # Actualizar precio en meta_pixel_data si hay oferta
-        if single_product.is_on_sale and single_product.sale_price:
-            meta_pixel_data['price'] = f"{single_product.sale_price:.2f}"
-        
-        # Obtener FAQs del producto
-        product_faqs = FAQService.get_product_faqs(single_product)
-        
-        # Construir breadcrumb_items (FASE 3.4)
-        breadcrumb_items = [
-            {'name': 'Inicio', 'url': '/'},
-            {'name': single_product.category.category_name, 'url': single_product.category.get_url()},
-            {'name': single_product.name, 'url': None},
-        ]
-        
-        context = {
-            'single_product': single_product,
-            'in_cart': in_cart,
-            'orderproduct': orderproduct,
-            'reviews': reviews,
-            'product_gallery': product_gallery,
-            'meta_pixel_data': meta_pixel_data,
-            'price': display_price,
-            'CURRENCY': CURRENCY,
-            'dimensions': dimensions,
-            'dimension_variants_json': dimension_variants_json,
-            'sale_products': sale_products,
-            'product_faqs': product_faqs,
-            'breadcrumb_items': breadcrumb_items,
-        }
-        
-        return render(request, 'store/product_detail.html', context)
-    
-    except Exception as e:
-        logger.error(f'Error en product_detail para producto {product_slug}: {str(e)}')
-        return render(
-            request,
-            'store/error.html',
-            {'error_message': 'Ha ocurrido un error al cargar el producto'},
-            status=500
-        )
+
 
 
 def search(request):
@@ -373,10 +334,23 @@ def search(request):
 
 @login_required(login_url='account:login')
 def submit_review(request, product_id):
-    """Vista para enviar review"""
-    url = request.META.get('HTTP_REFERER')
-    
+    """Vista para enviar review con validación BOLA y prevención de Open Redirect"""
+    raw_referer = request.META.get('HTTP_REFERER')
+    fallback_url = reverse('store:store')
+    redirect_url = fallback_url
+    if raw_referer and url_has_allowed_host_and_scheme(
+        url=raw_referer,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        redirect_url = raw_referer
+
     if request.method == 'POST':
+        # SEC-101: Verificar si el usuario compró el producto (BOLA check)
+        if not ReviewService.user_can_review(request.user.id, product_id):
+            messages.error(request, 'Debes haber comprado este producto para dejar una reseña.')
+            return redirect(redirect_url)
+
         # Verificar si ya existe una review
         existing_review = ReviewService.get_user_review(request.user.id, product_id)
         
@@ -386,7 +360,7 @@ def submit_review(request, product_id):
             if form.is_valid():
                 form.save()
                 messages.success(request, 'Muchas gracias! Tu comentario ha sido actualizado.')
-                return redirect(url)
+                return redirect(redirect_url)
         else:
             # Crear nueva review
             form = ReviewForm(request.POST)
@@ -400,9 +374,9 @@ def submit_review(request, product_id):
                     ip=request.META.get('REMOTE_ADDR', '')
                 )
                 messages.success(request, 'Muchas gracias! Tu comentario ha sido publicado.')
-                return redirect(url)
+                return redirect(redirect_url)
     
-    return redirect(url)
+    return redirect(redirect_url)
 
 
 def offers(request):
@@ -502,7 +476,7 @@ def google_merchant_feed(request):
         return HttpResponse(pretty_xml, content_type='application/xml')
     except Exception as e:
         logger.error(f"Error generando feed de Google Merchant: {e}")
-        return HttpResponse(f"Error: {e}", content_type="text/plain", status=500)
+        return HttpResponse("Error interno al generar el feed", content_type="text/plain", status=500)
 
 
 __all__ = [

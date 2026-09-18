@@ -58,9 +58,15 @@ class ProductListSerializer(serializers.ModelSerializer):
         ]
     
     def get_average_review(self, obj):
+        annotated = getattr(obj, 'annotated_avg_review', None)
+        if annotated is not None:
+            return float(annotated)
         return obj.averageReview()
     
     def get_review_count(self, obj):
+        annotated = getattr(obj, 'annotated_review_count', None)
+        if annotated is not None:
+            return int(annotated)
         return obj.countReview()
     
     def get_image_urls(self, obj):
@@ -98,9 +104,15 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         ]
     
     def get_average_review(self, obj):
+        annotated = getattr(obj, 'annotated_avg_review', None)
+        if annotated is not None:
+            return float(annotated)
         return obj.averageReview()
     
     def get_review_count(self, obj):
+        annotated = getattr(obj, 'annotated_review_count', None)
+        if annotated is not None:
+            return int(annotated)
         return obj.countReview()
     
     def get_image_urls(self, obj):

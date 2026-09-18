@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.http import HttpResponse
+from django.db.models import Avg, Count, Q
 import logging
 import csv
 from xml.etree.ElementTree import Element, SubElement, tostring
@@ -35,7 +36,10 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         return ProductListSerializer
     
     def get_queryset(self):
-        return ProductService.get_all_products()
+        return ProductService.get_all_products().select_related('category').annotate(
+            annotated_avg_review=Avg('reviewrating__rating', filter=Q(reviewrating__status=True)),
+            annotated_review_count=Count('reviewrating__id', filter=Q(reviewrating__status=True))
+        )
     
     def list(self, request):
         """GET /api/store/products/"""
@@ -44,7 +48,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             return Response(filter_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         filters = filter_serializer.validated_data
-        products = ProductService.get_all_products()
+        products = self.get_queryset()
         
         # Aplicar filtros
         products = ProductService.filter_products(
@@ -137,10 +141,13 @@ class SearchViewSet(viewsets.ViewSet):
     def list(self, request):
         """GET /api/v1/store/search/?keyword={keyword}"""
         keyword = request.query_params.get('keyword', '')
-        products = SearchService.search_products(keyword)
+        products = SearchService.search_products(keyword).select_related('category').annotate(
+            annotated_avg_review=Avg('reviewrating__rating', filter=Q(reviewrating__status=True)),
+            annotated_review_count=Count('reviewrating__id', filter=Q(reviewrating__status=True))
+        )
         
         # Registrar búsquedas
-        if keyword and len(keyword) > 2:
+        if keyword and len(keyword) > 2 and products.exists():
             user = request.user if request.user.is_authenticated else None
             session_key = request.session.session_key
             if not session_key:
@@ -149,10 +156,18 @@ class SearchViewSet(viewsets.ViewSet):
             
             SearchService.register_search_results(products, keyword, user, session_key)
         
-        serializer = ProductListSerializer(products, many=True)
+        # SEC-106: Paginar resultados de búsqueda para prevenir DoS
+        page = request.query_params.get('page', 1)
+        paged_products, total_count = ProductService.get_paginated_products(
+            products,
+            page=page
+        )
+        serializer = ProductListSerializer(paged_products, many=True)
         return Response({
             'keyword': keyword,
-            'count': products.count(),
+            'count': total_count,
+            'page': int(page) if str(page).isdigit() else 1,
+            'total_pages': paged_products.paginator.num_pages if hasattr(paged_products, 'paginator') else 1,
             'results': serializer.data
         })
 
@@ -316,7 +331,7 @@ class FeedViewSet(viewsets.ViewSet):
             return HttpResponse(pretty_xml, content_type='application/xml')
         except Exception as e:
             logger.error(f"Error generando feed de Google Merchant: {e}")
-            return HttpResponse(f"Error: {e}", content_type="text/plain", status=500)
+            return HttpResponse("Error interno al generar el feed", content_type="text/plain", status=500)
 
 
 __all__ = [
