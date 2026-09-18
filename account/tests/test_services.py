@@ -39,7 +39,7 @@ class TestAccountRegistrationService:
         assert user.first_name == 'Test'
         assert user.last_name == 'User'
         assert user.phone == '1234567890'
-        assert user.username == 'test'
+        assert user.username.startswith('test_')
         assert UserProfile.objects.filter(user=user).exists()
         mock_send_email.assert_called_once()
 

@@ -39,3 +39,10 @@ graph LR
 - **AccountActivationService**: Activa la cuenta verificando el token recibido por email.
 - **PasswordChangeService**: Cambia contraseñas para usuarios logueados.
 - **DashboardService**: Recopila las estadísticas de pedidos (`orders_count`, `new_orders_count`, etc.) para renderizar en el panel de control del usuario.
+
+## 🛡️ Controles de Seguridad (AppSec & Hardening)
+- **Protección contra Open Redirect**: `AccountLoginService.resolve_safe_redirect` valida que cualquier parámetro `next` pertenezca al host autorizado y esquema seguro antes de redirigir.
+- **Defensa contra Enumeración de Cuentas**: `forgotPassword` (Web) y `PasswordResetViewSet.request_reset` (API) emiten respuestas genéricas unificadas sin revelar si una dirección de email existe.
+- **Rate Limiting Dedicado**: Clases de throttling por alcance en `account/api/throttling.py` (`LoginRateThrottle`, `RegisterRateThrottle`, `PasswordResetRateThrottle`) limitan abusos y fuerza bruta.
+- **Validación Estricta de Contraseñas**: Toda creación o reseteo de contraseña ejecuta la suite completa de `AUTH_PASSWORD_VALIDATORS` de Django.
+- **Aislamiento y Purga de Sesión**: La vista `resetPassword` exige sesión activa y elimina `uid` de `request.session` inmediatamente tras el cambio exitoso.

@@ -54,4 +54,11 @@ graph TD
   - `ErrorLoggingMiddleware`: Captura y registra excepciones imprevistas en los logs del servidor.
 
 ## 📝 Notas de Detalle (Obsidian Vault)
-- **Invalida Caché**: Cada vez que se actualiza el tema visual en el panel de control, el método `save()` de `SiteTheme` purga la clave `site_theme_active` de Redis para aplicar los cambios estéticos de manera instantánea.
+- **Invalida Caché**: Cada vez que se actualiza el tema visual en el panel de control, el método `save()` de `SiteTheme` purga la clave `site_theme_active` de Redis para aplicar los cambios estéticos de manera instantánea. Emite un `logger.warning` si se intenta crear una segunda instancia.
+- **Seguridad y Hardening (AppSec)**:
+  - Cargas y exploración de archivos en CKEditor restringidas a `staff_member_required`. Subidas de archivos no-imagen bloqueadas (`CKEDITOR_ALLOW_NONIMAGE_FILES = False`).
+  - Documentación de API (`/api/schema/` y `/api/docs/`) accesible únicamente para usuarios staff/admin (`IsAdminUser`).
+  - Cabecera `SECURE_PROXY_SSL_HEADER` y cookies `SESSION_COOKIE_HTTPONLY`/`SESSION_COOKIE_SAMESITE='Lax'` en producción.
+  - Servido de medios estáticos (`static()`) estrictamente condicionado a `DEBUG=True`.
+  - Excepciones de middleware canalizadas al logger namespace `'django'`.
+

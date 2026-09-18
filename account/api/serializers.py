@@ -67,9 +67,6 @@ class RegistrationSerializer(serializers.Serializer):
         if data['password'] != data['confirm_password']:
             raise serializers.ValidationError({"confirm_password": "Las contraseñas no coinciden"})
         
-        if Account.objects.filter(email=data['email']).exists():
-            raise serializers.ValidationError({"email": "Este email ya está registrado"})
-        
         return data
 
 

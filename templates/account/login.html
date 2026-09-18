@@ -63,6 +63,7 @@
                 <!-- Form -->
                 <form method="POST" class="space-y-4">
                     {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
                     
                     <!-- Email Field -->
                     <div>

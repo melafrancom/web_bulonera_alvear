@@ -1,10 +1,10 @@
 """Account Web Views"""
-import urllib.parse
 import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 from account.web.forms import RegistrationForm, UserForm, UserProfileForm
 from account.models import Account, UserProfile
@@ -39,7 +39,10 @@ def register(request):
                     request=request
                 )
                 messages.success(request, 'Te has registrado exitosamente. Verifica tu email para activar tu cuenta.')
-                return redirect(f'/account/login/?command=verification&email={user.email}')
+                return redirect(f'{reverse("account:login")}?command=verification')
+            except DjangoValidationError as e:
+                for msg in e.messages:
+                    messages.error(request, msg)
             except Exception as e:
                 logger.error(f"Error en registro: {e}")
                 messages.error(request, 'Ocurrió un error durante el registro. Intenta nuevamente.')
@@ -66,17 +69,14 @@ def login(request):
             except Exception as e:
                 logger.error(f"Error merging cart on login for user {user.email}: {e}")
             
-            # Redirect to next page if specified
-            url = request.META.get('HTTP_REFERER')
-            try:
-                query = urllib.parse.urlparse(url).query
-                params = dict(x.split('=') for x in query.split('&') if '=' in x)
-                if 'next' in params:
-                    return redirect(params['next'])
-            except Exception as e:
-                logger.exception(f"Error parsing referer URL: {e}")
-            
-            return redirect('account:dashboard')
+            # Redirect to next page if specified safely
+            next_url = request.POST.get('next') or request.GET.get('next')
+            safe_url = AccountLoginService.resolve_safe_redirect(
+                target_url=next_url,
+                allowed_host=request.get_host(),
+                require_https=request.is_secure(),
+            )
+            return redirect(safe_url)
         else:
             messages.error(request, 'Los datos son incorrectos.')
             return redirect('account:login')
@@ -133,14 +133,9 @@ def forgotPassword(request):
     """Vista para solicitar recuperación de contraseña"""
     if request.method == 'POST':
         email = request.POST.get('email', '')
-        success = PasswordResetService.send_reset_email(email, request)
-        
-        if success:
-            messages.success(request, 'Un email fue enviado a tu bandeja de entrada para recuperar tu contraseña')
-        else:
-            # Por seguridad, mostramos el mismo mensaje aunque el email no exista
-            messages.success(request, 'Si el email existe, recibirás instrucciones para recuperar tu contraseña')
-        
+        PasswordResetService.send_reset_email(email, request)
+        # Mensaje siempre idéntico — mitiga enumeración de cuentas (SEC-004)
+        messages.success(request, 'Si la cuenta existe, te hemos enviado instrucciones para recuperar tu contraseña.')
         return redirect('account:login')
     
     return render(request, 'account/forgotPassword.html')
@@ -161,6 +156,10 @@ def resetpassword_validate(request, uidb64, token):
 
 def resetPassword(request):
     """Vista para establecer nueva contraseña"""
+    if 'uid' not in request.session:
+        messages.error(request, 'Sesión de recuperación inválida o expirada.')
+        return redirect('account:forgotPassword')
+
     if request.method == 'POST':
         password = request.POST.get('password', '')
         confirm_password = request.POST.get('confirm_password', '')
@@ -170,6 +169,7 @@ def resetPassword(request):
             if uid:
                 success = PasswordResetService.reset_password(uid, password)
                 if success:
+                    request.session.pop('uid', None)
                     messages.success(request, 'La contraseña se actualizó correctamente')
                     return redirect('account:login')
                 else:

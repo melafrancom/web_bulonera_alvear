@@ -4,7 +4,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
+from account.api.throttling import LoginRateThrottle, RegisterRateThrottle, PasswordResetRateThrottle
 from django.contrib.auth import login as django_login, logout as django_logout
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import IntegrityError
 import logging
 
 from account.models import Account, UserProfile
@@ -28,7 +31,8 @@ logger = logging.getLogger(__name__)
 class AuthViewSet(viewsets.ViewSet):
     """ViewSet para autenticación (registro, login, logout)"""
     
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny],
+            throttle_classes=[RegisterRateThrottle])
     def register(self, request):
         """POST /api/account/auth/register/"""
         serializer = RegistrationSerializer(data=request.data)
@@ -47,12 +51,21 @@ class AuthViewSet(viewsets.ViewSet):
                     'user_id': user.id,
                     'email': user.email
                 }, status=status.HTTP_201_CREATED)
+            except DjangoValidationError as e:
+                return Response({'error': e.messages}, status=status.HTTP_400_BAD_REQUEST)
+            except IntegrityError:
+                # Mitigación de enumeración (SEC-004): respuesta genérica idéntica al éxito
+                logger.warning(f"Intento de registro con email duplicado: {serializer.validated_data.get('email')}")
+                return Response({
+                    'message': 'Registro exitoso. Verifica tu email para activar tu cuenta.',
+                }, status=status.HTTP_201_CREATED)
             except Exception as e:
                 logger.error(f"Error registrando usuario: {e}")
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny],
+            throttle_classes=[LoginRateThrottle])
     def login(self, request):
         """POST /api/account/auth/login/"""
         serializer = LoginSerializer(data=request.data)
@@ -192,22 +205,18 @@ class PasswordResetViewSet(viewsets.ViewSet):
     """ViewSet para recuperación de contraseña"""
     permission_classes = [AllowAny]
     
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'],
+            throttle_classes=[PasswordResetRateThrottle])
     def request_reset(self, request):
         """POST /api/account/password/request_reset/"""
         serializer = PasswordResetRequestSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data['email']
-            success = PasswordResetService.send_reset_email(email, request)
-            if success:
-                return Response({
-                    'message': 'Email de recuperación enviado'
-                }, status=status.HTTP_200_OK)
-            else:
-                # Por seguridad, no revelamos si el email existe o no
-                return Response({
-                    'message': 'Si el email existe, recibirás instrucciones'
-                }, status=status.HTTP_200_OK)
+            PasswordResetService.send_reset_email(email, request)
+            # Mensaje siempre idéntico — mitiga enumeración de cuentas (SEC-004 / SEC-011)
+            return Response({
+                'message': 'Si la cuenta existe, te hemos enviado instrucciones para recuperar tu contraseña.'
+            }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['post'], url_path='confirm/(?P<uidb64>[^/.]+)/(?P<token>[^/.]+)')

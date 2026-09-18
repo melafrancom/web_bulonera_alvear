@@ -3,12 +3,15 @@ Account App Services
 
 Contiene la lógica de negocio pura para gestión de autenticación y perfiles de usuario.
 """
+import uuid
 import logging
 from typing import Optional, Dict, List
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode, url_has_allowed_host_and_scheme
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.core.mail import EmailMessage
@@ -26,7 +29,17 @@ class AccountRegistrationService:
     @staticmethod
     def register(first_name: str, last_name: str, email: str, phone: str, password: str, request) -> Account:
         """Crear nuevo usuario y enviar email de verificación"""
-        username = email.split('@')[0]
+        base_username = email.split('@')[0][:80]
+        username = f"{base_username}_{uuid.uuid4().hex[:8]}"
+        
+        # Validar contraseña según la política de seguridad
+        temp_user = Account(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            username=username
+        )
+        validate_password(password, user=temp_user)
         
         user = Account.objects.create_user(
             first_name=first_name,
@@ -89,6 +102,21 @@ class AccountLoginService:
             logger.error(f"Error autenticando usuario {email}: {e}")
             return None
 
+    @staticmethod
+    def resolve_safe_redirect(
+        target_url: str | None,
+        allowed_host: str,
+        require_https: bool = False,
+    ) -> str:
+        """Valida que la URL de redirección sea interna al dominio actual."""
+        if target_url and target_url.strip() and url_has_allowed_host_and_scheme(
+            url=target_url.strip(),
+            allowed_hosts={allowed_host},
+            require_https=require_https,
+        ):
+            return target_url.strip()
+        return 'account:dashboard'
+
 
 class PasswordResetService:
     """Servicio para recuperación de contraseña"""
@@ -143,12 +171,16 @@ class PasswordResetService:
         """Actualiza la contraseña del usuario"""
         try:
             user = Account.objects.get(pk=uid)
+            validate_password(new_password, user=user)
             user.set_password(new_password)
             user.save()
             logger.info(f"Contraseña actualizada para usuario {user.email}")
             return True
         except Account.DoesNotExist:
             logger.error(f"Usuario con uid {uid} no encontrado para reset de password")
+            return False
+        except DjangoValidationError as e:
+            logger.warning(f"Contraseña rechazada por política para uid {uid}: {e.messages}")
             return False
         except Exception as e:
             logger.error(f"Error actualizando password: {e}")
@@ -256,10 +288,14 @@ class PasswordChangeService:
                 logger.warning(f"Contraseña actual incorrecta para {user.email}")
                 return False
             
+            validate_password(new_password, user=user)
             user.set_password(new_password)
             user.save()
             logger.info(f"Contraseña cambiada para {user.email}")
             return True
+        except DjangoValidationError as e:
+            logger.warning(f"Nueva contraseña rechazada por política para {user.email}: {e.messages}")
+            return False
         except Exception as e:
             logger.error(f"Error cambiando contraseña de {user.email}: {e}")
             return False
