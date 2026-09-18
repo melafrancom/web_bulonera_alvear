@@ -3,7 +3,7 @@
 # deploy_web.sh - Actualizar Bulonera Web en producción
 # ====================================================
 # Ejecutar desde cualquier lugar como:
-#   sudo /var/www/bulonera/web_bulonera_alvear/scripts/deploy.sh
+#   /var/www/bulonera/web_bulonera_alvear/scripts/deploy.sh
 # ====================================================
 
 set -euo pipefail
