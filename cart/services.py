@@ -5,8 +5,9 @@ Contiene la lógica de negocio para manejo del carrito de compras.
 Elimina la duplicación de código entre usuarios autenticados y anónimos.
 """
 import logging
-from typing import List, Optional, Tuple, Dict
+from typing import List, Optional, Tuple, Dict, Any
 from decimal import Decimal
+from django.db import transaction
 from django.db.models import QuerySet, Sum, F
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -20,6 +21,22 @@ logger = logging.getLogger(__name__)
 class CartService:
     """Servicio para manejo del carrito de compras"""
     
+    @staticmethod
+    def clamp_quantity(raw_quantity: Any, default: int = 1, min_val: int = 1, max_val: int = 1000) -> int:
+        """
+        Sanitiza y acota una cantidad al rango seguro [min_val, max_val].
+        Previene vulnerabilidades DoS por enteros masivos o entradas maliciosas.
+        """
+        try:
+            val = int(raw_quantity)
+            if val < min_val:
+                return min_val
+            if val > max_val:
+                return max_val
+            return val
+        except (ValueError, TypeError):
+            return default
+
     @staticmethod
     def get_or_create_cart_id(request) -> str:
         """
@@ -116,6 +133,9 @@ class CartService:
         if quantity < 1:
             raise ValueError("La cantidad debe ser mayor a 0")
         
+        # SEC-108: Limitar al rango permitido [1, 1000]
+        quantity = CartService.clamp_quantity(quantity, default=1, min_val=1, max_val=1000)
+        
         if variations is None:
             variations = []
         
@@ -137,6 +157,7 @@ class CartService:
             )
     
     @staticmethod
+    @transaction.atomic
     def _add_to_cart_authenticated(
         user: Account,
         product: Product,
@@ -153,8 +174,8 @@ class CartService:
             for item in existing_items:
                 existing_variations = list(item.variation.all())
                 if set(existing_variations) == set(variations):
-                    # Actualizar cantidad del item existente
-                    item.quantity += quantity
+                    # Actualizar cantidad del item existente respetando límite
+                    item.quantity = min(item.quantity + quantity, 1000)
                     item.save()
                     logger.info(f"Updated cart item {item.id} for user {user.id}")
                     return item
@@ -183,6 +204,7 @@ class CartService:
         return cart_item
     
     @staticmethod
+    @transaction.atomic
     def _add_to_cart_anonymous(
         request,
         product: Product,
@@ -204,8 +226,8 @@ class CartService:
             for item in existing_items:
                 existing_variations = list(item.variation.all())
                 if set(existing_variations) == set(variations):
-                    # Actualizar cantidad del item existente
-                    item.quantity += quantity
+                    # Actualizar cantidad del item existente respetando límite
+                    item.quantity = min(item.quantity + quantity, 1000)
                     item.save()
                     logger.info(f"Updated cart item {item.id} for cart {cart.cart_id}")
                     return item
@@ -291,6 +313,43 @@ class CartService:
             return False
     
     @staticmethod
+    def update_quantity(
+        cart_item_id: int,
+        quantity: int,
+        user: Optional[Account] = None,
+        cart_id: Optional[str] = None
+    ) -> CartItem:
+        """
+        Actualiza la cantidad de un ítem del carrito validando pertenencia y límites [1, 1000].
+        
+        Args:
+            cart_item_id: ID del CartItem a actualizar
+            quantity: Nueva cantidad deseada
+            user: Usuario autenticado (opcional)
+            cart_id: Session cart_id para usuario anónimo (opcional)
+            
+        Returns:
+            CartItem actualizado
+            
+        Raises:
+            ObjectDoesNotExist: Si el item no existe o no pertenece al usuario/sesión
+            ValueError: Si la cantidad es inválida o no hay contexto de usuario/sesión
+        """
+        clamped_quantity = CartService.clamp_quantity(quantity, default=1, min_val=1, max_val=1000)
+        
+        if user and user.is_authenticated:
+            cart_item = CartItem.objects.get(id=cart_item_id, user=user)
+        elif cart_id:
+            cart_item = CartItem.objects.get(id=cart_item_id, cart__cart_id=cart_id)
+        else:
+            raise ValueError("Se requiere usuario autenticado o cart_id de sesión válido")
+            
+        cart_item.quantity = clamped_quantity
+        cart_item.save(update_fields=['quantity'])
+        logger.info(f"Updated quantity to {clamped_quantity} for cart item {cart_item_id}")
+        return cart_item
+
+    @staticmethod
     def get_cart_count(request, user: Optional[Account] = None) -> int:
         """
         Obtiene el conteo total de items en el carrito.
@@ -306,6 +365,7 @@ class CartService:
         return sum(item.quantity for item in cart_items)
     
     @staticmethod
+    @transaction.atomic
     def merge_cart_on_login(request, user: Account) -> None:
         """
         Fusiona el carrito anónimo con el carrito del usuario al hacer login.
@@ -332,8 +392,8 @@ class CartService:
                 for user_item in user_items:
                     user_variations = set(user_item.variation.all())
                     if anon_variations == user_variations:
-                        # Fusionar cantidades
-                        user_item.quantity += anon_item.quantity
+                        # Fusionar cantidades respetando límite
+                        user_item.quantity = min(user_item.quantity + anon_item.quantity, 1000)
                         user_item.save()
                         anon_item.delete()
                         merged = True

@@ -120,17 +120,14 @@ class CartViewSet(viewsets.ViewSet):
         
         try:
             user = request.user if request.user.is_authenticated else None
+            cart_id = None if user else CartService.get_or_create_cart_id(request)
             
-            # Obtener el cart item
-            if user:
-                cart_item = get_object_or_404(CartItem, id=pk, user=user)
-            else:
-                cart_id = CartService.get_or_create_cart_id(request)
-                cart_item = get_object_or_404(CartItem, id=pk, cart__cart_id=cart_id)
-            
-            # Actualizar cantidad
-            cart_item.quantity = serializer.validated_data['quantity']
-            cart_item.save()
+            cart_item = CartService.update_quantity(
+                cart_item_id=pk,
+                quantity=serializer.validated_data['quantity'],
+                user=user,
+                cart_id=cart_id
+            )
             
             item_serializer = CartItemSerializer(cart_item, context={'request': request})
             
@@ -140,6 +137,11 @@ class CartViewSet(viewsets.ViewSet):
                 'item': item_serializer.data
             })
             
+        except CartItem.DoesNotExist:
+            return Response({
+                'status': 'error',
+                'message': 'Ítem no encontrado'
+            }, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             logger.error(f"Error updating cart item: {e}")
             return Response({

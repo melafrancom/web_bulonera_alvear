@@ -39,7 +39,7 @@ class CartItemSerializer(serializers.ModelSerializer):
 class AddToCartSerializer(serializers.Serializer):
     """Serializer para agregar productos al carrito"""
     product_id = serializers.IntegerField(required=True)
-    quantity = serializers.IntegerField(default=1, min_value=1)
+    quantity = serializers.IntegerField(default=1, min_value=1, max_value=1000)
     variations = serializers.ListField(
         child=serializers.IntegerField(),
         required=False,
@@ -47,20 +47,24 @@ class AddToCartSerializer(serializers.Serializer):
     )
     
     def validate_quantity(self, value):
-        """Valida que la cantidad sea positiva"""
+        """Valida que la cantidad esté en el rango permitido [1, 1000]"""
         if value < 1:
             raise serializers.ValidationError("La cantidad debe ser mayor a 0")
+        if value > 1000:
+            raise serializers.ValidationError("La cantidad no puede superar 1000 unidades")
         return value
 
 
 class UpdateCartItemSerializer(serializers.Serializer):
     """Serializer para actualizar cantidad de un item"""
-    quantity = serializers.IntegerField(min_value=1, required=True)
+    quantity = serializers.IntegerField(min_value=1, max_value=1000, required=True)
     
     def validate_quantity(self, value):
-        """Valida que la cantidad sea positiva"""
+        """Valida que la cantidad esté en el rango permitido [1, 1000]"""
         if value < 1:
             raise serializers.ValidationError("La cantidad debe ser mayor a 0")
+        if value > 1000:
+            raise serializers.ValidationError("La cantidad no puede superar 1000 unidades")
         return value
 
 
