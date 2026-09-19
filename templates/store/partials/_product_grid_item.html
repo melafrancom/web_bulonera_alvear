@@ -24,11 +24,25 @@ Note: Requires parent template to load: static, custom_filters, store_filters, h
         if (this.adding) return;
         
         this.adding = true;
-        const url = '{% url "cart:add_cart" product.id %}?qty=' + this.qty;
+        const url = '{% url "cart:add_cart" product.id %}';
+        const csrfToken = this.$el.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+            document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+            document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+            
+        const formData = new FormData();
+        formData.append('qty', this.qty);
+        if (csrfToken) {
+            formData.append('csrfmiddlewaretoken', csrfToken);
+        }
         
         try {
             const response = await fetch(url, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken || ''
+                },
+                body: formData
             });
             
             if (response.ok) {
@@ -54,6 +68,7 @@ Note: Requires parent template to load: static, custom_filters, store_filters, h
     }
 }" 
 class="bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden group">
+    {% csrf_token %}
     
     <!-- Product Image -->
     <a href="{{ product.get_url }}" class="block relative aspect-square overflow-hidden bg-slate-100 dark:bg-slate-700">

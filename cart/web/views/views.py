@@ -1,6 +1,7 @@
 """Cart Web Views"""
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.http import JsonResponse, HttpResponseRedirect
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -40,10 +41,12 @@ def cart_view(request):
     return render(request, 'cart/cart.html', context)
 
 
+@require_POST
 def add_cart(request, product_id):
     """
     Agrega un producto al carrito.
     Soporta tanto usuarios autenticados como anónimos.
+    Requiere método POST con protección CSRF obligatoria.
     """
     try:
         product = get_object_or_404(Product, id=product_id)
@@ -55,16 +58,9 @@ def add_cart(request, product_id):
             }, status=404)
         return redirect('store:store')
     
-    # SEC-108: Validar cantidad contra DoS e input inválido
-    raw_quantity = request.POST.get('quantity') if request.method == 'POST' else request.GET.get('qty')
-    try:
-        quantity = int(raw_quantity) if raw_quantity is not None else 1
-        if quantity < 1:
-            quantity = 1
-        elif quantity > 1000:
-            quantity = 1000
-    except (ValueError, TypeError):
-        quantity = 1
+    # SEC-108: Validar cantidad contra DoS e input inválido mediante CartService
+    raw_quantity = request.POST.get('quantity') or request.POST.get('qty')
+    quantity = CartService.clamp_quantity(raw_quantity, default=1, min_val=1, max_val=1000)
     
     # Obtener variaciones del POST
     variations = []
@@ -125,10 +121,12 @@ def add_cart(request, product_id):
         return redirect('cart:cart')
 
 
+@require_POST
 def remove_cart(request, product_id, cart_item_id):
     """
     Decrementa la cantidad de un item del carrito.
     Si la cantidad llega a 0, elimina el item.
+    Requiere método POST con protección CSRF obligatoria.
     """
     user = request.user if request.user.is_authenticated else None
     CartService.remove_from_cart(
@@ -141,9 +139,11 @@ def remove_cart(request, product_id, cart_item_id):
     return redirect('cart:cart')
 
 
+@require_POST
 def remove_cart_item(request, product_id, cart_item_id):
     """
     Elimina completamente un item del carrito.
+    Requiere método POST con protección CSRF obligatoria.
     """
     user = request.user if request.user.is_authenticated else None
     CartService.remove_from_cart(

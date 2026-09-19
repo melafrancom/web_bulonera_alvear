@@ -75,13 +75,12 @@
                                  qty: {{ cart_item.quantity }},
                                  itemId: {{ cart_item.id }},
                                  productId: {{ cart_item.product.id }},
-                                 
-                                 removeItem() {
-                                     if (confirm('¿Eliminar este producto del carrito?')) {
-                                         window.location.href = '{% url 'cart:remove_cart_item' cart_item.product.id cart_item.id %}';
-                                     }
-                                 }
-                             }">
+                                                                 removeItem() {
+                                    if (confirm('¿Eliminar este producto del carrito?')) {
+                                        this.$refs.removeFormMobile.submit();
+                                    }
+                                }
+                            }">
                             
                             <!-- Product Info -->
                             <div class="flex gap-3 mb-4">
@@ -126,10 +125,13 @@
                             <!-- Quantity Controls -->
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden">
-                                    <a href="{% url 'cart:remove_cart' cart_item.product.id cart_item.id %}"
-                                       class="px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
-                                        <i data-lucide="minus" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
-                                    </a>
+                                    <form action="{% url 'cart:remove_cart' cart_item.product.id cart_item.id %}" method="post" class="inline m-0 p-0">
+                                        {% csrf_token %}
+                                        <button type="submit"
+                                                class="px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
+                                            <i data-lucide="minus" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
+                                        </button>
+                                    </form>
                                     <input type="text" 
                                            x-model="qty"
                                            readonly
@@ -146,11 +148,14 @@
                                     </form>
                                 </div>
                                 
-                                <button @click="removeItem()"
-                                        class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                    Eliminar
-                                </button>
+                                <form action="{% url 'cart:remove_cart_item' cart_item.product.id cart_item.id %}" method="post" x-ref="removeFormMobile" class="inline m-0 p-0">
+                                    {% csrf_token %}
+                                    <button type="button" @click="removeItem()"
+                                            class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        Eliminar
+                                    </button>
+                                </form>
                             </div>
                         </div>
                         {% endfor %}
