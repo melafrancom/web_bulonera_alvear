@@ -81,7 +81,7 @@ class OrderService:
             city=form_data['city'],
             state=form_data['state'],
             order_note=form_data.get('order_note', ''),
-            order_total=float(total),
+            order_total=total,
             ip=ip_address or ''
         )
         
@@ -182,20 +182,31 @@ class PaymentService:
         order.is_ordered = True
         order.save()
         
-        # Actualizar OrderProducts
+        # Marcar productos y descontar stock indicativo
         order_products = OrderProduct.objects.filter(order=order)
+        PaymentService._decrement_stock_and_mark_ordered(order_products, payment)
+        
+        logger.info(f"Pago procesado para orden {order.order_number}")
+        return payment
+
+    @staticmethod
+    def _decrement_stock_and_mark_ordered(order_products, payment: Payment) -> None:
+        """
+        Marca OrderProducts como ordenados y descuenta stock indicativo.
+        Requiere ejecutarse dentro de @transaction.atomic.
+
+        Nota: product.stock en la web es solo un indicador visual.
+        La gestión real de inventario está en el ERP de la empresa.
+        """
         for order_product in order_products:
             order_product.payment = payment
             order_product.ordered = True
             order_product.save()
             
-            # Actualizar stock del producto
+            # Descuento indicativo (no autoritativo — el ERP es la fuente de verdad)
             product = order_product.product
             product.stock -= order_product.quantity
             product.save()
-        
-        logger.info(f"Pago procesado para orden {order.order_number}")
-        return payment
     
     @staticmethod
     def create_whatsapp_payment(user: Account, order: Order) -> Payment:
@@ -218,7 +229,6 @@ class PaymentService:
         )
         
         order.payment = payment
-        order.is_ordered = True
         order.save()
         
         logger.info(f"Pago WhatsApp creado para orden {order.order_number}")
@@ -383,17 +393,13 @@ class WhatsAppService:
         # Crear pago pendiente
         payment = PaymentService.create_whatsapp_payment(order.user, order)
         
-        # Actualizar OrderProducts
+        # Marcar productos y descontar stock indicativo
         order_products = OrderProduct.objects.filter(order=order)
-        for order_product in order_products:
-            order_product.payment = payment
-            order_product.ordered = True
-            order_product.save()
-            
-            # Actualizar stock
-            product = order_product.product
-            product.stock -= order_product.quantity
-            product.save()
+        PaymentService._decrement_stock_and_mark_ordered(order_products, payment)
+        
+        # Marcar orden como confirmada DESPUÉS de descontar todo
+        order.is_ordered = True
+        order.save()
         
         # Generar link
         whatsapp_link = WhatsAppService.generate_whatsapp_link(order)

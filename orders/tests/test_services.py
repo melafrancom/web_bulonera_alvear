@@ -261,3 +261,72 @@ class TestCheckoutService:
         
         with pytest.raises(ValueError, match="carrito está vacío"):
             CheckoutService.complete_checkout(user, form_data)
+
+
+@pytest.mark.django_db
+class TestAtomicity:
+    """AUD-ORD-NEW-001: Verificar atomicidad de is_ordered + stock."""
+
+    def test_double_submit_raises_error(self, user, product):
+        """Pagar una orden ya pagada lanza error."""
+        order = Order.objects.create(
+            user=user, first_name='Test', last_name='User',
+            phone='123', email=user.email,
+            address_line_1='Test', country='AR',
+            city='BA', state='1000',
+            order_number='20240101003', order_total=10.0,
+            is_ordered=True
+        )
+        with pytest.raises(ValueError, match="ya fue pagada"):
+            PaymentService.process_payment(user, order, {
+                'payment_id': 'X', 'payment_method': 'Transfer', 'status': 'Completed'
+            })
+
+    def test_stock_decrements_on_payment(self, user, product):
+        """Stock indicativo se descuenta correctamente en process_payment."""
+        initial_stock = product.stock
+        order = Order.objects.create(
+            user=user, first_name='Test', last_name='User',
+            phone='123', email=user.email,
+            address_line_1='Test', country='AR',
+            city='BA', state='1000',
+            order_number='20240101004', order_total=20.0
+        )
+        OrderProduct.objects.create(
+            order=order, user=user, product=product,
+            quantity=2, purchase_price=10.0
+        )
+
+        PaymentService.process_payment(user, order, {
+            'payment_id': 'PAY789',
+            'payment_method': 'Transfer',
+            'status': 'Completed'
+        })
+        product.refresh_from_db()
+        assert product.stock == initial_stock - 2
+
+    def test_process_whatsapp_atomicity_and_stock(self, user, product):
+        """process_whatsapp_order descuenta stock y marca is_ordered al final."""
+        from orders.services import WhatsAppService
+        initial_stock = product.stock
+        order = Order.objects.create(
+            user=user, first_name='Test', last_name='User',
+            phone='123', email=user.email,
+            address_line_1='Test', country='AR',
+            city='BA', state='1000',
+            order_number='20240101005', order_total=20.0,
+            is_ordered=False
+        )
+        OrderProduct.objects.create(
+            order=order, user=user, product=product,
+            quantity=3, purchase_price=10.0
+        )
+
+        payment, wa_link = WhatsAppService.process_whatsapp_order(order)
+        order.refresh_from_db()
+        product.refresh_from_db()
+
+        assert order.is_ordered is True
+        assert order.payment == payment
+        assert product.stock == initial_stock - 3
+        assert wa_link is not None

@@ -83,3 +83,56 @@ class TestCheckoutAPI:
         })
         # Carrito vacío o endpoint no soporta POST
         assert response.status_code in [400, 405, 422]
+
+
+@pytest.mark.django_db
+class TestProcessPaymentPermissions:
+    """AUD-202: process_payment y process_whatsapp API solo accesible por staff."""
+
+    def test_regular_user_cannot_process_payment(self, authenticated_api_client, user):
+        """POST process_payment retorna 403 para usuarios regulares."""
+        from orders.models import Order
+        order = Order.objects.create(
+            user=user, first_name='Test', last_name='User',
+            phone='123', email=user.email,
+            address_line_1='Test', country='AR',
+            city='BA', state='1000',
+            order_number='20240101001', order_total=100.0
+        )
+        response = authenticated_api_client.post(
+            f'/api/v1/orders/{order.order_number}/process_payment/',
+            {'order_number': order.order_number, 'payment_id': 'FAKE', 'payment_method': 'Transfer', 'status': 'Completed'}
+        )
+        assert response.status_code == 403
+
+    def test_regular_user_cannot_process_whatsapp(self, authenticated_api_client, user):
+        """POST process_whatsapp retorna 403 para usuarios regulares."""
+        from orders.models import Order
+        order = Order.objects.create(
+            user=user, first_name='Test', last_name='User',
+            phone='123', email=user.email,
+            address_line_1='Test', country='AR',
+            city='BA', state='1000',
+            order_number='20240101002', order_total=50.0
+        )
+        response = authenticated_api_client.post(
+            f'/api/v1/orders/{order.order_number}/process_whatsapp/'
+        )
+        assert response.status_code == 403
+
+    def test_staff_user_can_process_payment(self, api_client, admin_user):
+        """POST process_payment permitido para staff."""
+        from orders.models import Order
+        api_client.force_authenticate(user=admin_user)
+        order = Order.objects.create(
+            user=admin_user, first_name='Admin', last_name='User',
+            phone='123', email=admin_user.email,
+            address_line_1='Test', country='AR',
+            city='BA', state='1000',
+            order_number='20240101003', order_total=100.0
+        )
+        response = api_client.post(
+            f'/api/v1/orders/{order.order_number}/process_payment/',
+            {'order_number': order.order_number, 'payment_id': 'FAKE_ADMIN', 'payment_method': 'Transfer', 'status': 'Completed'}
+        )
+        assert response.status_code == 200

@@ -2,7 +2,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.shortcuts import get_object_or_404
 
 from orders.models import Order, OrderProduct
@@ -32,11 +32,18 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
     - GET /api/orders/ → Listar órdenes del usuario
     - GET /api/orders/{id}/ → Detalle de orden
     - POST /api/orders/create/ → Crear orden desde carrito
-    - POST /api/orders/{id}/process_payment/ → Procesar pago
+    - POST /api/orders/{id}/process_payment/ → Procesar pago (Admin/Staff)
     - GET /api/orders/{id}/whatsapp_link/ → Obtener link de WhatsApp
+    - POST /api/orders/{id}/process_whatsapp/ → Procesar WhatsApp (Admin/Staff)
     """
     permission_classes = [IsAuthenticated]
     lookup_field = 'order_number'
+
+    def get_permissions(self):
+        """process_payment y process_whatsapp requieren staff. El resto requiere auth."""
+        if self.action in ('process_payment', 'process_whatsapp'):
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
     
     def get_serializer_class(self):
         """Usa serializer diferente para list vs retrieve"""

@@ -1,49 +1,90 @@
 """
-Tests de vistas web de Orders.
+Tests de seguridad de vistas web de Orders.
 """
 import pytest
-from django.test import Client
+from django.urls import reverse
+from orders.models import Order
+from account.models import Account
 
 
 @pytest.mark.django_db
-class TestOrderWebViews:
-    """Tests de vistas web de órdenes."""
+class TestOrderCompleteIDOR:
+    """AUD-201: order_complete debe requerir login y scoping de usuario."""
 
-    def test_checkout_view_exists(self, client):
-        """Verifica que existe una vista de checkout"""
-        try:
-            # Intentar acceder a cualquier URL que pueda ser checkout
-            response = client.get('/orders/checkout/', follow=False)
-            # Si existe, debería ser 200, 302 (redirect), o 404 según la lógica
-            assert response.status_code in [200, 301, 302, 404]
-        except:
-            # Si la URL no existe, es un falso positivo de test
-            pass
+    def test_anonymous_redirects_to_login(self, client):
+        """Acceso anónimo a order_complete redirige a login."""
+        url = reverse('orders:order_complete', args=['20240101001'])
+        response = client.get(url)
+        assert response.status_code == 302
+        assert 'login' in response.url
 
-    def test_order_complete_view_exists(self, client):
-        """Verifica que existe una vista de orden completada"""
-        try:
-            response = client.get('/orders/', follow=False)
-            assert response.status_code in [200, 301, 302, 404]
-        except:
-            pass
+    def test_user_cannot_see_other_user_order(self, client_with_user, user):
+        """Usuario autenticado NO puede ver órdenes de otro usuario."""
+        other_user = Account.objects.create_user(
+            first_name='Other', last_name='User',
+            username='other@test.com', email='other@test.com',
+            password='testpass123'
+        )
+        order = Order.objects.create(
+            user=other_user,
+            first_name='Other', last_name='User',
+            phone='123', email='other@test.com',
+            address_line_1='Test', country='AR',
+            city='BA', state='1000',
+            order_number='20240101099'
+        )
+        url = reverse('orders:order_complete', args=[order.order_number])
+        response = client_with_user.get(url)
+        assert response.status_code == 404
 
-    def test_order_complete_template_has_noindex(self, client):
-        """Verifica que el template order_complete.html incluya noindex, nofollow"""
-        from django.template.loader import render_to_string
-        rendered = render_to_string('orders/order_complete.html', {'order_number': '12345'})
-        assert 'name="robots" content="noindex, nofollow"' in rendered
+    def test_user_can_see_own_order(self, client_with_user, user):
+        """Usuario autenticado puede ver su propia orden."""
+        order = Order.objects.create(
+            user=user,
+            first_name='Test', last_name='User',
+            phone='123', email=user.email,
+            address_line_1='Test', country='AR',
+            city='BA', state='1000',
+            order_number='20240101001'
+        )
+        url = reverse('orders:order_complete', args=[order.order_number])
+        response = client_with_user.get(url)
+        assert response.status_code == 200
 
 
 @pytest.mark.django_db
-class TestCheckoutViews:
-    """Tests de vistas de checkout."""
+class TestPaymentsView:
+    """AUD-203: Vista payments solo acepta POST."""
 
-    def test_checkout_redirects_if_not_authenticated(self, client, user):
-        """Checkout redirige si no está autenticado"""
-        try:
-            response = client.get('/orders/checkout/', follow=False)
-            # Debería redirigir a login o retornar algo
-            assert response.status_code in [200, 301, 302, 404]
-        except:
-            pass
+    def test_payments_rejects_get(self, client_with_user):
+        """GET a payments debe retornar 405."""
+        url = reverse('orders:payments')
+        response = client_with_user.get(url)
+        assert response.status_code == 405
+
+    def test_payments_unauthenticated_redirects(self, client):
+        """Acceso sin login redirige."""
+        url = reverse('orders:payments')
+        response = client.post(url, content_type='application/json')
+        assert response.status_code == 302
+        assert 'login' in response.url
+
+
+@pytest.mark.django_db
+class TestOrderCompleteNoindex:
+    """SEO: order_complete incluye noindex."""
+
+    def test_template_has_noindex(self, client_with_user, user):
+        """El template incluye meta robots noindex."""
+        order = Order.objects.create(
+            user=user,
+            first_name='Test', last_name='User',
+            phone='123', email=user.email,
+            address_line_1='Test', country='AR',
+            city='BA', state='1000',
+            order_number='20240101001'
+        )
+        url = reverse('orders:order_complete', args=[order.order_number])
+        response = client_with_user.get(url)
+        assert response.status_code == 200
+        assert b'noindex' in response.content

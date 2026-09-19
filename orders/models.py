@@ -29,9 +29,9 @@ class Order(models.Model):
     )
     #### Datos de order ####
     user = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True)
-    order_number = models.CharField(max_length=30)
+    order_number = models.CharField(max_length=30, unique=True, db_index=True)
     order_note = models.CharField(max_length=100, blank=True)
-    order_total = models.FloatField(null=True, blank=True)
+    order_total = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     status = models.CharField(max_length=50, choices=STATUS, default='New')
     payment = models.ForeignKey(Payment, on_delete=models.SET_NULL, null=True, blank=True)
     
@@ -43,7 +43,7 @@ class Order(models.Model):
     address_line_2 = models.CharField(max_length=100, blank=True)
     country = models.CharField(max_length=50)  # Agregado mio
     city = models.CharField(max_length=50)  # Agregado mio
-    state = models.CharField(max_length=10)  # QUE ES CODIGO POSTAL EN CHECKOUT.HTML
+    state = models.CharField(max_length=10)  # Código postal argentino (4 dígitos o CPA de 8 caracteres)
     
     ip = models.CharField(max_length=25, blank=True)
     is_ordered = models.BooleanField(default=False)
@@ -88,11 +88,11 @@ class Order(models.Model):
 class OrderProduct(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     payment = models.ForeignKey(Payment, on_delete=models.CASCADE, blank=True, null=True)
-    user = models.ForeignKey(Account, on_delete=models.CASCADE)
+    user = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     variation = models.ManyToManyField(Variation, blank=True)
     quantity = models.IntegerField()
-    purchase_price = models.FloatField()
+    purchase_price = models.DecimalField(max_digits=12, decimal_places=2)
     ordered = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

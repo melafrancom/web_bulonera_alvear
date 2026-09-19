@@ -1,6 +1,7 @@
 """Orders Web Views"""
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse
@@ -88,129 +89,97 @@ def place_order(request):
 
 
 @login_required
+@require_POST
 def payments(request):
     """
-    Vista para procesar pagos.
-    Soporta tanto pagos tradicionales como WhatsApp.
+    Vista para procesar pagos (POST JSON).
+    Scaffold para futura integración de pasarela de pagos.
     """
-    if request.method == 'POST':
-        try:
-            # Cargar datos del pago
-            body = json.loads(request.body)
-            
-            # Validar campos requeridos
-            required_fields = ['orderID', 'transID', 'payment_method', 'status']
-            for field in required_fields:
-                if field not in body:
-                    return JsonResponse({
-                        'error': f'Falta el campo requerido: {field}'
-                    }, status=400)
-            
-            # Obtener orden
-            order = get_object_or_404(
-                Order,
-                user=request.user,
-                is_ordered=False,
-                order_number=body['orderID']
-            )
-            
-            # Procesar pago usando el servicio
-            payment_data = {
-                'payment_id': body['transID'],
-                'payment_method': body['payment_method'],
-                'status': body['status']
-            }
-            
-            payment = PaymentService.process_payment(
-                user=request.user,
-                order=order,
-                payment_data=payment_data
-            )
-            
-            # Enviar email de confirmación
-            CheckoutService.send_order_confirmation_email(order)
-            
-            # Generar link de WhatsApp
-            whatsapp_link = WhatsAppService.generate_whatsapp_link(order)
-            
-            # Respuesta exitosa
-            return JsonResponse({
-                'status': 'success',
-                'whatsapp_link': whatsapp_link,
-                'order_number': order.order_number,
-                'transID': payment.payment_id,
-            })
-            
-        except ValueError as e:
-            logger.warning(f"Error procesando pago: {e}")
-            return JsonResponse({'error': str(e)}, status=400)
-        except Exception as e:
-            logger.error(f"Error en payments: {e}", exc_info=True)
-            return JsonResponse({'error': 'Error procesando el pago'}, status=500)
-    
-    elif request.method == 'GET' and request.GET.get('whatsapp') == 'true':
-        # Procesar orden para WhatsApp
-        order_number = request.GET.get('order_number')
+    try:
+        # Cargar datos del pago
+        body = json.loads(request.body)
         
-        try:
-            order = get_object_or_404(
-                Order,
-                user=request.user,
-                is_ordered=False,
-                order_number=order_number
-            )
-            
-            # Procesar para WhatsApp
-            payment, whatsapp_link = WhatsAppService.process_whatsapp_order(order)
-            
-            # Enviar email de confirmación
-            CheckoutService.send_order_confirmation_email(order)
-            
-            # Redirigir a WhatsApp
-            return redirect('orders:whatsapp_redirect') + f'?order_number={order_number}'
-            
-        except Exception as e:
-            logger.error(f"Error procesando orden WhatsApp: {e}")
-            messages.error(request, "Error al procesar la orden")
-            return redirect('cart:cart')
-    
-    return JsonResponse({'error': 'Método no permitido'}, status=405)
+        # Validar campos requeridos
+        required_fields = ['orderID', 'transID', 'payment_method', 'status']
+        for field in required_fields:
+            if field not in body:
+                return JsonResponse({
+                    'error': f'Falta el campo requerido: {field}'
+                }, status=400)
+        
+        # Obtener orden
+        order = get_object_or_404(
+            Order,
+            user=request.user,
+            is_ordered=False,
+            order_number=body['orderID']
+        )
+        
+        # Procesar pago usando el servicio
+        payment_data = {
+            'payment_id': body['transID'],
+            'payment_method': body['payment_method'],
+            'status': body['status']
+        }
+        
+        payment = PaymentService.process_payment(
+            user=request.user,
+            order=order,
+            payment_data=payment_data
+        )
+        
+        # Enviar email de confirmación
+        CheckoutService.send_order_confirmation_email(order)
+        
+        # Generar link de WhatsApp
+        whatsapp_link = WhatsAppService.generate_whatsapp_link(order)
+        
+        # Respuesta exitosa
+        return JsonResponse({
+            'status': 'success',
+            'whatsapp_link': whatsapp_link,
+            'order_number': order.order_number,
+            'transID': payment.payment_id,
+        })
+        
+    except ValueError as e:
+        logger.warning(f"Error procesando pago: {e}")
+        return JsonResponse({'error': str(e)}, status=400)
+    except Exception as e:
+        logger.error(f"Error en payments: {e}", exc_info=True)
+        return JsonResponse({'error': 'Error procesando el pago'}, status=500)
 
 
+@login_required(login_url='account:login')
 def order_complete(request, order_number):
     """
     Vista de confirmación de orden completada.
     Muestra el resumen de la orden y los productos.
     """
-    try:
-        order = Order.objects.get(order_number=order_number)
-        ordered_products = OrderProduct.objects.filter(order=order)
-        
-        # Calcular subtotal
-        subtotal = sum(
-            item.purchase_price * item.quantity 
-            for item in ordered_products
-        )
-        
-        # Obtener payment si existe
-        payment = order.payment
-        trans_id = payment.payment_id if payment else ""
-        
-        context = {
-            'order': order,
-            'ordered_products': ordered_products,
-            'order_number': order.order_number,
-            'transID': trans_id,
-            'payment': payment,
-            'subtotal': subtotal,
-            'status': order.status
-        }
-        
-        return render(request, 'orders/order_complete.html', context)
-        
-    except Order.DoesNotExist:
-        messages.error(request, "Orden no encontrada")
-        return redirect('account:my_orders')
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    ordered_products = OrderProduct.objects.filter(order=order)
+    
+    # Calcular subtotal
+    subtotal = sum(
+        item.purchase_price * item.quantity 
+        for item in ordered_products
+    )
+    
+    # Obtener payment si existe
+    payment = order.payment
+    trans_id = payment.payment_id if payment else ""
+    
+    context = {
+        'order': order,
+        'ordered_products': ordered_products,
+        'order_number': order.order_number,
+        'transID': trans_id,
+        'payment': payment,
+        'subtotal': subtotal,
+        'status': order.status
+    }
+    
+    return render(request, 'orders/order_complete.html', context)
 
 
 @login_required

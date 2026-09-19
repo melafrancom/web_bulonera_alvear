@@ -116,7 +116,7 @@ class CreateOrderSerializer(serializers.Serializer):
     address_line_2 = serializers.CharField(max_length=100, required=False, allow_blank=True)
     country = serializers.CharField(max_length=50)
     city = serializers.CharField(max_length=50)
-    state = serializers.CharField(max_length=5)
+    state = serializers.CharField(max_length=10)
     order_note = serializers.CharField(max_length=100, required=False, allow_blank=True)
 
 
@@ -132,4 +132,13 @@ class ProcessPaymentSerializer(serializers.Serializer):
         valid_methods = ['Credit Card', 'Debit Card', 'PayPal', 'WhatsApp', 'Transfer']
         if value not in valid_methods:
             raise serializers.ValidationError(f"Método de pago inválido. Opciones: {', '.join(valid_methods)}")
+        return value
+
+    def validate_status(self, value):
+        """Validar status permitidos."""
+        valid_statuses = ['Completed', 'Pending', 'Failed']
+        if value not in valid_statuses:
+            raise serializers.ValidationError(
+                f"Status inválido. Opciones: {', '.join(valid_statuses)}"
+            )
         return value
