@@ -1,7 +1,40 @@
+import os
+from urllib.parse import urlparse
+import nh3
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from media_bank.upload_utils import overwrite_upload_path, create_clean_filename
-import os
+
+SAFE_TAGS = {
+    'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li',
+    'table', 'thead', 'tbody', 'tr', 'th', 'td',
+    'strong', 'em', 'a', 'br', 'span', 'div'
+}
+
+SAFE_ATTRIBUTES = {
+    'a': {'href', 'title', 'rel', 'target'},
+    'th': {'colspan', 'rowspan', 'scope'},
+    'td': {'colspan', 'rowspan'},
+    '*': {'class', 'id'},
+}
+
+SAFE_URL_SCHEMES = {'http', 'https', 'mailto', 'tel'}
+
+
+def clean_html(raw_html: str) -> str:
+    """Sanitiza HTML para rich_description usando nh3 para prevenir XSS."""
+    if not raw_html:
+        return raw_html
+    return nh3.clean(
+        raw_html,
+        tags=SAFE_TAGS,
+        attributes=SAFE_ATTRIBUTES,
+        url_schemes=SAFE_URL_SCHEMES,
+        link_rel=None
+    )
+
+
 
 def category_image_path(instance, filename):
     clean_name = create_clean_filename(filename)
@@ -56,6 +89,9 @@ class Category(models.Model):
                 self.meta_description = f"{self.description} Stock real en Bulonera Alvear, Resistencia, Chaco."[:160]
             else:
                 self.meta_description = f"¿Buscás {self.category_name.lower()} en Resistencia, Chaco? Stock real en Bulonera Alvear. Envíos al NEA/NOA y a toda Argentina."[:160]
+        # AUD-CAT-002: Sanitizar rich_description contra XSS
+        if self.rich_description:
+            self.rich_description = clean_html(self.rich_description)
         super().save(*args, **kwargs)
     
     def get_url(self):
@@ -161,6 +197,9 @@ class SubCategory(models.Model):
                 f"¿Buscás {self.subcategory_name.lower()} en Chaco? En Bulonera Alvear, "
                 f"tu ferretería industrial en Av. Alvear 1301, Resistencia. Envíos a toda Argentina."
             )[:160]
+        # AUD-CAT-002: Sanitizar rich_description contra XSS
+        if self.rich_description:
+            self.rich_description = clean_html(self.rich_description)
         super().save(*args, **kwargs)
 
     def get_faqs(self):
@@ -266,6 +305,24 @@ class NavbarItem(models.Model):
         verbose_name = 'Item de Navegación'
         verbose_name_plural = 'Items de Navegación'
         
+    def clean(self):
+        super().clean()
+        if self.item_type == 'custom' and self.custom_url:
+            url = self.custom_url.strip()
+            if url.startswith('/') or url.startswith('#'):
+                if url.startswith('//'):
+                    raise ValidationError({'custom_url': "URLs con esquema relativo '//' no están permitidas."})
+                return
+            parsed = urlparse(url)
+            if parsed.scheme not in ('http', 'https'):
+                raise ValidationError({
+                    'custom_url': f"Esquema de URL no permitido: '{parsed.scheme}'. Solo se permiten URLs relativas ('/') o absolutas con http:// o https://."
+                })
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.label} ({self.get_item_type_display()})"
         
@@ -275,5 +332,6 @@ class NavbarItem(models.Model):
         elif self.item_type == 'custom':
             return self.custom_url
         return '#'
+
 
 

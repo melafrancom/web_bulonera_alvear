@@ -1,4 +1,6 @@
 """Category API ViewSets"""
+import logging
+from django.db.models import Count
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -13,8 +15,6 @@ from category.api.serializers import (
 )
 from category.services import CategoryService, SubCategoryService
 
-import logging
-
 logger = logging.getLogger(__name__)
 
 
@@ -24,10 +24,10 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     
     Endpoints:
     - GET /api/categories/ → Listar todas las categorías
-    - GET /api/categories/{id}/ → Detalle de categoría con subcategorías
+    - GET /api/categories/{slug}/ → Detalle de categoría con subcategorías
     - GET /api/categories/featured/ → Categorías destacadas
     """
-    queryset = Category.objects.all()
+    queryset = Category.objects.all().order_by('category_name')
     permission_classes = [AllowAny]
     lookup_field = 'slug'
     
@@ -38,10 +38,12 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
         return CategorySerializer
     
     def get_queryset(self):
-        """Optimiza queries con prefetch"""
+        """Optimiza queries con prefetch o annotate y garantiza orden determinista"""
         if self.action == 'retrieve':
             return CategoryService.get_all_categories()
-        return Category.objects.all()
+        if self.action == 'list':
+            return Category.objects.annotate(_subcategory_count=Count('subcategories')).order_by('category_name')
+        return Category.objects.all().order_by('category_name')
     
     @action(detail=False, methods=['get'])
     def featured(self, request):
@@ -64,13 +66,13 @@ class SubCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     
     Endpoints:
     - GET /api/subcategories/ → Listar todas las subcategorías
-    - GET /api/subcategories/{id}/ → Detalle de subcategoría
+    - GET /api/subcategories/{slug}/ → Detalle de subcategoría
     """
-    queryset = SubCategory.objects.all()
+    queryset = SubCategory.objects.all().order_by('subcategory_name')
     serializer_class = SubCategorySerializer
     permission_classes = [AllowAny]
     lookup_field = 'slug'
     
     def get_queryset(self):
-        """Optimiza queries con select_related"""
-        return SubCategoryService.get_all_subcategories()
+        """Optimiza queries con select_related y orden determinista"""
+        return SubCategoryService.get_all_subcategories().order_by('subcategory_name')

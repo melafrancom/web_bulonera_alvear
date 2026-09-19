@@ -1,5 +1,6 @@
 """Tests for Category API"""
 import pytest
+from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from category.models import Category, SubCategory, FeaturedCategory
@@ -45,36 +46,58 @@ class TestCategoryAPIViewSet(APITestCase):
         )
     
     def test_list_categories(self):
-        """Test: GET /api/categories/ lista todas las categorías"""
-        response = self.client.get('/api/v1/categories/')
+        """Test: GET /api/v1/category/categories/ lista todas las categorías"""
+        # Arrange
+        url = reverse('category_api:category-list')
         
-        # Puede ser 404 si no está montada la URL, o 200 si está montada
-        if response.status_code == 200:
-            self.assertEqual(len(response.data), 2)
+        # Act
+        response = self.client.get(url)
+        
+        # Assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
+        count = response.data.get('count', len(results)) if isinstance(response.data, dict) else len(results)
+        self.assertEqual(count, 2)
+        self.assertEqual(len(results), 2)
     
     def test_retrieve_category(self):
-        """Test: GET /api/categories/{slug}/ obtiene detalle de categoría"""
-        response = self.client.get(f'/api/v1/categories/{self.category1.slug}/')
+        """Test: GET /api/v1/category/categories/{slug}/ obtiene detalle de categoría"""
+        # Arrange
+        url = reverse('category_api:category-detail', kwargs={'slug': self.category1.slug})
         
-        if response.status_code == 200:
-            self.assertEqual(response.data['category_name'], 'Herramientas')
-            self.assertIn('subcategories', response.data)
-            self.assertEqual(len(response.data['subcategories']), 2)
+        # Act
+        response = self.client.get(url)
+        
+        # Assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['category_name'], 'Herramientas')
+        self.assertIn('subcategories', response.data)
+        self.assertEqual(len(response.data['subcategories']), 2)
     
     def test_featured_categories(self):
-        """Test: GET /api/categories/featured/ obtiene categorías destacadas"""
-        response = self.client.get('/api/v1/categories/featured/')
+        """Test: GET /api/v1/category/categories/featured/ obtiene categorías destacadas"""
+        # Arrange
+        url = reverse('category_api:category-featured')
         
-        if response.status_code == 200:
-            self.assertEqual(len(response.data), 1)
-            self.assertEqual(response.data[0]['category']['category_name'], 'Herramientas')
+        # Act
+        response = self.client.get(url)
+        
+        # Assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['category']['category_name'], 'Herramientas')
     
     def test_category_subcategories(self):
-        """Test: GET /api/categories/{slug}/subcategories/ obtiene subcategorías"""
-        response = self.client.get(f'/api/v1/categories/{self.category1.slug}/subcategories/')
+        """Test: GET /api/v1/category/categories/{slug}/subcategories/ obtiene subcategorías"""
+        # Arrange
+        url = reverse('category_api:category-subcategories', kwargs={'slug': self.category1.slug})
         
-        if response.status_code == 200:
-            self.assertEqual(len(response.data), 2)
+        # Act
+        response = self.client.get(url)
+        
+        # Assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
 
 
 @pytest.mark.django_db
@@ -96,16 +119,29 @@ class TestSubCategoryAPIViewSet(APITestCase):
         )
     
     def test_list_subcategories(self):
-        """Test: GET /api/subcategories/ lista todas las subcategorías"""
-        response = self.client.get('/api/v1/subcategories/')
+        """Test: GET /api/v1/category/subcategories/ lista todas las subcategorías"""
+        # Arrange
+        url = reverse('category_api:subcategory-list')
         
-        if response.status_code == 200:
-            self.assertEqual(len(response.data), 1)
+        # Act
+        response = self.client.get(url)
+        
+        # Assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
+        count = response.data.get('count', len(results)) if isinstance(response.data, dict) else len(results)
+        self.assertEqual(count, 1)
+        self.assertEqual(len(results), 1)
     
     def test_retrieve_subcategory(self):
-        """Test: GET /api/subcategories/{slug}/ obtiene detalle de subcategoría"""
-        response = self.client.get(f'/api/v1/subcategories/{self.subcategory.slug}/')
+        """Test: GET /api/v1/category/subcategories/{slug}/ obtiene detalle de subcategoría"""
+        # Arrange
+        url = reverse('category_api:subcategory-detail', kwargs={'slug': self.subcategory.slug})
         
-        if response.status_code == 200:
-            self.assertEqual(response.data['subcategory_name'], 'Destornilladores')
-            self.assertEqual(response.data['category_name'], 'Herramientas')
+        # Act
+        response = self.client.get(url)
+        
+        # Assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['subcategory_name'], 'Destornilladores')
+        self.assertEqual(response.data['category_name'], 'Herramientas')

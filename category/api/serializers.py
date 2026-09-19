@@ -27,7 +27,9 @@ class CategorySerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
     
     def get_subcategory_count(self, obj):
-        """Cuenta las subcategorías de esta categoría"""
+        """Cuenta las subcategorías de esta categoría utilizando anotación si existe"""
+        if hasattr(obj, '_subcategory_count'):
+            return obj._subcategory_count
         return obj.subcategories.count()
 
 
@@ -42,7 +44,9 @@ class CategoryListSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
     
     def get_subcategory_count(self, obj):
-        """Cuenta las subcategorías de esta categoría"""
+        """Cuenta las subcategorías de esta categoría utilizando anotación si existe"""
+        if hasattr(obj, '_subcategory_count'):
+            return obj._subcategory_count
         return obj.subcategories.count() if hasattr(obj, 'subcategories') else 0
 
 
