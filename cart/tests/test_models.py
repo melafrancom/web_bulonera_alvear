@@ -92,14 +92,14 @@ class TestCartItemModel(TestCase):
         self.assertEqual(cart_item.product, self.product)
     
     def test_cart_item_purchase_price_auto_set(self):
-        """Test: Precio de compra se establece automáticamente"""
+        """Test: Precio de compra se establece automáticamente como Decimal"""
         cart_item = CartItem.objects.create(
             user=self.user,
             product=self.product,
             quantity=1
         )
         
-        self.assertEqual(cart_item.purchase_price, self.product.price)
+        self.assertEqual(cart_item.purchase_price, Decimal(str(self.product.price)))
     
     def test_cart_item_purchase_price_sale(self):
         """Test: Precio de compra usa precio de oferta si está disponible"""
@@ -113,15 +113,15 @@ class TestCartItemModel(TestCase):
             quantity=1
         )
         
-        self.assertEqual(cart_item.purchase_price, 80.00)
+        self.assertEqual(cart_item.purchase_price, Decimal('80.00'))
     
     def test_cart_item_sub_total(self):
-        """Test: Cálculo de subtotal"""
+        """Test: Cálculo de subtotal en Decimal"""
         cart_item = CartItem.objects.create(
             user=self.user,
             product=self.product,
             quantity=3,
-            purchase_price=100.00
+            purchase_price=Decimal('100.00')
         )
         
-        self.assertEqual(cart_item.sub_total, 300.00)
+        self.assertEqual(cart_item.sub_total, Decimal('300.00'))

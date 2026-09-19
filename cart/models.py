@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.contrib import admin
 from django.db import models
 from store.models import Product, Variation
@@ -37,20 +38,26 @@ class CartItem(models.Model):
     quantity = models.IntegerField()
     is_active = models.BooleanField(default=True)
     variation = models.ManyToManyField(Variation, blank=True)
-    purchase_price = models.FloatField(null=True, blank=True)
+    purchase_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     
     def save(self, *args, **kwargs):
-    # Set the purchase price based on whether product is on sale
-        if not self.purchase_price:
+        # Set the purchase price based on whether product is on sale
+        if self.purchase_price is None:
             if self.product.is_on_sale and self.product.sale_price:
-                self.purchase_price = self.product.sale_price
+                raw_price = self.product.sale_price
             else:
-                self.purchase_price = self.product.price
+                raw_price = self.product.price
+            if raw_price is not None:
+                self.purchase_price = round(Decimal(str(raw_price)), 2)
+        elif not isinstance(self.purchase_price, Decimal):
+            self.purchase_price = round(Decimal(str(self.purchase_price)), 2)
         super(CartItem, self).save(*args, **kwargs)
     
     @property
     def sub_total(self):
-        return self.purchase_price * self.quantity
+        if self.purchase_price is not None:
+            return self.purchase_price * self.quantity
+        return Decimal('0.00')
 
     def get_geo_summary(self) -> str:
         """Genera un resumen estructurado del ítem del carrito."""

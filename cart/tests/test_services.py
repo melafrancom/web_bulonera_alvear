@@ -75,7 +75,7 @@ class TestCartService(TestCase):
         self.assertEqual(cart_item.user, self.user)
         self.assertEqual(cart_item.product, self.product)
         self.assertEqual(cart_item.quantity, 2)
-        self.assertEqual(cart_item.purchase_price, self.product.price)
+        self.assertEqual(cart_item.purchase_price, Decimal(str(self.product.price)))
     
     def test_add_to_cart_anonymous_user(self):
         """Test: Agregar producto al carrito (usuario anónimo)"""
