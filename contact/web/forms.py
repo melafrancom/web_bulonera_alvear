@@ -1,7 +1,19 @@
 from django import forms
 from contact.models import ContactOption
 
+
 class ContactForm(forms.ModelForm):
+    # Honeypot anti-spam: invisible para humanos, bots lo rellenan automáticamente
+    website = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'autocomplete': 'off',
+            'tabindex': '-1',
+            'aria-hidden': 'true',
+        }),
+        label=''
+    )
+
     class Meta:
         model = ContactOption
         fields = ['name', 'email', 'contact_method', 'subject', 'message']

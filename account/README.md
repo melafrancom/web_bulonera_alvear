@@ -46,3 +46,5 @@ graph LR
 - **Rate Limiting Dedicado**: Clases de throttling por alcance en `account/api/throttling.py` (`LoginRateThrottle`, `RegisterRateThrottle`, `PasswordResetRateThrottle`) limitan abusos y fuerza bruta.
 - **Validación Estricta de Contraseñas**: Toda creación o reseteo de contraseña ejecuta la suite completa de `AUTH_PASSWORD_VALIDATORS` de Django.
 - **Aislamiento y Purga de Sesión**: La vista `resetPassword` exige sesión activa y elimina `uid` de `request.session` inmediatamente tras el cambio exitoso.
+- **Preservación Contable e Integridad de Facturación**: Relación desacoplada con `OrderProduct` (`on_delete=models.SET_NULL, null=True`) en `orders`. Esto permite eliminar de forma segura cuentas spam o usuarios sin corromper el detalle histórico de facturación comercial.
+- **Suite de Pruebas**: Tests automatizados en `account/tests/` cubriendo registro, autenticación segura, reseteo de contraseña, mitigación de enumeración y validación de sesiones.

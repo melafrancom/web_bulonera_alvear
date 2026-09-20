@@ -1,16 +1,36 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
-# Create your models here.
+
+def validate_no_crlf(value: str) -> None:
+    """Valida que el campo no contenga saltos de línea para prevenir Email Header Injection."""
+    if '\r' in value or '\n' in value:
+        raise ValidationError("El campo no puede contener saltos de línea.")
+
+
 class ContactOption(models.Model):
     CONTACT_CHOICES = [
         ('whatsapp', 'WhatsApp'),
         ('email', 'Correo Electrónico'),
     ]
     
-    name = models.CharField(max_length=100, verbose_name="Nombre")
+    name = models.CharField(
+        max_length=100,
+        verbose_name="Nombre",
+        validators=[validate_no_crlf]
+    )
     email = models.EmailField(verbose_name="Correo Electrónico")
-    contact_method = models.CharField(max_length=10, choices=CONTACT_CHOICES, default='email', verbose_name="Método de Contacto")
-    subject = models.CharField(max_length=200, verbose_name="Asunto")
+    contact_method = models.CharField(
+        max_length=10,
+        choices=CONTACT_CHOICES,
+        default='email',
+        verbose_name="Método de Contacto"
+    )
+    subject = models.CharField(
+        max_length=200,
+        verbose_name="Asunto",
+        validators=[validate_no_crlf]
+    )
     message = models.TextField(verbose_name="Mensaje")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Envío")
     

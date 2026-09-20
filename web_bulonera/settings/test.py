@@ -26,3 +26,11 @@ PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
 CONTACT_EMAIL = 'test_owner@bulonera.com'
 EMAIL_TO_SEND_MESSAGES = 'test_owner@bulonera.com'
 DEFAULT_FROM_EMAIL = 'noreply@bulonera.com'
+
+# Cache en memoria para tests (aislamiento total de Redis)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'test-snowflake',
+    }
+}

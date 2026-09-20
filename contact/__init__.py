@@ -12,6 +12,4 @@ Estructura:
 - tests/: Tests unitarios y de integración
 """
 
-default_app_config = 'contact.apps.ContactConfig'
-
 __all__ = []

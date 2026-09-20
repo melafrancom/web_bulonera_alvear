@@ -32,4 +32,8 @@ graph LR
 - **SubCategoryService.get_subcategory_by_slug**: Obtiene una subcategoría específica resolviendo mediante el slug de su categoría padre y de sí misma.
 
 ## 📝 Notas de Detalle (Obsidian Vault)
-- **Autollenado SEO**: El método `save()` de `Category` y `SubCategory` autocompleta el `meta_title` y `meta_description` utilizando plantillas locales si no se completan manualmente en el admin.
+- **Autollenado y Sanitización SEO**: El método `save()` de `Category` y `SubCategory` autocompleta el `meta_title` y `meta_description` utilizando plantillas locales si no se completan manualmente en el admin. Además, sanitiza automáticamente el HTML de `rich_description` mediante `nh3.clean` con allowlist estricta para prevenir Stored XSS.
+- **Validación Defensiva de URLs**: `NavbarItem.clean()` restringe `custom_url` exclusivamente a rutas relativas (`/`) o URLs absolutas (`http://`, `https://`), bloqueando inyecciones de esquemas peligrosos como `javascript:`, `data:` o `//evil.com`.
+- **Caché e Invalidación Automática**: `context_processors.menu_links` almacena en Redis las categorías y elementos del navbar por 15 minutos (`category:menu_links` y `category:navbar_items`), reduciendo 3 queries por request. `category/signals.py` se encarga de invalidar automáticamente dichas claves ante eventos `post_save` o `post_delete` en `Category`, `SubCategory` o `NavbarItem`.
+- **Suite de Pruebas**: 55 tests automatizados en `category/tests/` (`test_api.py`, `test_models.py`, `test_services.py`, `test_security.py`) con cobertura 100% en API paginada, validaciones de seguridad, modelos y servicios.
+

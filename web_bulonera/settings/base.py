@@ -302,6 +302,7 @@ CACHES = {
 # REST FRAMEWORK CONFIGURATION
 # ============================================================
 REST_FRAMEWORK = {
+    'NUM_PROXIES': 1,  # OpenLiteSpeed / Nginx como proxy reverso único
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 30,
@@ -326,6 +327,7 @@ REST_FRAMEWORK = {
         'login': '5/minute',
         'register': '3/minute',
         'password_reset': '3/hour',
+        'contact': '5/hour',
     },
 }
 

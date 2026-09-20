@@ -50,3 +50,12 @@ graph LR
 
 ## 📝 Notas de Detalle (Obsidian Vault)
 - **Algoritmo de Regeneración de Slugs**: Los productos importados reciben slugs temporales automáticos. El sistema detecta cuando el nombre ha sido curado profesionalmente por un operario para gatillar la regeneración limpia y definitiva del slug.
+- **Seguridad y Hardening (AppSec - Fase 19)**:
+  - **BOLA en Reseñas (SEC-101)**: `submit_review` verifica `ReviewService.user_can_review()`, prohibiendo que usuarios califiquen productos sin haberlos comprado previamente.
+  - **Open Redirect (SEC-102)**: Redirecciones seguras con `url_has_allowed_host_and_scheme(allowed_hosts={request.get_host()})` y fallback a `store:store`.
+  - **Fuga de Información en Feeds (SEC-104 & SEC-105)**: Respuestas de error genéricas (status 500) en feeds web y API sin filtrar excepciones internas.
+  - **Paginación Defensiva (SEC-106) & Anti-DoS en Búsqueda (SEC-109)**: Paginación estructurada en `SearchViewSet` y truncamiento estricto a 100 caracteres en keywords de búsqueda.
+  - **Optimización Anti N+1 (SEC-107)**: `ProductViewSet` y `SearchViewSet` anotan promedio y conteo de reseñas en DB, priorizados por serializers.
+  - **Eficiencia de Memoria en Feeds (SEC-111 & SEC-112)**: Consumo con `.iterator(chunk_size=200)` y unificación a través de `FeedService`.
+  - **Suite de Seguridad**: 9 tests específicos en `store/tests/test_security.py`.
+
