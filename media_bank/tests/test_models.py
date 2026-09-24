@@ -98,3 +98,56 @@ class TestImageAssetModel:
         assert schema_data['@type'] == 'ImageObject'
         assert schema_data['name'] == 'bulon_hexagonal'
         assert 'contentUrl' in schema_data
+
+    def test_get_webp_url_returns_none_without_sync_processing(self, monkeypatch):
+        """
+        Test de regresión anti-DoS (AUD-MB-004).
+        Verifica que get_webp_url no invoque ningún procesador de imágenes sincrónico
+        cuando el archivo WebP no existe en disco.
+        """
+        image = Image.new('RGB', (50, 50), color='cyan')
+        image_io = io.BytesIO()
+        image.save(image_io, format='JPEG')
+        image_io.seek(0)
+
+        asset = ImageAsset.objects.create(
+            file=SimpleUploadedFile('anti_dos_test.jpg', image_io.read(), content_type='image/jpeg')
+        )
+
+        # Si el procesador sincrónico fuera llamado, esto fallaría si se espía o si no existe
+        url = asset.get_webp_url()
+        # Debe retornar None limpiamente si aún no fue procesado por Celery
+        assert url is None
+
+    def test_get_webp_url_returns_url_when_file_exists(self, monkeypatch):
+        """Verifica que get_webp_url resuelva la URL si el archivo físico WebP existe."""
+        import os
+        from django.conf import settings
+
+        image = Image.new('RGB', (50, 50), color='orange')
+        image_io = io.BytesIO()
+        image.save(image_io, format='JPEG')
+        image_io.seek(0)
+
+        asset = ImageAsset.objects.create(
+            file=SimpleUploadedFile('test_exist.jpg', image_io.read(), content_type='image/jpeg')
+        )
+
+        # Simular que el archivo WebP existe físicamente
+        monkeypatch.setattr(os.path, 'isfile', lambda path: True if 'test_exist.webp' in path else False)
+
+        url = asset.get_webp_url()
+        assert url is not None
+        assert 'test_exist.webp' in url
+
+    def test_model_validation_rejects_invalid_file(self):
+        """Verifica que full_clean rechace archivos corruptos o extensiones prohibidas."""
+        from django.core.exceptions import ValidationError
+
+        asset = ImageAsset(
+            file=SimpleUploadedFile('fake.txt', b'NOT_AN_IMAGE', content_type='text/plain'),
+            name='Bad File'
+        )
+        with pytest.raises(ValidationError):
+            asset.full_clean()
+

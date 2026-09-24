@@ -1,6 +1,6 @@
 """Media Bank Admin"""
 from django.contrib import admin
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 from .models import ImageAsset
 
 
@@ -24,21 +24,23 @@ class ImageAssetAdmin(admin.ModelAdmin):
     )
 
     def thumbnail_preview(self, obj):
-        """Thumbnail en la lista."""
-        if obj.file:
-            return mark_safe(
-                f'<img src="{obj.file.url}" '
-                f'style="width:60px; height:60px; object-fit:cover; border-radius:4px;" />'
+        """Thumbnail seguro en la lista para prevenir Stored XSS."""
+        if obj.file and obj.file.name:
+            return format_html(
+                '<img src="{}" alt="{}" style="width:60px; height:60px; object-fit:cover; border-radius:4px;" />',
+                obj.file.url,
+                obj.alt_text or obj.name or ''
             )
         return "—"
     thumbnail_preview.short_description = "Preview"
 
     def thumbnail_preview_large(self, obj):
-        """Preview grande en el formulario."""
-        if obj.file:
-            return mark_safe(
-                f'<img src="{obj.file.url}" '
-                f'style="max-width:400px; border-radius:8px;" />'
+        """Preview grande seguro en el formulario para prevenir Stored XSS."""
+        if obj.file and obj.file.name:
+            return format_html(
+                '<img src="{}" alt="{}" style="max-width:400px; border-radius:8px;" />',
+                obj.file.url,
+                obj.alt_text or obj.name or ''
             )
         return "—"
     thumbnail_preview_large.short_description = "Vista previa"

@@ -1,7 +1,12 @@
 """Media Bank Models"""
 import os
 from django.db import models
-from media_bank.upload_utils import overwrite_upload_path
+from django.core.validators import FileExtensionValidator
+from media_bank.upload_utils import (
+    overwrite_upload_path,
+    create_clean_filename,
+    validate_image_file,
+)
 
 
 class ImageType(models.TextChoices):
@@ -23,10 +28,21 @@ UPLOAD_PATHS = {
 }
 
 
-def image_asset_upload_path(instance, filename):
-    """Rutea la imagen al directorio correcto según su tipo y sobrescribe."""
+def image_asset_upload_path(instance, filename: str) -> str:
+    """
+    Rutea la imagen al directorio correspondiente según su tipo y sanitiza el nombre.
+
+    QUÉ:
+        Limpia caracteres conflictivos del nombre de archivo y genera la ruta destino
+        confinada para almacenamiento.
+
+    POR QUÉ:
+        Previene inconsistencias de nombres de archivo y asegura que el archivo se guarde
+        en el prefijo correcto sin sufijos redundantes de almacenamiento.
+    """
+    clean_filename = create_clean_filename(filename)
     base_path = UPLOAD_PATHS.get(instance.image_type, 'photos/products/original/')
-    return overwrite_upload_path(f'{base_path}{filename}')
+    return overwrite_upload_path(f'{base_path}{clean_filename}')
 
 
 class ImageAsset(models.Model):
@@ -39,7 +55,11 @@ class ImageAsset(models.Model):
     )
     file = models.ImageField(
         upload_to=image_asset_upload_path,
-        help_text="Archivo de imagen"
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp', 'gif']),
+            validate_image_file,
+        ],
+        help_text="Archivo de imagen (JPG, PNG, WEBP, GIF; máx 10 MB)"
     )
     name = models.CharField(
         max_length=255,
@@ -114,16 +134,29 @@ class ImageAsset(models.Model):
 
     def get_webp_url(self):
         """
-        Construye la URL al archivo WebP correspondiente.
-        Verifica la existencia física del archivo con fallback a subcarpetas legacy.
-        Retorna None si no existe.
+        Construye la URL al archivo WebP correspondiente si ya fue procesado.
+
+        QUÉ:
+            Verifica la existencia física del archivo WebP pre-generado de forma asíncrona.
+            Retorna la URL pública si existe, o None si aún no fue procesado.
+
+        POR QUÉ:
+            Resuelve la vulnerabilidad DoS (AUD-MB-004) donde el modelo ejecutaba procesamiento
+            pesado de imágenes con Pillow sincrónicamente dentro del worker HTTP/uWSGI,
+            bloqueándolo y provocando timeouts (harakiri) ante tráfico concurrente.
+
+        CÓMO:
+            1. Comprueba si el asset tiene un archivo asociado.
+            2. Itera sobre las rutas candidatas (nueva y legacy).
+            3. Si encuentra el archivo físicamente en MEDIA_ROOT, retorna la URL relativa.
+            4. Si no existe aún, retorna None sin bloquear el worker web.
         """
         if not self.file or not self.file.name:
             return None
-        
+
         # Obtener el nombre del archivo sin extensión
         base_name = os.path.splitext(os.path.basename(self.file.name))[0]
-        
+
         # Candidatos de rutas por tipo (nueva → legacy)
         WEBP_CANDIDATES = {
             ImageType.PRODUCT: [
@@ -143,44 +176,15 @@ class ImageAsset(models.Model):
                 f'photos/banners/webp/{base_name}.webp',
             ],
         }
-        
+
         from django.conf import settings
         candidates = WEBP_CANDIDATES.get(self.image_type, [])
-        
+
         for candidate in candidates:
             full_path = os.path.join(settings.MEDIA_ROOT, candidate)
             if os.path.isfile(full_path):
                 return f'/media/{candidate}'
-        
-        # Fallback defensivo: si no existe, intentar generar el WebP sincrónicamente
-        try:
-            from store.utils import (
-                ImageProcessor,
-                CarouselImageProcessor,
-                BannerImageProcessor,
-                CategoryImageProcessor
-            )
-            
-            processor_map = {
-                ImageType.PRODUCT: lambda: ImageProcessor(self.file.path).process_image(),
-                ImageType.CAROUSEL: lambda: CarouselImageProcessor(self.file.path).process_image(),
-                ImageType.BANNER: lambda: BannerImageProcessor(self.file.path).process_image(),
-                ImageType.CATEGORY: lambda: CategoryImageProcessor(self.file.path).process_image(),
-                ImageType.SUBCATEGORY: lambda: CategoryImageProcessor(self.file.path).process_image(is_subcategory=True),
-            }
-            
-            processor_fn = processor_map.get(self.image_type)
-            if processor_fn:
-                processor_fn()
-                # Volver a verificar la existencia del primer candidato (estándar nuevo)
-                if candidates:
-                    first_candidate = candidates[0]
-                    full_path = os.path.join(settings.MEDIA_ROOT, first_candidate)
-                    if os.path.isfile(full_path):
-                        return f'/media/{first_candidate}'
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error generando WebP sincrónicamente en get_webp_url para asset {self.id}: {e}")
-        
+
+        # POR QUÉ: No ejecutar procesamiento síncrono en uWSGI. El worker Celery
+        # se encarga de generarlo de forma desacoplada vía señal post_save.
         return None

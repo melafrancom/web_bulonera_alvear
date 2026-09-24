@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect
 from django.urls import path
 from django.contrib import messages
 from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 import pandas as pd
 import csv
 import io
@@ -37,9 +38,9 @@ class ProductGalleryInLine(admin.TabularInline):
 
     def image_preview(self, obj):
         if obj.image_asset and obj.image_asset.file:
-            return mark_safe(f'<img src="{obj.image_asset.file.url}" style="max-height: 100px; border-radius:4px;"/>')
+            return format_html('<img src="{}" style="max-height: 100px; border-radius:4px;"/>', obj.image_asset.file.url)
         elif obj.image:
-            return mark_safe(f'<img src="{obj.image.url}" style="max-height: 100px; border-radius:4px;"/>')
+            return format_html('<img src="{}" style="max-height: 100px; border-radius:4px;"/>', obj.image.url)
         return "—"
     image_preview.short_description = "Vista previa"
 
@@ -66,9 +67,9 @@ class ProductAdmin(admin.ModelAdmin):
     def image_preview_method(self, obj):
         """Preview readonly de la imagen seleccionada en el FK."""
         if obj.image and obj.image.file and obj.image.file.name:
-            return mark_safe(
-                f'<img src="{obj.image.file.url}" '
-                f'style="max-width:400px; border-radius:8px;" />'
+            return format_html(
+                '<img src="{}" style="max-width:400px; border-radius:8px;" />',
+                obj.image.file.url
             )
         return "—"
     image_preview_method.short_description = "Vista previa de imagen"
@@ -559,14 +560,14 @@ class CarouselImageAdmin(admin.ModelAdmin):
     def image_preview_method(self, obj):
         """Preview readonly de la imagen seleccionada en el FK."""
         if obj.image_asset and obj.image_asset.file and obj.image_asset.file.name:
-            return mark_safe(
-                f'<img src="{obj.image_asset.file.url}" '
-                f'style="max-width:400px; border-radius:8px;" />'
+            return format_html(
+                '<img src="{}" style="max-width:400px; border-radius:8px;" />',
+                obj.image_asset.file.url
             )
         elif obj.image and obj.image.name:
-            return mark_safe(
-                f'<img src="{obj.image.url}" '
-                f'style="max-width:400px; border-radius:8px;" />'
+            return format_html(
+                '<img src="{}" style="max-width:400px; border-radius:8px;" />',
+                obj.image.url
             )
         return "—"
     image_preview_method.short_description = "Vista previa de imagen (Desktop)"
@@ -574,14 +575,14 @@ class CarouselImageAdmin(admin.ModelAdmin):
     def image_mobile_preview_method(self, obj):
         """Preview readonly de la imagen móvil (Art Direction)."""
         if obj.image_mobile_asset and obj.image_mobile_asset.file and obj.image_mobile_asset.file.name:
-            return mark_safe(
-                f'<img src="{obj.image_mobile_asset.file.url}" '
-                f'style="max-width:300px; border-radius:8px;" />'
+            return format_html(
+                '<img src="{}" style="max-width:300px; border-radius:8px;" />',
+                obj.image_mobile_asset.file.url
             )
         elif obj.image_mobile and obj.image_mobile.name:
-            return mark_safe(
-                f'<img src="{obj.image_mobile.url}" '
-                f'style="max-width:300px; border-radius:8px;" />'
+            return format_html(
+                '<img src="{}" style="max-width:300px; border-radius:8px;" />',
+                obj.image_mobile.url
             )
         return "—"
     image_mobile_preview_method.short_description = "Vista previa de imagen (Mobile)"
@@ -589,9 +590,9 @@ class CarouselImageAdmin(admin.ModelAdmin):
     def image_tablet_preview_method(self, obj):
         """Preview readonly de la imagen tablet (Art Direction)."""
         if obj.image_tablet_asset and obj.image_tablet_asset.file and obj.image_tablet_asset.file.name:
-            return mark_safe(
-                f'<img src="{obj.image_tablet_asset.file.url}" '
-                f'style="max-width:350px; border-radius:8px;" />'
+            return format_html(
+                '<img src="{}" style="max-width:350px; border-radius:8px;" />',
+                obj.image_tablet_asset.file.url
             )
         return "—"
     image_tablet_preview_method.short_description = "Vista previa de imagen (Tablet)"
@@ -599,9 +600,9 @@ class CarouselImageAdmin(admin.ModelAdmin):
     def image_large_preview_method(self, obj):
         """Preview readonly de la imagen large (Art Direction)."""
         if obj.image_large_asset and obj.image_large_asset.file and obj.image_large_asset.file.name:
-            return mark_safe(
-                f'<img src="{obj.image_large_asset.file.url}" '
-                f'style="max-width:500px; border-radius:8px;" />'
+            return format_html(
+                '<img src="{}" style="max-width:500px; border-radius:8px;" />',
+                obj.image_large_asset.file.url
             )
         return "—"
     image_large_preview_method.short_description = "Vista previa de imagen (Large Monitor)"
