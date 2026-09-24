@@ -1,0 +1,126 @@
+# English translations for Bulonera Alvear Blog
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-24 14:29-0300\n"
+"PO-Revision-Date: 2026-09-24 14:30-0300\n"
+"Last-Translator: Tech Lead <[EMAIL_ADDRESS]>\n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: templates/blog/includes/_cta_whatsapp.html:7
+msgid "¿Necesitás asesoramiento?"
+msgstr "Need expert advice?"
+
+#: templates/blog/includes/_cta_whatsapp.html:10
+msgid ""
+"Nuestro equipo técnico está disponible para ayudarte a elegir los productos "
+"correctos para tu proyecto."
+msgstr "Our technical team is available to help you choose the right products for your project."
+
+#: templates/blog/includes/_cta_whatsapp.html:20
+msgid "Consultar por WhatsApp"
+msgstr "Contact us on WhatsApp"
+
+#: templates/blog/includes/_sidebar_products.html:9
+msgid "Productos Relacionados"
+msgstr "Related Products"
+
+#: templates/blog/post_detail.html:141
+msgid "Lectura"
+msgstr "Reading time"
+
+#: templates/blog/post_detail.html:142 templates/blog/post_list.html:136
+msgid "vistas"
+msgstr "views"
+
+#: templates/blog/post_detail.html:163
+msgid "Puntos Clave / Resumen Ejecutivo"
+msgstr "Key Takeaways / Executive Summary"
+
+#: templates/blog/post_detail.html:186
+msgid "Compartir este artículo"
+msgstr "Share this article"
+
+#: templates/blog/post_detail.html:226
+msgid "Posts relacionados"
+msgstr "Related posts"
+
+#: templates/blog/post_detail.html:259 templates/blog/post_list.html:154
+msgid "Leer más"
+msgstr "Read more"
+
+#: templates/blog/post_list.html:5
+msgid "Blog - Artículos de Ferretería e Industria | Bulonera Alvear"
+msgstr "Blog - Hardware & Industrial Articles | Bulonera Alvear"
+
+#: templates/blog/post_list.html:7
+msgid ""
+"Lee nuestros artículos sobre ferretería, bulonería industrial y guías "
+"técnicas. Contenido especializado para profesionales y emprendedores."
+msgstr "Read our articles on hardware, industrial fasteners and technical guides. Specialized content for professionals and contractors."
+
+#: templates/blog/post_list.html:19
+msgid "Artículos técnicos, guías y novedades sobre ferretería industrial"
+msgstr "Technical articles, guides and news on industrial hardware"
+
+#: templates/blog/post_list.html:30
+msgid "Artículos técnicos sobre ferretería industrial"
+msgstr "Technical articles on industrial hardware"
+
+#: templates/blog/post_list.html:47
+msgid "Blog de Ferretería"
+msgstr "Hardware Blog"
+
+#: templates/blog/post_list.html:48
+msgid "Guías técnicas, consejos y novedades para profesionales e industria"
+msgstr "Technical guides, tips and news for industry professionals"
+
+#: templates/blog/post_list.html:61
+msgid "Filtrar por:"
+msgstr "Filter by:"
+
+#: templates/blog/post_list.html:64
+msgid "Todos"
+msgstr "All"
+
+#: templates/blog/post_list.html:167
+msgid "Primera"
+msgstr "First"
+
+#: templates/blog/post_list.html:171
+msgid "Anterior"
+msgstr "Previous"
+
+#: templates/blog/post_list.html:176
+msgid "Página"
+msgstr "Page"
+
+#: templates/blog/post_list.html:176
+msgid "de"
+msgstr "of"
+
+#: templates/blog/post_list.html:182
+msgid "Siguiente"
+msgstr "Next"
+
+#: templates/blog/post_list.html:186
+msgid "Última"
+msgstr "Last"
+
+#: templates/blog/post_list.html:198
+msgid "No hay artículos"
+msgstr "No articles found"
+
+#: templates/blog/post_list.html:199
+msgid "Vuelve pronto para nuevos contenidos"
+msgstr "Come back soon for new content"
+
+#: templates/blog/post_list.html:202
+msgid "Volver a la tienda"
+msgstr "Back to store"

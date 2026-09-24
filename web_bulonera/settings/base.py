@@ -78,6 +78,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -98,6 +99,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'django.template.context_processors.i18n',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'web_bulonera.context_processors.meta_settings',
@@ -158,6 +160,16 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
 LANGUAGE_CODE = 'es-ar'
+
+LANGUAGES = [
+    ('es', 'Español'),
+    ('en', 'English'),
+    ('pt', 'Português'),
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / 'blog' / 'locale',
+]
 
 TIME_ZONE = 'America/Argentina/Buenos_Aires'
 

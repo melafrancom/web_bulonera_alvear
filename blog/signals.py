@@ -58,6 +58,14 @@ def notify_indexnow_on_post_change(sender, instance, created, **kwargs):
         'urlList': [post_url],
     }
     
+    # Notificar URLs de traducciones existentes (EN, PT)
+    for translation in instance.translations.all():
+        try:
+            tr_url = f"{site_url}{translation.get_absolute_url()}"
+            payload['urlList'].append(tr_url)
+        except Exception as e:
+            logger.debug(f"[IndexNow] Error obteniendo URL de traducción {translation.id}: {e}")
+    
     try:
         response = requests.post(
             INDEXNOW_API_URL,

@@ -2,7 +2,25 @@
 from django.contrib import admin
 from django.utils import timezone
 from ckeditor.widgets import CKEditorWidget
-from blog.models import Post, SocialMetadata, PostTag
+from blog.models import Post, SocialMetadata, PostTag, PostTranslation
+
+
+class PostTranslationInline(admin.StackedInline):
+    """Inline para cargar traducciones EN/PT de un post."""
+    model = PostTranslation
+    extra = 0
+    max_num = 2  # Solo en/pt
+    fields = (
+        'language', 'title', 'slug', 'content', 'excerpt',
+        'image_alt', 'meta_title', 'meta_description'
+    )
+    prepopulated_fields = {'slug': ('title',)}
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        """Usar CKEditorWidget para el campo content de traducciones."""
+        if db_field.name == 'content':
+            kwargs['widget'] = CKEditorWidget(config_name='blog')
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
 
 class SocialMetadataInline(admin.StackedInline):
@@ -41,9 +59,9 @@ class PostAdmin(admin.ModelAdmin):
         'title', 'post_type', 'is_published', 'published_date', 'views_count', 'author'
     ]
     list_filter = ['post_type', 'is_published', 'created_date', 'tags']
-    search_fields = ['title', 'content', 'excerpt']
+    search_fields = ['title', 'content', 'excerpt', 'translations__title']
     autocomplete_fields = ['featured_image', 'tags']
-    inlines = [SocialMetadataInline]
+    inlines = [PostTranslationInline, SocialMetadataInline]
     readonly_fields = ['views_count', 'created_date', 'modified_date', 'author']
     actions = [make_published, make_unpublished]
     

@@ -1,0 +1,126 @@
+# Portuguese translations for Bulonera Alvear Blog
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-24 14:29-0300\n"
+"PO-Revision-Date: 2026-09-24 14:30-0300\n"
+"Last-Translator: Tech Lead <[EMAIL_ADDRESS]>\n"
+"Language-Team: Portuguese\n"
+"Language: pt\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: templates/blog/includes/_cta_whatsapp.html:7
+msgid "¿Necesitás asesoramiento?"
+msgstr "Precisa de assessoria?"
+
+#: templates/blog/includes/_cta_whatsapp.html:10
+msgid ""
+"Nuestro equipo técnico está disponible para ayudarte a elegir los productos "
+"correctos para tu proyecto."
+msgstr "Nossa equipe técnica está disponível para ajudá-lo a escolher os produtos corretos para o seu projeto."
+
+#: templates/blog/includes/_cta_whatsapp.html:20
+msgid "Consultar por WhatsApp"
+msgstr "Consultar pelo WhatsApp"
+
+#: templates/blog/includes/_sidebar_products.html:9
+msgid "Productos Relacionados"
+msgstr "Produtos Relacionados"
+
+#: templates/blog/post_detail.html:141
+msgid "Lectura"
+msgstr "Leitura"
+
+#: templates/blog/post_detail.html:142 templates/blog/post_list.html:136
+msgid "vistas"
+msgstr "visualizações"
+
+#: templates/blog/post_detail.html:163
+msgid "Puntos Clave / Resumen Ejecutivo"
+msgstr "Pontos-Chave / Resumo Executivo"
+
+#: templates/blog/post_detail.html:186
+msgid "Compartir este artículo"
+msgstr "Compartilhar este artigo"
+
+#: templates/blog/post_detail.html:226
+msgid "Posts relacionados"
+msgstr "Posts relacionados"
+
+#: templates/blog/post_detail.html:259 templates/blog/post_list.html:154
+msgid "Leer más"
+msgstr "Leia mais"
+
+#: templates/blog/post_list.html:5
+msgid "Blog - Artículos de Ferretería e Industria | Bulonera Alvear"
+msgstr "Blog - Artigos de Ferragens e Indústria | Bulonera Alvear"
+
+#: templates/blog/post_list.html:7
+msgid ""
+"Lee nuestros artículos sobre ferretería, bulonería industrial y guías "
+"técnicas. Contenido especializado para profesionales y emprendedores."
+msgstr "Leia nossos artigos sobre ferragens, fixadores industriais e guias técnicos. Conteúdo especializado para profissionais e empresas."
+
+#: templates/blog/post_list.html:19
+msgid "Artículos técnicos, guías y novedades sobre ferretería industrial"
+msgstr "Artigos técnicos, guias e novidades sobre ferragens industriais"
+
+#: templates/blog/post_list.html:30
+msgid "Artículos técnicos sobre ferretería industrial"
+msgstr "Artigos técnicos sobre ferragens industriais"
+
+#: templates/blog/post_list.html:47
+msgid "Blog de Ferretería"
+msgstr "Blog de Ferragens"
+
+#: templates/blog/post_list.html:48
+msgid "Guías técnicas, consejos y novedades para profesionales e industria"
+msgstr "Guias técnicos, dicas e novidades para profissionais e indústria"
+
+#: templates/blog/post_list.html:61
+msgid "Filtrar por:"
+msgstr "Filtrar por:"
+
+#: templates/blog/post_list.html:64
+msgid "Todos"
+msgstr "Todos"
+
+#: templates/blog/post_list.html:167
+msgid "Primera"
+msgstr "Primeira"
+
+#: templates/blog/post_list.html:171
+msgid "Anterior"
+msgstr "Anterior"
+
+#: templates/blog/post_list.html:176
+msgid "Página"
+msgstr "Página"
+
+#: templates/blog/post_list.html:176
+msgid "de"
+msgstr "de"
+
+#: templates/blog/post_list.html:182
+msgid "Siguiente"
+msgstr "Próxima"
+
+#: templates/blog/post_list.html:186
+msgid "Última"
+msgstr "Última"
+
+#: templates/blog/post_list.html:198
+msgid "No hay artículos"
+msgstr "Não há artigos"
+
+#: templates/blog/post_list.html:199
+msgid "Vuelve pronto para nuevos contenidos"
+msgstr "Volte em breve para novos conteúdos"
+
+#: templates/blog/post_list.html:202
+msgid "Volver a la tienda"
+msgstr "Voltar para a loja"

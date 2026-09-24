@@ -4,6 +4,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils import timezone
+from django.utils.translation import override
 
 
 class PostTag(models.Model):
@@ -262,6 +263,99 @@ class Post(models.Model):
     
     def __str__(self):
         return self.title
+
+
+class PostTranslation(models.Model):
+    """
+    Traducciones normalizadas de artículos del blog (EN, PT).
+    
+    Qué: Almacena título, slug, contenido y SEO metadata en idioma extranjero.
+    Por qué: Modelo normalizado (FK 1-a-N) en lugar de columnas duplicadas,
+    para poder agregar idiomas futuros sin migraciones de esquema.
+    
+    Invariantes:
+    - Un Post tiene como máximo 1 traducción por idioma (unique_together).
+    - El slug es único por idioma (unique_together) para evitar colisiones de URL.
+    - Si no existe traducción, el post queda oculto en /en/ o /pt/ (anti Thin Content).
+    """
+    LANGUAGE_CHOICES = [
+        ('en', 'English'),
+        ('pt', 'Português'),
+    ]
+
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='translations',
+        help_text="Artículo principal al que pertenece esta traducción"
+    )
+    language = models.CharField(
+        max_length=5,
+        choices=LANGUAGE_CHOICES,
+        db_index=True,
+        help_text="Código del idioma (en, pt)"
+    )
+    title = models.CharField(
+        max_length=200,
+        help_text="Título traducido del artículo"
+    )
+    slug = models.SlugField(
+        max_length=200,
+        help_text="Slug SEO en el idioma correspondiente (ej: grade-8-bolts-guide)"
+    )
+    content = models.TextField(
+        help_text="Contenido completo del artículo en este idioma (HTML/CKEditor)"
+    )
+    excerpt = models.CharField(
+        max_length=300,
+        blank=True,
+        help_text="Resumen traducido para previews y meta description"
+    )
+    image_alt = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Texto alternativo de la imagen en este idioma"
+    )
+    meta_title = models.CharField(
+        max_length=70,
+        blank=True,
+        help_text="Meta título traducido para SEO (máx 70 caracteres)"
+    )
+    meta_description = models.CharField(
+        max_length=160,
+        blank=True,
+        help_text="Meta descripción traducida para SEO (máx 160 caracteres)"
+    )
+    created_date = models.DateTimeField(auto_now_add=True)
+    modified_date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Traducción de Artículo"
+        verbose_name_plural = "Traducciones de Artículos"
+        unique_together = [
+            ('post', 'language'),   # Solo 1 traducción por idioma por post
+            ('language', 'slug'),   # Slug único por idioma
+        ]
+        indexes = [
+            models.Index(fields=['language', 'slug']),
+        ]
+
+    def save(self, *args, **kwargs):
+        """Auto-rellenar meta_title y meta_description desde título y excerpt."""
+        if not self.meta_title:
+            self.meta_title = self.title[:60]
+        if not self.meta_description and self.excerpt:
+            self.meta_description = self.excerpt[:160]
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self) -> str:
+        """URL absoluta de la traducción con prefijo de idioma."""
+        from django.urls import reverse
+        with override(self.language):
+            return reverse('blog:post_detail', args=[self.slug])
+
+    def __str__(self):
+        return f"{self.post.title} [{self.language.upper()}]"
 
 
 class SocialMetadata(models.Model):

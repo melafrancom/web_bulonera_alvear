@@ -1,0 +1,40 @@
+{% load i18n %}
+{# Selector de idioma — Solo visible en sección Blog #}
+<div class="flex items-center gap-2 text-sm bg-gray-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-slate-700 w-fit">
+  <span class="text-gray-500 dark:text-gray-400" aria-hidden="true">🌐</span>
+  {% get_available_languages as languages %}
+  {% get_current_language as current_lang %}
+  {% for lang_code, lang_name in languages %}
+    {% if lang_code == current_lang or lang_code == current_lang|slice:":2" %}
+      <span class="font-bold text-blue-600 dark:text-blue-400">{{ lang_name }}</span>
+    {% else %}
+      {% if post and available_translations %}
+        {# En vista de detalle, enlazar a la traducción directa si existe #}
+        {% if lang_code == 'es' %}
+          <a href="{{ post.get_absolute_url }}"
+             class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition">
+            {{ lang_name }}
+          </a>
+        {% else %}
+          {% with found_tr=None %}
+            {% for tr in available_translations %}
+              {% if tr.language == lang_code %}
+                <a href="{{ tr.get_absolute_url }}"
+                   class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition">
+                  {{ lang_name }}
+                </a>
+              {% endif %}
+            {% endfor %}
+          {% endwith %}
+        {% endif %}
+      {% else %}
+        {# En vista de lista o fallback general #}
+        <a href="/{% if lang_code != 'es' %}{{ lang_code }}/{% endif %}blog/"
+           class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition">
+          {{ lang_name }}
+        </a>
+      {% endif %}
+    {% endif %}
+    {% if not forloop.last %}<span class="text-gray-300 dark:text-gray-600">|</span>{% endif %}
+  {% endfor %}
+</div>

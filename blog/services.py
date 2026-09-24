@@ -5,27 +5,49 @@ from datetime import datetime
 
 from django.db.models import Q, QuerySet, F
 from django.utils import timezone
+from django.utils.translation import get_language
 
-from blog.models import Post, PostTag
+from blog.models import Post, PostTag, PostTranslation
 
 logger = logging.getLogger(__name__)
 
 
 class BlogService:
-    """Servicio para la lógica de negocio del blog"""
+    """Servicio para la lógica de negocio del blog con soporte i18n."""
     
     @staticmethod
-    def get_published_posts(tag_slug: Optional[str] = None) -> QuerySet:
-        """
-        Obtiene posts publicados cuya fecha de publicación ya llegó.
-        Soporta scheduling: posts con published_date en el futuro no se muestran.
+    def _get_active_lang() -> str:
+        """Obtiene el idioma activo del request actual vía LocaleMiddleware.
         
-        Args:
-            tag_slug: Slug del tag para filtrar (opcional)
+        Qué: Retorna el código de idioma base en minúsculas (ej: 'es', 'en', 'pt').
+        Por qué: Normaliza códigos regionales como 'es-ar' a 'es' para comparaciones internas consistentes.
         
         Returns:
-            QuerySet ordenado por published_date descendente
+            Código de idioma simplificado de 2 caracteres.
         """
+        lang = get_language() or 'es'
+        # REGLA: Normalizar 'es-ar' -> 'es' para comparaciones internas de traducción
+        return lang.split('-')[0].lower()
+    
+    @staticmethod
+    def get_published_posts(tag_slug: Optional[str] = None, lang: Optional[str] = None) -> QuerySet:
+        """Obtiene posts publicados cuya fecha de publicación ya llegó.
+        
+        Qué: Retorna posts en el idioma activo. Para idiomas no-base (en, pt),
+        solo retorna posts que tienen traducción completa registrada.
+        Por qué: Evita penalización de Google por Thin Content (páginas vacías
+        o duplicadas en inglés/portugués que solo muestran texto en español).
+        
+        Args:
+            tag_slug: Slug del tag para filtrar (opcional).
+            lang: Código de idioma. Si es None, usa el idioma activo del request.
+        
+        Returns:
+            QuerySet ordenado por published_date descendente.
+        """
+        if lang is None:
+            lang = BlogService._get_active_lang()
+        
         now = timezone.now()
         qs = Post.objects.filter(
             is_published=True,
@@ -33,33 +55,76 @@ class BlogService:
         ).select_related(
             'featured_image', 'author'
         ).prefetch_related(
-            'tags', 'social_metadata'
+            'tags', 'social_metadata', 'translations'
         ).order_by('-published_date')
         
+        # REGLA: En idiomas no-base, solo listar posts con traducción completa
+        if lang != 'es':
+            qs = qs.filter(translations__language=lang).distinct()
+        
         if tag_slug:
-            qs = qs.filter(tags__slug=tag_slug)
+            qs = qs.filter(tags__slug=tag_slug).distinct()
         
         return qs
     
     @staticmethod
-    def get_post_by_slug(slug: str) -> Optional[Post]:
-        """
-        Obtiene un post publicado por slug (para vistas detalle).
+    def get_post_by_slug(slug: str, lang: Optional[str] = None) -> Optional[Post]:
+        """Obtiene un post publicado por slug, considerando el idioma activo.
+        
+        Qué: Para español, busca por Post.slug directamente.
+        Para en/pt, busca primero por PostTranslation.slug y retorna su post padre.
         
         Args:
-            slug: Slug del post
+            slug: Slug del post (en el idioma correspondiente).
+            lang: Código de idioma. Si es None, usa el idioma activo del request.
         
         Returns:
-            Post object o None si no existe o no está publicado
+            Post object o None si no existe, no está publicado,
+            o no tiene traducción en el idioma solicitado.
+        """
+        if lang is None:
+            lang = BlogService._get_active_lang()
+        
+        now = timezone.now()
+        
+        try:
+            if lang == 'es':
+                return Post.objects.select_related(
+                    'featured_image', 'author'
+                ).prefetch_related(
+                    'tags', 'social_metadata', 'translations'
+                ).get(slug=slug, is_published=True, published_date__lte=now)
+            
+            # Idiomas no-base: buscar por slug de traducción
+            translation = PostTranslation.objects.select_related(
+                'post', 'post__featured_image', 'post__author'
+            ).prefetch_related(
+                'post__tags', 'post__social_metadata', 'post__translations'
+            ).get(
+                slug=slug,
+                language=lang,
+                post__is_published=True,
+                post__published_date__lte=now
+            )
+            return translation.post
+        except (Post.DoesNotExist, PostTranslation.DoesNotExist):
+            logger.warning(f"Post no encontrado: slug={slug}, lang={lang}")
+            return None
+    
+    @staticmethod
+    def get_translation(post: Post, lang: str) -> Optional[PostTranslation]:
+        """Obtiene la traducción de un post en un idioma específico.
+        
+        Args:
+            post: Post padre.
+            lang: Código de idioma ('en' o 'pt').
+        
+        Returns:
+            PostTranslation o None si no existe.
         """
         try:
-            return Post.objects.select_related(
-                'featured_image', 'author'
-            ).prefetch_related(
-                'tags', 'social_metadata'
-            ).get(slug=slug, is_published=True)
-        except Post.DoesNotExist:
-            logger.warning(f"Post no encontrado: {slug}")
+            return post.translations.get(language=lang)
+        except PostTranslation.DoesNotExist:
             return None
     
     @staticmethod

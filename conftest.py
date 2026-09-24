@@ -11,7 +11,7 @@ from account.models import Account, UserProfile
 from category.models import Category, SubCategory
 from store.models import Product, ReviewRating
 from cart.models import Cart, CartItem
-from blog.models import Post, PostTag, SocialMetadata
+from blog.models import Post, PostTag, SocialMetadata, PostTranslation
 
 
 @pytest.fixture
@@ -198,4 +198,35 @@ def social_metadata(db_session, blog_post_social_repost):
         embed_code='<iframe src="https://www.instagram.com/p/ABC123DEF456/embed/" width="320" height="400"></iframe>',
         embed_url='https://www.instagram.com/p/ABC123DEF456/embed/'
     )
+
+
+@pytest.fixture
+def blog_post_translation_en(db_session, blog_post_article):
+    """Crea una traducción en inglés de un post existente."""
+    return PostTranslation.objects.create(
+        post=blog_post_article,
+        language='en',
+        title='How to Select Screws Correctly',
+        slug='how-to-select-screws-correctly',
+        content='<h2>Introduction</h2><p>In this guide you will learn how to choose the right screw...</p>',
+        excerpt='Learn how to choose the perfect screw for your project',
+        meta_title='Guide: How to Select Screws | Bulonera Alvear',
+        meta_description='Discover how to select screws according to DIN standards',
+    )
+
+
+@pytest.fixture
+def blog_post_translation_pt(db_session, blog_post_article):
+    """Crea una traducción en portugués de un post existente."""
+    return PostTranslation.objects.create(
+        post=blog_post_article,
+        language='pt',
+        title='Como Selecionar Parafusos Corretamente',
+        slug='como-selecionar-parafusos-corretamente',
+        content='<h2>Introdução</h2><p>Neste guia você aprenderá a escolher o parafuso certo...</p>',
+        excerpt='Aprenda a escolher o parafuso perfeito para seu projeto',
+        meta_title='Guia: Como Selecionar Parafusos | Bulonera Alvear',
+        meta_description='Descubra como selecionar parafusos segundo normas DIN',
+    )
+
 

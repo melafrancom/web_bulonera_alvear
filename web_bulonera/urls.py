@@ -17,6 +17,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from django.conf.urls.i18n import i18n_patterns
 from django.conf.urls.static import static
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
@@ -48,7 +49,6 @@ urlpatterns = [
     
     # Web URLs (Templates HTML)
     path('store/', include(('store.web.urls', 'store'))),
-    path('blog/', include(('blog.web.urls', 'blog'))),
     path('cart/', include(('cart.web.urls', 'cart'))),
     path('account/', include(('account.web.urls', 'account'))),
     path('orders/', include(('orders.web.urls', 'orders'))),
@@ -92,6 +92,14 @@ urlpatterns = [
     path("llms.txt", views.llms_txt),
     path("ads.txt", views.ads_txt),
 ]
+
+# Blog con soporte i18n: /blog/ (es), /en/blog/ (en), /pt/blog/ (pt)
+# POR QUÉ: prefix_default_language=False preserva /blog/ sin prefijo para español,
+# evitando romper URLs ya indexadas en Google y backlinks existentes.
+urlpatterns += i18n_patterns(
+    path('blog/', include(('blog.web.urls', 'blog'))),
+    prefix_default_language=False,
+)
 
 # SEC-005: Explicitación defensiva (static() ya retorna [] con DEBUG=False)
 if settings.DEBUG:

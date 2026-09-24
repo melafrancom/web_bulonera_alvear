@@ -3,19 +3,14 @@ from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 from django.utils import timezone
 
-from blog.models import Post, PostTag
+from blog.models import Post, PostTag, PostTranslation
 from blog.services import BlogService
 
 
 class BlogPostSitemap(Sitemap):
     """
-    Genera un sitemap XML de todos los posts publicados.
+    Genera un sitemap XML de todos los posts publicados en español.
     Necesario para descubrimiento por motores de búsqueda.
-    
-    Características:
-    - Incluye priority y changefreq para indicar importancia
-    - Ordena por última modificación para crawlers inteligentes
-    - Usa BlogService para obtener posts publicados con filtro de date
     """
     changefreq = 'weekly'
     priority = 0.8
@@ -34,15 +29,56 @@ class BlogPostSitemap(Sitemap):
         return reverse('blog:post_detail', kwargs={'slug': item.slug})
 
 
+class BlogPostEnglishSitemap(Sitemap):
+    """
+    Sitemap de posts del blog traducidos al inglés.
+    Solo incluye posts con PostTranslation(language='en').
+    """
+    changefreq = 'weekly'
+    priority = 0.8
+    protocol = 'https'
+    
+    def items(self):
+        return PostTranslation.objects.filter(
+            language='en',
+            post__is_published=True,
+            post__published_date__lte=timezone.now()
+        ).select_related('post')
+    
+    def lastmod(self, item):
+        return item.modified_date
+    
+    def location(self, item):
+        return item.get_absolute_url()
+
+
+class BlogPostPortugueseSitemap(Sitemap):
+    """
+    Sitemap de posts del blog traducidos al portugués.
+    Solo incluye posts con PostTranslation(language='pt').
+    """
+    changefreq = 'weekly'
+    priority = 0.8
+    protocol = 'https'
+    
+    def items(self):
+        return PostTranslation.objects.filter(
+            language='pt',
+            post__is_published=True,
+            post__published_date__lte=timezone.now()
+        ).select_related('post')
+    
+    def lastmod(self, item):
+        return item.modified_date
+    
+    def location(self, item):
+        return item.get_absolute_url()
+
+
 class BlogTagSitemap(Sitemap):
     """
     Genera un sitemap XML de todas las páginas de tags.
     Importante para facilitar indexación de taxonomía.
-    
-    Características:
-    - Priority menor que posts individuales (estos son agregadores)
-    - changefreq=daily porque nuevos posts afectan contenido del tag
-    - lastmod basado en el post más reciente del tag
     """
     changefreq = 'daily'
     priority = 0.6
@@ -70,5 +106,7 @@ class BlogTagSitemap(Sitemap):
 # Registro de sitemaps para pasarlo a Django Sitemap framework
 sitemaps = {
     'blog-posts': BlogPostSitemap,
+    'blog-posts-en': BlogPostEnglishSitemap,
+    'blog-posts-pt': BlogPostPortugueseSitemap,
     'blog-tags': BlogTagSitemap,
 }
