@@ -356,6 +356,13 @@ SPECTACULAR_SETTINGS = {
 }
 
 # ============================================================
+# LÍMITES GLOBALES DE SUBIDA (Defensa DoS - SEC-INF-006)
+# ============================================================
+# REGLA: Alineado con MAX_IMAGE_SIZE_BYTES de media_bank (10 MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 10 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024    # 10 MB
+
+# ============================================================
 # CKEDITOR CONFIGURATION
 # ============================================================
 CKEDITOR_UPLOAD_PATH = 'blog/uploads/'
