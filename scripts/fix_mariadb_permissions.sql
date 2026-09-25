@@ -1,20 +1,20 @@
 -- ============================================
--- FIX CRÍTICO: Permisos MariaDB para Docker
+-- FIX: Permisos MariaDB Confinados para Docker (SEC-INF-005)
 -- ============================================
--- Problema: El usuario bulonera_user fue creado con @'localhost'
--- MariaDB rechaza conexiones desde la IP Docker (172.x.x.x)
--- 
--- Solución: Permitir conexiones desde cualquier IP con @'%'
--- 
--- SEGURIDAD: @'%' es seguro porque el puerto 3306 NO debe estar
--- expuesto a internet. Verificar con: sudo ufw status
--- 
--- Ejecutar SOLO LA PRIMERA VEZ en el VPS:
+-- REGLA: Confinar acceso exclusivamente a la subred de Docker (172.%.%.%) y localhost.
+-- Previene que un error en el firewall (UFW/iptables) exponga la DB si el puerto 3306 escucha en 0.0.0.0.
+--
+-- Ejecutar en el VPS:
 -- mysql -u root -p < fix_mariadb_permissions.sql
 -- ============================================
 
--- Otorgar permisos desde cualquier IP
-GRANT ALL PRIVILEGES ON buloneraalvearDB.* TO 'bulonera_user'@'%' IDENTIFIED BY 'CAMBIAR_POR_PASSWORD_BD';
+-- Revocar y eliminar el usuario con comodín global '%' si existía
+REVOKE ALL PRIVILEGES ON buloneraalvearDB.* FROM 'bulonera_user'@'%';
+DROP USER IF EXISTS 'bulonera_user'@'%';
+
+-- Otorgar permisos EXCLUSIVAMENTE desde subred Docker (172.x.x.x) y localhost
+GRANT ALL PRIVILEGES ON buloneraalvearDB.* TO 'bulonera_user'@'172.%.%.%' IDENTIFIED BY 'CAMBIAR_POR_PASSWORD_BD';
+GRANT ALL PRIVILEGES ON buloneraalvearDB.* TO 'bulonera_user'@'localhost' IDENTIFIED BY 'CAMBIAR_POR_PASSWORD_BD';
 
 -- Aplicar cambios
 FLUSH PRIVILEGES;
@@ -22,5 +22,6 @@ FLUSH PRIVILEGES;
 -- Verificar permisos
 SELECT User, Host FROM mysql.user WHERE User = 'bulonera_user';
 
--- Verificar acceso a la base de datos
-SHOW GRANTS FOR 'bulonera_user'@'%';
+-- Verificar accesos a la base de datos
+SHOW GRANTS FOR 'bulonera_user'@'172.%.%.%';
+SHOW GRANTS FOR 'bulonera_user'@'localhost';
