@@ -1,10 +1,100 @@
 """Blog Models - Posts, Social Metadata, and Tags"""
+import nh3
 from django.db import models
 from django.conf import settings
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils import timezone
 from django.utils.translation import override
+
+
+# ==============================================================================
+# SANITIZACIÓN HTML CON NH3 (OWASP A03:2021 - Injection / XSS)
+# ==============================================================================
+
+# Tags permitidos en el contenido del blog (CKEditor)
+# POR QUÉ: Permite elementos estándar de artículos enriquecidos (títulos, tablas,
+# imágenes, listas, código), bloqueando scripts, applets e iframes en el body.
+BLOG_CONTENT_ALLOWED_TAGS = {
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'p', 'span', 'div', 'blockquote', 'pre', 'code', 'hr', 'br', 'section',
+    'strong', 'em', 'b', 'i', 'u', 's', 'strike', 'sub', 'sup',
+    'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+    'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption', 'colgroup', 'col',
+    'img', 'figure', 'figcaption',
+    'a',
+}
+
+BLOG_CONTENT_ALLOWED_ATTRIBUTES = {
+    '*': {'class', 'id', 'style', 'title', 'dir', 'lang'},
+    'a': {'href', 'title', 'rel', 'target'},
+    'img': {'src', 'alt', 'title', 'width', 'height', 'loading', 'decoding'},
+    'th': {'colspan', 'rowspan', 'scope', 'align', 'valign'},
+    'td': {'colspan', 'rowspan', 'scope', 'align', 'valign'},
+    'col': {'span', 'width'},
+    'colgroup': {'span', 'width'},
+}
+
+BLOG_SAFE_URL_SCHEMES = {'http', 'https', 'mailto', 'tel'}
+
+
+def clean_blog_content(raw_html: str) -> str:
+    """
+    Sanitiza HTML de artículos de blog usando nh3 para prevenir Stored XSS.
+
+    # REGLA: Ejecutar en Post.save() y PostTranslation.save().
+    # CUIDADO: iframes no permitidos aquí; usar SocialMetadata para embeds.
+    """
+    if not raw_html:
+        return raw_html
+    return nh3.clean(
+        raw_html,
+        tags=BLOG_CONTENT_ALLOWED_TAGS,
+        attributes=BLOG_CONTENT_ALLOWED_ATTRIBUTES,
+        url_schemes=BLOG_SAFE_URL_SCHEMES,
+        link_rel=None,
+    )
+
+
+# Allowlist para SocialMetadata.embed_code (embeds de redes sociales e iframes)
+# POR QUÉ: Los embeds de Instagram, TikTok, YouTube y Facebook requieren blockquote/iframe.
+SOCIAL_EMBED_ALLOWED_TAGS = {
+    'blockquote', 'div', 'p', 'a', 'span', 'img', 'iframe', 'section', 'strong', 'em', 'br',
+}
+
+SOCIAL_EMBED_ALLOWED_ATTRIBUTES = {
+    '*': {
+        'class', 'id', 'style', 'title', 'dir', 'lang', 'cite',
+        'data-instgrm-captioned', 'data-instgrm-permalink', 'data-instgrm-version',
+        'data-video-id',
+    },
+    'a': {'href', 'target', 'rel', 'title'},
+    'img': {'src', 'alt', 'width', 'height'},
+    'iframe': {
+        'src', 'width', 'height', 'frameborder', 'allowfullscreen',
+        'allow', 'title', 'scrolling', 'loading', 'referrerpolicy',
+    },
+}
+
+
+def clean_social_embed(raw_html: str) -> str:
+    """
+    Sanitiza código embed de redes sociales usando nh3 para prevenir XSS.
+
+    # REGLA: Ejecutar en SocialMetadata.save().
+    # POR QUÉ: Permite iframes y blockquotes con atributos oficiales de redes sociales,
+    # bloqueando scripts maliciosos y esquemas javascript:/data:.
+    """
+    if not raw_html:
+        return raw_html
+    return nh3.clean(
+        raw_html,
+        tags=SOCIAL_EMBED_ALLOWED_TAGS,
+        attributes=SOCIAL_EMBED_ALLOWED_ATTRIBUTES,
+        url_schemes={'http', 'https'},
+        link_rel=None,
+    )
+
 
 
 class PostTag(models.Model):
@@ -168,6 +258,10 @@ class Post(models.Model):
     
     def save(self, *args, **kwargs):
         """Auto-generar slug y rellenar SEO por defecto"""
+        # SEC-BLG-001: Sanitizar HTML del contenido para mitigar Stored XSS
+        if self.content:
+            self.content = clean_blog_content(self.content)
+
         if not self.slug:
             self.slug = self._generate_unique_slug()
         
@@ -342,6 +436,10 @@ class PostTranslation(models.Model):
 
     def save(self, *args, **kwargs):
         """Auto-rellenar meta_title y meta_description desde título y excerpt."""
+        # SEC-BLG-001: Sanitizar HTML de traducción para mitigar Stored XSS
+        if self.content:
+            self.content = clean_blog_content(self.content)
+
         if not self.meta_title:
             self.meta_title = self.title[:60]
         if not self.meta_description and self.excerpt:
@@ -407,6 +505,12 @@ class SocialMetadata(models.Model):
     class Meta:
         verbose_name = "Social Media Post"
         verbose_name_plural = "Social Media Posts"
-    
+
+    def save(self, *args, **kwargs):
+        """SEC-BLG-006: Sanitizar embed_code para prevenir Stored XSS."""
+        if self.embed_code:
+            self.embed_code = clean_social_embed(self.embed_code)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.get_platform_display()} — {self.post.title}"

@@ -38,8 +38,9 @@ def notify_indexnow_on_post_change(sender, instance, created, **kwargs):
     
     # Construir URL absoluta del post
     try:
-        relative_url = reverse('blog:blog-detail', kwargs={'slug': instance.slug})
-        site_url = getattr(settings, 'SITE_URL', 'https://buloneraalvear.online')
+        # SEC-BLG-002: Usar nombre canónico de URL 'blog:post_detail'
+        relative_url = reverse('blog:post_detail', kwargs={'slug': instance.slug})
+        site_url = getattr(settings, 'SITE_URL', 'https://buloneraalvear.online').rstrip('/')
         post_url = f"{site_url}{relative_url}"
     except Exception as e:
         logger.error(f"[IndexNow] Error construyendo URL para post {instance.id}: {e}")
@@ -51,8 +52,13 @@ def notify_indexnow_on_post_change(sender, instance, created, **kwargs):
         logger.warning("[IndexNow] INDEXNOW_API_KEY no configurado")
         return
     
+    # SEC-BLG-002: Extraer host dinámicamente de SITE_URL en lugar de hardcodear
+    from urllib.parse import urlparse
+    parsed_site = urlparse(site_url)
+    host = parsed_site.hostname or 'buloneraalvear.online'
+
     payload = {
-        'host': 'bulonera-alvear.com.ar',
+        'host': host,
         'key': indexnow_key,
         'keyLocation': f"{site_url}/.well-known/IndexNow/{indexnow_key}.txt",
         'urlList': [post_url],

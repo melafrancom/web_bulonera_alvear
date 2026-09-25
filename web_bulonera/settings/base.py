@@ -374,7 +374,8 @@ CKEDITOR_CONFIGS = {
             ['NumberedList', 'BulletedList', 'Blockquote'],
             ['Link', 'Unlink'],
             ['Image', 'Table', 'HorizontalRule'],
-            ['RemoveFormat', 'Source'],
+            # SEC-BLG-004: Eliminar botón 'Source' para evitar inyección de HTML/JS crudo
+            ['RemoveFormat'],
             ['Undo', 'Redo'],
         ],
         'height': 400,

@@ -18,7 +18,8 @@ class SocialMetadataSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SocialMetadata
-        fields = ['platform', 'platform_display', 'original_url', 'embed_url', 'embed_code', 'captured_at']
+        # SEC-BLG-003: Excluir embed_code (HTML crudo) de API pública
+        fields = ['platform', 'platform_display', 'original_url', 'embed_url', 'captured_at']
         read_only_fields = ['captured_at']
 
 

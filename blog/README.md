@@ -39,4 +39,11 @@ graph LR
 ## 📝 Notas de Detalle (Obsidian Vault)
 - **Validación Social**: El método `clean()` de `Post` restringe las reglas de negocio; no se permite guardar un post con tipo `social_repost` si no se ha asignado y completado su modelo relacionado `SocialMetadata`.
 - **Internacionalización (i18n)**: Rutas `/blog/` (español sin prefijo), `/en/blog/` (inglés) y `/pt/blog/` (portugués). Hreflang cruzado generado automáticamente en el detalle y catálogo de sitemaps XML dedicados (`blog-posts-en`, `blog-posts-pt`).
+- **Defensa en Profundidad & Sanitización HTML (OWASP A03:2021)**:
+  - `Post.save()` y `PostTranslation.save()` sanitizan el campo `content` mediante `nh3.clean()` utilizando una allowlist estricta de tags para artículos enriquecidos (`h1-h6`, `p`, `table`, `img`, `pre`, `code`, etc.), purgando cualquier `<script>`, manejador de eventos inline (`onerror`, `onclick`), esquemas `javascript:` e `<iframe>`.
+  - `SocialMetadata.save()` sanitiza `embed_code` con allowlist orientada a widgets e iframes oficiales (Instagram, TikTok, YouTube), filtrando tags ejecutables no autorizados.
+  - El botón `Source` de CKEditor ha sido desactivado en `CKEDITOR_CONFIGS['blog']` para evitar la inyección de HTML crudo en el navegador.
+  - La API REST (`SocialMetadataSerializer`) excluye `embed_code` para prevenir fugas de código hacia clientes externos.
+- **Señal IndexNow (SEO)**: Emite pings asíncronos a la API de IndexNow al publicar/modificar un post, resolviendo dinámicamente `blog:post_detail` y obteniendo el hostname desde `settings.SITE_URL`.
+
 
