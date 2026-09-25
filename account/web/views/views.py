@@ -213,8 +213,31 @@ def edit_profile(request):
         profile_form = UserProfileForm(request.POST, request.FILES, instance=userprofile)
         
         if user_form.is_valid() and profile_form.is_valid():
-            user_form.save()
-            profile_form.save()
+            # POR QUÉ: Delegar persistencia y lógica de actualización al servicio de dominio (SEC-INF-007)
+            ProfileUpdateService.update_user_profile(
+                user=request.user,
+                first_name=user_form.cleaned_data.get('first_name'),
+                last_name=user_form.cleaned_data.get('last_name'),
+                phone=user_form.cleaned_data.get('phone'),
+            )
+            if 'profile_picture' in request.FILES:
+                ProfileUpdateService.update_user_profile_picture(
+                    user=request.user,
+                    profile_picture=request.FILES['profile_picture'],
+                )
+            elif profile_form.cleaned_data.get('profile_picture') is False:
+                ProfileUpdateService.update_user_profile_picture(
+                    user=request.user,
+                    profile_picture=None,
+                )
+            ProfileUpdateService.update_user_profile_address(
+                user=request.user,
+                address_line_1=profile_form.cleaned_data.get('address_line_1'),
+                address_line_2=profile_form.cleaned_data.get('address_line_2'),
+                city=profile_form.cleaned_data.get('city'),
+                state=profile_form.cleaned_data.get('state'),
+                country=profile_form.cleaned_data.get('country'),
+            )
             messages.success(request, 'Tu información fue guardada con éxito.')
             return redirect('account:dashboard')
     else:

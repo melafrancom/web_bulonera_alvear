@@ -1,11 +1,13 @@
 from typing import Any, Mapping
 from django import forms
 from django.core.files.base import File
+from django.core.validators import FileExtensionValidator
 from django.db.models.base import Model
 from django.forms.utils import ErrorList
 
 # LOCAL APPS:
 from account.models import Account, UserProfile  
+from media_bank.upload_utils import validate_image_file
 
 #Debemos crear los formularios a utilizar: Formularios de registros, de usuario, y de perfil del usuario.
 class RegistrationForm(forms.ModelForm):
@@ -57,7 +59,16 @@ class UserForm(forms.ModelForm):
             self.fields[field].widget.attrs['class']='form-control'
 
 class UserProfileForm(forms.ModelForm):
-    profile_picture = forms.ImageField(required=False, error_messages = {'invalid': ('Solo archivos de imagen')}, widget=forms.FileInput)
+    # REGLA: Validar extensión y magic bytes de imagen en el formulario web antes de persistir
+    profile_picture = forms.ImageField(
+        required=False,
+        error_messages={'invalid': 'Solo archivos de imagen válidos.'},
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp']),
+            validate_image_file,
+        ],
+        widget=forms.FileInput,
+    )
     class Meta:
         model = UserProfile
         fields = ('address_line_1', 'address_line_2', 'city', 'state', 'country', 'profile_picture')

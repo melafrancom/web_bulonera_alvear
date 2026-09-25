@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from media_bank.upload_utils import overwrite_upload_path, create_clean_filename
+from django.core.validators import FileExtensionValidator
+from media_bank.upload_utils import overwrite_upload_path, create_clean_filename, validate_image_file
 
 def profile_picture_path(instance, filename):
     clean_name = create_clean_filename(filename)
@@ -97,7 +98,15 @@ class UserProfile(models.Model):
     user = models.OneToOneField(Account, on_delete=models.CASCADE)
     address_line_1 = models.CharField(max_length=100, blank=True)
     address_line_2 = models.CharField(max_length=100, blank=True)
-    profile_picture = models.ImageField(blank=True, upload_to=profile_picture_path)
+    # REGLA: Validador estricto de magic bytes y lista blanca de extensiones para mitigar SEC-INF-001
+    profile_picture = models.ImageField(
+        blank=True,
+        upload_to=profile_picture_path,
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp']),
+            validate_image_file,
+        ],
+    )
     city = models.CharField(max_length=50, blank=True)
     state = models.CharField(max_length=50, blank=True)
     country = models.CharField(max_length=50, blank=True)
