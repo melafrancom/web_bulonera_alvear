@@ -2,9 +2,10 @@ import os
 from urllib.parse import urlparse
 import nh3
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.urls import reverse
-from media_bank.upload_utils import overwrite_upload_path, create_clean_filename
+from media_bank.upload_utils import overwrite_upload_path, create_clean_filename, validate_image_file
 
 SAFE_TAGS = {
     'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li',
@@ -72,7 +73,14 @@ class Category(models.Model):
         help_text="Imagen de categoría (desde Banco de Imágenes)"
     )
     # Legacy (Fase A - mantener para compatibilidad)
-    cat_image = models.ImageField(upload_to=category_image_path, blank=True)
+    cat_image = models.ImageField(
+        upload_to=category_image_path,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp']),
+            validate_image_file,
+        ],
+    )
 
     
     class Meta:
@@ -181,7 +189,14 @@ class SubCategory(models.Model):
         help_text="Imagen de subcategoría (desde Banco de Imágenes)"
     )
     # Legacy (Fase A - mantener para compatibilidad)
-    image = models.ImageField(upload_to=subcategory_image_path, blank=True)
+    image = models.ImageField(
+        upload_to=subcategory_image_path,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp']),
+            validate_image_file,
+        ],
+    )
     
     class Meta:
         verbose_name = 'Sub Category'

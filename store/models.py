@@ -11,9 +11,9 @@ CURRENCY = settings.CURRENCY
 from account.models import Account
 from category.models import Category, SubCategory
 from .utils import ImageProcessor
-from .utils import CarouselImageProcessor
+from django.core.validators import FileExtensionValidator
 import os
-from media_bank.upload_utils import overwrite_upload_path, create_clean_filename
+from media_bank.upload_utils import overwrite_upload_path, create_clean_filename, validate_image_file
 
 def store_product_image_path(instance, filename):
     clean_name = create_clean_filename(filename)
@@ -47,7 +47,14 @@ class Product(models.Model):
         help_text="Imagen principal del producto (desde Banco de Imágenes)"
     )
     # Legacy (Fase A - mantener para compatibilidad)
-    images = models.ImageField(blank=True, upload_to=store_product_image_path)
+    images = models.ImageField(
+        blank=True,
+        upload_to=store_product_image_path,
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp']),
+            validate_image_file,
+        ],
+    )
     image_alt = models.CharField(max_length=255, blank=True, help_text="Texto alternativo de la imagen principal (SEO)")
     price = models.FloatField()
     stock = models.IntegerField()
@@ -447,7 +454,14 @@ class ProductGallery(models.Model):
         help_text="Imagen de galería (desde Banco de Imágenes)"
     )
     # Legacy (Fase A - mantener para compatibilidad)
-    image = models.ImageField(upload_to=store_product_image_path, max_length=250)
+    image = models.ImageField(
+        upload_to=store_product_image_path,
+        max_length=250,
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp']),
+            validate_image_file,
+        ],
+    )
     alt = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
@@ -533,14 +547,22 @@ class CarouselImage(models.Model):
         upload_to=store_carousel_image_path,
         blank=True,
         null=True,
-        help_text="Imagen directa (legacy). Usar 'Imagen del banco' es preferible."
+        help_text="Imagen directa (legacy). Usar 'Imagen del banco' es preferible.",
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp']),
+            validate_image_file,
+        ],
     )
     # Legacy mobile field (Fase 10 - mantener para compatibilidad)
     image_mobile = models.ImageField(
         upload_to=store_carousel_image_path,
         blank=True,
         null=True,
-        help_text="Imagen mobile directa (legacy). Usar Banco de Imágenes preferentemente."
+        help_text="Imagen mobile directa (legacy). Usar Banco de Imágenes preferentemente.",
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp']),
+            validate_image_file,
+        ],
     )
     description = models.TextField(blank=True, help_text="Descripción de la imagen (opcional)")
     url = models.CharField(max_length=255, blank=True, null=True, help_text="URL a la que redirige al hacer clic")
@@ -841,12 +863,26 @@ class PromoBanner(models.Model):
     )
     
     # Legacy ImageFields (mantener para compatibilidad)
-    image_desktop = models.ImageField(upload_to=store_banner_image_path,
-        blank=True, null=True,
-        help_text="[LEGACY] Imagen para desktop (usar Banco de Imágenes preferentemente)")
-    image_mobile = models.ImageField(upload_to=store_banner_image_path,
-        blank=True, null=True,
-        help_text="[LEGACY] Imagen para mobile (usar Banco de Imágenes preferentemente)")
+    image_desktop = models.ImageField(
+        upload_to=store_banner_image_path,
+        blank=True,
+        null=True,
+        help_text="[LEGACY] Imagen para desktop (usar Banco de Imágenes preferentemente)",
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp']),
+            validate_image_file,
+        ],
+    )
+    image_mobile = models.ImageField(
+        upload_to=store_banner_image_path,
+        blank=True,
+        null=True,
+        help_text="[LEGACY] Imagen para mobile (usar Banco de Imágenes preferentemente)",
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp']),
+            validate_image_file,
+        ],
+    )
 
     # === Sistema de enlaces híbrido ===
     # Prioridad: url > link_product > link_category
