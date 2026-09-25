@@ -63,17 +63,27 @@ else
 fi
 echo ""
 
+# Cargar variables de entorno de producción si existen
+ENV_FILE="/var/www/bulonera/web_bulonera_alvear/.env"
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    . "$ENV_FILE" 2>/dev/null || true
+    set +a
+fi
+
 echo "🗄️  Database"
 echo "------------"
-check_service "MariaDB" "mysql -u bulonera_user -pDB_PASSWORD -e 'SELECT 1' buloneraalvearDB" || ((ERRORS++))
+# REGLA: Usar variable de entorno para credenciales, nunca hardcodear (SEC-INF-008)
+check_service "MariaDB" "mysql -u bulonera_user -p\"${DB_PASSWORD}\" -e 'SELECT 1' buloneraalvearDB" || ((ERRORS++))
 echo ""
 
 echo "🔴 Redis"
 echo "--------"
-check_service "Redis Ping" "redis-cli ping" || ((ERRORS++))
-check_service "Redis DB 3 (Celery Broker)" "redis-cli -n 3 ping" || ((ERRORS++))
-check_service "Redis DB 4 (Celery Result)" "redis-cli -n 4 ping" || ((ERRORS++))
-check_service "Redis DB 5 (Cache)" "redis-cli -n 5 ping" || ((ERRORS++))
+# REGLA: Autenticar con REDIS_PASSWORD para evitar fallos silenciosos (SEC-INF-009)
+check_service "Redis Ping" "redis-cli -a \"${REDIS_PASSWORD}\" ping" || ((ERRORS++))
+check_service "Redis DB 3 (Celery Broker)" "redis-cli -a \"${REDIS_PASSWORD}\" -n 3 ping" || ((ERRORS++))
+check_service "Redis DB 4 (Celery Result)" "redis-cli -a \"${REDIS_PASSWORD}\" -n 4 ping" || ((ERRORS++))
+check_service "Redis DB 5 (Cache)" "redis-cli -a \"${REDIS_PASSWORD}\" -n 5 ping" || ((ERRORS++))
 echo ""
 
 echo "🌐 Web Services"
