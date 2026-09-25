@@ -1,4 +1,5 @@
 """Blog Models - Posts, Social Metadata, and Tags"""
+import html
 import nh3
 from django.db import models
 from django.conf import settings
@@ -47,6 +48,14 @@ def clean_blog_content(raw_html: str) -> str:
     """
     if not raw_html:
         return raw_html
+
+    # UX-RESILIENCE: Si el contenido fue pegado en modo visual de CKEditor sin alternar
+    # a 'Source', CKEditor escapa los tags como &lt;div... o &lt;!--...
+    # Desescapamos para recuperar el HTML real antes de sanitizarlo con nh3.
+    stripped = raw_html.strip()
+    if '&lt;' in stripped and any(marker in stripped for marker in ('&lt;div', '&lt;p', '&lt;!--', '&lt;h2', '&lt;h3', '&lt;table', '&lt;section', '&lt;article')):
+        raw_html = html.unescape(raw_html)
+
     return nh3.clean(
         raw_html,
         tags=BLOG_CONTENT_ALLOWED_TAGS,

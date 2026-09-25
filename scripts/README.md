@@ -3,6 +3,7 @@
 > Colección de scripts para facilitar el deploy y mantenimiento de Bulonera Web en producción.
 >
 > **Documentación Relacionada:**
+> - [`SecurityChecklist.md`](../SecurityChecklist.md) — Manual de Seguridad, Hardening SEC-INF y Operaciones de Producción.
 > - [`DEPLOY_INSTRUCTIONS.md`](../DEPLOY_INSTRUCTIONS.md) — Instrucciones paso a paso del servidor.
 > - [`logs/README.md`](../logs/README.md) — Monitoreo de logs generados por estos procesos.
 

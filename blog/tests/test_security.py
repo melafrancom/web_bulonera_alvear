@@ -218,14 +218,42 @@ class TestBlogAPISecurityExposure:
 class TestCKEditorConfigurationSecurity:
     """Valida las configuraciones de seguridad del editor enriquecido CKEditor (SEC-BLG-004)."""
 
-    def test_ckeditor_toolbar_excludes_source_button(self):
+    def test_ckeditor_toolbar_includes_source_button_protected_by_nh3(self):
         """
-        # SEC-BLG-004: Verifica que el botón 'Source' no figure en el toolbar personalizado del blog.
+        # SEC-BLG-004: Verifica que el botón 'Source' esté habilitado para el flujo editorial
+        # (pegar plantillas HTML de artículos) y que la seguridad esté garantizada por nh3 en backend.
         """
         blog_config = settings.CKEDITOR_CONFIGS.get('blog', {})
         toolbar_custom = blog_config.get('toolbar_Custom', [])
 
         # Aplanar todos los subgrupos de herramientas del toolbar
         flattened_buttons = [btn for group in toolbar_custom for btn in group]
-        assert 'Source' not in flattened_buttons
+        assert 'Source' in flattened_buttons
         assert 'RemoveFormat' in flattened_buttons
+        assert blog_config.get('allowedContent') is True
+
+    def test_post_content_unescapes_accidental_html_entities_and_sanitizes(self, admin_user):
+        """
+        # UX-SEC: Si un admin pega HTML en modo visual de CKEditor, los tags vienen escapados
+        # como &lt;div... El modelo debe desescaparlos para renderizar HTML real y sanitizarlos con nh3.
+        """
+        escaped_html = (
+            '&lt;div class="blog-article-content prose prose-lg max-w-none text-slate-800"&gt;'
+            '&lt;!-- Apertura Answer-First --&gt;'
+            '&lt;p class="lead text-lg"&gt;Para sacar un tornillo barrido se debe aplicar calor.&lt;/p&gt;'
+            '&lt;h2&gt;Método 1&lt;/h2&gt;'
+            '&lt;script&gt;alert("XSS")&lt;/script&gt;'
+            '&lt;/div&gt;'
+        )
+        post = Post.objects.create(
+            title='Artículo con HTML pegado en modo visual',
+            content=escaped_html,
+            author=admin_user,
+        )
+        # Debe convertirse en HTML real para que el navegador lo estilice correctamente
+        assert '<div class="blog-article-content prose prose-lg max-w-none text-slate-800">' in post.content
+        assert '<h2>Método 1</h2>' in post.content
+        assert '<p class="lead text-lg">' in post.content
+        # Y nh3 debe seguir eliminando el script malicioso
+        assert '<script>' not in post.content
+        assert 'alert("XSS")' not in post.content

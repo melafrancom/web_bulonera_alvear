@@ -381,14 +381,14 @@ CKEDITOR_CONFIGS = {
             ['NumberedList', 'BulletedList', 'Blockquote'],
             ['Link', 'Unlink'],
             ['Image', 'Table', 'HorizontalRule'],
-            # SEC-BLG-004: Eliminar botón 'Source' para evitar inyección de HTML/JS crudo
-            ['RemoveFormat'],
+            # Flujo editorial: 'Source' permite pegar plantillas HTML enriquecidas; sanitizado por nh3 en Post.save()
+            ['RemoveFormat', 'Source'],
             ['Undo', 'Redo'],
         ],
         'height': 400,
         'width': '100%',
         'removePlugins': 'elementspath',
-        'extraAllowedContent': 'div(*); span(*); p(*); h2(*); h3(*); section(*)',
+        'allowedContent': True,
         'format_tags': 'p;h2;h3;h4;pre',
     },
 } 
