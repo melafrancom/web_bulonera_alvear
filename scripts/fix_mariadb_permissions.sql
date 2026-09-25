@@ -8,8 +8,7 @@
 -- mysql -u root -p < fix_mariadb_permissions.sql
 -- ============================================
 
--- Revocar y eliminar el usuario con comodín global '%' si existía
-REVOKE ALL PRIVILEGES ON buloneraalvearDB.* FROM 'bulonera_user'@'%';
+-- Eliminar el usuario con comodín global '%' si existía (idempotente)
 DROP USER IF EXISTS 'bulonera_user'@'%';
 
 -- Otorgar permisos EXCLUSIVAMENTE desde subred Docker (172.x.x.x) y localhost
