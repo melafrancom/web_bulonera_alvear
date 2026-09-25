@@ -41,7 +41,16 @@ COPY . /app/
 # Copy compiled CSS from builder
 COPY --from=builder /app/static/css/tailwind.min.css /app/static/css/
 
-RUN chmod +x /app/docker-entrypoint.sh
+# REGLA: Usuario no-root dedicado para uWSGI y Celery (SEC-INF-002)
+# CUIDADO: El UID debe coincidir con el propietario de /var/www/shared/media/ en el host.
+# stat -c '%u:%g' /var/www/shared/media/ -> si es www-data (33), usar --uid 33.
+RUN groupadd -g 1000 bulonera && \
+	useradd -u 1000 -g bulonera -G www-data -d /app -s /bin/false bulonera && \
+	chmod +x /app/docker-entrypoint.sh && \
+	mkdir -p /app/staticfiles /app/media /app/logs && \
+	chown -R bulonera:bulonera /app
+
+USER bulonera
 
 EXPOSE 8002
 
