@@ -38,8 +38,8 @@ def notify_indexnow_on_post_change(sender, instance, created, **kwargs):
     
     # Construir URL absoluta del post
     try:
-        # SEC-BLG-002: Usar nombre canónico de URL 'blog:post_detail'
-        relative_url = reverse('blog:post_detail', kwargs={'slug': instance.slug})
+        # SEC-BLG-002: Usar URL canónica del modelo Post
+        relative_url = instance.get_absolute_url()
         site_url = getattr(settings, 'SITE_URL', 'https://buloneraalvear.online').rstrip('/')
         post_url = f"{site_url}{relative_url}"
     except Exception as e:

@@ -14,6 +14,15 @@ from cart.models import Cart, CartItem
 from blog.models import Post, PostTag, SocialMetadata, PostTranslation
 
 
+@pytest.fixture(autouse=True)
+def reset_language():
+    """Garantiza aislamiento i18n entre tests restableciendo el idioma del hilo."""
+    from django.utils.translation import deactivate
+    deactivate()
+    yield
+    deactivate()
+
+
 @pytest.fixture
 def db_session(db):
     """Fixture que proporciona acceso a la base de datos para tests."""
