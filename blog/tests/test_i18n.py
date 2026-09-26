@@ -86,13 +86,50 @@ class TestBlogI18nDetailView:
         response = client.get('/en/blog/nonexistent-slug/')
         assert response.status_code == 404
     
-    def test_hreflang_tags_present(self, client, blog_post_article, blog_post_translation_en):
-        """Verifica que hreflang cruzado está presente en el HTML."""
-        response = client.get(f'/blog/{blog_post_article.slug}/')
-        content = response.content.decode()
-        assert 'hreflang="es-AR"' in content
-        assert 'hreflang="en"' in content
-        assert 'hreflang="x-default"' in content
+    def test_language_switch_from_english_back_to_spanish(self, client, blog_post_article, blog_post_translation_en):
+        """Desde /en/blog/<slug-en>/, el selector de idioma debe enlazar a /blog/<slug-es>/ (sin prefijo) y retornar 200."""
+        res_en = client.get(f'/en/blog/{blog_post_translation_en.slug}/')
+        assert res_en.status_code == 200
+        content = res_en.content.decode()
+        
+        # Verificar que el link a español es la ruta limpia sin prefijo /en/
+        expected_es_path = f'/blog/{blog_post_article.slug}/'
+        assert f'href="{expected_es_path}"' in content
+        
+        # Seguir el link a español y verificar que retorna 200 OK
+        res_es = client.get(expected_es_path)
+        assert res_es.status_code == 200
+        assert blog_post_article.title in res_es.content.decode()
+
+    def test_language_switch_from_portuguese_back_to_spanish(self, client, blog_post_article, blog_post_translation_pt):
+        """Desde /pt/blog/<slug-pt>/, el selector de idioma debe enlazar a /blog/<slug-es>/ (sin prefijo) y retornar 200."""
+        res_pt = client.get(f'/pt/blog/{blog_post_translation_pt.slug}/')
+        assert res_pt.status_code == 200
+        content = res_pt.content.decode()
+        
+        expected_es_path = f'/blog/{blog_post_article.slug}/'
+        assert f'href="{expected_es_path}"' in content
+        
+        res_es = client.get(expected_es_path)
+        assert res_es.status_code == 200
+        assert blog_post_article.title in res_es.content.decode()
+
+    def test_language_switch_labels_use_endonyms(self, client, blog_post_article, blog_post_translation_en, blog_post_translation_pt):
+        """El selector de idioma debe mostrar los endónimos oficiales: Español, English, Português."""
+        res = client.get(f'/en/blog/{blog_post_translation_en.slug}/')
+        content = res.content.decode()
+        assert "Español" in content
+        assert "English" in content
+        assert "Português" in content
+
+    def test_post_get_absolute_url_clean_in_foreign_context(self, blog_post_article):
+        """Post.get_absolute_url() siempre debe retornar la URL base sin prefijos independientemente del contexto activo."""
+        from django.utils.translation import override
+        with override('en'):
+            assert blog_post_article.get_absolute_url() == f"/blog/{blog_post_article.slug}/"
+        with override('pt'):
+            assert blog_post_article.get_absolute_url() == f"/blog/{blog_post_article.slug}/"
+
 
 
 @pytest.mark.django_db

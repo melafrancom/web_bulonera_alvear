@@ -29,7 +29,7 @@ BLOG_CONTENT_ALLOWED_TAGS = {
 BLOG_CONTENT_ALLOWED_ATTRIBUTES = {
     '*': {'class', 'id', 'style', 'title', 'dir', 'lang'},
     'a': {'href', 'title', 'rel', 'target'},
-    'img': {'src', 'alt', 'title', 'width', 'height', 'loading', 'decoding'},
+    'img': {'src', 'alt', 'title', 'width', 'height', 'loading', 'decoding', 'fetchpriority', 'srcset', 'sizes'},
     'th': {'colspan', 'rowspan', 'scope', 'align', 'valign'},
     'td': {'colspan', 'rowspan', 'scope', 'align', 'valign'},
     'col': {'span', 'width'},
@@ -344,9 +344,20 @@ class Post(models.Model):
         
         return slug
     
-    def get_absolute_url(self):
-        """URL absoluta del post (compatible con sitemap)"""
-        return reverse('blog:post_detail', args=[self.slug])
+    def get_absolute_url(self) -> str:
+        """URL absoluta del post en idioma base (español sin prefijo).
+        
+        # POR QUÉ: Cuando se invoca desde una vista en inglés o portugués (/en/ o /pt/),
+        # reverse() hereda el idioma activo del hilo y añade el prefijo /en/ o /pt/ al slug en español,
+        # provocando un error 404 al intentar regresar al artículo original.
+        # REGLA: Forzar siempre settings.LANGUAGE_CODE ('es-ar') para que prefix_default_language=False
+        # devuelva la ruta limpia /blog/<slug>/.
+        """
+        from django.conf import settings
+        from django.urls import reverse
+        from django.utils.translation import override
+        with override(settings.LANGUAGE_CODE):
+            return reverse('blog:post_detail', args=[self.slug])
     
     @property
     def image_url(self):
