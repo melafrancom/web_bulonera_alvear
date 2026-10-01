@@ -165,3 +165,68 @@ class TestPasswordValidationEnforcement:
     def test_short_password_rejected_in_reset(self, user):
         result = PasswordResetService.reset_password(str(user.pk), '123')
         assert result is False
+
+
+@pytest.mark.django_db
+class TestHTMLLoginRateLimiting:
+    """WEB-SEC-01: Rate limiting genérico en vistas HTML de autenticación."""
+
+    def test_login_returns_429_after_limit(self, client):
+        from django.core.cache import cache
+        cache.clear()
+        for i in range(5):
+            resp = client.post(reverse('account:login'), {
+                'email': f'test{i}@example.com', 'password': 'wrong'
+            })
+            assert resp.status_code in (200, 302), f"Intento {i+1} debió ser permitido"
+        
+        resp_blocked = client.post(reverse('account:login'), {
+            'email': 'test@example.com', 'password': 'wrong'
+        })
+        assert resp_blocked.status_code == 429
+        cache.clear()
+
+    def test_register_returns_429_after_limit(self, client):
+        from django.core.cache import cache
+        cache.clear()
+        for i in range(3):
+            client.post(reverse('account:register'), {
+                'first_name': 'Test', 'last_name': 'User',
+                'email': f'reg{i}@example.com', 'phone': '12345',
+                'password': 'StrongPass123!', 'confirm_password': 'StrongPass123!',
+            })
+        
+        resp_blocked = client.post(reverse('account:register'), {
+            'first_name': 'Bot', 'last_name': 'Spam',
+            'email': 'spam@example.com', 'phone': '99999',
+            'password': 'StrongPass123!', 'confirm_password': 'StrongPass123!',
+        })
+        assert resp_blocked.status_code == 429
+        cache.clear()
+
+    def test_forgot_password_returns_redirect_after_limit(self, client):
+        """POR QUÉ: forgotPassword siempre redirige (anti-enumeración SEC-004),
+        pero la lógica de check_rate_limit impide el envío de emails tras el límite."""
+        from django.core.cache import cache
+        cache.clear()
+        for i in range(3):
+            client.post(reverse('account:forgotPassword'), {'email': f'test{i}@example.com'})
+        
+        resp = client.post(reverse('account:forgotPassword'), {'email': 'victim@example.com'})
+        assert resp.status_code == 302  # Redirige siempre (anti-enumeración)
+        cache.clear()
+
+    def test_rate_limit_respects_x_forwarded_for(self, client):
+        from django.core.cache import cache
+        cache.clear()
+        headers = {'HTTP_X_FORWARDED_FOR': '181.44.120.5, 127.0.0.1'}
+        for i in range(5):
+            client.post(reverse('account:login'), {
+                'email': f'test{i}@example.com', 'password': 'wrong'
+            }, **headers)
+        
+        resp_blocked = client.post(reverse('account:login'), {
+            'email': 'test@example.com', 'password': 'wrong'
+        }, **headers)
+        assert resp_blocked.status_code == 429
+        cache.clear()

@@ -11,15 +11,7 @@ from contact.services import ContactService, ContactRateLimited
 logger = logging.getLogger(__name__)
 
 
-def _get_client_ip(request) -> str:
-    """Extrae la IP real del cliente considerando el proxy reverso (OLS / Nginx)."""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0].strip()
-    else:
-        ip = request.META.get('REMOTE_ADDR', '')
-    return ip
-
+from web_bulonera.utils import get_client_ip
 
 def contact_view(request):
     """Vista de formulario de contacto web tradicional."""
@@ -30,7 +22,7 @@ def contact_view(request):
     canonical_url = request.build_absolute_uri(reverse('contact:contact'))
 
     if request.method == 'POST':
-        client_ip = _get_client_ip(request)
+        client_ip = get_client_ip(request)
 
         # 1. Chequeo de Rate Limit (Redis / LocMem)
         try:

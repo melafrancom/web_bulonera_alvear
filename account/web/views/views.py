@@ -7,6 +7,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError as DjangoValidationError
 
 from account.web.forms import RegistrationForm, UserForm, UserProfileForm
+from web_bulonera.utils import get_client_ip, check_rate_limit, RateLimitExceeded
+
 from account.models import Account, UserProfile
 from account.services import (
     AccountRegistrationService,
@@ -27,6 +29,14 @@ def register(request):
     """Vista de registro de nuevos usuarios"""
     form = RegistrationForm()
     if request.method == 'POST':
+        # REGLA: Rate limiting anti-spam de registros masivos (WEB-SEC-01)
+        client_ip = get_client_ip(request)
+        try:
+            check_rate_limit(client_ip, scope='register', limit=3, timeout=60)
+        except RateLimitExceeded:
+            messages.error(request, "Has superado el límite de intentos permitidos. Por favor, espera un minuto.")
+            return render(request, 'account/register.html', {'form': form}, status=429)
+
         form = RegistrationForm(request.POST)
         if form.is_valid():
             try:
@@ -54,6 +64,14 @@ def register(request):
 def login(request):
     """Vista de login"""
     if request.method == 'POST':
+        # REGLA: Rate limiting anti fuerza bruta (WEB-SEC-01)
+        client_ip = get_client_ip(request)
+        try:
+            check_rate_limit(client_ip, scope='login', limit=5, timeout=60)
+        except RateLimitExceeded:
+            messages.error(request, "Has superado el límite de intentos permitidos. Por favor, espera un minuto.")
+            return render(request, 'account/login.html', status=429)
+
         email = request.POST.get('email', '')
         password = request.POST.get('password', '')
         
@@ -132,6 +150,14 @@ def dashboard(request):
 def forgotPassword(request):
     """Vista para solicitar recuperación de contraseña"""
     if request.method == 'POST':
+        # REGLA: Rate limiting anti fuerza bruta (WEB-SEC-01)
+        client_ip = get_client_ip(request)
+        try:
+            check_rate_limit(client_ip, scope='login', limit=5, timeout=60)
+        except RateLimitExceeded:
+            messages.error(request, "Has superado el límite de intentos permitidos. Por favor, espera un minuto.")
+            return render(request, 'account/login.html', status=429)
+
         email = request.POST.get('email', '')
         PasswordResetService.send_reset_email(email, request)
         # Mensaje siempre idéntico — mitiga enumeración de cuentas (SEC-004)

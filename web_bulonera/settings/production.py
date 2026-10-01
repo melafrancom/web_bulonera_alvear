@@ -34,3 +34,6 @@ EMAIL_USE_SSL = False
 EMAIL_TIMEOUT = 10  # Timeout en segundos para prevenir cuelgues de workers
 DEFAULT_FROM_EMAIL = env('EMAIL_TO_SEND_MESSAGES', default='contacto@buloneraalvear.online')
 CONTACT_EMAIL = env('EMAIL_TO_RECEIVE_MESSAGES', default='contacto@buloneraalvear.online')
+
+# POR QUÉ: El healthcheck interno ejecuta HTTP. Para evitar 301.
+SECURE_REDIRECT_EXEMPT = [r'^api/health/$']

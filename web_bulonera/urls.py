@@ -39,8 +39,25 @@ sitemaps = {
     **blog_sitemaps,  # Incluir blog-posts y blog-tags
 }
 
+from django.http import JsonResponse
+from web_bulonera.health import deep_health_check
+
+def admin_honeypot(request):
+    """# REGLA: Honeypot para registrar y descartar intentos de acceso automatizados a /admin/."""
+    return JsonResponse({'detail': 'Not found'}, status=404)
+
+_admin_slug = getattr(settings, 'ADMIN_URL', 'admin/').strip('/') + '/'
+if _admin_slug != 'admin/':
+    admin_routes = [
+        path(_admin_slug, admin.site.urls),
+        path('admin/', admin_honeypot, name='admin_honeypot'),
+    ]
+else:
+    admin_routes = [
+        ]
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    *admin_routes,
     path('', views.home, name='home'),
     
     # URLs planas para productos (Fase 1 - SEO Refactoring)
@@ -64,8 +81,6 @@ urlpatterns = [
     path('api/v1/contact/', include('contact.api.urls.urls')),
     
     # API Documentation
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     
     #Others:
     path('return-policy/', views.returnPolicy, name='return_policy'),
@@ -74,6 +89,7 @@ urlpatterns = [
     path('location/', views.location, name='location'),
     path('history/', views.history, name='history'),
     path('nosotros/', views.nosotros, name='nosotros'),
+    path('api/health/', deep_health_check, name='deep_health_check'),
     path('offline/', views.offline, name='offline'),
     
     # PWA - Service Worker (debe servirse desde la raíz, no /static/)
@@ -111,3 +127,10 @@ handler404 = 'web_bulonera.error_handlers.handler404'
 handler500 = 'web_bulonera.error_handlers.handler500'
 handler403 = 'web_bulonera.error_handlers.handler403'
 handler400 = 'web_bulonera.error_handlers.handler400'
+
+# API Documentation — Solo disponible en desarrollo (WEB-SEC-05)
+if settings.DEBUG:
+    urlpatterns += [
+        path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+        path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    ]

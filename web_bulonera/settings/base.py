@@ -392,3 +392,6 @@ CKEDITOR_CONFIGS = {
         'format_tags': 'p;h2;h3;h4;pre',
     },
 } 
+
+# Ruta ofuscada del panel de administración (SEC-003: anti-escaneo)
+ADMIN_URL = env('ADMIN_URL', default='admin/')
