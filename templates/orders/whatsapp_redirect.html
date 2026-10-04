@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
+{% load l10n %}
 
 {% block title %}Redirigiendo a WhatsApp - Bulonera Alvear{% endblock %}
 
@@ -86,7 +87,7 @@ window.dataLayer.push({
   'event': 'purchase',
   'ecommerce': {
     'transaction_id': '{{ order.order_number }}',
-    'value': {{ order.order_total|default:0.0 }},
+    'value': {{ order.order_total|default:"0.0"|unlocalize }},
     'currency': 'ARS',
     'items': [
       {% for item in ordered_products %}
@@ -94,7 +95,7 @@ window.dataLayer.push({
         'item_id': '{{ item.product.code }}',
         'item_name': '{{ item.product.name|escapejs }}',
         'item_category': '{{ item.product.category.category_name|escapejs }}',
-        'price': {{ item.purchase_price }},
+        'price': {{ item.purchase_price|unlocalize }},
         'quantity': {{ item.quantity }}
       }{% if not forloop.last %},{% endif %}
       {% endfor %}
@@ -148,14 +149,14 @@ function whatsappRedirect() {
         try {
           gtag('event', 'purchase', {
             'transaction_id': '{{ order.order_number }}',
-            'value': {{ order.order_total|default:0.0 }},
+            'value': {{ order.order_total|default:"0.0"|unlocalize }},
             'currency': 'ARS',
             'items': [
               {% for item in ordered_products %}
               {
                 'item_id': '{{ item.product.code }}',
                 'item_name': '{{ item.product.name|escapejs }}',
-                'price': {{ item.purchase_price }},
+                'price': {{ item.purchase_price|unlocalize }},
                 'quantity': {{ item.quantity }}
               }{% if not forloop.last %},{% endif %}
               {% endfor %}
@@ -171,7 +172,7 @@ function whatsappRedirect() {
       if (typeof fbq === 'function') {
         try {
           fbq('track', 'Purchase', {
-            'value': {{ order.order_total|default:0.0 }},
+            'value': {{ order.order_total|default:"0.0"|unlocalize }},
             'currency': 'ARS',
             'content_type': 'product',
             'contents': [

@@ -3,6 +3,7 @@
 {% load custom_filters %}
 {% load store_filters %}
 {% load humanize %}
+{% load l10n %}
 
 {% block title %}{{ single_product.meta_title|default:single_product.name }} | Bulonera Alvear{% endblock %}
 
@@ -179,9 +180,9 @@
                 fbq('track', 'ViewContent', {
                     content_type: 'product',
                     content_ids: ['{{ meta_pixel_data.id }}'],
-                    content_name: '{{ meta_pixel_data.title }}',
-                    content_category: '{{ single_product.category.name }}',
-                    value: '{{ price }}',
+                    content_name: '{{ meta_pixel_data.title|escapejs }}',
+                    content_category: '{{ single_product.category.category_name|escapejs }}',
+                    value: {{ price|default:"0.0"|unlocalize }},
                     currency: '{{ CURRENCY }}'
                 });
             }
@@ -282,9 +283,9 @@
                                             fbq('track', 'AddToCart', {
                                                 content_type: 'product',
                                                 content_ids: ['{{ meta_pixel_data.id }}'],
-                                                content_name: '{{ meta_pixel_data.title }}',
-                                                content_category: '{{ single_product.category.name }}',
-                                                value: '{{ price|floatformat:2 }}',
+                                                content_name: '{{ meta_pixel_data.title|escapejs }}',
+                                                content_category: '{{ single_product.category.category_name|escapejs }}',
+                                                value: {{ price|default:"0.0"|unlocalize }},
                                                 currency: '{{ CURRENCY }}'
                                             });
                                         }

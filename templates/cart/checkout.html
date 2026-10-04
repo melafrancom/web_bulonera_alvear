@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
+{% load l10n %}
 
 {% block title %}Checkout - Bulonera Alvear{% endblock %}
 
@@ -392,7 +393,7 @@ window.dataLayer = window.dataLayer || [];
 window.dataLayer.push({
   'event': 'begin_checkout',
   'ecommerce': {
-    'value': {{ total|default:0.0 }},
+    'value': {{ total|default:"0.0"|unlocalize }},
     'currency': 'ARS',
     'items': [
       {% for item in cart_items %}
@@ -400,7 +401,7 @@ window.dataLayer.push({
         'item_id': '{{ item.product.code }}',
         'item_name': '{{ item.product.name|escapejs }}',
         'item_category': '{{ item.product.category.category_name|escapejs }}',
-        'price': {{ item.purchase_price }},
+        'price': {{ item.purchase_price|unlocalize }},
         'quantity': {{ item.quantity }}
       }{% if not forloop.last %},{% endif %}
       {% endfor %}
