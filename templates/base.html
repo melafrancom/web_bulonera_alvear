@@ -131,15 +131,9 @@
          The cookie consent banner JS activates them when the user accepts.
          ═══════════════════════════════════════════════════════ -->
 
-    <!-- Google Analytics (gtag.js) — analytics consent -->
-    <script type="text/plain" data-consent="analytics" data-src="https://www.googletagmanager.com/gtag/js?id=G-23Z5V711SL"></script>
-    <script type="text/plain" data-consent="analytics">
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-23Z5V711SL');
-    </script>
-    
+    <!-- ba_track.js Facade (síncrono, no evalúa consentimiento por sí solo, encola eventos) -->
+    <script src="{% static 'js/ba_track.js' %}"></script>
+
     <!-- Google Tag Manager — analytics consent -->
     <script type="text/plain" data-consent="analytics">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -453,64 +447,7 @@
     </a>
     {% endif %}
 
-    <!-- Conversion Tracking Script (Sprint 5: Tarea 5.1) -->
-    <script>
-        function trackWhatsAppClick(ctaId, sku = '') {
-            try {
-                // Tracking event for Meta Pixel
-                if (typeof fbq === 'function') {
-                    fbq('trackCustom', 'WhatsAppContact', {
-                        content_name: 'WhatsApp Click',
-                        content_category: 'Lead Generation',
-                        cta_id: ctaId,
-                        product_sku: sku
-                    });
-                }
-                
-                // Tracking event for GA4
-                if (typeof gtag === 'function') {
-                    gtag('event', 'generate_lead', {
-                        'event_category': 'Engagement',
-                        'event_label': ctaId,
-                        'value': 1.0,
-                        'currency': 'ARS',
-                        'items': sku ? [{ 'item_id': sku }] : []
-                    });
-                }
-            } catch (e) {
-                console.warn('Analytics tracking error:', e);
-            }
-        }
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            // Set up click listeners on all WhatsApp buttons
-            const selectors = [
-                '#floating-whatsapp-btn',
-                '#whatsapp-product-consult-btn',
-                '#cta-band-whatsapp',
-                '#hero-cta-whatsapp',
-                '#final-cta-whatsapp',
-                '#history-cta-whatsapp'
-            ];
-            
-            selectors.forEach(selector => {
-                const elements = document.querySelectorAll(selector);
-                elements.forEach(el => {
-                    el.addEventListener('click', (e) => {
-                        const href = el.getAttribute('href') || '';
-                        let sku = '';
-                        try {
-                            if (href.includes('?text=')) {
-                                const urlParams = new URLSearchParams(href.split('?')[1]);
-                                sku = urlParams.get('text') || '';
-                            }
-                        } catch (err) {}
-                        trackWhatsAppClick(selector, sku);
-                    });
-                });
-            });
-        });
-    </script>
+    <!-- Conversion Tracking Script (Movido a static/js/ba_track.js) -->
 
     {% block extra_js %}{% endblock %}
 </body>

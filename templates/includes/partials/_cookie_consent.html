@@ -175,6 +175,14 @@ function cookieConsent() {
 
         _save() {
             localStorage.setItem('ba_cookie_consent', JSON.stringify(this.preferences));
+            
+            // Crear cookie espejo (1 año) para que el servidor pueda leer el consentimiento
+            const d = new Date();
+            d.setTime(d.getTime() + (365*24*60*60*1000));
+            const analytics = this.preferences.analytics ? '1' : '0';
+            const advertising = this.preferences.advertising ? '1' : '0';
+            document.cookie = "ba_consent=a=" + analytics + "|d=" + advertising + "; expires=" + d.toUTCString() + "; path=/; SameSite=Lax";
+            
             this.showBanner = false;
             this._activateScripts(this.preferences);
         },
@@ -214,6 +222,10 @@ function cookieConsent() {
                         el.remove();
                     });
                 }
+                
+                // Disparar evento global para que la fachada baTrack vacíe sus colas
+                window.dispatchEvent(new CustomEvent('ba:consent-applied', { detail: prefs }));
+                
             }, 3000);
 
             // Re-init Lucide icons for any new icons rendered de manera inmediata
