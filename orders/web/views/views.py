@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.urls import reverse
 import json
 import logging
+from django.conf import settings
 
 from orders.models import Order, OrderProduct
 from orders.web.forms import OrderForm
@@ -16,6 +17,7 @@ from orders.services import (
     CheckoutService,
     WhatsAppService
 )
+from tracking.services import MetaCapiService
 from cart.models import CartItem
 
 logger = logging.getLogger(__name__)
@@ -56,6 +58,16 @@ def place_order(request):
                 # Redirigir a WhatsApp
                 whatsapp_url = f'{reverse("orders:whatsapp_redirect")}?order_number={order.order_number}'
                 logger.info(f"Orden {order.order_number} creada exitosamente")
+                
+                # Flag de conversión para Frontend (evita duplicados si el usuario recarga la página)
+                request.session['ba_pending_purchase'] = order.order_number
+                
+                # Encolar Meta CAPI
+                try:
+                    MetaCapiService.enqueue_purchase(order, request)
+                except Exception as capi_err:
+                    logger.error(f"Error encolando CAPI: {capi_err}", exc_info=True)
+                
                 return redirect(whatsapp_url)
                 
             except ValueError as e:
@@ -260,11 +272,36 @@ def whatsapp_redirect(request):
         # Recuperar productos para el tracking de conversión
         ordered_products = OrderProduct.objects.filter(order=order)
         
+        # Validar si es una compra nueva (evita disparar el tag nuevamente si recarga la página)
+        pending_purchase_id = request.session.pop('ba_pending_purchase', None)
+        is_new_purchase = (pending_purchase_id == order_number)
+        
+        # Payloads de Tracking (ADR-04 json_script)
+        from tracking.services import TrackingPayloadService
+        meta_payload = TrackingPayloadService.build_purchase_custom_data(order)
+        ga4_payload = {
+            'transaction_id': str(order.order_number),
+            'value': float(order.order_total) if order.order_total else 0.0,
+            'currency': getattr(settings, 'CURRENCY', 'ARS'),
+            'items': [
+                {
+                    'item_id': str(item.product.code),
+                    'item_name': str(item.product.name),
+                    'item_category': str(item.product.category.category_name) if getattr(item.product, 'category', None) else '',
+                    'price': float(item.purchase_price) if item.purchase_price else 0.0,
+                    'quantity': int(item.quantity)
+                } for item in ordered_products
+            ]
+        }
+        
         context = {
             'order': order,
             'whatsapp_link': whatsapp_link,
             'order_number': order_number,
             'ordered_products': ordered_products,
+            'is_new_purchase': is_new_purchase,
+            'meta_payload': meta_payload,
+            'ga4_payload': ga4_payload,
         }
         
         return render(request, 'orders/whatsapp_redirect.html', context)

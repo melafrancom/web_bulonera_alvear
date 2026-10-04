@@ -72,7 +72,7 @@ INSTALLED_APPS = [
     'contact',
     'media_bank',
     'blog',
-
+    'tracking',
 ]
 
 MIDDLEWARE = [
@@ -395,3 +395,6 @@ CKEDITOR_CONFIGS = {
 
 # Ruta ofuscada del panel de administración (SEC-003: anti-escaneo)
 ADMIN_URL = env('ADMIN_URL', default='admin/')
+
+# Tokens para Meta CAPI
+META_CAPI_TOKEN = env('META_CAPI_TOKEN', default='')

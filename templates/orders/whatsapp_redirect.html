@@ -80,40 +80,39 @@
   </div>
 </div>
 
-<script>
-// 1. Inyección de dataLayer de e-commerce de compra de forma inmediata
-window.dataLayer = window.dataLayer || [];
-window.dataLayer.push({
-  'event': 'purchase',
-  'ecommerce': {
-    'transaction_id': '{{ order.order_number }}',
-    'value': {{ order.order_total|default:"0.0"|unlocalize }},
-    'currency': 'ARS',
-    'items': [
-      {% for item in ordered_products %}
-      {
-        'item_id': '{{ item.product.code }}',
-        'item_name': '{{ item.product.name|escapejs }}',
-        'item_category': '{{ item.product.category.category_name|escapejs }}',
-        'price': {{ item.purchase_price|unlocalize }},
-        'quantity': {{ item.quantity }}
-      }{% if not forloop.last %},{% endif %}
-      {% endfor %}
-    ]
-  }
-});
+{% if is_new_purchase %}
+{{ ga4_payload|json_script:"ga4-purchase-data" }}
+{{ meta_payload|json_script:"meta-purchase-data" }}
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.baTrack) {
+        // Enviar compra a GA4 (DataLayer)
+        const ga4Data = window.baTrack.fromScript('ga4-purchase-data');
+        if (ga4Data) {
+            window.baTrack.ecommerce('purchase', ga4Data);
+        }
+        
+        // Encolar evento a Meta Pixel
+        const metaData = window.baTrack.fromScript('meta-purchase-data');
+        if (metaData) {
+            const eventId = 'purchase.{{ order.order_number }}';
+            window.baTrack.meta('Purchase', metaData, eventId);
+        }
+    }
+});
+</script>
+{% endif %}
+
+<script>
 function whatsappRedirect() {
   return {
-    countdown: 7, // Subimos a 7s para dar tiempo al delay de 3s del cookie consent y envío del tag
+    countdown: 5,
     whatsappLink: "{{ whatsapp_link }}",
     countdownInterval: null,
-    trackingInterval: null,
-    purchaseTracked: false,
     
     init() {
       this.startCountdown();
-      this.startTrackingAttempts();
     },
     
     startCountdown() {
@@ -127,104 +126,24 @@ function whatsappRedirect() {
       }, 1000);
     },
     
-    // Intenta disparar los tags nativos de gtag y fbq que cargan con delay asíncrono
-    startTrackingAttempts() {
-      let attempts = 0;
-      this.trackingInterval = setInterval(() => {
-        attempts++;
-        if (this.trackPurchase() || attempts >= 14) { // 14 intentos = 7 segundos
-          clearInterval(this.trackingInterval);
-        }
-      }, 500);
-    },
-    
-    trackPurchase() {
-      if (this.purchaseTracked) return true;
-      
-      let trackedGtag = false;
-      let trackedFbq = false;
-      
-      // GA4 Purchase Event direct call (si ya cargó)
-      if (typeof gtag === 'function') {
-        try {
-          gtag('event', 'purchase', {
-            'transaction_id': '{{ order.order_number }}',
-            'value': {{ order.order_total|default:"0.0"|unlocalize }},
-            'currency': 'ARS',
-            'items': [
-              {% for item in ordered_products %}
-              {
-                'item_id': '{{ item.product.code }}',
-                'item_name': '{{ item.product.name|escapejs }}',
-                'price': {{ item.purchase_price|unlocalize }},
-                'quantity': {{ item.quantity }}
-              }{% if not forloop.last %},{% endif %}
-              {% endfor %}
-            ]
-          });
-          trackedGtag = true;
-        } catch (e) {
-          console.warn('Gtag e-commerce purchase error:', e);
-        }
-      }
-      
-      // Meta Pixel Purchase Event direct call (si ya cargó)
-      if (typeof fbq === 'function') {
-        try {
-          fbq('track', 'Purchase', {
-            'value': {{ order.order_total|default:"0.0"|unlocalize }},
-            'currency': 'ARS',
-            'content_type': 'product',
-            'contents': [
-              {% for item in ordered_products %}
-              {
-                'id': '{{ item.product.code }}',
-                'quantity': {{ item.quantity }}
-              }{% if not forloop.last %},{% endif %}
-              {% endfor %}
-            ]
-          });
-          trackedFbq = true;
-        } catch (e) {
-          console.warn('Facebook Pixel Purchase error:', e);
-        }
-      }
-      
-      // Consideramos rastreado si al menos uno corrió
-      if (trackedGtag || trackedFbq) {
-        this.purchaseTracked = true;
-        return true;
-      }
-      return false;
-    },
-    
     openWhatsApp() {
-      clearInterval(this.trackingInterval);
-      this.trackPurchase(); // Intento final de último segundo
+      const whatsappWindow = window.open(this.whatsappLink, "_blank");
       
-      // Esperar 300ms para asegurar la transmisión de red del beacon
-      setTimeout(() => {
-        const whatsappWindow = window.open(this.whatsappLink, "_blank");
-        
-        if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed == 'undefined') {
-          alert("Por favor, permite las ventanas emergentes para abrir WhatsApp automáticamente");
-        } else {
-          setTimeout(() => {
-            window.location.href = "{% url 'account:my_orders' %}";
-          }, 1500);
-        }
-      }, 300);
+      if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed == 'undefined') {
+        alert("Por favor, permite las ventanas emergentes para abrir WhatsApp automáticamente");
+      } else {
+        setTimeout(() => {
+          window.location.href = "{% url 'account:my_orders' %}";
+        }, 1500);
+      }
     },
     
     handleWhatsAppClick() {
       clearInterval(this.countdownInterval);
-      clearInterval(this.trackingInterval);
-      this.trackPurchase(); // Intento final de último segundo
       
-      // Esperar 300ms para asegurar la transmisión de red del beacon antes de redirigir la pestaña
       setTimeout(() => {
         window.location.href = "{% url 'account:my_orders' %}";
-      }, 1200);
+      }, 500);
     }
   }
 }
