@@ -1,6 +1,7 @@
 import pytest
 from django.test import Client
 from django.urls import reverse
+from store.models import Product, ProductTag
 
 
 @pytest.mark.django_db
@@ -17,6 +18,32 @@ class TestStoreViews:
         response = client.get(reverse('store:store'))
         assert response.status_code == 200
         assert 'products' in response.context
+
+    def test_store_view_filter_by_tags_and_context(self, client, category):
+        """Verifica que la vista de tienda filtra por parámetro GET ?tags y pasa available_tags al context."""
+        # Arrange
+        tag = ProductTag.objects.create(name="Destacado", slug="destacado")
+        p1 = Product.objects.create(
+            code='P-WEB-1', name='Producto Destacado', slug='p-web-1',
+            price=15.0, stock=5, category=category, is_available=True
+        )
+        p1.tags.add(tag)
+        p2 = Product.objects.create(
+            code='P-WEB-2', name='Producto Comun', slug='p-web-2',
+            price=25.0, stock=5, category=category, is_available=True
+        )
+
+        # Act
+        response = client.get(f"{reverse('store:store')}?tags=destacado")
+
+        # Assert
+        assert response.status_code == 200
+        assert 'available_tags' in response.context
+        assert 'tags' in response.context
+        assert 'destacado' in response.context['tags']
+        p_ids = [p.id for p in response.context['products']]
+        assert p1.id in p_ids
+        assert p2.id not in p_ids
 
     def test_store_view_with_category(self, client, category, product):
         """Verifica que la vista filtra por categoría y renderiza rich_description."""

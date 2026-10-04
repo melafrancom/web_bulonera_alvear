@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from store.models import (
     Product, ReviewRating, ProductGallery, Variation,
-    CarouselImage, FAQ, FAQCategory
+    CarouselImage, FAQ, FAQCategory, ProductTag
 )
 from category.models import Category, SubCategory
 
@@ -40,9 +40,17 @@ class VariationSerializer(serializers.ModelSerializer):
         fields = ['id', 'variation_category', 'variation_value', 'is_active']
 
 
+class ProductTagSerializer(serializers.ModelSerializer):
+    """Serializer para tags de productos"""
+    class Meta:
+        model = ProductTag
+        fields = ['id', 'name', 'slug']
+
+
 class ProductListSerializer(serializers.ModelSerializer):
     """Serializer para listado de productos"""
     category = CategorySimpleSerializer(read_only=True)
+    tags = ProductTagSerializer(many=True, read_only=True)
     average_review = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
     image_urls = serializers.SerializerMethodField()
@@ -52,7 +60,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'code', 'name', 'slug', 'price', 'sale_price', 'is_on_sale',
-            'discount_percentage', 'stock', 'is_available', 'category',
+            'discount_percentage', 'stock', 'is_available', 'category', 'tags',
             'images', 'image_urls', 'image_alt', 'brand', 'average_review',
             'review_count', 'display_price', 'created_date'
         ]
@@ -82,6 +90,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     """Serializer detallado para producto"""
     category = CategorySimpleSerializer(read_only=True)
     subcategories = SubCategorySimpleSerializer(many=True, read_only=True)
+    tags = ProductTagSerializer(many=True, read_only=True)
     gallery = ProductGallerySerializer(source='productgallery_set', many=True, read_only=True)
     average_review = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
@@ -95,7 +104,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'code', 'name', 'slug', 'description', 'price', 'sale_price',
             'is_on_sale', 'discount_percentage', 'stock', 'is_available',
-            'category', 'subcategories', 'images', 'image_urls', 'image_alt',
+            'category', 'subcategories', 'tags', 'images', 'image_urls', 'image_alt',
             'brand', 'condition', 'diameter', 'length', 'norm', 'grade',
             'material', 'colour', 'type', 'form', 'thread_formats', 'origin',
             'average_review', 'review_count', 'gallery', 'display_price',
@@ -213,6 +222,11 @@ class ProductFilterSerializer(serializers.Serializer):
     min_price = serializers.FloatField(required=False, min_value=0)
     max_price = serializers.FloatField(required=False, min_value=0)
     brand = serializers.CharField(required=False, allow_blank=True)
+    tags = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list
+    )
     sort_by = serializers.ChoiceField(
         choices=['id', 'price_asc', 'price_desc'],
         required=False,
@@ -236,4 +250,5 @@ __all__ = [
     'CarouselImageSerializer',
     'SearchSerializer',
     'ProductFilterSerializer',
+    'ProductTagSerializer',
 ]

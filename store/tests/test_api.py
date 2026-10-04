@@ -8,7 +8,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from django.urls import reverse
 
-from store.models import Product, ReviewRating, CarouselImage, FAQ, FAQCategory
+from store.models import Product, ReviewRating, CarouselImage, FAQ, FAQCategory, ProductTag
 from store.services import ReviewService
 
 
@@ -21,6 +21,48 @@ class TestProductAPI:
         response = client.get('/api/v1/store/products/')
         assert response.status_code == 200
         assert 'results' in response.json()
+
+    def test_list_products_includes_tags(self, client, category, product):
+        """GET /api/v1/store/products/ incluye lista de tags con id, name, slug."""
+        # Arrange
+        tag = ProductTag.objects.create(name="Especial", slug="especial")
+        product.tags.add(tag)
+
+        # Act
+        response = client.get('/api/v1/store/products/')
+
+        # Assert
+        assert response.status_code == 200
+        data = response.json()
+        item = next(p for p in data['results'] if p['id'] == product.id)
+        assert 'tags' in item
+        assert len(item['tags']) == 1
+        assert item['tags'][0]['slug'] == 'especial'
+        assert item['tags'][0]['name'] == 'Especial'
+
+    def test_list_products_filter_by_tags_param(self, client, category):
+        """GET /api/v1/store/products/?tags=oferta filtra productos por tag."""
+        # Arrange
+        tag_oferta = ProductTag.objects.create(name="Oferta", slug="oferta")
+        p1 = Product.objects.create(
+            code='P-API-1', name='Producto En Oferta', slug='p-api-1',
+            price=10.0, stock=5, category=category, is_available=True
+        )
+        p1.tags.add(tag_oferta)
+        p2 = Product.objects.create(
+            code='P-API-2', name='Producto Sin Oferta', slug='p-api-2',
+            price=20.0, stock=5, category=category, is_available=True
+        )
+
+        # Act
+        response = client.get('/api/v1/store/products/?tags=oferta')
+
+        # Assert
+        assert response.status_code == 200
+        results = response.json()['results']
+        product_ids = [p['id'] for p in results]
+        assert p1.id in product_ids
+        assert p2.id not in product_ids
 
     def test_list_products_empty(self, client):
         """GET /api/v1/store/products/ con BD vacía retorna lista vacía"""

@@ -54,7 +54,8 @@ if _admin_slug != 'admin/':
     ]
 else:
     admin_routes = [
-        ]
+        path('admin/', admin.site.urls),
+    ]
 
 urlpatterns = [
     *admin_routes,
@@ -80,7 +81,9 @@ urlpatterns = [
     path('api/v1/account/', include('account.api.urls.urls')),
     path('api/v1/contact/', include('contact.api.urls.urls')),
     
-    # API Documentation
+    # API Documentation (SEC-011: Protegido por IsAdminUser en SPECTACULAR_SETTINGS)
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     
     #Others:
     path('return-policy/', views.returnPolicy, name='return_policy'),
@@ -127,10 +130,3 @@ handler404 = 'web_bulonera.error_handlers.handler404'
 handler500 = 'web_bulonera.error_handlers.handler500'
 handler403 = 'web_bulonera.error_handlers.handler403'
 handler400 = 'web_bulonera.error_handlers.handler400'
-
-# API Documentation — Solo disponible en desarrollo (WEB-SEC-05)
-if settings.DEBUG:
-    urlpatterns += [
-        path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-        path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    ]

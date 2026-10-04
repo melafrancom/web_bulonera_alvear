@@ -264,6 +264,75 @@ class TestProductImport:
         assert product.material == 'Acero'
         assert product.origin == 'Argentina'
 
+    def test_import_crea_y_asocia_tags_correctamente(self):
+        """Test: Importar productos con columna 'tags' crea ProductTag y asocia M2M."""
+        # Arrange
+        data = [{
+            'code': 'TAGPROD1',
+            'name': 'Bulón Cabeza Redonda',
+            'price': 150.00,
+            'category': 'Fijaciones',
+            'tags': 'Acero Inoxidable, Construcción, Destacados'
+        }]
+
+        # Act
+        excel_file = self.create_test_excel(data)
+        result = ProductService.import_from_file(excel_file)
+
+        # Assert
+        assert result.created == 1
+        product = Product.objects.get(code='TAGPROD1')
+        tags = list(product.tags.values_list('slug', flat=True))
+        assert 'acero-inoxidable' in tags
+        assert 'construccion' in tags
+        assert 'destacados' in tags
+        assert len(result.tags_created) == 3
+
+    def test_import_reutiliza_tags_existentes_sin_duplicar(self):
+        """Test: Importar productos no duplica ProductTag si el slug ya existe."""
+        # Arrange
+        from store.models import ProductTag
+        ProductTag.objects.create(name="Oferta", slug="oferta")
+
+        data = [{
+            'code': 'TAGPROD2',
+            'name': 'Tuerca Hexagonal',
+            'price': 80.00,
+            'category': 'Fijaciones',
+            'tags': 'Oferta, Nuevo'
+        }]
+
+        # Act
+        excel_file = self.create_test_excel(data)
+        result = ProductService.import_from_file(excel_file)
+
+        # Assert
+        assert result.created == 1
+        assert ProductTag.objects.filter(slug='oferta').count() == 1
+        assert ProductTag.objects.filter(slug='nuevo').count() == 1
+        assert 'Oferta' not in result.tags_created
+        assert 'Nuevo' in result.tags_created
+
+    def test_import_columna_tags_vacia_no_falla(self):
+        """Test: Fila con columna tags vacía se importa sin errores y sin tags asignados."""
+        # Arrange
+        data = [{
+            'code': 'TAGPROD3',
+            'name': 'Arandela Simple',
+            'price': 30.00,
+            'category': 'Fijaciones',
+            'tags': ''
+        }]
+
+        # Act
+        excel_file = self.create_test_excel(data)
+        result = ProductService.import_from_file(excel_file)
+
+        # Assert
+        assert result.created == 1
+        product = Product.objects.get(code='TAGPROD3')
+        assert product.tags.count() == 0
+
 
 @pytest.mark.django_db
 class TestERPClient:

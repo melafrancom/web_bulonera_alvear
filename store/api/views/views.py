@@ -56,7 +56,8 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             min_price=filters.get('min_price'),
             max_price=filters.get('max_price'),
             brand=filters.get('brand'),
-            sort_by=filters.get('sort_by', 'id')
+            sort_by=filters.get('sort_by', 'id'),
+            tags=filters.get('tags', [])
         )
         
         # Paginar

@@ -5,7 +5,7 @@ Tests reales para ProductService, SearchService, ReviewService, FAQService, Caro
 """
 import pytest
 from django.test import TestCase
-from store.models import Product, ReviewRating, FAQ, FAQCategory, CarouselImage
+from store.models import Product, ReviewRating, FAQ, FAQCategory, CarouselImage, ProductTag
 from store.services import (
     ProductService, SearchService, ReviewService, FAQService, CarouselService
 )
@@ -185,6 +185,87 @@ class TestProductService:
         assert 'Marca 1' in brands
         assert 'Marca 2' in brands
         assert 'sin_marca' in brands
+
+    def test_filter_products_by_single_tag_success(self, category):
+        """Filtra productos asociados a un único tag."""
+        # Arrange
+        tag = ProductTag.objects.create(name="Promoción", slug="promocion")
+        p1 = Product.objects.create(
+            code='P-TAG-1', name='Producto Con Tag', slug='p-con-tag',
+            price=10.0, stock=5, category=category
+        )
+        p1.tags.add(tag)
+        p2 = Product.objects.create(
+            code='P-TAG-2', name='Producto Sin Tag', slug='p-sin-tag',
+            price=20.0, stock=5, category=category
+        )
+
+        # Act
+        filtered = ProductService.filter_products(Product.objects.all(), tags=['promocion'])
+
+        # Assert
+        assert p1 in filtered
+        assert p2 not in filtered
+
+    def test_filter_products_by_multiple_tags_strict_and_semantics(self, category):
+        """Filtra productos requiriendo TODOS los tags seleccionados (semántica AND estricta)."""
+        # Arrange
+        tag_a = ProductTag.objects.create(name="Tag A", slug="tag-a")
+        tag_b = ProductTag.objects.create(name="Tag B", slug="tag-b")
+
+        p_both = Product.objects.create(
+            code='P-BOTH', name='Producto Ambos Tags', slug='p-ambos-tags',
+            price=15.0, stock=5, category=category
+        )
+        p_both.tags.add(tag_a, tag_b)
+
+        p_only_a = Product.objects.create(
+            code='P-A', name='Producto Solo Tag A', slug='p-solo-tag-a',
+            price=25.0, stock=5, category=category
+        )
+        p_only_a.tags.add(tag_a)
+
+        # Act
+        filtered = ProductService.filter_products(Product.objects.all(), tags=['tag-a', 'tag-b'])
+
+        # Assert
+        assert p_both in filtered
+        assert p_only_a not in filtered
+
+    def test_filter_products_by_non_existent_tag_returns_empty(self, category):
+        """Filtrar por un tag inexistente devuelve un queryset vacío."""
+        # Arrange
+        Product.objects.create(
+            code='P-NORMAL', name='Producto Normal', slug='p-normal',
+            price=10.0, stock=5, category=category
+        )
+
+        # Act
+        filtered = ProductService.filter_products(Product.objects.all(), tags=['tag-inexistente'])
+
+        # Assert
+        assert filtered.count() == 0
+
+    def test_filter_products_with_tags_does_not_duplicate_annotated_rows(self, category, user):
+        """Verifica que el filtrado por tags no multiplica filas con anotaciones."""
+        # Arrange
+        tag1 = ProductTag.objects.create(name="Tag 1", slug="tag-1")
+        tag2 = ProductTag.objects.create(name="Tag 2", slug="tag-2")
+        p = Product.objects.create(
+            code='P-ANNOTATED', name='Producto Anotado', slug='p-anotado',
+            price=10.0, stock=5, category=category
+        )
+        p.tags.add(tag1, tag2)
+        ReviewService.create_review(
+            user_id=user.id, product_id=p.id, subject="Rev 1", review="Buen producto", rating=5.0, ip="127.0.0.1"
+        )
+
+        # Act
+        qs = Product.objects.filter(id=p.id)
+        filtered = ProductService.filter_products(qs, tags=['tag-1'])
+
+        # Assert
+        assert filtered.count() == 1
 
     def test_get_paginated_products(self, category):
         """Pagina productos correctamente"""

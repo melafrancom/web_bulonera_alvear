@@ -39,6 +39,7 @@ class ImportResult:
     errors: int = 0
     image_warnings: int = 0
     error_details: List[Tuple[int, str]] = field(default_factory=list)
+    tags_created: List[str] = field(default_factory=list)
 
 
 class ProductService:
@@ -90,8 +91,17 @@ class ProductService:
     
     @staticmethod
     def filter_products(products: QuerySet, min_price: float = None, max_price: float = None,
-                       brand: str = None, sort_by: str = 'id') -> QuerySet:
+                       brand: str = None, sort_by: str = 'id', tags: list = None) -> QuerySet:
         """Aplica filtros a productos"""
+        # Filtro por tags (semántica AND sin ensuciar los joins principales)
+        if tags:
+            for tag in tags:
+                if str(tag).isdigit():
+                    subquery = Product.objects.filter(tags__id=int(tag)).values('pk')
+                else:
+                    subquery = Product.objects.filter(tags__slug=tag).values('pk')
+                products = products.filter(pk__in=subquery)
+                
         # Filtro de precio
         if min_price is not None and max_price is not None:
             try:
@@ -513,6 +523,12 @@ class ProductService:
                 product, str(item['subcategories']), item, processed_subcategories
             )
         
+        # Procesar tags
+        if 'tags' in item and item['tags'] and not pd.isna(item['tags']):
+            ProductService._process_tags(
+                product, str(item['tags']), result
+            )
+        
         return created
     
     @staticmethod
@@ -594,6 +610,30 @@ class ProductService:
                 if not FAQ.objects.filter(subcategory=subcat).exists():
                     ProductService._process_faqs(subcat, str(item['faq']))
                 processed_subcategories.add(subcat.id)
+
+    @staticmethod
+    def _process_tags(product: Product, tags_str: str, result: ImportResult) -> None:
+        """Procesa los tags del producto desde un string separado por comas"""
+        from store.models import ProductTag
+        tag_names = [t.strip() for t in tags_str.split(',') if t.strip()]
+        
+        tags_to_assign = []
+        for tag_name in tag_names:
+            slug = slugify(tag_name)
+            if not slug:
+                continue
+            
+            tag, created = ProductTag.objects.get_or_create(
+                slug=slug,
+                defaults={'name': tag_name}
+            )
+            if created:
+                result.tags_created.append(tag_name)
+                
+            tags_to_assign.append(tag)
+            
+        if tags_to_assign:
+            product.tags.set(tags_to_assign)
     
     @staticmethod
     def _process_faqs(subcategory: SubCategory, faq_text: str) -> None:

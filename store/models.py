@@ -30,6 +30,18 @@ def store_banner_image_path(instance, filename):
 # Create your models here.
 # Modelo relacionado a todo sobre el producto. Con respecto a agregar/quitar productos al carrito está en 'cart'.
 
+class ProductTag(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    slug = models.SlugField(max_length=50, unique=True)
+    is_active = models.BooleanField(default=True, help_text="Inactivo oculta el tag de los filtros")
+
+    class Meta:
+        verbose_name = 'Tag de Producto'
+        verbose_name_plural = 'Tags de Productos'
+
+    def __str__(self):
+        return self.name
+
 class Product(models.Model):
     code = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=200, unique=True)
@@ -60,6 +72,7 @@ class Product(models.Model):
     stock = models.IntegerField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     subcategories = models.ManyToManyField(SubCategory, blank=True) # Relación ManyToMany con SubCategory
+    tags = models.ManyToManyField(ProductTag, blank=True, related_name='products') # Fase 1
     is_available = models.BooleanField(default=True)
     created_date = models.DateTimeField(auto_now_add=True)#Útil para sitemap
     modified_date = models.DateTimeField(auto_now=True)#Útil para sitemap

@@ -1,6 +1,6 @@
 import pytest
 from django.test import TestCase
-from store.models import Product, ReviewRating
+from store.models import Product, ReviewRating, ProductTag
 from category.models import Category
 
 
@@ -371,3 +371,60 @@ class TestCarouselImageUrl:
         carousel = CarouselImage(title='Test Without Image', position=1)
         
         assert carousel.image_url == '/static/images/placeholder.png'
+
+
+@pytest.mark.django_db
+class TestProductTagModel:
+    """Tests del modelo ProductTag y su relación ManyToMany con Product."""
+
+    def test_product_tag_creation_and_string_representation(self):
+        """Verifica la creación y representación en string de un tag."""
+        # Arrange
+        name = "Bulones de Acero"
+        slug = "bulones-de-acero"
+
+        # Act
+        tag = ProductTag.objects.create(name=name, slug=slug, is_active=True)
+
+        # Assert
+        assert tag.name == name
+        assert tag.slug == slug
+        assert tag.is_active is True
+        assert str(tag) == name
+
+    def test_product_tag_unique_name_constraint(self):
+        """Verifica que el nombre del tag es estrictamente único."""
+        # Arrange
+        from django.db import IntegrityError
+        ProductTag.objects.create(name="Oferta Unica", slug="oferta-1")
+
+        # Act & Assert
+        with pytest.raises(IntegrityError):
+            ProductTag.objects.create(name="Oferta Unica", slug="oferta-2")
+
+    def test_product_tag_unique_slug_constraint(self):
+        """Verifica que el slug del tag es estrictamente único."""
+        # Arrange
+        from django.db import IntegrityError
+        ProductTag.objects.create(name="Oferta A", slug="oferta-slug-unico")
+
+        # Act & Assert
+        with pytest.raises(IntegrityError):
+            ProductTag.objects.create(name="Oferta B", slug="oferta-slug-unico")
+
+    def test_product_tag_many_to_many_relationship_with_product(self, product):
+        """Verifica la asignación bidireccional ManyToMany entre Product y ProductTag."""
+        # Arrange
+        tag1 = ProductTag.objects.create(name="Industria", slug="industria")
+        tag2 = ProductTag.objects.create(name="Construcción", slug="construccion")
+
+        # Act
+        product.tags.add(tag1, tag2)
+
+        # Assert
+        assert product.tags.count() == 2
+        assert tag1 in product.tags.all()
+        assert tag2 in product.tags.all()
+        assert product in tag1.products.all()
+        assert product in tag2.products.all()
+

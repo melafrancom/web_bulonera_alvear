@@ -12,7 +12,7 @@ import csv
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom.minidom import parseString
 
-from store.models import Product, ReviewRating, CarouselImage
+from store.models import Product, ReviewRating, CarouselImage, ProductTag
 from store.web.forms import ReviewForm
 from store.services import (
     ProductService, SearchService, ReviewService,
@@ -56,13 +56,15 @@ def store(request, category_slug=None, subcategory_slug=None):
     max_price = request.GET.get('max_price')
     brand = request.GET.get('brand')
     sort_by = request.GET.get('sort_by', 'id')
+    tags = request.GET.getlist('tags')
     
     products = ProductService.filter_products(
         products,
         min_price=min_price,
         max_price=max_price,
         brand=brand,
-        sort_by=sort_by
+        sort_by=sort_by,
+        tags=tags
     )
     
     sale_products = ProductService.filter_products(
@@ -70,7 +72,8 @@ def store(request, category_slug=None, subcategory_slug=None):
         min_price=min_price,
         max_price=max_price,
         brand=brand,
-        sort_by=sort_by
+        sort_by=sort_by,
+        tags=tags
     )
     
     # Separar productos en oferta y normales
@@ -117,6 +120,8 @@ def store(request, category_slug=None, subcategory_slug=None):
         'min_price': min_price,
         'max_price': max_price,
         'sort_by': sort_by,
+        'tags': tags,
+        'available_tags': ProductTag.objects.filter(is_active=True).order_by('name'),
         'main_categories': main_categories,
         'links': categories,
         'brands': brands,
