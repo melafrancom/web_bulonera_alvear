@@ -1,7 +1,7 @@
 // Service Worker para Bulonera Alvear PWA
 // Estrategia: Cache First para assets, Network First para HTML, Network Only para API/Admin
 
-const CACHE_NAME = 'bulonera-v1';
+const CACHE_NAME = 'bulonera-v2';
 const STATIC_ASSETS = [
     '/',
     '/store/',
@@ -45,12 +45,20 @@ self.addEventListener('fetch', event => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // API y admin: siempre red (Network Only)
-    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin/')) {
-        return; // fetch normal, sin intervención del SW
+    // 1. REGLA FUNDAMENTAL: Solo intervenir en peticiones del mismo origen.
+    // Ignorar por completo recursos de terceros (GTM, Meta, Clarity, Google APIs, CDNs externas).
+    if (url.origin !== location.origin) {
+        return;
     }
 
-    // Assets estáticos: Cache First
+    // 2. API, Admin y rutas privadas: siempre red (Network Only)
+    if (url.pathname.startsWith('/api/') || 
+        url.pathname.startsWith('/admin/') || 
+        url.pathname.startsWith('/gestion-secreta-web/')) {
+        return;
+    }
+
+    // 3. Assets estáticos locales: Cache First
     if (url.pathname.startsWith('/static/') || url.pathname.startsWith('/media/')) {
         event.respondWith(
             caches.match(request).then(cached => {
@@ -73,26 +81,33 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // HTML: Network First con fallback offline
-    event.respondWith(
-        fetch(request)
-            .then(response => {
-                // Cachear respuestas HTML exitosas
-                if (response && response.status === 200 && response.headers.get('content-type')?.includes('text/html')) {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-                }
-                return response;
-            })
-            .catch(() => {
-                // Si falla la red, intentar caché
-                return caches.match(request).then(cached => {
-                    if (cached) {
-                        return cached;
+    // 4. HTML de Navegación: Network First con fallback offline
+    // Solo responder con /offline/ si es una navegación HTML del usuario
+    if (request.mode === 'navigate') {
+        event.respondWith(
+            fetch(request)
+                .then(response => {
+                    // Cachear respuestas HTML exitosas
+                    if (response && response.status === 200 && response.headers.get('content-type')?.includes('text/html')) {
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
                     }
-                    // Si no hay caché, mostrar página offline
-                    return caches.match('/offline/');
-                });
-            })
-    );
+                    return response;
+                })
+                .catch(() => {
+                    // Si falla la red, intentar caché
+                    return caches.match(request).then(cached => {
+                        if (cached) {
+                            return cached;
+                        }
+                        // Si no hay caché, mostrar página offline
+                        return caches.match('/offline/');
+                    });
+                })
+        );
+        return;
+    }
+
+    // 5. Cualquier otra petición interna (XHR/Fetch que no sea navegación): Pasar directo a red
+    event.respondWith(fetch(request));
 });
