@@ -50,8 +50,13 @@ window.baTrack = window.baTrack || {
         window.dataLayer = window.dataLayer || [];
         window.dataLayer.push({ ecommerce: null });
         if (payload) {
-            payload.event = eventName;
-            window.dataLayer.push(payload);
+            const ecommerceObj = payload.ecommerce || payload;
+            window.dataLayer.push({
+                event: eventName,
+                value: ecommerceObj.value,
+                currency: ecommerceObj.currency,
+                ecommerce: ecommerceObj
+            });
         }
     },
 

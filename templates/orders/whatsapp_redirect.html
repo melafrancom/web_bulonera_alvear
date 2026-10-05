@@ -161,7 +161,7 @@ function whatsappRedirect() {
         "merchant_id": 5427791461,
         "order_id": "{{ order.order_number|escapejs }}",
         "email": "{{ order.email|escapejs }}",
-        "delivery_country": "{{ order.country|default:'AR'|escapejs }}",
+        "delivery_country": "{% if order.country|length == 2 %}{{ order.country|upper|escapejs }}{% else %}AR{% endif %}",
         "estimated_delivery_date": estimatedDateStr
       });
     });
