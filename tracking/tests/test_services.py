@@ -186,6 +186,58 @@ class TestTrackingPayloadService:
         assert first_item['item_price'] == 5250.16
         assert isinstance(first_item['item_price'], float)
 
+    @pytest.mark.django_db
+    def test_extract_user_data_includes_hashed_pii_for_authenticated_user(self, rf, user):
+        """
+        QUÉ:
+            Verifica que si la petición proviene de un usuario autenticado con email y teléfono,
+            se extraigan y hasheen en sha256 para maximizar el Event Match Quality (EMQ).
+        POR QUÉ:
+            Meta CAPI exige hasheo previo en SHA-256 sin espacios y en minúsculas para em y ph.
+        """
+        # Arrange
+        user.email = "usuario.test@example.com"
+        user.phone_number = "+54 9 362 412-3456"
+        user.save()
+
+        request = rf.get('/', HTTP_USER_AGENT='Mozilla/5.0 TestBrowser')
+        request.user = user
+
+        # Act
+        user_data = TrackingPayloadService.extract_user_data(request)
+
+        # Assert
+        expected_em = hashlib.sha256(b"usuario.test@example.com").hexdigest()
+        expected_ph = hashlib.sha256(b"5493624123456").hexdigest()
+        assert user_data['em'] == expected_em
+        assert user_data['ph'] == expected_ph
+
+    @pytest.mark.django_db
+    def test_build_addtocart_custom_data_conforms_to_adr01(self, product):
+        """
+        QUÉ:
+            Verifica que el custom_data de AddToCart use product.code y cálculo de total en float.
+        POR QUÉ:
+            Consistencia de IDs con el catálogo de Meta y tipos nativos float en el JSON de CAPI.
+        """
+        # Arrange
+        quantity = 4
+
+        # Act
+        custom_data = TrackingPayloadService.build_addtocart_custom_data(product, quantity)
+
+        # Assert
+        assert custom_data['currency'] == 'ARS'
+        expected_val = float(product.price * quantity)
+        assert custom_data['value'] == expected_val
+        assert isinstance(custom_data['value'], float)
+        assert custom_data['content_type'] == 'product'
+        assert len(custom_data['contents']) == 1
+        assert custom_data['contents'][0]['id'] == str(product.code)
+        assert custom_data['contents'][0]['quantity'] == 4
+        assert custom_data['contents'][0]['item_price'] == float(product.price)
+
+
 
 # ============================================================================
 # 3. Tests para MetaCapiService
@@ -250,3 +302,75 @@ class TestMetaCapiService:
             assert first_attempt is True
             assert second_attempt is False
             assert mock_delay.call_count == 1  # Solo se encoló una vez
+
+    def test_enqueue_add_to_cart_aborts_without_advertising_consent(self, rf, product):
+        """
+        QUÉ:
+            Valida que AddToCart no se envíe a Meta si falta el consentimiento publicitario.
+        POR QUÉ:
+            Cumplimiento normativo y respeto del banner de cookies.
+        """
+        # Arrange
+        request = rf.get('/')
+        request.COOKIES['ba_consent'] = 'a=1|d=0'
+
+        # Act
+        with patch('tracking.services.send_meta_capi_event.delay') as mock_delay:
+            result = MetaCapiService.enqueue_add_to_cart(request, product, quantity=2, event_id='cart-uuid-123')
+
+            # Assert
+            assert result is False
+            mock_delay.assert_not_called()
+
+    def test_enqueue_add_to_cart_success_enqueues_celery_task(self, rf, product):
+        """
+        QUÉ:
+            Valida el encolamiento exitoso de AddToCart con el event_id provisto por el cliente.
+        POR QUÉ:
+            Deduplicación hybrid Browser + Server vía event_id común.
+        """
+        # Arrange
+        cache.clear()
+        request = rf.get('/', HTTP_USER_AGENT='TestBrowser')
+        request.COOKIES['ba_consent'] = 'a=1|d=1'
+        event_id = 'test-addtocart-uuid-456'
+
+        # Act
+        with patch('tracking.services.send_meta_capi_event.delay') as mock_delay:
+            result = MetaCapiService.enqueue_add_to_cart(request, product, quantity=3, event_id=event_id)
+
+            # Assert
+            assert result is True
+            mock_delay.assert_called_once()
+            call_args = mock_delay.call_args[0]
+            event_name, queued_event_id, user_data, custom_data = call_args
+
+            assert event_name == 'AddToCart'
+            assert queued_event_id == event_id
+            assert custom_data['contents'][0]['id'] == str(product.code)
+            assert custom_data['contents'][0]['quantity'] == 3
+
+    def test_enqueue_add_to_cart_enforces_idempotency(self, rf, product):
+        """
+        QUÉ:
+            Valida que múltiples envíos con el mismo event_id sean ignorados por idempotencia en cache.
+        POR QUÉ:
+            Evitar registrar dos veces el mismo evento si el usuario reintenta la petición.
+        """
+        # Arrange
+        cache.clear()
+        request = rf.get('/')
+        request.COOKIES['ba_consent'] = 'a=1|d=1'
+        event_id = 'test-duplicate-uuid-789'
+
+        with patch('tracking.services.send_meta_capi_event.delay') as mock_delay:
+            # Act - Primer intento
+            first_attempt = MetaCapiService.enqueue_add_to_cart(request, product, quantity=1, event_id=event_id)
+            # Act - Segundo intento con el mismo event_id
+            second_attempt = MetaCapiService.enqueue_add_to_cart(request, product, quantity=1, event_id=event_id)
+
+            # Assert
+            assert first_attempt is True
+            assert second_attempt is False
+            assert mock_delay.call_count == 1
+

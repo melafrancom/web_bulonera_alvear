@@ -91,6 +91,16 @@ def add_cart(request, product_id):
         )
         
         # Responder según el tipo de request
+        fb_event_id = request.POST.get('fb_event_id')
+        if fb_event_id:
+            from tracking.services import MetaCapiService
+            MetaCapiService.enqueue_add_to_cart(
+                request=request,
+                product=product,
+                quantity=quantity,
+                event_id=fb_event_id
+            )
+
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success'})
         else:

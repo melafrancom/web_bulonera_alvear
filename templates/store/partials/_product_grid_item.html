@@ -6,7 +6,7 @@ Note: Requires parent template to load: static, custom_filters, store_filters, h
 {% endcomment %}
 
 {% load static %}
-{% load custom_filters store_filters %}
+{% load custom_filters store_filters l10n %}
 <div x-data="{
     qty: 1,
     max: {{ product.stock }},
@@ -35,6 +35,10 @@ Note: Requires parent template to load: static, custom_filters, store_filters, h
             formData.append('csrfmiddlewaretoken', csrfToken);
         }
         
+        // Generar ID único para deduplicación (Browser + Server CAPI)
+        const eventId = 'atc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        formData.append('fb_event_id', eventId);
+        
         try {
             const response = await fetch(url, {
                 method: 'POST',
@@ -53,6 +57,27 @@ Note: Requires parent template to load: static, custom_filters, store_filters, h
                 window.dispatchEvent(new CustomEvent('show-toast', {
                     detail: { message: 'Producto agregado al carrito', type: 'success' }
                 }));
+                
+                // Track Meta Pixel AddToCart
+                if (window.baTrack && window.baTrack.meta) {
+                    window.baTrack.meta('AddToCart', {
+                        content_type: 'product',
+                        content_ids: ['{{ product.code }}'],
+                        content_name: '{{ product.product_name|escapejs }}',
+                        content_category: '{{ product.category.category_name|escapejs }}',
+                        value: {{ product.price|default:"0.0"|unlocalize }},
+                        currency: '{{ CURRENCY|default:"ARS" }}'
+                    }, eventId);
+                } else if (typeof fbq !== 'undefined') {
+                    fbq('track', 'AddToCart', {
+                        content_type: 'product',
+                        content_ids: ['{{ product.code }}'],
+                        content_name: '{{ product.product_name|escapejs }}',
+                        content_category: '{{ product.category.category_name|escapejs }}',
+                        value: {{ product.price|default:"0.0"|unlocalize }},
+                        currency: '{{ CURRENCY|default:"ARS" }}'
+                    }, { eventID: eventId });
+                }
                 
                 // Reset quantity
                 this.qty = 1;

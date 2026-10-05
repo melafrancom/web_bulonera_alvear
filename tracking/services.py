@@ -49,6 +49,15 @@ class TrackingPayloadService:
             "fbc": request.COOKIES.get('_fbc', ''),
         }
         
+        # Mejora de EMQ (Event Match Quality) para usuarios logueados
+        if hasattr(request, 'user') and request.user.is_authenticated:
+            if request.user.email:
+                user_data["em"] = TrackingPayloadService.hash_value(request.user.email)
+            if getattr(request, 'user') and getattr(request.user, 'phone_number', None):
+                phone = re.sub(r'\D', '', request.user.phone_number)
+                if phone:
+                    user_data["ph"] = TrackingPayloadService.hash_value(phone)
+        
         # Limpiar vacíos
         return {k: v for k, v in user_data.items() if v}
         
@@ -77,6 +86,23 @@ class TrackingPayloadService:
             "value": float(order.order_total) if order.order_total else 0.0,
             "content_type": "product",
             "contents": contents
+        }
+
+    @staticmethod
+    def build_addtocart_custom_data(product, quantity: int) -> Dict[str, Any]:
+        """
+        Construye el custom_data para agregar al carrito.
+        OBLIGATORIO: Usar product.code (ADR-01) y floats para importes.
+        """
+        return {
+            "currency": getattr(settings, 'CURRENCY', 'ARS'),
+            "value": float(product.price * int(quantity)) if product.price else 0.0,
+            "content_type": "product",
+            "contents": [{
+                "id": str(product.code),
+                "quantity": int(quantity),
+                "item_price": float(product.price) if product.price else 0.0
+            }]
         }
 
 
@@ -116,4 +142,24 @@ class MetaCapiService:
         
         # 5. Encolar tarea
         send_meta_capi_event.delay('Purchase', event_id, user_data, custom_data)
+        return True
+
+    @staticmethod
+    def enqueue_add_to_cart(request, product, quantity, event_id):
+        """
+        Prepara y encola un evento AddToCart en Meta CAPI de forma híbrida.
+        Usa el event_id provisto por JS para permitir deduplicación en el panel.
+        """
+        if not ConsentService.has_advertising_consent(request):
+            return False
+            
+        # Idempotencia de 1 hora para carritos (evitar reprocesos del mismo request)
+        cache_key = f"capi:sent:{event_id}"
+        if not cache.add(cache_key, 1, timeout=3600):
+            return False
+            
+        user_data = TrackingPayloadService.extract_user_data(request)
+        custom_data = TrackingPayloadService.build_addtocart_custom_data(product, quantity)
+        
+        send_meta_capi_event.delay('AddToCart', event_id, user_data, custom_data)
         return True

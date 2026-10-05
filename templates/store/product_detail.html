@@ -260,6 +260,10 @@
                                 const form = this.$refs.cartForm;
                                 const formData = new FormData(form);
                                 
+                                // Generar ID único para deduplicación (Browser + Server CAPI)
+                                const eventId = 'atc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                                formData.append('fb_event_id', eventId);
+                                
                                 try {
                                     const response = await fetch(form.action, {
                                         method: 'POST',
@@ -279,7 +283,16 @@
                                         }));
                                         
                                         // Track Meta Pixel AddToCart
-                                        if (typeof fbq !== 'undefined') {
+                                        if (window.baTrack && window.baTrack.meta) {
+                                            window.baTrack.meta('AddToCart', {
+                                                content_type: 'product',
+                                                content_ids: ['{{ meta_pixel_data.id }}'],
+                                                content_name: '{{ meta_pixel_data.title|escapejs }}',
+                                                content_category: '{{ single_product.category.category_name|escapejs }}',
+                                                value: {{ price|default:"0.0"|unlocalize }},
+                                                currency: '{{ CURRENCY }}'
+                                            }, eventId);
+                                        } else if (typeof fbq !== 'undefined') {
                                             fbq('track', 'AddToCart', {
                                                 content_type: 'product',
                                                 content_ids: ['{{ meta_pixel_data.id }}'],
@@ -287,7 +300,7 @@
                                                 content_category: '{{ single_product.category.category_name|escapejs }}',
                                                 value: {{ price|default:"0.0"|unlocalize }},
                                                 currency: '{{ CURRENCY }}'
-                                            });
+                                            }, { eventID: eventId });
                                         }
                                     }
                                 } catch (error) {

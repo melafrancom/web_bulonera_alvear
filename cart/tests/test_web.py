@@ -25,3 +25,27 @@ class TestCartWebViews:
         from django.template.loader import render_to_string
         rendered = render_to_string('cart/cart.html', {'cart_items': [], 'quantity': 0})
         assert 'name="robots" content="noindex, nofollow"' in rendered
+
+    def test_add_cart_invokes_meta_capi_with_fb_event_id(self, client, product):
+        """
+        QUÉ:
+            Verifica que la vista web add_cart pase el fb_event_id recibido por POST al servicio MetaCapiService.
+        POR QUÉ:
+            Deduplicación hybrid Browser + Server en Meta CAPI para el evento AddToCart.
+        """
+        from django.urls import reverse
+        from unittest.mock import patch
+
+        url = reverse('cart:add_cart', args=[product.id])
+        event_id = "test-frontend-uuid-999"
+
+        with patch('tracking.services.MetaCapiService.enqueue_add_to_cart') as mock_enqueue:
+            response = client.post(url, {'quantity': 2, 'fb_event_id': event_id})
+            assert response.status_code == 302
+            mock_enqueue.assert_called_once()
+            args, kwargs = mock_enqueue.call_args
+            assert kwargs.get('product') == product or (len(args) > 1 and args[1] == product)
+            assert kwargs.get('quantity') == 2 or (len(args) > 2 and args[2] == 2)
+            assert kwargs.get('event_id') == event_id or (len(args) > 3 and args[3] == event_id)
+
+
