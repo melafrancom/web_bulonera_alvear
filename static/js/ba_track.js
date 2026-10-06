@@ -95,15 +95,23 @@ window.addEventListener('ba:consent-applied', function(e) {
     }
 });
 
+// Helper para generar UUIDs (RFC4122) para deduplicación
+function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 // Delegación de leads para botones de WhatsApp (TRK-009)
 document.addEventListener('DOMContentLoaded', function() {
     document.body.addEventListener('click', function(e) {
         // Buscar el botón o contenedor más cercano con atributos de lead
-        const leadBtn = e.target.closest('[data-ba-lead]') || e.target.closest('a[href*="wa.me"], a[href*="api.whatsapp.com"]');
+        const leadBtn = e.target.closest('[data-ba-lead]') || e.target.closest('a[href*="wa.me"], a[href*="api.whatsapp.com"], a[href*="/contact/whatsapp-lead/"]');
         if (!leadBtn) return;
         
         const method = leadBtn.getAttribute('data-ba-lead') || 'whatsapp';
-        const href = leadBtn.getAttribute('href') || '';
+        let href = leadBtn.getAttribute('href') || '';
         let sku = '';
         
         try {
@@ -114,14 +122,15 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (err) {}
         
         const btnId = leadBtn.id || (leadBtn.classList.length ? leadBtn.classList[0] : method);
+        const eventId = uuidv4();
         
-        // Disparar evento para Meta
+        // Disparar evento para Meta con deduplicación (eventID)
         window.baTrack.metaCustom('WhatsAppContact', {
             content_name: 'WhatsApp Click',
             content_category: 'Lead Generation',
             cta_id: btnId,
             product_sku: sku
-        });
+        }, eventId);
         
         // Disparar evento para GA4
         window.baTrack.pushGA4({
@@ -132,5 +141,14 @@ document.addEventListener('DOMContentLoaded', function() {
             'currency': 'ARS',
             'items': sku ? [{ 'item_id': sku }] : []
         });
+        
+        // CAPI Híbrido: Si el botón apunta a nuestra vista interna de redirección, 
+        // inyectamos el event_id en la URL para que el backend deduplique.
+        if (href.includes('/contact/whatsapp-lead/')) {
+            e.preventDefault(); // Detenemos la navegación nativa
+            const connector = href.includes('?') ? '&' : '?';
+            // Abrimos la ruta interna (que registra el CAPI y redirige a wa.me)
+            window.open(href + connector + 'event_id=' + eventId, leadBtn.target || '_blank');
+        }
     });
 });

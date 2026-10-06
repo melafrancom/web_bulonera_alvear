@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 from web_bulonera.utils import get_client_ip
+from tracking.services import MetaCapiService
 
 def contact_view(request):
     """Vista de formulario de contacto web tradicional."""
@@ -58,6 +59,9 @@ def contact_view(request):
                     subject=form.cleaned_data['subject'],
                     message=form.cleaned_data['message']
                 )
+                
+                # CAPI: Registrar evento de Lead para formulario exitoso
+                MetaCapiService.enqueue_generate_lead(request, lead_method="contact_form")
 
                 if form.cleaned_data['contact_method'] == 'email':
                     messages.success(request, "¡Gracias por tu mensaje! Te contactaremos a la brevedad.")
@@ -87,3 +91,25 @@ def contact_view(request):
 def contact_success(request):
     """Vista de confirmación de éxito tras enviar el formulario de contacto."""
     return render(request, 'contact/contact_success.html')
+
+
+def whatsapp_lead_redirect(request):
+    """
+    Vista de redirección para botones flotantes de WhatsApp.
+    Permite atrapar el clic, enviar evento Meta CAPI (Lead) y redirigir a WhatsApp.
+    """
+    import urllib.parse
+    
+    text = request.GET.get('text', '')
+    event_id = request.GET.get('event_id')
+    whatsapp_number = getattr(settings, 'WHATSAPP_NUMBER', '')
+    
+    # CAPI: Registrar evento de Lead
+    MetaCapiService.enqueue_generate_lead(request, lead_method="whatsapp_floating", event_id=event_id)
+    
+    # Construir URL real de WhatsApp
+    wa_url = f"https://wa.me/{whatsapp_number}"
+    if text:
+        wa_url += f"?text={urllib.parse.quote(text)}"
+        
+    return redirect(wa_url)

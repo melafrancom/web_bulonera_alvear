@@ -435,7 +435,8 @@
     
     <!-- Floating WhatsApp CTA (Sprint 4: Tarea 4.1) -->
     {% if WHATSAPP_NUMBER %}
-    <a href="https://wa.me/{{ WHATSAPP_NUMBER }}?text=Hola%20Bulonera%20Alvear%2C%20quiero%20hacer%20una%20consulta."
+    <a href="{% url 'contact:whatsapp_lead_redirect' %}?text=Hola%20Bulonera%20Alvear%2C%20quiero%20hacer%20una%20consulta."
+       data-ba-lead="whatsapp_floating"
        target="_blank"
        rel="noopener noreferrer"
        class="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 bg-[#25D366] hover:bg-[#20BA56] text-white rounded-full shadow-2xl transition-all duration-300 hover:scale-110 focus:ring-4 focus:ring-green-300 focus:outline-none"

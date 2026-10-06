@@ -163,3 +163,32 @@ class MetaCapiService:
         
         send_meta_capi_event.delay('AddToCart', event_id, user_data, custom_data)
         return True
+
+    @staticmethod
+    def enqueue_generate_lead(request, lead_method: str = "whatsapp", event_id: str = None):
+        """
+        Prepara y encola un evento Lead en Meta CAPI de forma híbrida.
+        Se dispara desde vistas de redirección a WhatsApp o envíos de formulario de contacto.
+        """
+        if not ConsentService.has_advertising_consent(request):
+            return False
+            
+        if not event_id:
+            event_id = uuid.uuid4().hex
+            
+        # Idempotencia (evitar múltiples clicks rápidos del mismo usuario)
+        cache_key = f"capi:sent:{event_id}"
+        if not cache.add(cache_key, 1, timeout=300):
+            return False
+            
+        user_data = TrackingPayloadService.extract_user_data(request)
+        
+        # Meta recomienda incluir la fuente del lead
+        custom_data = {
+            "lead_event_source": lead_method,
+            "currency": getattr(settings, 'CURRENCY', 'ARS'),
+            "value": 0.00
+        }
+        
+        send_meta_capi_event.delay('Lead', event_id, user_data, custom_data)
+        return True
