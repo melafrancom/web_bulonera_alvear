@@ -61,7 +61,18 @@ def contact_view(request):
                 )
                 
                 # CAPI: Registrar evento de Lead para formulario exitoso
-                MetaCapiService.enqueue_generate_lead(request, lead_method="contact_form")
+                # Enviar PII cifrado extraído del formulario (ADR-Tracking)
+                from tracking.services import TrackingPayloadService
+                extra_data = {}
+                if form.cleaned_data.get('email'):
+                    extra_data['em'] = TrackingPayloadService.hash_value(form.cleaned_data['email'])
+                if form.cleaned_data.get('name'):
+                    name_parts = form.cleaned_data['name'].strip().split(' ', 1)
+                    extra_data['fn'] = TrackingPayloadService.hash_value(name_parts[0])
+                    if len(name_parts) > 1:
+                        extra_data['ln'] = TrackingPayloadService.hash_value(name_parts[1])
+                        
+                MetaCapiService.enqueue_generate_lead(request, lead_method="contact_form", extra_user_data=extra_data)
 
                 if form.cleaned_data['contact_method'] == 'email':
                     messages.success(request, "¡Gracias por tu mensaje! Te contactaremos a la brevedad.")

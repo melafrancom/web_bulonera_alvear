@@ -197,7 +197,7 @@ class TestTrackingPayloadService:
         """
         # Arrange
         user.email = "usuario.test@example.com"
-        user.phone_number = "+54 9 362 412-3456"
+        user.phone = "+54 9 362 412-3456"
         user.save()
 
         request = rf.get('/', HTTP_USER_AGENT='Mozilla/5.0 TestBrowser')

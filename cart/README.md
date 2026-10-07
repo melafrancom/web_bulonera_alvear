@@ -43,5 +43,7 @@ graph LR
   - **Precisión Financiera (AUD-CART-002)**: Migración de `purchase_price` de `FloatField` a `DecimalField(max_digits=12, decimal_places=2)`.
   - **Open Redirect (SEC-103)**: `add_cart` valida `HTTP_REFERER` mediante `url_has_allowed_host_and_scheme(allowed_hosts={request.get_host()})` bloqueando phishing tras añadir productos al carrito.
   - **Input Validation y Clamping Centralizado (SEC-108)**: Validación defensiva contra strings no numéricos y restricción estricta de cantidad al rango seguro `[1, 1000]` centralizada en la capa de servicios (`CartService.add_to_cart`).
-  - **Suite de Pruebas**: Tests unitarios y de integración en `cart/tests/` garantizando cobertura de métodos HTTP, validación y seguridad.
+  - **Medición Híbrida CAPI AddToCart (Fase 24)**: La vista `add_cart` captura el identificador único `fb_event_id` generado en el cliente (Alpine.js) y despacha de forma desacoplada la tarea asíncrona hacia `MetaCapiService.enqueue_add_to_cart(request, product, quantity, event_id)` para deduplicación 1:1 en Meta Events Manager.
+  - **Suite de Pruebas**: Tests unitarios y de integración en `cart/tests/` garantizando cobertura de métodos HTTP, validación, despacho de CAPI y seguridad.
+
 

@@ -37,10 +37,25 @@ class ConsentService:
 
 class TrackingPayloadService:
     @staticmethod
+    def normalize_phone(phone_str: str) -> str:
+        """
+        Normaliza teléfonos argentinos agregando el código de país (54)
+        para coincidir con los perfiles de Meta y maximizar el EMQ.
+        """
+        if not phone_str:
+            return ""
+        digits = re.sub(r'\D', '', str(phone_str))
+        if len(digits) == 10:
+            return "54" + digits
+        elif len(digits) == 11 and digits.startswith("0"):
+            return "54" + digits[1:]
+        return digits
+
+    @staticmethod
     def extract_user_data(request) -> Dict[str, Any]:
         """
         Extrae y hashea datos del usuario (cuando es necesario) y toma identificadores de navegador.
-        Para CAPI, IPs y User Agents se envían en plano. Emails/teléfonos se deben hashear en SHA-256.
+        Para CAPI, IPs y User Agents se envían en plano. PII se hashea en SHA-256.
         """
         user_data = {
             "client_ip_address": get_client_ip(request),
@@ -51,12 +66,23 @@ class TrackingPayloadService:
         
         # Mejora de EMQ (Event Match Quality) para usuarios logueados
         if hasattr(request, 'user') and request.user.is_authenticated:
-            if request.user.email:
-                user_data["em"] = TrackingPayloadService.hash_value(request.user.email)
-            if getattr(request, 'user') and getattr(request.user, 'phone_number', None):
-                phone = re.sub(r'\D', '', request.user.phone_number)
-                if phone:
-                    user_data["ph"] = TrackingPayloadService.hash_value(phone)
+            user = request.user
+            if getattr(user, 'id', None):
+                user_data["external_id"] = TrackingPayloadService.hash_value(str(user.id))
+            if getattr(user, 'email', None):
+                user_data["em"] = TrackingPayloadService.hash_value(user.email)
+            
+            # Soporta tanto el campo 'phone' como 'phone_number'
+            phone_raw = getattr(user, 'phone', None) or getattr(user, 'phone_number', None)
+            if phone_raw:
+                phone_clean = TrackingPayloadService.normalize_phone(phone_raw)
+                if phone_clean:
+                    user_data["ph"] = TrackingPayloadService.hash_value(phone_clean)
+            
+            if getattr(user, 'first_name', None):
+                user_data["fn"] = TrackingPayloadService.hash_value(user.first_name)
+            if getattr(user, 'last_name', None):
+                user_data["ln"] = TrackingPayloadService.hash_value(user.last_name)
         
         # Limpiar vacíos
         return {k: v for k, v in user_data.items() if v}
@@ -129,14 +155,29 @@ class MetaCapiService:
         # 4. Construir payload
         user_data = TrackingPayloadService.extract_user_data(request)
         
-        # Si la orden tiene email (ej. usuario invitado o registrado)
+        # Enriquecimiento PII para maximizar el EMQ (Event Match Quality)
+        if getattr(order, 'user_id', None):
+            user_data["external_id"] = TrackingPayloadService.hash_value(str(order.user_id))
+        elif order.email:
+            # Fallback seguro: usar hash del email como external_id para invitados
+            user_data["external_id"] = TrackingPayloadService.hash_value(order.email)
+            
         if order.email:
             user_data["em"] = TrackingPayloadService.hash_value(order.email)
         if order.phone:
-            # Meta espera el teléfono hasheado y preferiblemente con código de país
-            phone = re.sub(r'\D', '', order.phone)
-            if phone:
-                user_data["ph"] = TrackingPayloadService.hash_value(phone)
+            phone_clean = TrackingPayloadService.normalize_phone(order.phone)
+            if phone_clean:
+                user_data["ph"] = TrackingPayloadService.hash_value(phone_clean)
+                
+        if getattr(order, 'first_name', None):
+            user_data["fn"] = TrackingPayloadService.hash_value(order.first_name)
+        if getattr(order, 'last_name', None):
+            user_data["ln"] = TrackingPayloadService.hash_value(order.last_name)
+        if getattr(order, 'city', None):
+            user_data["ct"] = TrackingPayloadService.hash_value(order.city)
+        if getattr(order, 'country', None):
+            country_code = str(order.country).lower() if str(order.country) else 'ar'
+            user_data["country"] = TrackingPayloadService.hash_value(country_code)
         
         custom_data = TrackingPayloadService.build_purchase_custom_data(order)
         
@@ -165,7 +206,7 @@ class MetaCapiService:
         return True
 
     @staticmethod
-    def enqueue_generate_lead(request, lead_method: str = "whatsapp", event_id: str = None):
+    def enqueue_generate_lead(request, lead_method: str = "whatsapp", event_id: str = None, extra_user_data: dict = None):
         """
         Prepara y encola un evento Lead en Meta CAPI de forma híbrida.
         Se dispara desde vistas de redirección a WhatsApp o envíos de formulario de contacto.
@@ -182,6 +223,8 @@ class MetaCapiService:
             return False
             
         user_data = TrackingPayloadService.extract_user_data(request)
+        if extra_user_data:
+            user_data.update(extra_user_data)
         
         # Meta recomienda incluir la fuente del lead
         custom_data = {
