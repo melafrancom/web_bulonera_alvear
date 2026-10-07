@@ -110,6 +110,7 @@ def robots_txt(request):
         "Disallow: /cart/",
         "Disallow: /orders/",
         "Disallow: /account/dashboard/",
+        "Disallow: /contact/whatsapp-lead/",
         "",
         # Bingbot explicit rules
         "User-Agent: Bingbot",
@@ -119,6 +120,7 @@ def robots_txt(request):
         "Disallow: /cart/",
         "Disallow: /orders/",
         "Disallow: /account/dashboard/",
+        "Disallow: /contact/whatsapp-lead/",
         "",
         # Meta/Facebook crawler
         "User-Agent: Facebookexternalhit",
@@ -136,6 +138,7 @@ def robots_txt(request):
         "Disallow: /cart/",
         "Disallow: /orders/",
         "Disallow: /account/dashboard/",
+        "Disallow: /contact/whatsapp-lead/",
         "",
         f"Sitemap: {SITE_URL}/sitemap.xml",
         "",

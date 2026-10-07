@@ -96,3 +96,55 @@ class TestContactWebViews(TestCase):
         # Assert
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'contact/contact_success.html')
+
+    def test_whatsapp_lead_redirect_enqueues_capi_lead_and_redirects(self):
+        """
+        QUÉ:
+            Verifica que GET /contact/whatsapp-lead/ invoque enqueue_generate_lead con fallback
+            por defecto 'whatsapp' y redirija adecuadamente hacia la URL de WhatsApp.
+        POR QUÉ:
+            Permite medir conversiones de WhatsApp de forma server-side (Meta CAPI) sin romper si falta source.
+        """
+        from unittest.mock import patch
+
+        # Arrange
+        url = reverse('contact:whatsapp_lead_redirect') + '?text=Hola&event_id=wa-test-uuid-123'
+
+        # Act
+        with patch('contact.web.views.views.MetaCapiService.enqueue_generate_lead') as mock_lead:
+            response = self.client.get(url)
+
+            # Assert
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(response.url.startswith('https://wa.me/'))
+            self.assertIn('text=Hola', response.url)
+            mock_lead.assert_called_once()
+            call_kwargs = mock_lead.call_args
+            self.assertEqual(call_kwargs.kwargs.get('lead_method') or call_kwargs[1].get('lead_method'), 'whatsapp')
+            self.assertEqual(call_kwargs.kwargs.get('event_id') or call_kwargs[1].get('event_id'), 'wa-test-uuid-123')
+
+    def test_whatsapp_lead_redirect_with_dynamic_source(self):
+        """
+        QUÉ:
+            Verifica que GET /contact/whatsapp-lead/ extraiga el parámetro ?source= y lo envíe
+            a Meta CAPI como lead_method.
+        POR QUÉ:
+            Garantiza granularidad en reportes de Meta Ads Manager para attribution por canal/sección.
+        """
+        from unittest.mock import patch
+
+        # Arrange
+        url = reverse('contact:whatsapp_lead_redirect') + '?text=Hola&event_id=wa-test-uuid-999&source=product_detail'
+
+        # Act
+        with patch('contact.web.views.views.MetaCapiService.enqueue_generate_lead') as mock_lead:
+            response = self.client.get(url)
+
+            # Assert
+            self.assertEqual(response.status_code, 302)
+            mock_lead.assert_called_once()
+            call_kwargs = mock_lead.call_args
+            self.assertEqual(call_kwargs.kwargs.get('lead_method') or call_kwargs[1].get('lead_method'), 'product_detail')
+            self.assertEqual(call_kwargs.kwargs.get('event_id') or call_kwargs[1].get('event_id'), 'wa-test-uuid-999')
+
+

@@ -61,7 +61,7 @@
           </li>
           <li class="flex items-center gap-2">
             <i data-lucide="message-circle" class="w-4 h-4 text-primary-600 dark:text-primary-400"></i>
-            <span>WhatsApp: <a href="https://wa.me/543624733431" target="_blank" class="text-primary-600 dark:text-primary-400 hover:underline">+54 362 473-3431</a></span>
+            <span>WhatsApp: <a href="{% url 'contact:whatsapp_lead_redirect' %}?source=legal_terms" data-ba-lead="whatsapp_legal_terms" target="_blank" rel="nofollow noopener noreferrer" class="text-primary-600 dark:text-primary-400 hover:underline">+54 362 473-3431</a></span>
           </li>
           <li class="flex items-center gap-2">
             <i data-lucide="share-2" class="w-4 h-4 text-primary-600 dark:text-primary-400"></i>
@@ -254,7 +254,7 @@
           </li>
           <li class="flex items-center gap-2">
             <i data-lucide="phone" class="w-4 h-4 text-primary-600 dark:text-primary-400"></i>
-            <a href="https://wa.me/543624733431" target="_blank" class="text-primary-600 dark:text-primary-400 hover:underline">+54 362 473-3431</a>
+            <a href="{% url 'contact:whatsapp_lead_redirect' %}?source=legal_terms" data-ba-lead="whatsapp_legal_terms" target="_blank" rel="nofollow noopener noreferrer" class="text-primary-600 dark:text-primary-400 hover:underline">+54 362 473-3431</a>
           </li>
           <li class="flex items-center gap-2">
             <i data-lucide="map-pin" class="w-4 h-4 text-primary-600 dark:text-primary-400"></i>

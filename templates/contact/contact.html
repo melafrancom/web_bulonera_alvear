@@ -162,7 +162,7 @@
                 Respuesta inmediata
               </p>
               {% if whatsapp_number %}
-              <a href="https://wa.me/{{ whatsapp_number }}" target="_blank" rel="noopener noreferrer" class="text-green-600 dark:text-green-400 hover:underline font-medium">
+              <a href="{% url 'contact:whatsapp_lead_redirect' %}?source=contact_info" data-ba-lead="whatsapp_contact_info" target="_blank" rel="nofollow noopener noreferrer" class="text-green-600 dark:text-green-400 hover:underline font-medium">
                 {{ whatsapp_number }}
               </a>
               {% else %}

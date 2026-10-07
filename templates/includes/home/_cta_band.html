@@ -13,8 +13,9 @@
       {% if cta_text %}{{ cta_text }}{% else %}¿Necesitás cotizar bulonería o ferretería para tu proyecto? Consultanos sin compromiso:{% endif %}
     </p>
     <div class="flex flex-wrap justify-center gap-4">
-      <a href="https://wa.me/543624733431?text=Hola%2C%20necesito%20cotizar%20productos"
-         target="_blank" rel="noopener noreferrer"
+      <a href="{% url 'contact:whatsapp_lead_redirect' %}?text=Hola%2C%20necesito%20cotizar%20productos&source=home_cta_band"
+         data-ba-lead="whatsapp_home_cta"
+         target="_blank" rel="nofollow noopener noreferrer"
          class="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20BD5C] text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg"
          id="cta-band-whatsapp">
         <i data-lucide="message-circle" class="w-5 h-5"></i>

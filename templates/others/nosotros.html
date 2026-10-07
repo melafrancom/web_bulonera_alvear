@@ -85,8 +85,9 @@
       </p>
       <div class="mt-8 flex flex-wrap gap-4">
         {% if WHATSAPP_NUMBER %}
-        <a href="https://wa.me/{{ WHATSAPP_NUMBER }}?text=Hola%2C%20quiero%20consultar%20sobre%20productos"
-           target="_blank" rel="noopener noreferrer"
+        <a href="{% url 'contact:whatsapp_lead_redirect' %}?text=Hola%2C%20quiero%20consultar%20sobre%20productos&source=nosotros_hero"
+           data-ba-lead="whatsapp_nosotros_hero"
+           target="_blank" rel="nofollow noopener noreferrer"
            class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
            id="hero-cta-whatsapp">
           <i data-lucide="message-circle" class="w-5 h-5"></i>
@@ -146,7 +147,7 @@
         Nuestro Catálogo
       </h2>
       <p class="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-        Disponemos de una línea completa de bulonería, tornillería, herramientas y materiales de ferretería. Si no encontrás lo que necesitás, <a href="https://wa.me/543624733431" target="_blank" rel="noopener noreferrer" class="text-[#1B3A5C] dark:text-[#9ac1f0] underline hover:no-underline">consultanos</a>.
+        Disponemos de una línea completa de bulonería, tornillería, herramientas y materiales de ferretería. Si no encontrás lo que necesitás, <a href="{% url 'contact:whatsapp_lead_redirect' %}?source=nosotros_catalogo" data-ba-lead="whatsapp_nosotros_catalogo" target="_blank" rel="nofollow noopener noreferrer" class="text-[#1B3A5C] dark:text-[#9ac1f0] underline hover:no-underline">consultanos</a>.
       </p>
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -438,8 +439,9 @@
       Si estás evaluando proveedores, necesitás cotizar un volumen específico o tenés una consulta técnica, nuestro equipo está disponible para asesorarte sin compromiso. Visitanos en nuestro local o contactanos:
     </p>
     <div class="flex flex-wrap justify-center gap-4 mb-8">
-      <a href="https://wa.me/543624733431?text=Hola%2C%20quiero%20consultar%20precios%20y%20stock"
-         target="_blank" rel="noopener noreferrer"
+      <a href="{% url 'contact:whatsapp_lead_redirect' %}?text=Hola%2C%20quiero%20consultar%20precios%20y%20stock&source=nosotros_asesoria"
+         data-ba-lead="whatsapp_nosotros_asesoria"
+         target="_blank" rel="nofollow noopener noreferrer"
          class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3.5 rounded-lg transition-colors text-lg"
          id="final-cta-whatsapp">
         <i data-lucide="message-circle" class="w-5 h-5"></i>

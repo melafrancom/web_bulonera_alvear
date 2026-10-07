@@ -374,3 +374,106 @@ class TestMetaCapiService:
             assert second_attempt is False
             assert mock_delay.call_count == 1
 
+    def test_enqueue_generate_lead_aborts_without_advertising_consent(self, rf):
+        """
+        QUÉ:
+            Verifica que enqueue_generate_lead aborte y retorne False si el usuario no tiene consentimiento publicitario.
+        POR QUÉ:
+            REGLA: Cumplimiento de privacidad GDPR/ePrivacy; no despachar eventos CAPI sin cookie d=1.
+        """
+        # Arrange
+        request = rf.get('/')
+        request.COOKIES['ba_consent'] = 'a=1|d=0'
+
+        # Act
+        with patch('tracking.services.send_meta_capi_event.delay') as mock_delay:
+            result = MetaCapiService.enqueue_generate_lead(request, lead_method="whatsapp")
+
+            # Assert
+            assert result is False
+            mock_delay.assert_not_called()
+
+    def test_enqueue_generate_lead_success_enqueues_celery_task_with_default_whatsapp(self, rf):
+        """
+        QUÉ:
+            Valida que enqueue_generate_lead despache la tarea Celery con evento 'Lead' y genere UUID si event_id es None.
+        POR QUÉ:
+            Asegurar que las conversiones de WhatsApp se registren en Meta CAPI con payload estandarizado.
+        """
+        # Arrange
+        cache.clear()
+        request = rf.get('/', HTTP_USER_AGENT='TestBrowser')
+        request.COOKIES['ba_consent'] = 'a=1|d=1'
+
+        # Act
+        with patch('tracking.services.send_meta_capi_event.delay') as mock_delay:
+            result = MetaCapiService.enqueue_generate_lead(request, lead_method="whatsapp")
+
+            # Assert
+            assert result is True
+            mock_delay.assert_called_once()
+            call_args = mock_delay.call_args[0]
+            event_name, generated_event_id, user_data, custom_data = call_args
+
+            assert event_name == 'Lead'
+            assert bool(generated_event_id) is True
+            assert custom_data['lead_event_source'] == 'whatsapp'
+            assert custom_data['currency'] == 'ARS'
+            assert custom_data['value'] == 0.0
+
+    def test_enqueue_generate_lead_success_with_custom_method_and_event_id(self, rf):
+        """
+        QUÉ:
+            Valida que se respete el event_id provisto desde el frontend (JS) y la fuente personalizada.
+        POR QUÉ:
+            Permite la deduplicación hybrid browser/server en Meta Events Manager.
+        """
+        # Arrange
+        cache.clear()
+        request = rf.get('/', HTTP_USER_AGENT='TestBrowser')
+        request.COOKIES['ba_consent'] = 'a=1|d=1'
+        custom_id = 'wa-lead-uuid-456'
+
+        # Act
+        with patch('tracking.services.send_meta_capi_event.delay') as mock_delay:
+            result = MetaCapiService.enqueue_generate_lead(
+                request,
+                lead_method="whatsapp_floating",
+                event_id=custom_id
+            )
+
+            # Assert
+            assert result is True
+            mock_delay.assert_called_once()
+            call_args = mock_delay.call_args[0]
+            event_name, queued_id, user_data, custom_data = call_args
+
+            assert event_name == 'Lead'
+            assert queued_id == custom_id
+            assert custom_data['lead_event_source'] == 'whatsapp_floating'
+
+    def test_enqueue_generate_lead_enforces_idempotency(self, rf):
+        """
+        QUÉ:
+            Valida que múltiples envíos con el mismo event_id sean ignorados dentro de la ventana de cache.
+        POR QUÉ:
+            Evita duplicación de eventos Lead si el usuario hace doble clic en el botón de WhatsApp.
+        """
+        # Arrange
+        cache.clear()
+        request = rf.get('/')
+        request.COOKIES['ba_consent'] = 'a=1|d=1'
+        event_id = 'lead-duplicate-uuid-999'
+
+        with patch('tracking.services.send_meta_capi_event.delay') as mock_delay:
+            # Act - Primer clic
+            first = MetaCapiService.enqueue_generate_lead(request, lead_method="whatsapp", event_id=event_id)
+            # Act - Segundo clic inmediato
+            second = MetaCapiService.enqueue_generate_lead(request, lead_method="whatsapp", event_id=event_id)
+
+            # Assert
+            assert first is True
+            assert second is False
+            assert mock_delay.call_count == 1
+
+

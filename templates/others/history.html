@@ -223,8 +223,9 @@
       Ponte en contacto con nuestro equipo de atención comercial hoy mismo. Te responderemos a la brevedad.
     </p>
     <div class="flex flex-wrap justify-center gap-4">
-      <a href="https://wa.me/543624733431?text=Hola%2C%20necesito%20hacer%20una%20consulta"
-         target="_blank" rel="noopener noreferrer"
+      <a href="{% url 'contact:whatsapp_lead_redirect' %}?text=Hola%2C%20necesito%20hacer%20una%20consulta&source=history"
+         data-ba-lead="whatsapp_history"
+         target="_blank" rel="nofollow noopener noreferrer"
          class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3.5 rounded-lg transition-colors text-lg"
          id="history-cta-whatsapp">
         <i data-lucide="message-circle" class="w-5 h-5"></i>

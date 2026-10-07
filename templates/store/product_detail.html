@@ -519,9 +519,10 @@
 
                                 <!-- WhatsApp Consult Button (Sprint 4: Tarea 4.3) -->
                                 {% if WHATSAPP_NUMBER %}
-                                <a href="https://wa.me/{{ WHATSAPP_NUMBER }}?text=Hola%20Bulonera%20Alvear%2C%20quiero%20consultar%20por%20el%20producto%20{{ single_product.name|urlencode }}%20(C%C3%B3digo%3A%20{{ single_product.code|urlencode }})."
+                                <a href="{% url 'contact:whatsapp_lead_redirect' %}?text=Hola%20Bulonera%20Alvear%2C%20quiero%20consultar%20por%20el%20producto%20{{ single_product.name|urlencode }}%20(C%C3%B3digo%3A%20{{ single_product.code|urlencode }}).&source=product_detail"
+                                   data-ba-lead="whatsapp_product"
                                    target="_blank"
-                                   rel="noopener noreferrer"
+                                   rel="nofollow noopener noreferrer"
                                    class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6"
                                    id="whatsapp-product-consult-btn">
                                     <i data-lucide="message-circle" class="w-5 h-5"></i>

@@ -102,10 +102,11 @@ def whatsapp_lead_redirect(request):
     
     text = request.GET.get('text', '')
     event_id = request.GET.get('event_id')
+    source = request.GET.get('source') or request.GET.get('lead_method') or 'whatsapp'
     whatsapp_number = getattr(settings, 'WHATSAPP_NUMBER', '')
     
     # CAPI: Registrar evento de Lead
-    MetaCapiService.enqueue_generate_lead(request, lead_method="whatsapp_floating", event_id=event_id)
+    MetaCapiService.enqueue_generate_lead(request, lead_method=source, event_id=event_id)
     
     # Construir URL real de WhatsApp
     wa_url = f"https://wa.me/{whatsapp_number}"
