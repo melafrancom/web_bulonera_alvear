@@ -60,6 +60,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        heading: ['Barlow', 'sans-serif'],
       },
       typography: (theme) => ({
         DEFAULT: {

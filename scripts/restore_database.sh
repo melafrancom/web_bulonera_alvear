@@ -8,7 +8,7 @@
 set -e
 
 # Configuración
-BACKUP_DIR="/var/www/bulonera/backups"
+BACKUP_DIR="/var/backups/databases/buloneraalvearDB"
 DB_NAME="buloneraalvearDB"
 DB_USER="bulonera_user"
 
@@ -16,14 +16,30 @@ echo "🔄 Restauración de Base de Datos"
 echo "================================"
 echo ""
 
-# Listar backups disponibles
-echo "📋 Backups disponibles:"
-ls -lh "$BACKUP_DIR" | grep "backup_${DB_NAME}" | nl
-echo ""
+# Verificar existencia del directorio de backups
+if [ ! -d "$BACKUP_DIR" ]; then
+    echo "❌ Error: Directorio de backups no encontrado: $BACKUP_DIR"
+    exit 1
+fi
 
-# Solicitar archivo de backup
-read -p "📁 Nombre del archivo de backup (sin path): " BACKUP_FILE
-BACKUP_PATH="${BACKUP_DIR}/${BACKUP_FILE}"
+# Solicitar archivo de backup si no se pasó como argumento
+BACKUP_INPUT="${1:-}"
+
+if [ -z "$BACKUP_INPUT" ]; then
+    echo "📋 Backups disponibles:"
+    ls -lh "$BACKUP_DIR" | grep "backup_${DB_NAME}" | nl || true
+    echo ""
+    read -p "📁 Nombre del archivo de backup (sin path): " BACKUP_INPUT
+fi
+
+# Determinar ruta completa del archivo
+if [ -f "$BACKUP_INPUT" ]; then
+    BACKUP_PATH="$BACKUP_INPUT"
+    BACKUP_FILE=$(basename "$BACKUP_INPUT")
+else
+    BACKUP_FILE="$BACKUP_INPUT"
+    BACKUP_PATH="${BACKUP_DIR}/${BACKUP_FILE}"
+fi
 
 # Verificar que existe
 if [ ! -f "$BACKUP_PATH" ]; then

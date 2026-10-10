@@ -32,7 +32,8 @@ graph LR
 ```
 
 ## 🛠️ Modelos Clave / Entidades (DB)
-- **Product** (Hereda de `models.Model`): Modela el producto físico. Almacena código de barras/código interno (`code`), medidas (`diameter`, `length`), precios (estándar y en oferta), stock, SEO tags y metadatos para integración publicitaria en redes (Meta Pixel y Google Merchant Feed).
+- **Product** (Hereda de `models.Model`): Modela el producto físico. Almacena código de barras/código interno (`code`), medidas (`diameter`, `length`), precios (estándar y en oferta), stock, SEO tags, relación M2M a `ProductTag` y metadatos para integración publicitaria en redes (Meta Pixel y Google Merchant Feed).
+- **ProductTag** (Hereda de `models.Model`): Modela etiquetas o agrupadores de productos para filtrado rápido por características especiales o promocionales (ej. "CyberMonday", "Oferta", "Inoxidable"), con `name`, `slug` y estado `is_active`.
 - **ProductGallery** (Hereda de `models.Model`): Colección de imágenes adicionales para el producto.
 - **Variation** (Hereda de `models.Model`): Mapea opciones del producto por categorías (ej. Rosca, Material, Medida).
 - **ReviewRating** (Hereda de `models.Model`): Modela las reseñas y puntuaciones de usuarios.
@@ -41,8 +42,9 @@ graph LR
 - **CarouselImage**: Banners principales del carrusel de bienvenida.
 
 ## ⚡ Servicios y Casos de Uso Críticos (services.py)
-- **ProductService.filter_products / paginate_products**: Filtra y pagina productos en el listado del catálogo.
-- **ProductService.import_products_from_file**: Lee y analiza archivos Excel/CSV utilizando pandas, y actualiza de forma masiva el catálogo (precios y existencias) en modo seco (`--dry-run`) o en base directa.
+- **ProductService.filter_products / paginate_products**: Filtra y pagina productos en el catálogo; soporta filtrado multi-tag con semántica AND estricta mediante subconsultas (`pk__in`) para evitar producto cartesiano en anotaciones de reviews.
+- **ProductService.get_available_tags**: Obtiene tags activos vinculados a productos disponibles para alimentar los filtros de la barra lateral.
+- **ProductService.import_from_file**: Lee y analiza archivos Excel/CSV utilizando pandas, centraliza la importación de productos, imágenes y categorías, y procesa la columna `tags` (creando automáticamente tags inexistentes o reutilizando existentes sin duplicación).
 - **SearchService.search_products**: Implementa búsquedas de productos e indexa palabras de búsqueda en `ProductSearch` para alimentar el autocompletado y análisis de tendencias.
 - **ReviewService.create_review**: Gestiona el guardado y actualización de reviews recalculando la media de estrellas del producto.
 - **HomeSectionService.get_active_sections**: Obtiene las secciones del Home y resuelve las consultas específicas de sus productos asociados (respetando curaduría manual o fallback automático).

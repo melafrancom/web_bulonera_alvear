@@ -184,6 +184,20 @@ function cookieConsent() {
             document.cookie = "ba_consent=a=" + analytics + "|d=" + advertising + "; expires=" + d.toUTCString() + "; path=/; SameSite=Lax";
             
             this.showBanner = false;
+
+            // Notificación reactiva inmediata a baTrack y listeners globales para revocación o aplicación activa
+            window.dispatchEvent(new CustomEvent('ba:consent-applied', { detail: this.preferences }));
+
+            // Notificar inmediatamente a Google (gtag) si está presente para actualizar Consent Mode en caliente
+            if (typeof gtag === 'function') {
+                gtag('consent', 'update', {
+                    'analytics_storage': this.preferences.analytics ? 'granted' : 'denied',
+                    'ad_storage': this.preferences.advertising ? 'granted' : 'denied',
+                    'ad_user_data': this.preferences.advertising ? 'granted' : 'denied',
+                    'ad_personalization': this.preferences.advertising ? 'granted' : 'denied'
+                });
+            }
+
             this._activateScripts(this.preferences);
         },
 
