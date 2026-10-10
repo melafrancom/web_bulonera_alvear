@@ -16,6 +16,7 @@ bulonera.sock
 .env
 .env.*
 !.env.example
+!.env.production.example
 
 # Node
 node_modules/
@@ -40,6 +41,7 @@ Thumbs.db
 static/css/tailwind.min.css
 *.xlsx
 
+# local files to be added to .gitignore
 WEB_ARCHITECTURE.md
 ARQUITECTURA_DEPLOY.md
 DEPLOY_INSTRUCTIONS.md
@@ -81,6 +83,9 @@ AUDIT_BLOG_APP.md
 BLOG_FINAL_SUMMARY.md
 BLOG_QUICK_START.md
 IMPLEMENTATION_BLOG_WALKTHROUGH.md
+debug_reviews.py
+test_publish_existing.py
+
 
 # Graphify & Obsidian temp files
 # Ignorar configuración de Obsidian
@@ -92,3 +97,6 @@ docs/*
 !docs/communities/*
 docs\communities
 docs/
+
+# Google Taxonomy
+taxonomy-with-ids.*
