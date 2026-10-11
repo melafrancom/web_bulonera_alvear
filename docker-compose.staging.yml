@@ -1,0 +1,54 @@
+# ============================================================
+# BULONERA WEB - Docker Compose Override para Staging / Load Testing
+# ============================================================
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d
+# ============================================================
+
+services:
+  bulonera_web:
+    command: uwsgi --ini uwsgi.staging.ini
+    env_file: !override
+      - .env.staging
+    environment:
+      DJANGO_SETTINGS_MODULE: web_bulonera.settings.staging
+    ports: !override
+      # REGLA: Restringido estrictamente a loopback del host (reemplaza el 0.0.0.0 base)
+      - "127.0.0.1:8002:8002"
+    networks:
+      default:
+        aliases:
+          - bulonera-web
+    restart: "no"
+
+  # Generador de Carga Locust Contenerizado (Versión fijada)
+  locust:
+    image: locustio/locust:2.32.8
+    container_name: bulonera_web_load_locust
+    ports:
+      - "127.0.0.1:8089:8089"
+    volumes:
+      - ./tests/load:/mnt/locust
+    command: -f /mnt/locust/locustfile.py --host http://bulonera-web:8002
+    depends_on:
+      - bulonera_web
+    restart: "no"
+
+  # Deshabilitación verificable de Celery en staging (no se inician los contenedores)
+  bulonera_web_celery_worker:
+    entrypoint: ["echo", "Celery worker deshabilitado en staging"]
+    profiles:
+      - donotstart
+    restart: "no"
+
+  bulonera_web_celery_beat:
+    entrypoint: ["echo", "Celery beat deshabilitado en staging"]
+    profiles:
+      - donotstart
+    restart: "no"
+
+  bulonera_web_flower:
+    entrypoint: ["echo", "Flower deshabilitado en staging"]
+    profiles:
+      - donotstart
+    restart: "no"

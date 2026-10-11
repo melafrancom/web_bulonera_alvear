@@ -1,0 +1,99 @@
+{
+  "categories": [
+    "buloneria",
+    "ferreteria"
+  ],
+  "subcategories": [
+    {
+      "category": "buloneria",
+      "subcategory": "tornillos-autoperforantes"
+    },
+    {
+      "category": "buloneria",
+      "subcategory": "arandelas"
+    },
+    {
+      "category": "buloneria",
+      "subcategory": "bulon-g5-alta-resistencia"
+    },
+    {
+      "category": "buloneria",
+      "subcategory": "bulon-comun"
+    },
+    {
+      "category": "buloneria",
+      "subcategory": "bulon-milimetrico"
+    },
+    {
+      "category": "ferreteria",
+      "subcategory": "mangueras"
+    },
+    {
+      "category": "buloneria",
+      "subcategory": "tirafondos"
+    },
+    {
+      "category": "buloneria",
+      "subcategory": "varillas-roscadas"
+    },
+    {
+      "category": "buloneria",
+      "subcategory": "tornillos-allen"
+    }
+  ],
+  "products": [
+    {
+      "id": 26791,
+      "slug": "cano-riego-tricolor-super-reforzado-34-x-50"
+    },
+    {
+      "id": 26792,
+      "slug": "cano-riego-cristal-reforzado-verde-12-x-50"
+    },
+    {
+      "id": 26793,
+      "slug": "cano-riego-cristal-reforzado-verde-34-x-25"
+    },
+    {
+      "id": 26794,
+      "slug": "cano-riego-cristal-reforzado-verde-34-x-50"
+    },
+    {
+      "id": 26795,
+      "slug": "cano-riego-cristal-super-reforzado-azul-12-x-25"
+    },
+    {
+      "id": 26796,
+      "slug": "cano-riego-cristal-super-reforzado-azul-12-x-50"
+    },
+    {
+      "id": 26797,
+      "slug": "cano-riego-cristal-super-reforzado-azul-34-x-25"
+    },
+    {
+      "id": 26798,
+      "slug": "cano-riego-cristal-super-reforzado-azul-34-x-50"
+    },
+    {
+      "id": 26799,
+      "slug": "cano-riego-trenzado-verde-12-x-25"
+    },
+    {
+      "id": 26800,
+      "slug": "cano-riego-trenzado-verde-12-x-50"
+    }
+  ],
+  "search_terms": [
+    "cano",
+    "riego",
+    "bulon",
+    "arandela",
+    "tornillo",
+    "manguera"
+  ],
+  "blog_posts": [
+    "historia",
+    "post-de-prueba-publicacion-admin-552",
+    "post-de-prueba-publicacion-525"
+  ]
+}

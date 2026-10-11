@@ -12,7 +12,10 @@ def counter(request):
     
     Uso en templates: {{ cart_count }}
     """
-    user = request.user if request.user.is_authenticated else None
+    # REGLA: Acceso defensivo a session y user en caso de errores tempranos (DisallowedHost, etc.)
+    if not hasattr(request, 'session'):
+        return dict(cart_count=0)
+    user = request.user if getattr(request, 'user', None) and request.user.is_authenticated else None
     cart_count = CartService.get_cart_count(request, user)
     
     return dict(cart_count=cart_count)

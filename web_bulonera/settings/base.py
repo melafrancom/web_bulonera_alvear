@@ -22,6 +22,8 @@ env = environ.Env()
 settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', '')
 if 'production' in settings_module:
     environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+elif 'staging' in settings_module:
+    environ.Env.read_env(os.path.join(BASE_DIR, '.env.staging'))
 else:
     environ.Env.read_env(os.path.join(BASE_DIR, '.env.local'))
 

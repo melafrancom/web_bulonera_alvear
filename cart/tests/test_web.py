@@ -48,4 +48,20 @@ class TestCartWebViews:
             assert kwargs.get('quantity') == 2 or (len(args) > 2 and args[2] == 2)
             assert kwargs.get('event_id') == event_id or (len(args) > 3 and args[3] == event_id)
 
+    def test_counter_context_processor_handles_missing_user_attribute(self):
+        """
+        QUÉ: Verifica que counter no lance AttributeError si request.user no está definido.
+        POR QUÉ: Páginas de error temprano (DisallowedHost, 400) se renderizan antes de AuthenticationMiddleware.
+        """
+        from django.test import RequestFactory
+        from cart.context_processors import counter
+
+        rf = RequestFactory()
+        request = rf.get('/cart/')
+        # RequestFactory no inyecta request.user por defecto
+        assert not hasattr(request, 'user')
+        result = counter(request)
+        assert 'cart_count' in result
+        assert result['cart_count'] == 0
+
 
