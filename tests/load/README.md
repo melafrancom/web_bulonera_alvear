@@ -63,11 +63,17 @@ docker compose -f docker-compose.yml -f docker-compose.staging.yml exec bulonera
 - $\Delta \text{keyspace\_hits}$ y $\Delta \text{keyspace\_misses}$ con el Hit Ratio % exacto.
 - Si Redis o MariaDB sufren una caída, el monitor marca la ejecución como **fallida** (`exit 1`) y no computa deltas engañosos.
 
-### 2. Monitoreo de Recursos en Contenedores
+### 2. Monitoreo Continuo de Recursos en el Host (`record_stats.py`)
+```bash
+python tests/load/record_stats.py --duration 300 --interval 2
+```
+*Captura de forma continua mediante `docker stats` la CPU pico, CPU media, distribución de carga y memoria máxima de todos los contenedores con cálculo de cadencia real.*
+
+### 3. Inspección Interactiva en Vivo
 ```bash
 docker stats
 ```
-*(Dejar corriendo sin `--no-stream` para observar picos de CPU y RAM en tiempo real).*
+*(Dejar corriendo sin `--no-stream` para observar consumo en tiempo real).*
 
 ---
 

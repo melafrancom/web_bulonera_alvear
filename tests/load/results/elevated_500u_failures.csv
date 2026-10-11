@@ -1,0 +1,19 @@
+Method,Name,Error,Occurrences
+GET,/store/category/[category_slug]/,RemoteDisconnected('Remote end closed connection without response'),34
+GET,/blog/[post_slug]/,RemoteDisconnected('Remote end closed connection without response'),8
+GET,/blog/[post_slug]/,"ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x....>, 'Connection to bulonera-web timed out. (connect timeout=None)')",8
+GET,/store/category/[cat]/subcategory/[sub]/,"ConnectionResetError(104, 'Connection reset by peer')",14
+GET,/store/category/[cat]/subcategory/[sub]/,RemoteDisconnected('Remote end closed connection without response'),8
+GET,/p/[product_slug]/,"ConnectionResetError(104, 'Connection reset by peer')",40
+GET,/ (Home),"ConnectionResetError(104, 'Connection reset by peer')",31
+GET,/store/category/[category_slug]/,"ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x....>, 'Connection to bulonera-web timed out. (connect timeout=None)')",47
+GET,/store/category/[category_slug]/,"ConnectionResetError(104, 'Connection reset by peer')",41
+GET,/p/[product_slug]/,"ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x....>, 'Connection to bulonera-web timed out. (connect timeout=None)')",39
+GET,/p/[product_slug]/,RemoteDisconnected('Remote end closed connection without response'),26
+GET,/ (Home),"ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x....>, 'Connection to bulonera-web timed out. (connect timeout=None)')",45
+GET,/blog/[post_slug]/,"ConnectionResetError(104, 'Connection reset by peer')",6
+GET,/blog/ (List),"ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x....>, 'Connection to bulonera-web timed out. (connect timeout=None)')",7
+GET,/store/category/[cat]/subcategory/[sub]/,"ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x....>, 'Connection to bulonera-web timed out. (connect timeout=None)')",14
+GET,/blog/ (List),"ConnectionResetError(104, 'Connection reset by peer')",4
+GET,/ (Home),RemoteDisconnected('Remote end closed connection without response'),26
+GET,/blog/ (List),RemoteDisconnected('Remote end closed connection without response'),3
