@@ -144,7 +144,7 @@ class ProductService:
     @staticmethod
     def get_product_gallery(product_id: int) -> QuerySet:
         """Obtiene galería de imágenes de un producto"""
-        return ProductGallery.objects.filter(product_id=product_id)
+        return ProductGallery.objects.filter(product_id=product_id).select_related('image_asset')
     
     @staticmethod
     def get_dimension_variants(product: Product) -> List[Product]:
@@ -848,8 +848,17 @@ class FeedService:
     
     @staticmethod
     def get_google_merchant_feed_data() -> List[Dict]:
-        """Obtiene datos para feed de Google Merchant (optimizado con chunks y select_related)"""
-        products = Product.objects.filter(is_available=True).select_related('category').iterator(chunk_size=200)
+        """Obtiene datos para feed de Google Merchant (optimizado con select_related y prefetch_related)."""
+        # PERF: prefetch_related evita N+1 queries al acceder a productgallery_set
+        # dentro de get_merchant_data(). Sin prefetch, cada producto ejecutaría una
+        # consulta adicional a store_productgallery (potencial timeout en catálogos grandes).
+        # SUPOSICIÓN: El catálogo actual es <1k productos; omitir iterator() es seguro porque
+        # iterator() ignora prefetch_related en Django.
+        products = (
+            Product.objects.filter(is_available=True)
+            .select_related('category')
+            .prefetch_related('productgallery_set', 'productgallery_set__image_asset')
+        )
         feed_data = []
         
         for product in products:

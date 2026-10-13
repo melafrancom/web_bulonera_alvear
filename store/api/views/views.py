@@ -316,6 +316,8 @@ class FeedViewSet(viewsets.ViewSet):
                 SubElement(item, 'description').text = data.get('description', '')
                 SubElement(item, 'link').text = data.get('link', '')
                 SubElement(item, 'g:image_link').text = data.get('image_link', '')
+                for additional_url in data.get('additional_image_links', []):
+                    SubElement(item, 'g:additional_image_link').text = additional_url
                 SubElement(item, 'g:availability').text = data.get('availability', '')
                 SubElement(item, 'g:price').text = data.get('price', '')
                 SubElement(item, 'g:brand').text = data.get('brand', '')

@@ -300,7 +300,7 @@ class Product(models.Model):
         subcats = self.subcategories.all()
         product_type = ' > '.join([sc.subcategory_name for sc in subcats]) if subcats.exists() else self.category.category_name
         
-        return {
+        data = {
             'title': self.name,
             'description': self.description,
             'link': f"{SITE_URL}{self.get_absolute_url()}",
@@ -314,6 +314,21 @@ class Product(models.Model):
             'google_product_category': self.google_category if self.google_category else self.category.category_name,
             'product_type': product_type,  # Nueva línea
         }
+
+        # POR QUÉ: Google Merchant exige <g:additional_image_link> para indexar
+        # imágenes secundarias. Máximo 10 por especificación de Google Shopping.
+        additional_images = []
+        for gallery_item in self.productgallery_set.all()[:10]:
+            url = gallery_item.image_url
+            if url and not url.startswith('/static/'):
+                if url.startswith('http://') or url.startswith('https://'):
+                    additional_images.append(url)
+                else:
+                    path = url if url.startswith('/') else f"/{url}"
+                    additional_images.append(f"{SITE_URL.rstrip('/')}{path}")
+        data['additional_image_links'] = additional_images
+
+        return data
     
     @property
     def get_image_urls(self):
@@ -485,6 +500,19 @@ class ProductGallery(models.Model):
         if not self.alt and self.product and self.product.name:
             self.alt = self.product.name[:255]
         super().save(*args, **kwargs)
+
+    @property
+    def image_url(self):
+        """Retorna la URL de la imagen de galería (FK primero, fallback a legacy)."""
+        # Fase A: Intentar FK primero, fallback a legacy
+        if self.image_asset and self.image_asset.file and self.image_asset.file.name:
+            webp_url = self.image_asset.get_webp_url()
+            if webp_url:
+                return webp_url
+            return self.image_asset.file.url
+        if self.image and self.image.name:
+            return self.image.url
+        return ''
 
     @property
     def get_image_urls(self):

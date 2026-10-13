@@ -59,7 +59,8 @@
       },
       "name": "{{ single_product.name|escapejs }}",
       "image": [
-        "{{ request.scheme }}://{{ request.get_host }}{{ single_product.image_url }}"
+        "{{ request.scheme }}://{{ request.get_host }}{{ single_product.image_url }}"{% for img in product_gallery %}{% if img.image_url %},
+        "{{ request.scheme }}://{{ request.get_host }}{{ img.image_url }}"{% endif %}{% endfor %}
       ],
       "description": "{{ single_product.meta_description|default:single_product.description|escapejs|truncatewords:80 }}",
       "sku": "{{ single_product.code }}",
