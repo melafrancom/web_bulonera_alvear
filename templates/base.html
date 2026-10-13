@@ -162,7 +162,7 @@
         t.src=v;s=b.getElementsByTagName(e)[0];
         s.parentNode.insertBefore(t,s)}(window, document,'script',
         'https://connect.facebook.net/en_US/fbevents.js');
-        fbq('init', '{{ META_PIXEL_ID }}');
+        fbq('init', '{{ META_PIXEL_ID }}'{% if ba_external_id %}, {external_id: '{{ ba_external_id }}'}{% endif %});
         fbq('track', 'PageView');
     </script>
     {% endif %}

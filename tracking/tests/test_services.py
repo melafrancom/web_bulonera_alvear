@@ -212,6 +212,62 @@ class TestTrackingPayloadService:
         assert user_data['em'] == expected_em
         assert user_data['ph'] == expected_ph
 
+    def test_extract_user_data_includes_external_id_for_anonymous_user(self, rf):
+        """
+        QUÉ:
+            Verifica que un visitante anónimo con sesión activa genere external_id hasheado.
+        POR QUÉ:
+            Maximiza EMQ de Meta CAPI para visitantes no autenticados sin pedir login.
+        """
+        request = rf.get('/', HTTP_USER_AGENT='TestBrowser')
+        session_mock = MagicMock()
+        session_mock.session_key = "session_xyz_123"
+        request.session = session_mock
+
+        user_data = TrackingPayloadService.extract_user_data(request)
+
+        expected_external_id = hashlib.sha256(b"session_xyz_123").hexdigest()
+        assert user_data.get('external_id') == expected_external_id
+        assert 'em' not in user_data
+
+    def test_extract_user_data_anonymous_without_session_omits_external_id(self, rf):
+        """
+        QUÉ:
+            Verifica que una petición sin sesión o con session_key vacío no genere external_id ni crashee.
+        POR QUÉ:
+            Evita fallos silenciosos o valores nulos en el payload enviado a Meta CAPI.
+        """
+        request = rf.get('/', HTTP_USER_AGENT='TestBrowser')
+        # Sin atributo session
+        user_data = TrackingPayloadService.extract_user_data(request)
+        assert 'external_id' not in user_data
+
+        # Con session pero sin session_key
+        session_mock = MagicMock()
+        session_mock.session_key = None
+        request.session = session_mock
+        user_data_no_key = TrackingPayloadService.extract_user_data(request)
+        assert 'external_id' not in user_data_no_key
+
+    @pytest.mark.django_db
+    def test_extract_user_data_authenticated_user_uses_user_id_not_session(self, rf, user):
+        """
+        QUÉ:
+            Verifica que un usuario autenticado use hash(user.id) como external_id aunque tenga sesión.
+        POR QUÉ:
+            El ID de base de datos es inmutable y tiene mayor prioridad de matching en Meta CAPI.
+        """
+        request = rf.get('/', HTTP_USER_AGENT='TestBrowser')
+        request.user = user
+        session_mock = MagicMock()
+        session_mock.session_key = "session_other_key"
+        request.session = session_mock
+
+        user_data = TrackingPayloadService.extract_user_data(request)
+
+        expected_external_id = hashlib.sha256(str(user.id).encode('utf-8')).hexdigest()
+        assert user_data.get('external_id') == expected_external_id
+
     @pytest.mark.django_db
     def test_build_addtocart_custom_data_conforms_to_adr01(self, product):
         """
@@ -374,6 +430,34 @@ class TestMetaCapiService:
             assert second_attempt is False
             assert mock_delay.call_count == 1
 
+    def test_enqueue_add_to_cart_creates_session_if_missing(self, rf, product):
+        """
+        QUÉ:
+            Verifica que enqueue_add_to_cart fuerce session.create() si session_key es None.
+        POR QUÉ:
+            Garantiza que exista session_key disponible para external_id antes de encolar CAPI.
+        """
+        cache.clear()
+        request = rf.get('/', HTTP_USER_AGENT='TestBrowser')
+        request.COOKIES['ba_consent'] = 'a=1|d=1'
+        session_mock = MagicMock()
+        session_mock.session_key = None
+
+        def fake_create():
+            session_mock.session_key = "newly_created_session"
+
+        session_mock.create.side_effect = fake_create
+        request.session = session_mock
+
+        with patch('tracking.services.send_meta_capi_event.delay') as mock_delay:
+            result = MetaCapiService.enqueue_add_to_cart(request, product, quantity=1, event_id="cart_session_evt_1")
+
+            assert result is True
+            session_mock.create.assert_called_once()
+            call_args = mock_delay.call_args[0]
+            user_data = call_args[2]
+            assert user_data.get('external_id') == hashlib.sha256(b"newly_created_session").hexdigest()
+
     def test_enqueue_generate_lead_aborts_without_advertising_consent(self, rf):
         """
         QUÉ:
@@ -475,5 +559,31 @@ class TestMetaCapiService:
             assert first is True
             assert second is False
             assert mock_delay.call_count == 1
+
+
+def test_meta_settings_context_processor_injects_ba_external_id(rf, settings):
+    """
+    QUÉ:
+        Verifica que el context processor meta_settings inyecte ba_external_id correctamente.
+    POR QUÉ:
+        Sincroniza el Pixel del navegador con CAPI server-side para el Event Match Quality (EMQ).
+    """
+    from web_bulonera.context_processors import meta_settings
+
+    settings.META_PIXEL_ENABLED = True
+
+    # 1. Anónimo con sesión
+    request = rf.get('/')
+    session_mock = MagicMock()
+    session_mock.session_key = "session_ctx_test_123"
+    request.session = session_mock
+    ctx = meta_settings(request)
+    assert ctx['ba_external_id'] == hashlib.sha256(b"session_ctx_test_123").hexdigest()
+
+    # 2. Anónimo sin sesión
+    request_no_sess = rf.get('/')
+    ctx_no_sess = meta_settings(request_no_sess)
+    assert ctx_no_sess['ba_external_id'] == ''
+
 
 

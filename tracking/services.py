@@ -83,6 +83,14 @@ class TrackingPayloadService:
                 user_data["fn"] = TrackingPayloadService.hash_value(user.first_name)
             if getattr(user, 'last_name', None):
                 user_data["ln"] = TrackingPayloadService.hash_value(user.last_name)
+        else:
+            # POR QUÉ: Visitantes anónimos representan >95% del tráfico en AddToCart.
+            # Meta CAPI acepta external_id como cualquier identificador first-party
+            # persistente. El hash del session_key maximiza el EMQ sin requerir login.
+            session = getattr(request, 'session', None)
+            session_key = getattr(session, 'session_key', None) if session else None
+            if session_key:
+                user_data["external_id"] = TrackingPayloadService.hash_value(str(session_key))
         
         # Limpiar vacíos
         return {k: v for k, v in user_data.items() if v}
@@ -194,6 +202,11 @@ class MetaCapiService:
         if not ConsentService.has_advertising_consent(request):
             return False
             
+        # REGLA: Django no crea sesión hasta que se escribe en ella.
+        # Forzar creación para garantizar session_key como external_id.
+        if hasattr(request, 'session') and not getattr(request.session, 'session_key', None):
+            request.session.create()
+
         # Idempotencia de 1 hora para carritos (evitar reprocesos del mismo request)
         cache_key = f"capi:sent:{event_id}"
         if not cache.add(cache_key, 1, timeout=3600):

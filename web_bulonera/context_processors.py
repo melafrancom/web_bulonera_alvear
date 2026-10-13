@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.cache import cache
 from .models import SiteTheme
+from tracking.services import TrackingPayloadService
 
 from datetime import date, timedelta
 
@@ -14,9 +15,19 @@ def meta_settings(request):
     rating = google_data.get('rating') if is_valid else None
     reviews_count = google_data.get('total') if is_valid else None
 
+    # POR QUÉ: Sincronizar external_id entre Pixel (browser) y CAPI (servidor)
+    # para maximizar el Event Match Quality en Meta Events Manager.
+    ba_external_id = ''
+    if getattr(settings, 'META_PIXEL_ENABLED', False):
+        if hasattr(request, 'user') and request.user.is_authenticated:
+            ba_external_id = TrackingPayloadService.hash_value(str(request.user.id))
+        elif hasattr(request, 'session') and getattr(request.session, 'session_key', None):
+            ba_external_id = TrackingPayloadService.hash_value(str(request.session.session_key))
+
     return {
         'META_PIXEL_ENABLED': getattr(settings, 'META_PIXEL_ENABLED', False),
         'META_PIXEL_ID': getattr(settings, 'META_PIXEL_ID', ''),
+        'ba_external_id': ba_external_id,
         'SITE_URL': getattr(settings, 'SITE_URL', ''),
         'CURRENCY': getattr(settings, 'CURRENCY', 'USD'),
         'WHATSAPP_NUMBER': getattr(settings, 'WHATSAPP_NUMBER', ''),
