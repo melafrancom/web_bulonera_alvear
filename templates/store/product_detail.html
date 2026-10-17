@@ -174,17 +174,31 @@
     {% include 'seo/faq_schema_template.html' with faqs=product_faqs %}
 
     
-    <!-- Meta Pixel ViewContent Event -->
+    <!-- Meta Pixel & GA4 ViewContent / view_item Event (TRK-002) -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            if (typeof fbq !== 'undefined') {
-                fbq('track', 'ViewContent', {
+            if (window.baTrack) {
+                // Meta Pixel (encolado resiliente al delay de consentimiento)
+                window.baTrack.meta('ViewContent', {
                     content_type: 'product',
                     content_ids: ['{{ meta_pixel_data.id }}'],
                     content_name: '{{ meta_pixel_data.title|escapejs }}',
                     content_category: '{{ single_product.category.category_name|escapejs }}',
                     value: {{ price|default:"0.0"|unlocalize }},
-                    currency: '{{ CURRENCY }}'
+                    currency: '{{ CURRENCY|default:"ARS" }}'
+                });
+
+                // GA4 ecommerce view_item
+                window.baTrack.ecommerce('view_item', {
+                    currency: '{{ CURRENCY|default:"ARS" }}',
+                    value: {{ price|default:"0.0"|unlocalize }},
+                    items: [{
+                        item_id: '{{ meta_pixel_data.id }}',
+                        item_name: '{{ meta_pixel_data.title|escapejs }}',
+                        item_category: '{{ single_product.category.category_name|escapejs }}',
+                        price: {{ price|default:"0.0"|unlocalize }},
+                        quantity: 1
+                    }]
                 });
             }
         });

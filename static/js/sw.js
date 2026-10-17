@@ -1,7 +1,7 @@
 // Service Worker para Bulonera Alvear PWA
 // Estrategia: Cache First para assets, Network First para HTML, Network Only para API/Admin
 
-const CACHE_NAME = 'bulonera-v2';
+const CACHE_NAME = 'bulonera-v3';
 const STATIC_ASSETS = [
     '/',
     '/store/',
@@ -108,6 +108,7 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // 5. Cualquier otra petición interna (XHR/Fetch que no sea navegación): Pasar directo a red
-    event.respondWith(fetch(request));
+    // 5. Cualquier otra petición interna (XHR/Fetch que no sea navegación): Pasar directo a red nativa
+    // POR QUÉ: Evita "Uncaught (in promise) TypeError: Failed to fetch" cuando el navegador o usuario cancela peticiones
+    return;
 });
