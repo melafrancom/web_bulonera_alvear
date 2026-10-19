@@ -289,7 +289,7 @@
                     <span class="text-white/30">|</span>
                     
                     <!-- Ofertas (si las hay) -->
-                    <a href="{% url 'store:store' %}?promo=active" class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2 whitespace-nowrap">
+                    <a href="{% url 'store:offers' %}" class="flex-shrink-0 text-white text-sm font-medium hover:text-primary-100 transition-colors py-2 whitespace-nowrap">
                         <i class="w-4 h-4 inline-block mr-2 text-accent-400" data-lucide="zap"></i>
                         Ofertas
                     </a>
@@ -456,7 +456,7 @@
                 
                 <!-- Ofertas -->
                 <div class="pt-4 border-t border-slate-200 dark:border-slate-700">
-                    <a href="{% url 'store:store' %}?promo=active" @click="mobileOpen = false"
+                    <a href="{% url 'store:offers' %}" @click="mobileOpen = false"
                        class="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium text-accent-600 dark:text-accent-400">
                         <i data-lucide="zap" class="w-5 h-5"></i>
                         <span>Ofertas</span>

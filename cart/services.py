@@ -277,21 +277,33 @@ class CartService:
             bool: True si se removió exitosamente
         """
         try:
-            if user and user.is_authenticated:
-                cart_item = CartItem.objects.get(
-                    product_id=product_id,
-                    user=user,
-                    id=cart_item_id
-                )
-            else:
-                cart_id = CartService.get_or_create_cart_id(request)
-                cart = Cart.objects.get(cart_id=cart_id)
-                cart_item = CartItem.objects.get(
-                    product_id=product_id,
-                    cart=cart,
-                    id=cart_item_id
-                )
+            cart_id = CartService.get_or_create_cart_id(request)
             
+            # Buscar el ítem verificando pertenencia del usuario o de la sesión activa
+            if user and user.is_authenticated:
+                cart_item = CartItem.objects.filter(
+                    id=cart_item_id,
+                    product_id=product_id,
+                    user=user
+                ).first()
+                # Fallback resiliente: verificar por cart de sesión si no se asoció aún al usuario
+                if not cart_item and cart_id:
+                    cart_item = CartItem.objects.filter(
+                        id=cart_item_id,
+                        product_id=product_id,
+                        cart__cart_id=cart_id
+                    ).first()
+            else:
+                cart_item = CartItem.objects.filter(
+                    id=cart_item_id,
+                    product_id=product_id,
+                    cart__cart_id=cart_id
+                ).first()
+            
+            if not cart_item:
+                logger.warning(f"CartItem {cart_item_id} (producto {product_id}) no encontrado para la sesión/usuario activo.")
+                return False
+
             if remove_completely or cart_item.quantity <= 1:
                 cart_item.delete()
                 logger.info(f"Deleted cart item {cart_item_id}")
@@ -302,14 +314,8 @@ class CartService:
             
             return True
             
-        except CartItem.DoesNotExist:
-            logger.warning(f"Cart item {cart_item_id} not found")
-            return False
-        except Cart.DoesNotExist:
-            logger.warning(f"Cart not found for session")
-            return False
         except Exception as e:
-            logger.error(f"Error removing cart item: {e}")
+            logger.error(f"Error removing cart item {cart_item_id}: {e}", exc_info=True)
             return False
     
     @staticmethod
@@ -320,11 +326,14 @@ class CartService:
         cart_id: Optional[str] = None
     ) -> CartItem:
         """
-        Actualiza la cantidad de un ítem del carrito validando pertenencia y límites [1, 1000].
+        Actualiza la cantidad de un ítem existente validando propiedad y límites comerciales [1, 1000].
+        
+        REGLA: Este método es estrictamente para ACTUALIZAR.
+        Si quantity < 1 o > 1000, lanza ValueError. No elimina ítems silenciosamente.
         
         Args:
-            cart_item_id: ID del CartItem a actualizar
-            quantity: Nueva cantidad deseada
+            cart_item_id: ID del CartItem
+            quantity: Cantidad objetivo (debe cumplir 1 <= quantity <= 1000)
             user: Usuario autenticado (opcional)
             cart_id: Session cart_id para usuario anónimo (opcional)
             
@@ -332,21 +341,25 @@ class CartService:
             CartItem actualizado
             
         Raises:
-            ObjectDoesNotExist: Si el item no existe o no pertenece al usuario/sesión
-            ValueError: Si la cantidad es inválida o no hay contexto de usuario/sesión
+            ObjectDoesNotExist: Si el item no existe o no pertenece al usuario/sesión activa
+            ValueError: Si la cantidad está fuera del rango [1, 1000] o falta contexto de sesión
         """
-        clamped_quantity = CartService.clamp_quantity(quantity, default=1, min_val=1, max_val=1000)
-        
+        if quantity < 1 or quantity > 1000:
+            raise ValueError("La cantidad debe ser un número entero entre 1 y 1000.")
+
         if user and user.is_authenticated:
-            cart_item = CartItem.objects.get(id=cart_item_id, user=user)
+            cart_item = CartItem.objects.filter(id=cart_item_id, user=user).first()
         elif cart_id:
-            cart_item = CartItem.objects.get(id=cart_item_id, cart__cart_id=cart_id)
+            cart_item = CartItem.objects.filter(id=cart_item_id, cart__cart_id=cart_id).first()
         else:
-            raise ValueError("Se requiere usuario autenticado o cart_id de sesión válido")
-            
-        cart_item.quantity = clamped_quantity
+            raise ValueError("Se requiere usuario autenticado o cart_id de sesión válido.")
+
+        if not cart_item:
+            raise ObjectDoesNotExist(f"CartItem {cart_item_id} no encontrado o no pertenece a la sesión activa.")
+
+        cart_item.quantity = quantity
         cart_item.save(update_fields=['quantity'])
-        logger.info(f"Updated quantity to {clamped_quantity} for cart item {cart_item_id}")
+        logger.info(f"CartItem {cart_item_id} actualizado exitosamente a {quantity} unidades.")
         return cart_item
 
     @staticmethod

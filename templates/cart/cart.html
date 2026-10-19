@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
+{% load store_filters %}
 
 {% block title %}Carrito de Compras - Bulonera Alvear{% endblock %}
 
@@ -13,7 +14,9 @@
 {% block content %}
 <!-- Cart Section -->
 <section class="py-8 bg-slate-50 dark:bg-slate-900 min-h-screen">
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-4"
+         x-data="{ isEmpty: {% if not cart_items %}true{% else %}false{% endif %} }"
+         x-on:cart-updated.window="isEmpty = $event.detail.is_empty">
         
         <!-- Breadcrumb -->
         {% include 'includes/partials/_breadcrumb.html' with items=breadcrumb_items %}
@@ -30,21 +33,22 @@
                 </p>
                 {% endif %}
             </div>
-            <div class="bg-blue-50 dark:bg-slate-800 border-l-4 border-blue-600 p-3 rounded text-xs text-blue-900 dark:text-blue-200">
+            <!-- SXO Trust Badge con identidad visual Bulonera Alvear (#1B3A5C) -->
+            <div class="bg-blue-50 dark:bg-slate-800 border-l-4 border-[#1B3A5C] p-3 rounded text-xs text-blue-900 dark:text-blue-200 shadow-sm">
                 <span class="font-bold">Despacho Asegurado Bulonera Alvear</span><br>
                 <span>Stock verificado en Av. Alvear 1301, Resistencia. Envíos rápidos al NEA y garantía oficial.</span>
             </div>
         </div>
         
-        <!-- Empty State -->
-        {% if not cart_items %}
+        <!-- Empty State (Reactivo a AJAX y estático si no hay ítems) -->
+        <div x-show="isEmpty" x-cloak>
             {% include 'cart/partials/_empty_cart.html' %}
-        {% else %}
+        </div>
         
-        <!-- Cart Content -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Cart Content (Oculto dinámicamente cuando el carrito queda vacío) -->
+        <div x-show="!isEmpty" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            <!-- Cart Items Table -->
+            <!-- Cart Items Table / Cards -->
             <div class="lg:col-span-8">
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                     
@@ -54,8 +58,8 @@
                             <thead class="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                                 <tr class="text-sm uppercase text-slate-600 dark:text-slate-400">
                                     <th class="text-left py-4 px-4 font-semibold">Producto</th>
-                                    <th class="text-center py-4 px-4 font-semibold w-32">Cantidad</th>
-                                    <th class="text-right py-4 px-4 font-semibold w-32">Precio</th>
+                                    <th class="text-left py-4 px-4 font-semibold w-40">Cantidad</th>
+                                    <th class="text-right py-4 px-4 font-semibold w-36">Precio</th>
                                     <th class="text-right py-4 px-4 font-semibold w-32">Acciones</th>
                                 </tr>
                             </thead>
@@ -71,23 +75,25 @@
                     <div class="md:hidden divide-y divide-slate-200 dark:divide-slate-700">
                         {% for cart_item in cart_items %}
                         <div class="p-4" 
-                             x-data="{
-                                 qty: {{ cart_item.quantity }},
+                             data-cart-item-id="{{ cart_item.id }}"
+                             x-data="cartItemRow({
                                  itemId: {{ cart_item.id }},
                                  productId: {{ cart_item.product.id }},
-                                                                 removeItem() {
-                                    if (confirm('¿Eliminar este producto del carrito?')) {
-                                        this.$refs.removeFormMobile.submit();
-                                    }
-                                }
-                            }">
+                                 initialQty: {{ cart_item.quantity }},
+                                 unitPrice: '{% if cart_item.product.is_on_sale and cart_item.product.sale_price %}{{ cart_item.product.sale_price|floatformat:2 }}{% else %}{{ cart_item.product.price|floatformat:2 }}{% endif %}',
+                                 initialSubtotal: '{{ cart_item.sub_total|floatformat:2 }}',
+                                 updateUrl: '{% url 'cart:update_cart_quantity' cart_item.id %}',
+                                 removeUrl: '{% url 'cart:remove_cart_item' cart_item.product.id cart_item.id %}',
+                                 csrfToken: '{{ csrf_token }}'
+                             })">
                             
                             <!-- Product Info -->
                             <div class="flex gap-3 mb-4">
                                 <a href="{{ cart_item.product.get_url }}" class="flex-shrink-0">
                                     <img src="{{ cart_item.product.image_url }}" 
                                          alt="{{ cart_item.product.name }}"
-                                         class="w-20 h-20 object-cover rounded-lg border border-slate-200 dark:border-slate-700">
+                                         class="w-20 h-20 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
+                                         loading="lazy">
                                 </a>
                                 <div class="flex-1 min-w-0">
                                     <a href="{{ cart_item.product.get_url }}" 
@@ -109,51 +115,99 @@
                             
                             <!-- Price -->
                             <div class="mb-3">
-                                <div class="text-lg font-semibold text-slate-900 dark:text-white">
-                                    ${{ cart_item.sub_total|floatformat:2 }}
+                                <div class="text-lg font-semibold text-slate-900 dark:text-white tabular-nums"
+                                     x-text="formatCurrency(subtotal)">
+                                    {{ cart_item.sub_total|argentina_currency }}
                                 </div>
                                 <div class="text-sm text-slate-500 dark:text-slate-400">
                                     {% if cart_item.product.is_on_sale and cart_item.product.sale_price %}
-                                        <span class="text-green-600 dark:text-green-400">${{ cart_item.product.sale_price|floatformat:2 }}</span> c/u
-                                        <del class="text-slate-400 dark:text-slate-500 ml-1">${{ cart_item.product.price|floatformat:2 }}</del>
+                                        <span class="text-green-600 dark:text-green-400">{{ cart_item.product.sale_price|argentina_currency }}</span> c/u
+                                        <del class="text-slate-400 dark:text-slate-500 ml-1">{{ cart_item.product.price|argentina_currency }}</del>
                                     {% else %}
-                                        ${{ cart_item.product.price|floatformat:2 }} c/u
+                                        {{ cart_item.product.price|argentina_currency }} c/u
                                     {% endif %}
                                 </div>
                             </div>
                             
-                            <!-- Quantity Controls -->
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden">
-                                    <form action="{% url 'cart:remove_cart' cart_item.product.id cart_item.id %}" method="post" class="inline m-0 p-0">
-                                        {% csrf_token %}
-                                        <button type="submit"
-                                                class="px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
+                            <!-- Quantity Controls & Actions (Mobile Ergonomics >= 44x44px) -->
+                            <div class="flex items-center justify-between gap-2 pt-2">
+                                <form action="{% url 'cart:update_cart_quantity' cart_item.id %}" 
+                                      method="post" 
+                                      @submit.prevent="syncQuantity()" 
+                                      class="inline-flex flex-col items-start gap-1">
+                                    {% csrf_token %}
+                                    
+                                    <div class="flex items-center border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800 shadow-sm">
+                                        <!-- Botón Decrementar móvil -->
+                                        <button type="button"
+                                                @click="stepQuantity(-1)"
+                                                :disabled="isLoading || isRemoving"
+                                                class="min-w-[44px] min-h-[44px] flex items-center justify-center bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 active:scale-95 transition-all disabled:opacity-50"
+                                                aria-label="Disminuir cantidad">
                                             <i data-lucide="minus" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
                                         </button>
-                                    </form>
-                                    <input type="text" 
-                                           x-model="qty"
-                                           readonly
-                                           class="w-12 text-center border-0 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium">
-                                    <form action="{% url 'cart:add_cart' cart_item.product.id %}" method="post">
-                                        {% csrf_token %}
-                                        {% for item in cart_item.variation.all %}
-                                        <input type="hidden" name="{{ item.variation_category|lower }}" value="{{ item.variation_value|capfirst }}">
-                                        {% endfor %}
-                                        <button type="submit"
-                                                class="px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
+                                        
+                                        <!-- Input Numérico móvil -->
+                                        <input type="number" 
+                                               name="quantity"
+                                               x-model.number="qty"
+                                               @change="onInputChange()"
+                                               @keydown.enter.prevent="onInputChange()"
+                                               :disabled="isLoading || isRemoving"
+                                               min="1" 
+                                               max="1000"
+                                               step="1"
+                                               required
+                                               aria-label="Cantidad para {{ cart_item.product.name }}"
+                                               class="w-14 min-h-[44px] text-center border-0 bg-transparent text-slate-900 dark:text-white font-semibold text-base focus:ring-1 focus:ring-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                                        
+                                        <!-- Botón Incrementar móvil -->
+                                        <button type="button"
+                                                @click="stepQuantity(1)"
+                                                :disabled="isLoading || isRemoving"
+                                                class="min-w-[44px] min-h-[44px] flex items-center justify-center bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 active:scale-95 transition-all disabled:opacity-50"
+                                                aria-label="Aumentar cantidad">
                                             <i data-lucide="plus" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
                                         </button>
-                                    </form>
-                                </div>
+                                    </div>
+                                    
+                                    <!-- Botón visible SIN JavaScript (oculto progresivamente por Alpine) -->
+                                    <button type="submit" 
+                                            x-show="false"
+                                            class="mt-1 px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-xs font-semibold rounded text-slate-800 dark:text-slate-200">
+                                        Actualizar cantidad
+                                    </button>
+                                    
+                                    <!-- Feedback de Carga móvil -->
+                                    <div x-show="isLoading" x-cloak class="text-xs text-primary-600 dark:text-primary-400 flex items-center gap-1 mt-1">
+                                        <svg class="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                        </svg>
+                                        <span>Actualizando...</span>
+                                    </div>
+
+                                    <!-- Feedback de Error / Reintento móvil -->
+                                    <div x-show="errorMessage" x-cloak class="text-xs text-red-600 dark:text-red-400 mt-1 flex flex-col gap-0.5">
+                                        <span x-text="errorMessage"></span>
+                                        <button type="button" x-show="showRetry" @click="retry()" class="text-xs text-blue-600 dark:text-blue-400 underline font-semibold hover:text-blue-800 text-left">
+                                            Reintentar
+                                        </button>
+                                    </div>
+                                </form>
                                 
-                                <form action="{% url 'cart:remove_cart_item' cart_item.product.id cart_item.id %}" method="post" x-ref="removeFormMobile" class="inline m-0 p-0">
+                                <!-- Botón Eliminar móvil (>= 44x44px) -->
+                                <form action="{% url 'cart:remove_cart_item' cart_item.product.id cart_item.id %}" 
+                                      method="post" 
+                                      @submit.prevent="removeItem($event)" 
+                                      class="inline m-0 p-0">
                                     {% csrf_token %}
-                                    <button type="button" @click="removeItem()"
-                                            class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg">
+                                    <button type="submit" 
+                                            :disabled="isLoading || isRemoving"
+                                            class="min-h-[44px] inline-flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-sm font-medium rounded-lg transition-all duration-200 disabled:opacity-50"
+                                            aria-label="Eliminar {{ cart_item.product.name }}">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                        Eliminar
+                                        <span x-text="isRemoving ? 'Eliminando...' : 'Eliminar'">Eliminar</span>
                                     </button>
                                 </form>
                             </div>
@@ -170,7 +224,6 @@
             </div>
             
         </div>
-        {% endif %}
         
     </div>
 </section>
@@ -178,4 +231,218 @@
 <!-- Floating Cart -->
 {% include 'includes/partials/_floating_cart.html' %}
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function registerCartComponents() {
+        if (window.Alpine) {
+            // Componente de Resumen Global del Carrito
+            Alpine.data('cartSummary', ({ initialTotal }) => ({
+                total: initialTotal,
+
+                formatCurrency(val) {
+                    const n = parseFloat(val) || 0;
+                    return new Intl.NumberFormat('es-AR', {
+                        style: 'currency',
+                        currency: 'ARS',
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }).format(n);
+                },
+
+                updateCart(cartData) {
+                    if (cartData && cartData.total !== undefined) {
+                        this.total = cartData.total;
+                    }
+                }
+            }));
+
+            // Componente de Fila/Tarjeta de Ítem de Carrito
+            Alpine.data('cartItemRow', ({ itemId, productId, initialQty, unitPrice, initialSubtotal, updateUrl, removeUrl, csrfToken }) => ({
+                itemId: itemId,
+                productId: productId,
+                qty: parseInt(initialQty, 10) || 1,
+                lastConfirmedQty: parseInt(initialQty, 10) || 1,
+                lastAttemptedQty: parseInt(initialQty, 10) || 1,
+                unitPrice: unitPrice,
+                subtotal: initialSubtotal,
+                isLoading: false,
+                isRemoving: false,
+                errorMessage: '',
+                showRetry: false,
+                updateUrl: updateUrl,
+                removeUrl: removeUrl,
+                csrfToken: csrfToken,
+
+                formatCurrency(val) {
+                    const n = parseFloat(val) || 0;
+                    return new Intl.NumberFormat('es-AR', {
+                        style: 'currency',
+                        currency: 'ARS',
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }).format(n);
+                },
+
+                stepQuantity(delta) {
+                    if (this.isLoading || this.isRemoving) return;
+                    const nextVal = (parseInt(this.qty, 10) || 1) + delta;
+                    if (nextVal < 1) {
+                        this.errorMessage = 'La cantidad mínima es 1. Usa Eliminar para quitar el producto.';
+                        this.showRetry = false;
+                        return;
+                    }
+                    if (nextVal > 1000) {
+                        this.errorMessage = 'La cantidad máxima permitida es 1000 unidades.';
+                        this.showRetry = false;
+                        return;
+                    }
+                    this.qty = nextVal;
+                    this.syncQuantity();
+                },
+
+                onInputChange() {
+                    if (this.isLoading || this.isRemoving) return;
+                    const val = parseInt(this.qty, 10);
+                    if (isNaN(val) || val < 1) {
+                        this.errorMessage = 'La cantidad mínima es 1. Usa Eliminar para quitar el producto.';
+                        this.showRetry = false;
+                        this.qty = this.lastConfirmedQty;
+                        return;
+                    }
+                    if (val > 1000) {
+                        this.errorMessage = 'La cantidad máxima permitida es 1000 unidades.';
+                        this.showRetry = false;
+                        this.qty = 1000;
+                    } else {
+                        this.qty = val;
+                    }
+                    this.syncQuantity();
+                },
+
+                retry() {
+                    this.qty = this.lastAttemptedQty;
+                    this.syncQuantity();
+                },
+
+                async syncQuantity() {
+                    if (this.isLoading || this.isRemoving) return;
+                    const targetQty = parseInt(this.qty, 10);
+                    if (isNaN(targetQty) || targetQty < 1 || targetQty > 1000) {
+                        this.qty = this.lastConfirmedQty;
+                        return;
+                    }
+
+                    this.isLoading = true;
+                    this.errorMessage = '';
+                    this.showRetry = false;
+                    this.lastAttemptedQty = targetQty;
+
+                    try {
+                        const formData = new URLSearchParams();
+                        formData.append('quantity', targetQty);
+
+                        const response = await fetch(this.updateUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRFToken': this.csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            },
+                            body: formData.toString()
+                        });
+
+                        const data = await response.json();
+                        if (!response.ok || data.status !== 'success') {
+                            throw new Error(data.message || 'Error al actualizar la cantidad');
+                        }
+
+                        this.lastConfirmedQty = data.item.quantity;
+                        this.qty = data.item.quantity;
+                        this.subtotal = data.item.subtotal;
+                        this.errorMessage = '';
+                        this.showRetry = false;
+
+                        // Notificar a toda la ventana para actualizar resumen y empty state si correspondiera
+                        window.dispatchEvent(new CustomEvent('cart-updated', { detail: data.cart }));
+
+                        // Re-inicializar iconos si fuera necesario
+                        if (window.lucide) { window.lucide.createIcons(); }
+                    } catch (err) {
+                        this.errorMessage = err.message || 'Error de conexión al actualizar.';
+                        this.showRetry = true;
+                        this.qty = this.lastConfirmedQty;
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+                async removeItem(event) {
+                    if (this.isLoading || this.isRemoving) return;
+
+                    this.isRemoving = true;
+                    this.errorMessage = '';
+                    this.showRetry = false;
+
+                    const form = (event && event.target && event.target.tagName === 'FORM')
+                        ? event.target
+                        : (event && event.target && event.target.closest('form'))
+                            ? event.target.closest('form')
+                            : null;
+                    const token = (form && form.querySelector('[name=csrfmiddlewaretoken]')?.value)
+                        || this.csrfToken
+                        || document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                        || '';
+
+                    try {
+                        const formData = new URLSearchParams();
+                        formData.append('csrfmiddlewaretoken', token);
+
+                        const response = await fetch(this.removeUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRFToken': token,
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            },
+                            body: formData.toString()
+                        });
+
+                        const data = await response.json();
+                        if (!response.ok || data.status !== 'deleted') {
+                            throw new Error(data.message || 'No se pudo eliminar el producto.');
+                        }
+
+                        // 1. Notificar a toda la ventana para actualizar resumen, badges y empty state
+                        window.dispatchEvent(new CustomEvent('cart-updated', { detail: data.cart }));
+
+                        // 2. Remover todas las representaciones del ítem en el DOM (desktop y mobile sincronizados)
+                        const itemRows = document.querySelectorAll(`[data-cart-item-id="${this.itemId}"]`);
+                        if (itemRows.length > 0) {
+                            itemRows.forEach(el => el.remove());
+                        } else {
+                            this.$root.remove();
+                        }
+                    } catch (err) {
+                        console.error('Error al eliminar ítem vía AJAX:', err);
+                        // Fallback resiliente: enviar el formulario nativo si fetch o la red fallaran
+                        if (form) {
+                            form.submit();
+                        } else {
+                            window.location.reload();
+                        }
+                    }
+                }
+            }));
+        }
+    }
+
+    document.addEventListener('alpine:init', registerCartComponents);
+    if (window.Alpine) {
+        registerCartComponents();
+    }
+</script>
 {% endblock %}

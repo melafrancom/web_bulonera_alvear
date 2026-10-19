@@ -57,13 +57,14 @@ class CategoryService:
     @staticmethod
     def get_categories_for_menu() -> QuerySet[Category]:
         """
-        Obtiene categorías optimizadas para el menú de navegación.
-        Alias del método get_all_categories para compatibilidad con context_processor.
+        Obtiene categorías optimizadas para el menú de navegación y vistas públicas.
+        REGLA: Excluye categorías técnicas de fallback de importación ('sin-categoria').
+        No altera get_all_categories() para no afectar otros consumidores o Django Admin.
         
         Returns:
-            QuerySet de Category con subcategorías
+            QuerySet de Category con subcategorías excluyendo 'sin-categoria'
         """
-        return CategoryService.get_all_categories()
+        return Category.objects.exclude(slug="sin-categoria").prefetch_related('subcategories').all()
 
     @staticmethod
     def get_navbar_items() -> QuerySet:

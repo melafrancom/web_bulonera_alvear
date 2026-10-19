@@ -177,13 +177,13 @@ class TestCartClampingAndServiceSecurity:
         updated = CartService.update_quantity(item.id, 10, cart_id='test-session-clamping')
         assert updated.quantity == 10
 
-        # Actualizar a valor por encima de 1000
-        updated = CartService.update_quantity(item.id, 5000, cart_id='test-session-clamping')
-        assert updated.quantity == 1000
+        # Actualizar a valor por encima de 1000 lanza ValueError
+        with pytest.raises(ValueError):
+            CartService.update_quantity(item.id, 5000, cart_id='test-session-clamping')
 
-        # Actualizar a valor menor a 1
-        updated = CartService.update_quantity(item.id, -20, cart_id='test-session-clamping')
-        assert updated.quantity == 1
+        # Actualizar a valor menor a 1 lanza ValueError
+        with pytest.raises(ValueError):
+            CartService.update_quantity(item.id, -20, cart_id='test-session-clamping')
 
 
 @pytest.mark.django_db

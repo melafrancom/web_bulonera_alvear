@@ -78,6 +78,19 @@ class TestCategoryService(TestCase):
         categories = CategoryService.get_categories_for_menu()
         self.assertEqual(categories.count(), 2)
 
+    def test_get_categories_for_menu_excludes_sin_categoria(self):
+        """Test: get_categories_for_menu excluye categoría técnica sin-categoria pero get_all_categories la incluye"""
+        Category.objects.create(
+            category_name='Sin Categoría',
+            slug='sin-categoria',
+            description='Categoría técnica de importación'
+        )
+        menu_categories = CategoryService.get_categories_for_menu()
+        all_categories = CategoryService.get_all_categories()
+        
+        self.assertFalse(menu_categories.filter(slug='sin-categoria').exists())
+        self.assertTrue(all_categories.filter(slug='sin-categoria').exists())
+
     def test_get_navbar_items(self):
         """Test: Obtener items de navegación ordenados y activos"""
         from category.models import NavbarItem

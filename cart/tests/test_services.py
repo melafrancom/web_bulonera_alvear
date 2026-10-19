@@ -295,3 +295,106 @@ class TestCartService(TestCase):
         user_items = CartItem.objects.filter(user=self.user)
         self.assertEqual(user_items.count(), 1)
         self.assertEqual(user_items.first().quantity, 2)
+
+    def test_update_quantity_authenticated_user_success(self):
+        """Test: Actualizar cantidad de un ítem para usuario autenticado"""
+        cart_item = CartItem.objects.create(
+            user=self.user,
+            product=self.product,
+            quantity=2,
+            purchase_price=100.00
+        )
+        updated = CartService.update_quantity(
+            cart_item_id=cart_item.id,
+            quantity=5,
+            user=self.user
+        )
+        self.assertEqual(updated.quantity, 5)
+        cart_item.refresh_from_db()
+        self.assertEqual(cart_item.quantity, 5)
+
+    def test_update_quantity_anonymous_user_success(self):
+        """Test: Actualizar cantidad de un ítem para usuario anónimo con cart_id"""
+        cart = Cart.objects.create(cart_id='anon-session-123')
+        cart_item = CartItem.objects.create(
+            cart=cart,
+            product=self.product,
+            quantity=1,
+            purchase_price=100.00
+        )
+        updated = CartService.update_quantity(
+            cart_item_id=cart_item.id,
+            quantity=10,
+            cart_id='anon-session-123'
+        )
+        self.assertEqual(updated.quantity, 10)
+        cart_item.refresh_from_db()
+        self.assertEqual(cart_item.quantity, 10)
+
+    def test_update_quantity_boundary_limits(self):
+        """Test: Límites comerciales exactos 1 y 1000"""
+        cart_item = CartItem.objects.create(
+            user=self.user,
+            product=self.product,
+            quantity=5,
+            purchase_price=100.00
+        )
+        # Límite inferior: 1
+        updated_1 = CartService.update_quantity(cart_item.id, 1, user=self.user)
+        self.assertEqual(updated_1.quantity, 1)
+
+        # Límite superior: 1000
+        updated_1000 = CartService.update_quantity(cart_item.id, 1000, user=self.user)
+        self.assertEqual(updated_1000.quantity, 1000)
+
+    def test_update_quantity_rejects_zero_or_negative(self):
+        """Test: update_quantity rechaza <= 0 con ValueError y no elimina el ítem"""
+        cart_item = CartItem.objects.create(
+            user=self.user,
+            product=self.product,
+            quantity=3,
+            purchase_price=100.00
+        )
+        with self.assertRaises(ValueError):
+            CartService.update_quantity(cart_item.id, 0, user=self.user)
+
+        with self.assertRaises(ValueError):
+            CartService.update_quantity(cart_item.id, -5, user=self.user)
+
+        # El ítem debe seguir existiendo intacto
+        cart_item.refresh_from_db()
+        self.assertEqual(cart_item.quantity, 3)
+
+    def test_update_quantity_rejects_greater_than_1000(self):
+        """Test: update_quantity rechaza cantidades mayores a 1000 con ValueError"""
+        cart_item = CartItem.objects.create(
+            user=self.user,
+            product=self.product,
+            quantity=2,
+            purchase_price=100.00
+        )
+        with self.assertRaises(ValueError):
+            CartService.update_quantity(cart_item.id, 1001, user=self.user)
+
+        cart_item.refresh_from_db()
+        self.assertEqual(cart_item.quantity, 2)
+
+    def test_update_quantity_unauthorized_user_raises_does_not_exist(self):
+        """Test: Intentar actualizar un ítem de otro usuario o sesión levanta ObjectDoesNotExist"""
+        from django.core.exceptions import ObjectDoesNotExist
+        other_user = Account.objects.create_user(
+            first_name='Other',
+            last_name='User',
+            email='other@example.com',
+            username='otheruser',
+            password='testpass123'
+        )
+        cart_item = CartItem.objects.create(
+            user=other_user,
+            product=self.product,
+            quantity=2,
+            purchase_price=100.00
+        )
+        with self.assertRaises(ObjectDoesNotExist):
+            CartService.update_quantity(cart_item.id, 5, user=self.user)
+

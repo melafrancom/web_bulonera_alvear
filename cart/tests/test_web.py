@@ -82,3 +82,176 @@ class TestEmptyCartCommercialState:
         assert "Ver productos en oferta" in content
         assert category.category_name in content
         assert category.get_url() in content
+
+
+@pytest.mark.django_db
+class TestCartUpdateAndRemoveWebViews:
+    """Tests para endpoints de actualización y eliminación con soporte dual (AJAX JSON y POST tradicional)"""
+
+    def test_update_cart_quantity_ajax_success(self, client, product):
+        """Test: update_cart_quantity vía AJAX devuelve 200 con cadenas decimales y estado del carrito"""
+        from django.urls import reverse
+        from cart.models import Cart, CartItem
+
+        session = client.session
+        session.save()
+        cart = Cart.objects.create(cart_id=session.session_key)
+        cart_item = CartItem.objects.create(
+            cart=cart,
+            product=product,
+            quantity=1,
+            purchase_price=product.price
+        )
+
+        url = reverse('cart:update_cart_quantity', args=[cart_item.id])
+        response = client.post(
+            url,
+            {'quantity': 4},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json'
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data['status'] == 'success'
+        assert data['item']['id'] == cart_item.id
+        assert data['item']['quantity'] == 4
+        # Cadenas decimales a 2 decimales para precisión contable
+        assert isinstance(data['item']['subtotal'], str)
+        assert '.' in data['item']['subtotal']
+        assert isinstance(data['cart']['total'], str)
+        assert data['cart']['quantity'] == 4
+        assert data['cart']['item_count'] == 1
+        assert data['cart']['is_empty'] is False
+
+    def test_update_cart_quantity_ajax_rejects_zero_or_negative(self, client, product):
+        """Test: update_cart_quantity rechaza 0 con HTTP 400 y no elimina el ítem"""
+        from django.urls import reverse
+        from cart.models import Cart, CartItem
+
+        session = client.session
+        session.save()
+        cart = Cart.objects.create(cart_id=session.session_key)
+        cart_item = CartItem.objects.create(
+            cart=cart,
+            product=product,
+            quantity=2,
+            purchase_price=product.price
+        )
+
+        url = reverse('cart:update_cart_quantity', args=[cart_item.id])
+        response = client.post(
+            url,
+            {'quantity': 0},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json'
+        )
+
+        assert response.status_code == 400
+        data = response.json()
+        assert data['status'] == 'error'
+        # El ítem sigue existiendo
+        cart_item.refresh_from_db()
+        assert cart_item.quantity == 2
+
+    def test_update_cart_quantity_ajax_rejects_empty_or_non_integer(self, client, product):
+        """Test: update_cart_quantity rechaza valores vacíos o alfanuméricos con HTTP 400"""
+        from django.urls import reverse
+        from cart.models import Cart, CartItem
+
+        session = client.session
+        session.save()
+        cart = Cart.objects.create(cart_id=session.session_key)
+        cart_item = CartItem.objects.create(
+            cart=cart,
+            product=product,
+            quantity=1,
+            purchase_price=product.price
+        )
+
+        url = reverse('cart:update_cart_quantity', args=[cart_item.id])
+        # Vacío
+        res_empty = client.post(url, {'quantity': ''}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        assert res_empty.status_code == 400
+        assert res_empty.json()['status'] == 'error'
+
+        # No numérico
+        res_abc = client.post(url, {'quantity': 'abc'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        assert res_abc.status_code == 400
+        assert res_abc.json()['status'] == 'error'
+
+    def test_update_cart_quantity_traditional_post_fallback(self, client, product):
+        """Test: update_cart_quantity sin JavaScript redirige 302 y actualiza la base de datos"""
+        from django.urls import reverse
+        from cart.models import Cart, CartItem
+
+        session = client.session
+        session.save()
+        cart = Cart.objects.create(cart_id=session.session_key)
+        cart_item = CartItem.objects.create(
+            cart=cart,
+            product=product,
+            quantity=1,
+            purchase_price=product.price
+        )
+
+        url = reverse('cart:update_cart_quantity', args=[cart_item.id])
+        response = client.post(url, {'quantity': 3})
+
+        assert response.status_code == 302
+        assert response.url == reverse('cart:cart')
+        cart_item.refresh_from_db()
+        assert cart_item.quantity == 3
+
+    def test_remove_cart_item_ajax_returns_is_empty_true(self, client, product):
+        """Test: remove_cart_item vía AJAX retorna 'deleted' y cart.is_empty=True cuando se elimina el último ítem"""
+        from django.urls import reverse
+        from cart.models import Cart, CartItem
+
+        session = client.session
+        session.save()
+        cart = Cart.objects.create(cart_id=session.session_key)
+        cart_item = CartItem.objects.create(
+            cart=cart,
+            product=product,
+            quantity=1,
+            purchase_price=product.price
+        )
+
+        url = reverse('cart:remove_cart_item', args=[product.id, cart_item.id])
+        response = client.post(
+            url,
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json'
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data['status'] == 'deleted'
+        assert data['item_id'] == cart_item.id
+        assert data['cart']['is_empty'] is True
+        assert data['cart']['item_count'] == 0
+        assert not CartItem.objects.filter(id=cart_item.id).exists()
+
+    def test_remove_cart_item_traditional_post(self, client, product):
+        """Test: remove_cart_item tradicional redirige 302 al carrito"""
+        from django.urls import reverse
+        from cart.models import Cart, CartItem
+
+        session = client.session
+        session.save()
+        cart = Cart.objects.create(cart_id=session.session_key)
+        cart_item = CartItem.objects.create(
+            cart=cart,
+            product=product,
+            quantity=1,
+            purchase_price=product.price
+        )
+
+        url = reverse('cart:remove_cart_item', args=[product.id, cart_item.id])
+        response = client.post(url)
+
+        assert response.status_code == 302
+        assert response.url == reverse('cart:cart')
+        assert not CartItem.objects.filter(id=cart_item.id).exists()
+

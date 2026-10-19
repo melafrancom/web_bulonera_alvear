@@ -5,6 +5,8 @@ from django.views.decorators.http import require_POST
 from django.http import JsonResponse, HttpResponseRedirect
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
 
 import logging
 
@@ -150,19 +152,120 @@ def remove_cart(request, product_id, cart_item_id):
 
 
 @require_POST
+def update_cart_quantity(request, cart_item_id: int):
+    """
+    Actualiza la cantidad de un ítem del carrito.
+    Soporta AJAX (retorna JSON para Alpine.js con cadenas decimales) y POST tradicional (302).
+    """
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('Accept') == 'application/json'
+    user = request.user if request.user.is_authenticated else None
+    cart_id = CartService.get_or_create_cart_id(request) if not user else None
+    
+    # 1. Validación estricta de entrada (No convertir silenciosamente inválidos en 1)
+    raw_quantity = request.POST.get('quantity') or request.POST.get('qty')
+    if raw_quantity is None or str(raw_quantity).strip() == '':
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': 'La cantidad es requerida.'}, status=400)
+        messages.error(request, 'La cantidad es requerida.')
+        return redirect('cart:cart')
+
+    try:
+        quantity = int(raw_quantity)
+    except (ValueError, TypeError):
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': 'La cantidad debe ser un número entero válido.'}, status=400)
+        messages.error(request, 'La cantidad debe ser un número entero válido.')
+        return redirect('cart:cart')
+
+    # 2. Ejecución en Servicio
+    try:
+        updated_item = CartService.update_quantity(
+            cart_item_id=cart_item_id,
+            quantity=quantity,
+            user=user,
+            cart_id=cart_id
+        )
+        
+        # 3. Recalcular totales frescos
+        cart_items = CartService.get_cart_items(request, user)
+        cart_data = CartService.calculate_cart_totals(cart_items)
+        items_list = list(cart_data['items'])
+        item_count = len(items_list)
+        total_units = cart_data['quantity']
+
+        if is_ajax:
+            return JsonResponse({
+                'status': 'success',
+                'item': {
+                    'id': updated_item.id,
+                    'quantity': updated_item.quantity,
+                    'unit_price': f"{updated_item.purchase_price:.2f}",
+                    'subtotal': f"{updated_item.sub_total:.2f}",
+                },
+                'cart': {
+                    'total': f"{cart_data['total']:.2f}",
+                    'quantity': total_units,
+                    'item_count': item_count,
+                    'is_empty': item_count == 0,
+                }
+            })
+
+        return redirect('cart:cart')
+
+    except ValueError as val_err:
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': str(val_err)}, status=400)
+        messages.error(request, str(val_err))
+        return redirect('cart:cart')
+
+    except ObjectDoesNotExist:
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': 'El producto no fue encontrado en tu carrito.'}, status=404)
+        messages.error(request, 'El producto no fue encontrado en tu carrito.')
+        return redirect('cart:cart')
+
+    except Exception as err:
+        logger.error(f"Error actualizando cantidad en cart_item {cart_item_id}: {err}", exc_info=True)
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': 'Ocurrió un error al actualizar el carrito.'}, status=500)
+        messages.error(request, 'Ocurrió un error al actualizar el carrito.')
+        return redirect('cart:cart')
+
+
+@require_POST
 def remove_cart_item(request, product_id, cart_item_id):
     """
     Elimina completamente un item del carrito.
-    Requiere método POST con protección CSRF obligatoria.
+    Soporta AJAX (retorna totales y flag is_empty) y POST tradicional (302).
     """
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('Accept') == 'application/json'
     user = request.user if request.user.is_authenticated else None
-    CartService.remove_from_cart(
+    
+    success = CartService.remove_from_cart(
         request=request,
         product_id=product_id,
         cart_item_id=cart_item_id,
         user=user,
         remove_completely=True
     )
+
+    if is_ajax:
+        cart_items = CartService.get_cart_items(request, user)
+        cart_data = CartService.calculate_cart_totals(cart_items)
+        items_list = list(cart_data['items'])
+        item_count = len(items_list)
+
+        return JsonResponse({
+            'status': 'deleted' if success else 'error',
+            'item_id': cart_item_id,
+            'cart': {
+                'total': f"{cart_data['total']:.2f}",
+                'quantity': cart_data['quantity'],
+                'item_count': item_count,
+                'is_empty': item_count == 0,
+            }
+        })
+
     return redirect('cart:cart')
 
 

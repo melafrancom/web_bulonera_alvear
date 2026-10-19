@@ -5,8 +5,11 @@ Props: total, show_checkout_button, show_continue_button
 {% endcomment %}
 {% load static %}
 {% load custom_filters %}
+{% load store_filters %}
 
-<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 sticky top-4">
+<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 sticky top-4"
+     x-data="cartSummary({ initialTotal: '{{ total|floatformat:2 }}' })"
+     x-on:cart-updated.window="updateCart($event.detail)">
     <div class="p-6">
         <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
             Resumen de Orden
@@ -17,8 +20,9 @@ Props: total, show_checkout_button, show_continue_button
             <span class="text-slate-600 dark:text-slate-400 font-medium">
                 Total:
             </span>
-            <span class="text-2xl font-bold text-slate-900 dark:text-white">
-                ${{ total|floatformat:2 }}
+            <span class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums"
+                  x-text="formatCurrency(total)">
+                {{ total|argentina_currency }}
             </span>
         </div>
         
@@ -37,7 +41,7 @@ Props: total, show_checkout_button, show_continue_button
         <div class="space-y-3">
             {% if show_checkout_button %}
             <a href="{% url 'cart:checkout' %}" 
-               class="block w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-center font-semibold rounded-lg transition-colors duration-200">
+               class="block w-full px-6 py-3 bg-[#D42B1E] hover:bg-[#B82419] text-white text-center font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:ring-4 focus:ring-red-200">
                 Proceder al Pago
             </a>
             {% endif %}
