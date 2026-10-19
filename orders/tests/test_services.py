@@ -262,6 +262,42 @@ class TestCheckoutService:
         with pytest.raises(ValueError, match="carrito está vacío"):
             CheckoutService.complete_checkout(user, form_data)
 
+    def test_complete_checkout_rejects_purchase_price_zero(self, user, product):
+        """Rechaza checkout si algún item tiene purchase_price <= 0."""
+        from cart.models import Cart
+        cart = Cart.objects.create(cart_id=f'test-zero-{user.id}')
+        CartItem.objects.create(
+            cart=cart, user=user, product=product,
+            quantity=1, is_active=True, purchase_price=Decimal('0.00')
+        )
+        form_data = {
+            'first_name': 'Test', 'last_name': 'User', 'phone': '123',
+            'email': user.email, 'address_line_1': 'Test', 'country': 'AR',
+            'city': 'BA', 'state': '1000'
+        }
+        with pytest.raises(ValueError, match="sin precio válido"):
+            CheckoutService.complete_checkout(user, form_data)
+
+    def test_complete_checkout_rejects_purchase_price_none(self, user, product):
+        """Rechaza checkout si algún item tiene purchase_price None."""
+        from cart.models import Cart
+        cart = Cart.objects.create(cart_id=f'test-none-{user.id}')
+        item = CartItem(
+            cart=cart, user=user, product=product,
+            quantity=1, is_active=True
+        )
+        item.purchase_price = None
+        # Saltear save() regular que autocompleta precio
+        CartItem.objects.bulk_create([item])
+
+        form_data = {
+            'first_name': 'Test', 'last_name': 'User', 'phone': '123',
+            'email': user.email, 'address_line_1': 'Test', 'country': 'AR',
+            'city': 'BA', 'state': '1000'
+        }
+        with pytest.raises(ValueError, match="sin precio válido"):
+            CheckoutService.complete_checkout(user, form_data)
+
 
 @pytest.mark.django_db
 class TestAtomicity:

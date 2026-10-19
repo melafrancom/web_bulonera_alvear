@@ -1,3 +1,7 @@
+import html
+import re
+from urllib.parse import parse_qs, urlsplit
+
 import pytest
 from django.test import Client
 from django.urls import reverse
@@ -107,6 +111,53 @@ class TestStoreViews:
         assert len(products) > 0
 
     def test_search_view_no_results(self, client):
-        """Verifica que search con keyword inexistente no retorna errores."""
+        """Verifica que search con keyword inexistente no retorna errores y pasa keyword al contexto."""
         response = client.get(reverse('store:search') + "?keyword=xyzinexistente")
         assert response.status_code == 200
+        assert response.context.get('keyword') == 'xyzinexistente'
+
+    def test_search_view_q_parameter_passes_keyword_to_context(self, client):
+        """Verifica que el parámetro estándar 'q' también se pasa al contexto para Empty States."""
+        response = client.get(reverse('store:search') + "?q=arandela_especial_123")
+        assert response.status_code == 200
+        assert response.context.get('keyword') == 'arandela_especial_123'
+
+
+@pytest.mark.django_db
+class TestCommercialEmptyStates:
+    def test_zero_search_renders_recovery_cta_and_encodes_query(self, client):
+        keyword = "bulon especial 12x1.5"
+        response = client.get(reverse("store:search"), {"q": keyword})
+
+        assert response.status_code == 200
+        assert keyword in response.content.decode()
+        assert "view_zero_search_results" in response.content.decode()
+        assert "click_empty_search_whatsapp" in response.content.decode()
+        assert f"search_term:'{keyword}'" not in response.content.decode()
+
+        match = re.search(
+            r'<a(?=[^>]*data-ba-lead="empty_search")[^>]*href="([^"]+)"',
+            response.content.decode(),
+        )
+        assert match is not None
+        href = html.unescape(match.group(1))
+        params = parse_qs(urlsplit(href).query)
+        assert keyword in params["text"][0]
+        assert params["source"] == ["empty_search"]
+
+    def test_filtered_empty_state_has_reset_without_search_copy(self, client):
+        from category.models import Category
+
+        empty_category = Category.objects.create(
+            category_name="Categoría sin artículos",
+            slug="categoria-sin-articulos",
+        )
+        response = client.get(
+            reverse("store:products_by_category", args=[empty_category.slug])
+        )
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "No hay productos que coincidan con los filtros seleccionados" in content
+        assert "Limpiar filtros y ver catálogo" in content
+        assert "No encontramos productos para" not in content

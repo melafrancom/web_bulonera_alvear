@@ -269,6 +269,36 @@ class Product(models.Model):
         if reviews['count'] is not None:
             count = int(reviews['count'])
         return count
+
+    @property
+    def effective_price(self):
+        """Precio que corresponde mostrar y usar para validar el producto."""
+        if self.is_on_sale and self.sale_price is not None and self.sale_price > 0:
+            return self.sale_price
+        if not self.is_on_sale and self.price is not None and self.price > 0:
+            return self.price
+        return 0
+
+    @property
+    def has_valid_price(self):
+        """Indica si el precio efectivo es positivo y la oferta es consistente."""
+        return self.effective_price > 0
+
+    @staticmethod
+    def _stored_file_exists(field_file):
+        """Comprueba que haya nombre de archivo y que el storage lo contenga."""
+        if not field_file or not field_file.name:
+            return False
+        try:
+            return field_file.storage.exists(field_file.name)
+        except (OSError, ValueError):
+            return False
+
+    @property
+    def has_valid_image(self):
+        """True cuando el asset o la imagen legacy existe en su storage."""
+        asset_file = self.image.file if self.image_id and self.image else None
+        return self._stored_file_exists(asset_file) or self._stored_file_exists(self.images)
     
     @property
     def image_url(self):

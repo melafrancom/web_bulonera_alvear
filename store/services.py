@@ -1038,50 +1038,69 @@ class HomeSectionService:
         Resuelve los productos de un carrusel.
         PRIORIDAD: Manual (HomeSectionProduct) > Auto (source_type)
         """
-        from store.models import HomeSectionProduct, HomeSection
-        from orders.models import OrderProduct
-        
-        # 1. ¿Hay productos manuales?
-        if section.home_section_products.exists():
-            return [sp.product for sp in
-                    section.home_section_products
-                    .select_related('product')
-                    .order_by('position')
-                    if sp.product.is_available]
+        from store.models import HomeSectionProduct
 
-        # 2. Auto-generar según source_type
+        def valid_products(products, limit):
+            if limit <= 0:
+                return []
+            selected = []
+            for product in products:
+                if (product.is_available and product.has_valid_price
+                        and product.has_valid_image):
+                    selected.append(product)
+                    if len(selected) >= limit:
+                        break
+            return selected
+
+        # 1. Los productos manuales conservan prioridad y orden.
+        manual_products = section.home_section_products.select_related(
+            'product', 'product__image'
+        ).order_by('position')
+        if manual_products.exists():
+            return valid_products(
+                (section_product.product for section_product in manual_products),
+                section.max_products,
+            )
+
+        # 2. Construir candidatos automáticos con los mismos criterios de precio
+        # y nombre de archivo; la existencia real se confirma en valid_products.
         limit = section.max_products
         source = section.source_type
 
+        image_query = (
+            (Q(image__isnull=False) & ~Q(image__file='') & Q(image__file__isnull=False)) |
+            (~Q(images='') & Q(images__isnull=False))
+        )
+        price_query = (
+            Q(is_on_sale=True, sale_price__gt=0) |
+            Q(is_on_sale=False, price__gt=0)
+        )
+        base_qs = Product.objects.filter(
+            image_query, price_query, is_available=True
+        ).select_related('image')
+
         if source == 'bestsellers':
-            return list(Product.objects.filter(
-                is_available=True,
+            candidates = base_qs.filter(
                 orderproduct__isnull=False
             ).annotate(
                 order_count=Sum('orderproduct__quantity')
-            ).order_by('-order_count')[:limit])
+            ).order_by('-order_count')
 
         elif source == 'most_searched':
-            return list(Product.objects.filter(
-                is_available=True
-            ).order_by('-productsearch__search_count')[:limit])
+            candidates = base_qs.order_by('-productsearch__search_count')
 
         elif source == 'by_category' and section.category:
-            return list(Product.objects.filter(
-                category=section.category, is_available=True
-            ).order_by('-sold_count')[:limit])
+            candidates = base_qs.filter(category=section.category).order_by('-sold_count')
 
         elif source == 'on_sale':
-            return list(Product.objects.filter(
-                is_available=True, is_on_sale=True
-            ).order_by('-discount_percentage')[:limit])
+            candidates = base_qs.filter(is_on_sale=True).order_by('-discount_percentage')
 
         elif source == 'newest':
-            return list(Product.objects.filter(
-                is_available=True
-            ).order_by('-created_date')[:limit])
+            candidates = base_qs.order_by('-created_date')
+        else:
+            return []
 
-        return []
+        return valid_products(candidates.iterator(chunk_size=50), limit)
 
     @staticmethod
     def get_recommended_products(section) -> List[Product]:

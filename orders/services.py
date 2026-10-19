@@ -259,11 +259,28 @@ class CheckoutService:
         Raises:
             ValueError: Si hay errores en el proceso
         """
-        # Obtener items del carrito
-        cart_items = CartItem.objects.filter(user=user, is_active=True)
-        
-        if not cart_items.exists():
-            raise ValueError("El carrito está vacío")
+        # Bloquear y materializar los items para que dos checkouts simultáneos
+        # no creen órdenes a partir del mismo carrito.
+        cart_items = list(
+            CartItem.objects.select_for_update()
+            .filter(user=user, is_active=True)
+            .select_related('product')
+        )
+
+        if not cart_items:
+            raise ValueError("El carrito está vacío o ya fue procesado.")
+
+        invalid_items = [
+            item for item in cart_items
+            if item.purchase_price is None or item.purchase_price <= 0
+        ]
+        if invalid_items:
+            codes = ', '.join(item.product.code for item in invalid_items)
+            logger.warning("Checkout rechazado: items con precio inválido: %s", codes)
+            raise ValueError(
+                "Hay productos sin precio válido en tu carrito. "
+                "Por favor eliminalos y volvé a intentar."
+            )
         
         # Crear orden
         order = OrderService.create_order_from_cart(
@@ -273,8 +290,8 @@ class CheckoutService:
             ip_address=ip_address
         )
         
-        # Limpiar carrito
-        cart_items.delete()
+        # Limpiar carrito dentro de la misma transacción
+        CartItem.objects.filter(user=user, is_active=True).delete()
         
         logger.info(f"Checkout completado para orden {order.order_number}")
         return order

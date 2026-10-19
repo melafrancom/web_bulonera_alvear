@@ -332,6 +332,7 @@ def search(request):
     context = {
         'products': products,
         'product_count': products.count(),
+        'keyword': keyword,
     }
     
     return render(request, 'store/store.html', context)

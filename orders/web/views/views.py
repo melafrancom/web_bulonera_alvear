@@ -34,7 +34,7 @@ def place_order(request):
     
     if not cart_items.exists():
         messages.warning(request, "Tu carrito está vacío")
-        return redirect('store:store')
+        return redirect('cart:cart')
     
     # Calcular totales
     total = sum(item.sub_total for item in cart_items)
@@ -73,12 +73,20 @@ def place_order(request):
             except ValueError as e:
                 logger.warning(f"Error validando orden: {e}")
                 messages.error(request, str(e))
+                return redirect('cart:cart')
             except Exception as e:
                 logger.error(f"Error creando orden: {e}", exc_info=True)
                 messages.error(request, "Error al procesar la orden. Por favor intenta nuevamente.")
+                return redirect('cart:cart')
         else:
             logger.warning(f"Formulario inválido: {form.errors}")
             messages.error(request, "Por favor corrige los errores en el formulario")
+            cart_items = CartItem.objects.filter(user=current_user, is_active=True)
+            if not cart_items.exists():
+                messages.warning(request, "Tu carrito ya fue procesado o está vacío")
+                return redirect('cart:cart')
+            total = sum(item.sub_total for item in cart_items)
+            quantity = sum(item.quantity for item in cart_items)
     else:
         form = OrderForm()
     

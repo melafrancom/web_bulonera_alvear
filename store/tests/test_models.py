@@ -428,3 +428,51 @@ class TestProductTagModel:
         assert product in tag1.products.all()
         assert product in tag2.products.all()
 
+
+@pytest.mark.django_db
+class TestProductCommercialProperties:
+    """Tests de propiedades comerciales y validación física de storage en Product."""
+
+    def test_effective_price_on_sale_positive(self, category):
+        p = Product(category=category, price=150.0, is_on_sale=True, sale_price=120.0)
+        assert p.effective_price == 120.0
+        assert p.has_valid_price is True
+
+    def test_effective_price_on_sale_with_zero_base_price(self, category):
+        p = Product(category=category, price=0.0, is_on_sale=True, sale_price=120.0)
+        assert p.effective_price == 120.0
+        assert p.has_valid_price is True
+
+    def test_effective_price_regular_product(self, category):
+        p = Product(category=category, price=100.0, is_on_sale=False)
+        assert p.effective_price == 100.0
+        assert p.has_valid_price is True
+
+    def test_effective_price_on_sale_corrupted_zero_sale_price(self, category):
+        p = Product(category=category, price=100.0, is_on_sale=True, sale_price=0.0)
+        assert p.effective_price == 0
+        assert p.has_valid_price is False
+
+    def test_effective_price_regular_zero_price(self, category):
+        p = Product(category=category, price=0.0, is_on_sale=False)
+        assert p.effective_price == 0
+        assert p.has_valid_price is False
+
+    def test_has_valid_image_with_storage_file(self, category):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        mock_image = SimpleUploadedFile("product_real.png", b"file_content", content_type="image/png")
+        p = Product.objects.create(
+            code="P-IMG-01", name="Product With Real Image",
+            slug="product-with-real-image", price=50.0, stock=10,
+            category=category, images=mock_image
+        )
+        assert p.has_valid_image is True
+
+    def test_has_valid_image_without_image(self, category):
+        p = Product.objects.create(
+            code="P-NO-IMG", name="Product Without Image",
+            slug="product-without-image", price=50.0, stock=10,
+            category=category
+        )
+        assert p.has_valid_image is False
+

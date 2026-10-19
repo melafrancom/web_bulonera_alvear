@@ -11,12 +11,15 @@ class TestHomeBuilder:
     @pytest.fixture
     def setup_data(self):
         self.category = Category.objects.create(category_name="Herramientas", slug="herramientas")
+        mock_img1 = SimpleUploadedFile("taladro.png", b"file_content", content_type="image/png")
         self.product1 = Product.objects.create(
-            name="Taladro", price=100, stock=10, code="T001", is_available=True, category=self.category, slug="taladro"
+            name="Taladro", price=100, stock=10, code="T001", is_available=True, category=self.category, slug="taladro",
+            images=mock_img1
         )
+        mock_img2 = SimpleUploadedFile("lijadora.png", b"file_content", content_type="image/png")
         self.product2 = Product.objects.create(
             name="Lijadora", price=150, stock=5, code="L001", is_available=True, category=self.category, slug="lijadora",
-            is_on_sale=True, sale_price=120
+            is_on_sale=True, sale_price=120, images=mock_img2
         )
         # Create a section
         self.section = HomeSection.objects.create(
@@ -86,3 +89,90 @@ class TestHomeBuilder:
         assert carousel.id is not None
         assert carousel.image_asset == asset
         assert not carousel.image # should be empty
+
+
+@pytest.mark.django_db
+class TestHomeSectionCommercialSanitation:
+    """Valida los filtros de calidad comercial e integridad física de imagen en _resolve_products."""
+
+    def test_auto_section_filters_missing_image_and_invalid_prices(self):
+        category = Category.objects.create(category_name="Fijaciones", slug="fijaciones")
+        section = HomeSection.objects.create(
+            title="Novedades", section_type="product_carousel",
+            source_type="newest", position=1, max_products=10
+        )
+
+        valid_img = SimpleUploadedFile("tornillo_ok.png", b"fake_content", content_type="image/png")
+
+        # 1. Producto válido regular (debe incluirse)
+        p_ok = Product.objects.create(
+            code="OK-01", name="Tornillo Valido", slug="tornillo-valido",
+            price=200.0, stock=10, is_available=True, category=category,
+            images=valid_img
+        )
+
+        # 2. Producto sin imagen (debe excluirse)
+        Product.objects.create(
+            code="NO-IMG", name="Tornillo Sin Imagen", slug="tornillo-sin-imagen",
+            price=200.0, stock=10, is_available=True, category=category
+        )
+
+        # 3. Producto con precio 0 y sin oferta (debe excluirse)
+        img_zero = SimpleUploadedFile("zero.png", b"fake_content", content_type="image/png")
+        Product.objects.create(
+            code="PRICE-ZERO", name="Tornillo Precio Cero", slug="tornillo-precio-cero",
+            price=0.0, stock=10, is_available=True, category=category,
+            images=img_zero
+        )
+
+        # 4. Producto con oferta corrupta sale_price=0 (debe excluirse)
+        img_corrupt = SimpleUploadedFile("corrupt.png", b"fake_content", content_type="image/png")
+        Product.objects.create(
+            code="CORRUPT-SALE", name="Tornillo Oferta Cero", slug="tornillo-oferta-cero",
+            price=500.0, is_on_sale=True, sale_price=0.0, stock=10,
+            is_available=True, category=category, images=img_corrupt
+        )
+
+        # 5. Producto en oferta con sale_price válido aunque price=0 (debe incluirse)
+        img_sale = SimpleUploadedFile("sale_ok.png", b"fake_content", content_type="image/png")
+        p_sale_ok = Product.objects.create(
+            code="SALE-OK", name="Tornillo Oferta Valida", slug="tornillo-oferta-valida",
+            price=0.0, is_on_sale=True, sale_price=150.0, stock=10,
+            is_available=True, category=category, images=img_sale
+        )
+
+        products = HomeSectionService._resolve_products(section)
+        codes = [p.code for p in products]
+
+        assert "OK-01" in codes
+        assert "SALE-OK" in codes
+        assert "NO-IMG" not in codes
+        assert "PRICE-ZERO" not in codes
+        assert "CORRUPT-SALE" not in codes
+
+    def test_manual_section_filters_invalid_commercial_products(self):
+        category = Category.objects.create(category_name="Manual", slug="manual")
+        section = HomeSection.objects.create(
+            title="Manual Test", section_type="product_carousel",
+            source_type="bestsellers", position=1, max_products=10
+        )
+
+        # Producto manual sin imagen asignada (debe ser filtrado)
+        p_no_img = Product.objects.create(
+            code="MANUAL-NO-IMG", name="Manual Sin Foto", slug="manual-sin-foto",
+            price=300.0, stock=5, is_available=True, category=category
+        )
+        HomeSectionProduct.objects.create(section=section, product=p_no_img, position=1)
+
+        # Producto manual con imagen válida (debe conservarse)
+        img = SimpleUploadedFile("manual_ok.png", b"fake_content", content_type="image/png")
+        p_ok = Product.objects.create(
+            code="MANUAL-OK", name="Manual Con Foto", slug="manual-con-foto",
+            price=300.0, stock=5, is_available=True, category=category,
+            images=img
+        )
+        HomeSectionProduct.objects.create(section=section, product=p_ok, position=2)
+
+        products = HomeSectionService._resolve_products(section)
+        assert len(products) == 1
+        assert products[0].code == "MANUAL-OK"

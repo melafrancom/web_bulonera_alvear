@@ -1,24 +1,37 @@
 {% comment %}
-Empty Cart State Component
-Muestra mensaje cuando el carrito está vacío con CTA para continuar comprando
+Estado vacío del carrito: ofrece una ruta directa a promociones y categorías.
 {% endcomment %}
 
-<div class="flex flex-col items-center justify-center py-16 px-4">
-    <div class="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
-        <i data-lucide="shopping-cart" class="w-12 h-12 text-slate-400 dark:text-slate-500"></i>
+<section aria-labelledby="empty-cart-title" class="flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-center">
+    <div class="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-6 text-[#1B3A5C] dark:text-slate-300" aria-hidden="true">
+        <i data-lucide="shopping-cart" class="w-10 h-10"></i>
     </div>
-    
-    <h3 class="text-2xl font-semibold text-slate-900 dark:text-white mb-3 text-center">
-        Tu carrito está vacío
-    </h3>
-    
-    <p class="text-slate-600 dark:text-slate-400 mb-8 text-center max-w-md">
-        ¡Parece que no has agregado nada aún! Añade productos de tu interés al carrito.
+
+    <h2 id="empty-cart-title" class="text-2xl font-semibold font-heading text-slate-900 dark:text-white mb-3">
+        Tu carrito está listo para tus proyectos
+    </h2>
+
+    <p class="text-slate-600 dark:text-slate-400 mb-7 text-center max-w-md">
+        Explorá las promociones y encontrá lo que necesitás. Si buscás una medida específica, nuestro equipo puede ayudarte a confirmar disponibilidad.
     </p>
-    
-    <a href="{% url 'store:store' %}" 
-       class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium rounded-lg transition-colors duration-200">
-        <i data-lucide="arrow-left" class="w-5 h-5"></i>
-        Continuar Comprando
+
+    <a href="{% url 'store:offers' %}"
+       class="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#D42B1E] hover:bg-[#B82419] active:scale-[0.98] text-white font-semibold rounded-lg shadow-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#D42B1E]">
+        <i data-lucide="tag" class="w-5 h-5"></i>
+        Ver productos en oferta
     </a>
-</div>
+
+    {% if links %}
+    <div class="mt-8 w-full max-w-2xl">
+        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Explorá categorías</h3>
+        <div class="flex flex-wrap justify-center gap-2">
+            {% for category in links|slice:":3" %}
+            <a href="{{ category.get_url }}"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1B3A5C]">
+                {{ category.category_name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</section>

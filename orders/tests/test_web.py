@@ -233,3 +233,67 @@ class TestWhatsAppRedirectTracking:
         assert 'id="meta-purchase-data"' not in html
         assert 'window.baTrack.meta(\'Purchase\'' not in html
 
+
+@pytest.mark.django_db
+class TestPlaceOrderCheckoutFlow:
+    """Pruebas funcionales de place_order: redirección a /cart/ y anti-stale."""
+
+    def test_place_order_get_empty_cart_redirects_to_cart(self, client_with_user):
+        """GET a place_order sin items en el carrito debe redirigir a /cart/."""
+        url = reverse('orders:place_orders')
+        response = client_with_user.get(url)
+        assert response.status_code == 302
+        assert response.url == reverse('cart:cart')
+
+    def test_place_order_post_service_error_redirects_to_cart(self, client_with_user, user, product, monkeypatch):
+        """Si complete_checkout lanza ValueError, debe redirigir a /cart/ sin renderizar items obsoletos."""
+        from cart.models import Cart, CartItem
+        from orders.services import CheckoutService
+
+        cart = Cart.objects.create(cart_id=f'cart-web-{user.id}')
+        CartItem.objects.create(
+            cart=cart, user=user, product=product,
+            quantity=1, is_active=True, purchase_price=product.price
+        )
+
+        def mock_checkout_failure(*args, **kwargs):
+            raise ValueError("Hay productos sin precio válido en tu carrito.")
+
+        monkeypatch.setattr(CheckoutService, 'complete_checkout', mock_checkout_failure)
+
+        url = reverse('orders:place_orders')
+        post_data = {
+            'first_name': 'Juan', 'last_name': 'Perez', 'phone': '+5493624112233',
+            'email': user.email, 'address_line_1': 'Calle Falsa 123',
+            'country': 'Argentina', 'city': 'Resistencia', 'state': 'Chaco'
+        }
+        response = client_with_user.post(url, post_data)
+        assert response.status_code == 302
+        assert response.url == reverse('cart:cart')
+
+    def test_place_order_post_invalid_form_with_empty_cart_redirects_to_cart(self, client_with_user, user):
+        """Si el formulario es inválido y el carrito se vació en paralelo, redirige a /cart/."""
+        url = reverse('orders:place_orders')
+        # POST con datos incompletos (sin nombre ni teléfono) y sin carrito
+        response = client_with_user.post(url, {'first_name': ''})
+        assert response.status_code == 302
+        assert response.url == reverse('cart:cart')
+
+    def test_place_order_post_invalid_form_with_active_cart_renders_checkout(self, client_with_user, user, product):
+        """Si el formulario es inválido pero el carrito sigue activo, renderiza checkout con errores."""
+        from cart.models import Cart, CartItem
+        cart = Cart.objects.create(cart_id=f'cart-form-err-{user.id}')
+        item = CartItem.objects.create(
+            cart=cart, user=user, product=product,
+            quantity=2, is_active=True, purchase_price=product.price
+        )
+
+        url = reverse('orders:place_orders')
+        # Formulario deliberadamente inválido
+        response = client_with_user.post(url, {'first_name': ''})
+        assert response.status_code == 200
+        assert 'cart/checkout.html' in [t.name for t in response.templates if t.name]
+        assert 'form' in response.context
+        assert response.context['form'].errors
+        assert list(response.context['cart_items']) == [item]
+
