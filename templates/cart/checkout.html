@@ -5,7 +5,7 @@
 
 {% block title %}Checkout - Bulonera Alvear{% endblock %}
 
-{% block meta_description %}Completa tu orden de forma segura. Ingresa tu dirección de envío y procede al pago.{% endblock %}
+{% block meta_description %}Completa tu orden de forma segura. Selecciona retiro en local o envío al NEA y confirma tu pedido.{% endblock %}
 
 {% block content %}
 <!-- Checkout Section -->
@@ -17,11 +17,11 @@
         
         <!-- Page Title -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">
+            <h1 class="text-3xl font-heading font-bold text-slate-900 dark:text-white">
                 Finalizar Compra
             </h1>
-            <p class="text-slate-600 dark:text-slate-400 mt-2">
-                Completa tu información de envío para procesar tu orden
+            <p class="text-slate-600 dark:text-slate-400 mt-2 text-sm sm:text-base">
+                Elige tu modalidad de entrega y comprobante fiscal para procesar tu orden
             </p>
         </div>
         
@@ -32,25 +32,58 @@
                      first_name: '{{ form.first_name.value|default:request.user.first_name|escapejs }}',
                      last_name: '{{ form.last_name.value|default:request.user.last_name|escapejs }}',
                      email: '{{ form.email.value|default:request.user.email|escapejs }}',
-                     phone: '{{ form.phone.value|default:request.user.phone|default:""|escapejs }}',
-                     address_line_1: '{{ form.address_line_1.value|default:""|escapejs }}',
-                     address_line_2: '{{ form.address_line_2.value|default:""|escapejs }}',
-                     country: '{{ form.country.value|default:"Argentina"|escapejs }}',
-                     city: '{{ form.city.value|default:""|escapejs }}',
-                     state: '{{ form.state.value|default:""|escapejs }}',
-                     order_note: '{{ form.order_note.value|default:""|escapejs }}'
+                     phone: '{{ form.phone.value|default:request.user.phone|default:''|escapejs }}',
+                     delivery_type: '{{ form.delivery_type.value|default:'pickup'|escapejs }}',
+                     address_line_1: '{{ form.address_line_1.value|default:''|escapejs }}',
+                     address_line_2: '{{ form.address_line_2.value|default:''|escapejs }}',
+                     country: '{{ form.country.value|default:'Argentina'|escapejs }}',
+                     city: '{{ form.city.value|default:''|escapejs }}',
+                     state: '{{ form.state.value|default:''|escapejs }}',
+                     invoice_type: '{{ form.invoice_type.value|default:'B'|escapejs }}',
+                     doc_number: '{{ form.doc_number.value|default:''|escapejs }}',
+                     business_name: '{{ form.business_name.value|default:''|escapejs }}',
+                     order_note: '{{ form.order_note.value|default:''|escapejs }}'
                  },
                  errors: {
                      {% if form.first_name.errors %}first_name: '{{ form.first_name.errors.0|escapejs }}',{% endif %}
                      {% if form.last_name.errors %}last_name: '{{ form.last_name.errors.0|escapejs }}',{% endif %}
                      {% if form.email.errors %}email: '{{ form.email.errors.0|escapejs }}',{% endif %}
                      {% if form.phone.errors %}phone: '{{ form.phone.errors.0|escapejs }}',{% endif %}
+                     {% if form.delivery_type.errors %}delivery_type: '{{ form.delivery_type.errors.0|escapejs }}',{% endif %}
                      {% if form.address_line_1.errors %}address_line_1: '{{ form.address_line_1.errors.0|escapejs }}',{% endif %}
-                     {% if form.country.errors %}country: '{{ form.country.errors.0|escapejs }}',{% endif %}
                      {% if form.city.errors %}city: '{{ form.city.errors.0|escapejs }}',{% endif %}
                      {% if form.state.errors %}state: '{{ form.state.errors.0|escapejs }}',{% endif %}
+                     {% if form.invoice_type.errors %}invoice_type: '{{ form.invoice_type.errors.0|escapejs }}',{% endif %}
+                     {% if form.doc_number.errors %}doc_number: '{{ form.doc_number.errors.0|escapejs }}',{% endif %}
+                     {% if form.business_name.errors %}business_name: '{{ form.business_name.errors.0|escapejs }}',{% endif %}
                  },
                  submitting: false,
+
+                 setDelivery(type) {
+                     this.formData.delivery_type = type;
+                     if (type === 'pickup') {
+                         delete this.errors.address_line_1;
+                         delete this.errors.city;
+                         delete this.errors.state;
+                     } else {
+                         this.validateField('address_line_1');
+                         this.validateField('city');
+                         this.validateField('state');
+                     }
+                     this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+                 },
+
+                 setInvoice(type) {
+                     this.formData.invoice_type = type;
+                     if (type === 'B') {
+                         delete this.errors.business_name;
+                         this.validateField('doc_number');
+                     } else {
+                         this.validateField('business_name');
+                         this.validateField('doc_number');
+                     }
+                     this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+                 },
                  
                  validateField(field) {
                      if (field === 'email') {
@@ -62,7 +95,52 @@
                          } else {
                              delete this.errors.email;
                          }
-                     } else if (field !== 'address_line_2' && field !== 'order_note') {
+                     } else if (field === 'phone') {
+                         if (!this.formData.phone) {
+                             this.errors.phone = 'El teléfono es requerido para coordinar por WhatsApp';
+                         } else {
+                             delete this.errors.phone;
+                         }
+                     } else if (field === 'address_line_1' || field === 'city' || field === 'state') {
+                         if (this.formData.delivery_type === 'shipping') {
+                             if (!this.formData[field]) {
+                                 this.errors[field] = 'Este campo es requerido para envíos';
+                             } else {
+                                 delete this.errors[field];
+                             }
+                         } else {
+                             delete this.errors[field];
+                         }
+                     } else if (field === 'business_name') {
+                         if (this.formData.invoice_type === 'A') {
+                             if (!this.formData.business_name) {
+                                 this.errors.business_name = 'La Razón Social es obligatoria para Factura A';
+                             } else {
+                                 delete this.errors.business_name;
+                             }
+                         } else {
+                             delete this.errors.business_name;
+                         }
+                     } else if (field === 'doc_number') {
+                         const cleanDoc = (this.formData.doc_number || '').replace(/\D/g, '');
+                         if (this.formData.invoice_type === 'A') {
+                             if (!cleanDoc) {
+                                 this.errors.doc_number = 'El CUIT es obligatorio para Factura A';
+                             } else if (cleanDoc.length !== 11) {
+                                 this.errors.doc_number = 'El CUIT debe tener 11 dígitos';
+                             } else {
+                                 delete this.errors.doc_number;
+                             }
+                         } else if (this.formData.invoice_type === 'B' && cleanDoc) {
+                             if (cleanDoc.length !== 7 && cleanDoc.length !== 8) {
+                                 this.errors.doc_number = 'El DNI debe tener 7 u 8 dígitos';
+                             } else {
+                                 delete this.errors.doc_number;
+                             }
+                         } else {
+                             delete this.errors.doc_number;
+                         }
+                     } else if (field === 'first_name' || field === 'last_name') {
                          if (!this.formData[field]) {
                              this.errors[field] = 'Este campo es requerido';
                          } else {
@@ -72,36 +150,44 @@
                  },
                  
                  get isValid() {
-                     return this.formData.first_name && 
-                            this.formData.last_name && 
-                            this.formData.email && 
-                            this.formData.phone && 
-                            this.formData.address_line_1 && 
-                            this.formData.country && 
-                            this.formData.city && 
-                            this.formData.state &&
-                            Object.keys(this.errors).length === 0;
+                     const basicValid = this.formData.first_name && 
+                                        this.formData.last_name && 
+                                        this.formData.email && 
+                                        this.formData.phone;
+                     if (!basicValid) return false;
+
+                     if (this.formData.delivery_type === 'shipping') {
+                         if (!this.formData.address_line_1 || !this.formData.city || !this.formData.state) {
+                             return false;
+                         }
+                     }
+
+                     if (this.formData.invoice_type === 'A') {
+                         if (!this.formData.business_name || !this.formData.doc_number) {
+                             return false;
+                         }
+                         const cleanCuit = (this.formData.doc_number || '').replace(/\D/g, '');
+                         if (cleanCuit.length !== 11) return false;
+                     }
+
+                     return Object.keys(this.errors).length === 0;
                  }
              }">
             
-            <!-- Shipping Address Form -->
+            <!-- Checkout Form Column -->
             <div>
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
                     <div class="p-6">
-                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                            <i data-lucide="map-pin" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
-                            Dirección de Envío
-                        </h2>
                         
                         {% if form.non_field_errors %}
-                            <div class="mb-4 p-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300">
+                            <div class="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300">
                                 {% for error in form.non_field_errors %}
                                     <p class="text-sm font-medium">{{ error }}</p>
                                 {% endfor %}
                             </div>
                         {% endif %}
                         
-                        <form id="checkout-form" action="{% url 'orders:place_orders' %}" method="post" class="space-y-4" @submit="if (submitting) { $event.preventDefault(); } else { submitting = true; }">
+                        <form id="checkout-form" action="{% url 'orders:place_orders' %}" method="post" class="space-y-6" @submit="if (submitting) { $event.preventDefault(); } else { submitting = true; }">
                             {% csrf_token %}
                             
                             {% if form.errors %}
@@ -121,189 +207,378 @@
                             </div>
                             {% endif %}
                             
-                            <!-- Row 1: Nombre y Apellido -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="first_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Nombre(s) <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           id="first_name"
-                                           name="first_name" 
-                                           autocomplete="given-name"
-                                           x-model="formData.first_name"
-                                           @blur="validateField('first_name')"
-                                           required
-                                           class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                           :class="errors.first_name ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
-                                    <p x-show="errors.first_name" x-text="errors.first_name" class="mt-1 text-sm text-red-500"></p>
-                                </div>
-                                
-                                <div>
-                                    <label for="last_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Apellido(s) <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           id="last_name"
-                                           name="last_name" 
-                                           autocomplete="family-name"
-                                           x-model="formData.last_name"
-                                           @blur="validateField('last_name')"
-                                           required
-                                           class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                           :class="errors.last_name ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
-                                    <p x-show="errors.last_name" x-text="errors.last_name" class="mt-1 text-sm text-red-500"></p>
-                                </div>
-                            </div>
-                            
-                            <!-- Row 2: Email y Teléfono -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Correo Electrónico <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="email" 
-                                           id="email"
-                                           name="email" 
-                                           autocomplete="email"
-                                           x-model="formData.email"
-                                           @blur="validateField('email')"
-                                           required
-                                           class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                           :class="errors.email ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
-                                    <p x-show="errors.email" x-text="errors.email" class="mt-1 text-sm text-red-500"></p>
-                                </div>
-                                
-                                <div>
-                                    <label for="phone" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Teléfono <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="tel" 
-                                           id="phone"
-                                           name="phone" 
-                                           autocomplete="tel"
-                                           x-model="formData.phone"
-                                           @blur="validateField('phone')"
-                                           required
-                                           placeholder="+54 11 1234-5678"
-                                           class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                           :class="errors.phone ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
-                                    <p x-show="errors.phone" x-text="errors.phone" class="mt-1 text-sm text-red-500"></p>
-                                </div>
-                            </div>
-                            
-                            <!-- Row 3: Dirección -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="address_line_1" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Dirección <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           id="address_line_1"
-                                           name="address_line_1" 
-                                           autocomplete="address-line1"
-                                           x-model="formData.address_line_1"
-                                           @blur="validateField('address_line_1')"
-                                           required
-                                           placeholder="Calle y número"
-                                           class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                           :class="errors.address_line_1 ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
-                                    <p x-show="errors.address_line_1" x-text="errors.address_line_1" class="mt-1 text-sm text-red-500"></p>
-                                </div>
-                                
-                                <div>
-                                    <label for="address_line_2" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Detalles de la Dirección
-                                    </label>
-                                    <input type="text" 
-                                           id="address_line_2"
-                                           name="address_line_2" 
-                                           autocomplete="address-line2"
-                                           x-model="formData.address_line_2"
-                                           placeholder="Piso, depto, etc. (opcional)"
-                                           class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                           :class="errors.address_line_2 ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
-                                    <p x-show="errors.address_line_2" x-text="errors.address_line_2" class="mt-1 text-sm text-red-500"></p>
-                                </div>
-                            </div>
-                            
-                            <!-- Row 4: País, Ciudad, CP -->
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label for="country" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        País <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           id="country"
-                                           name="country" 
-                                           autocomplete="country-name"
-                                           x-model="formData.country"
-                                           @blur="validateField('country')"
-                                           required
-                                           class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                           :class="errors.country ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
-                                    <p x-show="errors.country" x-text="errors.country" class="mt-1 text-sm text-red-500"></p>
-                                </div>
-                                
-                                <div>
-                                    <label for="city" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Ciudad <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           id="city"
-                                           name="city" 
-                                           autocomplete="address-level2"
-                                           x-model="formData.city"
-                                           @blur="validateField('city')"
-                                           required
-                                           class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                           :class="errors.city ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
-                                    <p x-show="errors.city" x-text="errors.city" class="mt-1 text-sm text-red-500"></p>
-                                </div>
-                                
-                                <div>
-                                    <label for="state" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        CP <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           id="state"
-                                           name="state" 
-                                           autocomplete="postal-code"
-                                           x-model="formData.state"
-                                           @blur="validateField('state')"
-                                           required
-                                           maxlength="10"
-                                           placeholder="1234"
-                                           class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                           :class="errors.state ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
-                                    <p x-show="errors.state" x-text="errors.state" class="mt-1 text-sm text-red-500"></p>
-                                </div>
-                            </div>
-                            
-                            <!-- Row 5: Notas de la Orden -->
+                            <!-- SECCIÓN 1: Modalidad de Entrega -->
                             <div>
-                                <label for="order_note" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Notas de la Orden
+                                <h2 class="text-base font-heading font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                                    <i data-lucide="truck" class="w-5 h-5 text-[#1B3A5C] dark:text-blue-400"></i>
+                                    1. Modalidad de Entrega
+                                </h2>
+                                
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <!-- Opción 1: Retiro en Local -->
+                                    <button type="button"
+                                            @click="setDelivery('pickup')"
+                                            class="text-left relative flex flex-col p-4 rounded-xl border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
+                                            :class="formData.delivery_type === 'pickup' 
+                                                ? 'border-[#1B3A5C] bg-blue-50/40 dark:bg-slate-700/70 dark:border-blue-400 shadow-sm' 
+                                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800'">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="store" class="w-5 h-5 text-[#1B3A5C] dark:text-blue-400"></i>
+                                                <span class="font-heading font-semibold text-slate-900 dark:text-white text-sm">Retiro en Mostrador</span>
+                                            </div>
+                                            <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                                GRATIS
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                                            Av. Alvear 1301, Resistencia
+                                        </p>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                                            Lun a Vie 8:00-12:30 y 15:30-20:00 · Sáb 8:00-13:00
+                                        </p>
+                                    </button>
+
+                                    <!-- Opción 2: Envío Interior / NEA -->
+                                    <button type="button"
+                                            @click="setDelivery('shipping')"
+                                            class="text-left relative flex flex-col p-4 rounded-xl border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
+                                            :class="formData.delivery_type === 'shipping' 
+                                                ? 'border-[#1B3A5C] bg-blue-50/40 dark:bg-slate-700/70 dark:border-blue-400 shadow-sm' 
+                                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800'">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="package-check" class="w-5 h-5 text-[#1B3A5C] dark:text-blue-400"></i>
+                                                <span class="font-heading font-semibold text-slate-900 dark:text-white text-sm">Envío NEA / Interior</span>
+                                            </div>
+                                            <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                                                A coordinar
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                                            Chaco, Corrientes, Formosa, Santa Fe
+                                        </p>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                                            Flete y transporte acordado vía WhatsApp
+                                        </p>
+                                    </button>
+                                </div>
+                                <input type="hidden" name="delivery_type" :value="formData.delivery_type">
+                            </div>
+
+                            <!-- Banner informativo Retiro en Local -->
+                            <div x-show="formData.delivery_type === 'pickup'"
+                                 x-transition:enter="transition-all ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 -translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 class="p-4 rounded-xl bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600 flex items-start gap-3">
+                                <div class="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 flex-shrink-0">
+                                    <i data-lucide="map-pin" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-900 dark:text-white">
+                                        Retirás directamente en nuestro local
+                                    </p>
+                                    <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                                        No necesitás cargar dirección postal. Apenas confirmemos tu pedido por WhatsApp te avisaremos en cuanto esté embalado para pasar a buscarlo por Av. Alvear 1301.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- SECCIÓN 2: Datos de Contacto -->
+                            <div>
+                                <h2 class="text-base font-heading font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                                    <i data-lucide="user" class="w-5 h-5 text-[#1B3A5C] dark:text-blue-400"></i>
+                                    2. Datos del Comprador
+                                </h2>
+
+                                <div class="space-y-4">
+                                    <!-- Nombre y Apellido -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="first_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                Nombre(s) <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" 
+                                                   id="first_name"
+                                                   name="first_name" 
+                                                   autocomplete="given-name"
+                                                   x-model="formData.first_name"
+                                                   @blur="validateField('first_name')"
+                                                   required
+                                                   class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#1B3A5C] focus:border-transparent text-sm transition-all"
+                                                   :class="errors.first_name ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
+                                            <p x-show="errors.first_name" x-text="errors.first_name" class="mt-1 text-xs text-red-500"></p>
+                                        </div>
+                                        
+                                        <div>
+                                            <label for="last_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                Apellido(s) <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" 
+                                                   id="last_name"
+                                                   name="last_name" 
+                                                   autocomplete="family-name"
+                                                   x-model="formData.last_name"
+                                                   @blur="validateField('last_name')"
+                                                   required
+                                                   class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#1B3A5C] focus:border-transparent text-sm transition-all"
+                                                   :class="errors.last_name ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
+                                            <p x-show="errors.last_name" x-text="errors.last_name" class="mt-1 text-xs text-red-500"></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Email y Teléfono -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                Correo Electrónico <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="email" 
+                                                   id="email"
+                                                   name="email" 
+                                                   autocomplete="email"
+                                                   x-model="formData.email"
+                                                   @blur="validateField('email')"
+                                                   required
+                                                   class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#1B3A5C] focus:border-transparent text-sm transition-all"
+                                                   :class="errors.email ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
+                                            <p x-show="errors.email" x-text="errors.email" class="mt-1 text-xs text-red-500"></p>
+                                        </div>
+                                        
+                                        <div>
+                                            <label for="phone" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                Teléfono / WhatsApp <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="tel" 
+                                                   id="phone"
+                                                   name="phone" 
+                                                   autocomplete="tel"
+                                                   x-model="formData.phone"
+                                                   @blur="validateField('phone')"
+                                                   required
+                                                   placeholder="+54 362 4123456"
+                                                   class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#1B3A5C] focus:border-transparent text-sm transition-all"
+                                                   :class="errors.phone ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
+                                            <p x-show="errors.phone" x-text="errors.phone" class="mt-1 text-xs text-red-500"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SECCIÓN 3: Dirección de Envío (Solo si delivery_type == 'shipping') -->
+                            <div x-show="formData.delivery_type === 'shipping'"
+                                 x-transition:enter="transition-all ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-2"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 class="pt-2 border-t border-slate-100 dark:border-slate-700">
+                                
+                                <h2 class="text-base font-heading font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                                    <i data-lucide="map-pin" class="w-5 h-5 text-[#1B3A5C] dark:text-blue-400"></i>
+                                    3. Destino del Envío
+                                </h2>
+
+                                <div class="space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="address_line_1" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                Dirección (Calle y número) <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" 
+                                                   id="address_line_1"
+                                                   name="address_line_1" 
+                                                   autocomplete="address-line1"
+                                                   x-model="formData.address_line_1"
+                                                   @blur="validateField('address_line_1')"
+                                                   placeholder="Ej. Av. 9 de Julio 1250"
+                                                   class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#1B3A5C] focus:border-transparent text-sm transition-all"
+                                                   :class="errors.address_line_1 ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
+                                            <p x-show="errors.address_line_1" x-text="errors.address_line_1" class="mt-1 text-xs text-red-500"></p>
+                                        </div>
+                                        
+                                        <div>
+                                            <label for="address_line_2" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                Piso, Depto, Galpón o Transporte
+                                            </label>
+                                            <input type="text" 
+                                                   id="address_line_2"
+                                                   name="address_line_2" 
+                                                   autocomplete="address-line2"
+                                                   x-model="formData.address_line_2"
+                                                   placeholder="Opcional (Ej. Galpón 4 o Expreso Luján)"
+                                                   class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#1B3A5C] text-sm transition-all">
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label for="city" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                Ciudad / Localidad <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" 
+                                                   id="city"
+                                                   name="city" 
+                                                   autocomplete="address-level2"
+                                                   x-model="formData.city"
+                                                   @blur="validateField('city')"
+                                                   placeholder="Ej. Saenz Peña, Corrientes"
+                                                   class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#1B3A5C] focus:border-transparent text-sm transition-all"
+                                                   :class="errors.city ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
+                                            <p x-show="errors.city" x-text="errors.city" class="mt-1 text-xs text-red-500"></p>
+                                        </div>
+                                        
+                                        <div>
+                                            <label for="state" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                Código Postal <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" 
+                                                   id="state"
+                                                   name="state" 
+                                                   autocomplete="postal-code"
+                                                   x-model="formData.state"
+                                                   @blur="validateField('state')"
+                                                   maxlength="10"
+                                                   placeholder="Ej. 3500 o H3500"
+                                                   class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#1B3A5C] focus:border-transparent text-sm transition-all font-mono"
+                                                   :class="errors.state ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
+                                            <p x-show="errors.state" x-text="errors.state" class="mt-1 text-xs text-red-500"></p>
+                                        </div>
+
+                                        <div>
+                                            <label for="country" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                País
+                                            </label>
+                                            <input type="text" 
+                                                   id="country"
+                                                   name="country" 
+                                                   autocomplete="country-name"
+                                                   x-model="formData.country"
+                                                   readonly
+                                                   class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SECCIÓN 4: Datos Fiscales y Facturación -->
+                            <div class="pt-2 border-t border-slate-100 dark:border-slate-700">
+                                <h2 class="text-base font-heading font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                                    <i data-lucide="receipt" class="w-5 h-5 text-[#1B3A5C] dark:text-blue-400"></i>
+                                    4. Facturación y Comprobante
+                                </h2>
+
+                                <!-- Tabs de Comprobante -->
+                                <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-700/60 rounded-xl mb-4">
+                                    <button type="button"
+                                            @click="setInvoice('B')"
+                                            class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center justify-center gap-2"
+                                            :class="formData.invoice_type === 'B' 
+                                                ? 'bg-white dark:bg-slate-800 text-[#1B3A5C] dark:text-white shadow-sm' 
+                                                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'">
+                                        <i data-lucide="user" class="w-4 h-4"></i>
+                                        <span>Consumidor Final (Factura B)</span>
+                                    </button>
+                                    
+                                    <button type="button"
+                                            @click="setInvoice('A')"
+                                            class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center justify-center gap-2"
+                                            :class="formData.invoice_type === 'A' 
+                                                ? 'bg-white dark:bg-slate-800 text-[#1B3A5C] dark:text-white shadow-sm' 
+                                                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'">
+                                        <i data-lucide="building-2" class="w-4 h-4"></i>
+                                        <span>Empresa / Resp. Inscripto (Factura A)</span>
+                                    </button>
+                                </div>
+                                <input type="hidden" name="invoice_type" :value="formData.invoice_type">
+
+                                <!-- Campos según comprobante -->
+                                <div class="space-y-4">
+                                    <!-- Si es Factura A: Razón Social y CUIT -->
+                                    <div x-show="formData.invoice_type === 'A'" 
+                                         x-transition:enter="transition-all ease-out duration-150"
+                                         class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="business_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                Razón Social <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" 
+                                                   id="business_name"
+                                                   name="business_name" 
+                                                   x-model="formData.business_name"
+                                                   @blur="validateField('business_name')"
+                                                   placeholder="Ej. Metalúrgica Chaco S.R.L."
+                                                   class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#1B3A5C] text-sm transition-all"
+                                                   :class="errors.business_name ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
+                                            <p x-show="errors.business_name" x-text="errors.business_name" class="mt-1 text-xs text-red-500"></p>
+                                        </div>
+
+                                        <div>
+                                            <label for="doc_number_cuit" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                CUIT (11 dígitos) <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" 
+                                                   id="doc_number_cuit"
+                                                   name="doc_number" 
+                                                   x-model="formData.doc_number"
+                                                   @blur="validateField('doc_number')"
+                                                   maxlength="14"
+                                                   placeholder="Ej. 30-71234567-8"
+                                                   class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#1B3A5C] text-sm font-mono transition-all"
+                                                   :class="errors.doc_number ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
+                                            <p x-show="errors.doc_number" x-text="errors.doc_number" class="mt-1 text-xs text-red-500"></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Si es Factura B: DNI Opcional -->
+                                    <div x-show="formData.invoice_type === 'B'"
+                                         x-transition:enter="transition-all ease-out duration-150">
+                                        <label for="doc_number_dni" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                            DNI del Titular <span class="text-xs text-slate-500 dark:text-slate-400 font-normal">(Opcional para Consumidor Final)</span>
+                                        </label>
+                                        <input type="text" 
+                                               id="doc_number_dni"
+                                               :name="formData.invoice_type === 'B' ? 'doc_number' : ''"
+                                               x-model="formData.doc_number"
+                                               @blur="validateField('doc_number')"
+                                               maxlength="10"
+                                               placeholder="Ej. 28.123.456"
+                                               class="w-full md:w-1/2 px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#1B3A5C] text-sm font-mono transition-all"
+                                               :class="errors.doc_number ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
+                                        <p x-show="errors.doc_number" x-text="errors.doc_number" class="mt-1 text-xs text-red-500"></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SECCIÓN 5: Instrucciones o Notas -->
+                            <div class="pt-2 border-t border-slate-100 dark:border-slate-700">
+                                <label for="order_note" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                    Notas o Instrucciones Especiales
                                 </label>
                                 <textarea id="order_note"
                                           name="order_note" 
                                           x-model="formData.order_note"
-                                          rows="3"
-                                          placeholder="Instrucciones especiales para la entrega (opcional)"
-                                          class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white transition-all resize-none"></textarea>
+                                          rows="2"
+                                          placeholder="Horario preferido, persona autorizada a retirar o indicación de transporte (opcional)"
+                                          class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#1B3A5C] focus:border-transparent dark:bg-slate-700 dark:text-white text-sm transition-all resize-none"></textarea>
                             </div>
                             
                             <!-- Submit Button (Mobile) -->
-                            <div class="lg:hidden">
+                            <div class="lg:hidden pt-2">
                                 <button type="submit"
                                         :disabled="submitting || !isValid"
-                                        :class="submitting || !isValid ? 'bg-slate-300 dark:bg-slate-600 cursor-not-allowed' : 'bg-[#D42B1E] hover:bg-[#B82419]'"
-                                        class="w-full px-6 py-3 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#D42B1E]">
+                                        :class="submitting || !isValid ? 'bg-slate-300 dark:bg-slate-600 cursor-not-allowed' : 'bg-[#D42B1E] hover:bg-[#B82419] shadow-sm'"
+                                        class="w-full px-6 py-3.5 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#D42B1E]">
                                     <template x-if="!submitting">
-                                        <span class="inline-flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i><span>Realizar Pedido</span></span>
+                                        <span class="inline-flex items-center gap-2">
+                                            <i data-lucide="check-circle" class="w-5 h-5"></i>
+                                            <span>Realizar Pedido vía WhatsApp</span>
+                                        </span>
                                     </template>
                                     <template x-if="submitting">
-                                        <span class="inline-flex items-center gap-2"><span class="animate-spin rounded-full h-5 w-5 border-2 border-white/40 border-t-white" aria-hidden="true"></span><span>Procesando pedido...</span></span>
+                                        <span class="inline-flex items-center gap-2">
+                                            <span class="animate-spin rounded-full h-5 w-5 border-2 border-white/40 border-t-white" aria-hidden="true"></span>
+                                            <span>Procesando pedido...</span>
+                                        </span>
                                     </template>
                                 </button>
                             </div>
@@ -312,13 +587,13 @@
                 </div>
             </div>
             
-            <!-- Order Summary -->
+            <!-- Order Summary Column -->
             <div>
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 sticky top-4">
                     <div class="p-6">
-                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                            <i data-lucide="shopping-bag" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
-                            Resumen de Orden
+                        <h2 class="text-xl font-heading font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                            <i data-lucide="shopping-bag" class="w-5 h-5 text-[#1B3A5C] dark:text-blue-400"></i>
+                            Resumen del Pedido
                         </h2>
                         
                         <!-- Products Table -->
@@ -326,9 +601,9 @@
                             <table class="w-full">
                                 <thead class="border-b border-slate-200 dark:border-slate-700">
                                     <tr class="text-xs uppercase text-slate-600 dark:text-slate-400">
-                                        <th class="text-left py-3 px-2 font-semibold">Producto</th>
-                                        <th class="text-center py-3 px-2 font-semibold w-16">Cant.</th>
-                                        <th class="text-right py-3 px-2 font-semibold w-24">Precio</th>
+                                        <th class="text-left py-2.5 px-2 font-semibold">Producto</th>
+                                        <th class="text-center py-2.5 px-2 font-semibold w-16">Cant.</th>
+                                        <th class="text-right py-2.5 px-2 font-semibold w-24">Precio</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -339,12 +614,43 @@
                             </table>
                         </div>
                         
+                        <!-- Desglose y Modalidades Dinámicas -->
+                        <div class="space-y-3 py-4 border-t border-slate-200 dark:border-slate-700 text-sm">
+                            <div class="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                                <span>Subtotal Artículos:</span>
+                                <span class="font-semibold font-sans tabular-nums text-slate-900 dark:text-white">
+                                    ${{ total|floatformat:2 }}
+                                </span>
+                            </div>
+
+                            <div class="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                                <span class="flex items-center gap-1.5">
+                                    <i data-lucide="truck" class="w-4 h-4 text-slate-500"></i>
+                                    <span>Entrega:</span>
+                                </span>
+                                <span class="font-semibold"
+                                      :class="formData.delivery_type === 'pickup' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'"
+                                      x-text="formData.delivery_type === 'pickup' ? 'Retiro en Mostrador (Gratis)' : 'Envío NEA (A coordinar)'">
+                                </span>
+                            </div>
+
+                            <div class="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                                <span class="flex items-center gap-1.5">
+                                    <i data-lucide="receipt" class="w-4 h-4 text-slate-500"></i>
+                                    <span>Comprobante:</span>
+                                </span>
+                                <span class="font-medium text-slate-700 dark:text-slate-300"
+                                      x-text="formData.invoice_type === 'A' ? 'Factura A (Con CUIT)' : 'Factura B (Consumidor Final)'">
+                                </span>
+                            </div>
+                        </div>
+
                         <!-- Total -->
                         <div class="flex items-center justify-between py-4 border-t border-b border-slate-200 dark:border-slate-700 mb-6">
-                            <span class="text-slate-600 dark:text-slate-400 font-medium">
-                                Total:
+                            <span class="text-base font-semibold text-slate-900 dark:text-white">
+                                Total de la Orden:
                             </span>
-                            <span class="text-2xl font-bold text-slate-900 dark:text-white">
+                            <span class="text-2xl font-bold font-sans tabular-nums text-slate-900 dark:text-white">
                                 ${{ total|floatformat:2 }}
                             </span>
                         </div>
@@ -354,31 +660,37 @@
                             <button type="submit"
                                     form="checkout-form"
                                     :disabled="submitting || !isValid"
-                                    :class="submitting || !isValid ? 'bg-slate-300 dark:bg-slate-600 cursor-not-allowed' : 'bg-[#D42B1E] hover:bg-[#B82419]'"
-                                    class="w-full px-6 py-3 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#D42B1E]">
+                                    :class="submitting || !isValid ? 'bg-slate-300 dark:bg-slate-600 cursor-not-allowed' : 'bg-[#D42B1E] hover:bg-[#B82419] shadow-sm'"
+                                    class="w-full px-6 py-3.5 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#D42B1E]">
                                 <template x-if="!submitting">
-                                    <span class="inline-flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i><span>Realizar Pedido</span></span>
+                                    <span class="inline-flex items-center gap-2">
+                                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                                        <span>Realizar Pedido vía WhatsApp</span>
+                                    </span>
                                 </template>
                                 <template x-if="submitting">
-                                    <span class="inline-flex items-center gap-2"><span class="animate-spin rounded-full h-5 w-5 border-2 border-white/40 border-t-white" aria-hidden="true"></span><span>Procesando pedido...</span></span>
+                                    <span class="inline-flex items-center gap-2">
+                                        <span class="animate-spin rounded-full h-5 w-5 border-2 border-white/40 border-t-white" aria-hidden="true"></span>
+                                        <span>Procesando pedido...</span>
+                                    </span>
                                 </template>
                             </button>
                             
                             <a href="{% url 'store:store' %}" 
-                               class="block w-full px-6 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-white text-center font-medium rounded-lg transition-colors duration-200">
+                               class="block w-full px-6 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-white text-center font-medium rounded-lg text-sm transition-colors duration-150">
                                 Continuar Comprando
                             </a>
                         </div>
                         
-                        <!-- Security Info -->
+                        <!-- Trust Badges -->
                         <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 space-y-3">
-                            <div class="flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400">
-                                <i data-lucide="shield-check" class="w-4 h-4 flex-shrink-0 mt-0.5 text-green-600 dark:text-green-400"></i>
-                                <p>Compra segura. Tus datos están protegidos.</p>
+                            <div class="flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-400">
+                                <i data-lucide="shield-check" class="w-4 h-4 flex-shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400"></i>
+                                <p>Atención directa y asesoramiento técnico por mostrador o WhatsApp.</p>
                             </div>
-                            <div class="flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400">
-                                <i data-lucide="truck" class="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600 dark:text-blue-400"></i>
-                                <p>Envío a todo el país. Consulta tiempos de entrega.</p>
+                            <div class="flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-400">
+                                <i data-lucide="building-2" class="w-4 h-4 flex-shrink-0 mt-0.5 text-[#1B3A5C] dark:text-blue-400"></i>
+                                <p>Casa central en Av. Alvear 1301, Resistencia, Chaco.</p>
                             </div>
                         </div>
                     </div>

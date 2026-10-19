@@ -37,6 +37,7 @@ graph LR
 - **ProductGallery** (Hereda de `models.Model`): Colección de imágenes adicionales para el producto.
 - **Variation** (Hereda de `models.Model`): Mapea opciones del producto por categorías (ej. Rosca, Material, Medida).
 - **ReviewRating** (Hereda de `models.Model`): Modela las reseñas y puntuaciones de usuarios.
+- **ProductSearch** y **SearchQuery** (Heredan de `models.Model`): `ProductSearch` rastrea productos encontrados para tendencias; `SearchQuery` registra términos sin resultados (demanda oculta) de forma agregada para decisiones de compras y stock. Aplica una heurística de reducción de riesgo anti-PII (omitiendo emails, teléfonos y DNI/CUIT sin garantizar ausencia total en texto libre) y mide volumen acumulado de solicitudes (`search_count`), sin persistir IPs, usuarios ni sesiones.
 - **FAQ** y **FAQCategory** (Hereda de `models.Model`): Estructura las preguntas frecuentes a nivel de catálogo.
 - **HomeSection**, **HomeSectionProduct** y **PromoBanner**: Tablas de configuración del *Home Page Builder V2* que permiten estructurar carruseles, accesos rápidos y grids promocionales desde el admin.
 - **CarouselImage**: Banners principales del carrusel de bienvenida.
@@ -45,7 +46,8 @@ graph LR
 - **ProductService.filter_products / paginate_products**: Filtra y pagina productos en el catálogo; soporta filtrado multi-tag con semántica AND estricta mediante subconsultas (`pk__in`) para evitar producto cartesiano en anotaciones de reviews.
 - **ProductService.get_available_tags**: Obtiene tags activos vinculados a productos disponibles para alimentar los filtros de la barra lateral.
 - **ProductService.import_from_file**: Lee y analiza archivos Excel/CSV utilizando pandas, centraliza la importación de productos, imágenes y categorías, y procesa la columna `tags` (creando automáticamente tags inexistentes o reutilizando existentes sin duplicación).
-- **SearchService.search_products**: Implementa búsquedas de productos e indexa palabras de búsqueda en `ProductSearch` para alimentar el autocompletado y análisis de tendencias.
+- **SearchService.search_products**: Implementa búsquedas de productos en código, nombre, descripción, marca, categoría y subcategorías con deduplicación `.distinct()`.
+- **SearchService.record_unmatched_search**: Registra e incrementa conteos de solicitudes de búsqueda sin resultados en `SearchQuery` aplicando filtro heurístico por patrones (emails, teléfonos, documentos) e higiene estricta de logs (sin volcar términos crudos).
 - **ReviewService.create_review**: Gestiona el guardado y actualización de reviews recalculando la media de estrellas del producto.
 - **HomeSectionService.get_active_sections**: Obtiene las secciones del Home y resuelve las consultas específicas de sus productos asociados (respetando curaduría manual o fallback automático).
 - **GoogleReviewsService**: Consulta e integra calificaciones externas desde la API oficial de Google Maps con almacenamiento en caché de Redis.

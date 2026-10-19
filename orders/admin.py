@@ -8,10 +8,10 @@ class OrderProductInline(admin.TabularInline):
     extra = 0
 
 
-class OrderAdmin(admin.ModelAdmin): #Hace referencia a los datos introducidos en class Order.
-    list_display = ['order_number', 'full_name', 'phone', 'email', 'city', 'order_total', 'status', 'is_ordered', 'created_at']
-    list_filter = ['status', 'is_ordered']
-    search_fields = ['order_number', 'first_name', 'last_name', 'phone', 'email']
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ['order_number', 'full_name', 'delivery_type', 'invoice_type', 'phone', 'email', 'order_total', 'status', 'is_ordered', 'created_at']
+    list_filter = ['delivery_type', 'invoice_type', 'status', 'is_ordered']
+    search_fields = ['order_number', 'first_name', 'last_name', 'phone', 'email', 'doc_number', 'business_name']
     list_per_page = 20
     inlines = [OrderProductInline]
 

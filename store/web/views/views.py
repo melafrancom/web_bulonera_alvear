@@ -320,14 +320,18 @@ def search(request):
     products = SearchService.search_products(keyword)
     
     # Registrar búsquedas
-    if keyword and len(keyword) > 2 and products.exists():
-        user = request.user if request.user.is_authenticated else None
-        session_key = request.session.session_key
-        if not session_key:
-            request.session.create()
+    if keyword and len(keyword) > 2:
+        if products.exists():
+            user = request.user if request.user.is_authenticated else None
             session_key = request.session.session_key
-        
-        SearchService.register_search_results(products, keyword, user, session_key)
+            if not session_key:
+                request.session.create()
+                session_key = request.session.session_key
+            
+            SearchService.register_search_results(products, keyword, user, session_key)
+        else:
+            # Telemetría agregada de demanda oculta (sin PII)
+            SearchService.record_unmatched_search(keyword)
     
     context = {
         'products': products,

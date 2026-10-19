@@ -75,11 +75,15 @@ class OrderService:
             last_name=form_data['last_name'],
             phone=form_data['phone'],
             email=form_data['email'],
-            address_line_1=form_data['address_line_1'],
+            delivery_type=form_data.get('delivery_type', 'pickup'),
+            invoice_type=form_data.get('invoice_type', 'B'),
+            doc_number=form_data.get('doc_number', ''),
+            business_name=form_data.get('business_name', ''),
+            address_line_1=form_data.get('address_line_1', ''),
             address_line_2=form_data.get('address_line_2', ''),
-            country=form_data['country'],
-            city=form_data['city'],
-            state=form_data['state'],
+            country=form_data.get('country', ''),
+            city=form_data.get('city', ''),
+            state=form_data.get('state', ''),
             order_note=form_data.get('order_note', ''),
             order_total=total,
             ip=ip_address or ''
@@ -343,13 +347,33 @@ class WhatsAppService:
         Returns:
             str: Mensaje formateado para WhatsApp
         """
+        # Formato de entrega
+        if order.delivery_type == 'pickup':
+            delivery_str = "🏪 *Entrega:* Retiro en Mostrador (Av. Alvear 1301 - Gratis)"
+        else:
+            addr2 = f", {order.address_line_2}" if order.address_line_2 else ""
+            delivery_str = (
+                f"🚚 *Entrega:* Envío a Coordinar (Interior/NEA)\n"
+                f"📍 *Dirección:* {order.address_line_1}{addr2}, {order.city} (CP: {order.state})"
+            )
+
+        # Formato fiscal
+        if order.invoice_type == 'A':
+            fiscal_str = f"🧾 *Comprobante:* Factura A — {order.business_name} (CUIT: {order.doc_number})"
+        else:
+            dni_suffix = f" (DNI: {order.doc_number})" if order.doc_number else ""
+            fiscal_str = f"🧾 *Comprobante:* Consumidor Final / Factura B{dni_suffix}"
+
+        note_str = f"\n📝 *Nota:* {order.order_note}" if order.order_note else ""
+
         message = f"""🛒 *Nueva Orden de Compra*
 
 🆔 *ID de Orden:* {order.order_number}
 👤 *Cliente:* {order.full_name()}
 📞 *Teléfono:* {order.phone}
 📧 *Email:* {order.email}
-📍 *Dirección:* {order.address_line_1}, {order.city}, {order.state}
+{delivery_str}
+{fiscal_str}{note_str}
 
 📦 *Productos Ordenados:*
 """

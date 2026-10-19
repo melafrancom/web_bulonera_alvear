@@ -661,11 +661,45 @@ class ProductService:
 
 
 class SearchService:
-    """Servicio para búsqueda de productos"""
+    """Servicio para búsqueda de productos y análisis de telemetría agregada"""
     
+    # REGLA: Heurística de reducción de riesgo PII:
+    # Detecta patrones comunes de datos personales (emails, teléfonos y documentos DNI/CUIT).
+    # TRADE-OFF DOCUMENTADO: Códigos SKU comerciales puramente numéricos de 7 a 11 dígitos
+    # (presentes en el catálogo, ej. 00100100001) que NO coincidan con ningún producto existente
+    # serán descartados de SearchQuery para priorizar la no persistencia accidental de DNI o teléfonos.
+    # El motor de búsqueda (search_products) sí evalúa dichos códigos normalmente contra el catálogo.
+    _RE_EMAIL = re.compile(r'[\w\.-]+@[\w\.-]+\.\w+', re.IGNORECASE)
+    _RE_DOC_STANDALONE = re.compile(r'\b\d{7,11}\b')
+    _RE_CUIT_FORMATTED = re.compile(r'\b\d{2}[-.\s]\d{8}[-.\s]\d{1}\b')
+    _RE_DNI_FORMATTED = re.compile(r'\b\d{1,2}\.\d{3}\.\d{3}\b')
+    _RE_PHONE_LOCAL = re.compile(r'\b\d{3,4}[-.\s]\d{4}\b')
+    _RE_PHONE_NATIONAL = re.compile(r'(?:\+?54\s?9?)?\s?(?:0?[1-9]\d{1,3})[-.\s]?(?:15[-.\s]?)?\d{3,4}[-.\s]?\d{4}\b')
+
+    @classmethod
+    def contains_sensitive_pii(cls, text: str) -> bool:
+        """
+        Evalúa si el texto coincide con patrones comunes de datos personales (emails, teléfonos, DNI/CUIT).
+        Permite búsquedas técnicas con medidas (ej. 12x1.5, 14x2 100, 3/8) al no sumar dígitos arbitrarios.
+        """
+        if not text:
+            return False
+        return bool(
+            cls._RE_EMAIL.search(text) or
+            cls._RE_DOC_STANDALONE.search(text) or
+            cls._RE_CUIT_FORMATTED.search(text) or
+            cls._RE_DNI_FORMATTED.search(text) or
+            cls._RE_PHONE_LOCAL.search(text) or
+            cls._RE_PHONE_NATIONAL.search(text)
+        )
+
     @staticmethod
     def search_products(keyword: str) -> QuerySet:
-        """Busca productos por palabra clave en múltiples campos"""
+        """
+        Busca productos por palabra clave en múltiples campos y relaciones:
+        código, nombre, descripción, marca, categoría y subcategorías.
+        Aplica .distinct() para evitar duplicación cuando un producto coincide en varias subcategorías.
+        """
         if not keyword:
             return Product.objects.filter(is_available=True)
         
@@ -674,14 +708,15 @@ class SearchService:
         if not keyword:
             return Product.objects.filter(is_available=True)
         
-        # Expandir búsqueda a múltiples campos: código, nombre, descripción, marca
         return Product.objects.filter(
             Q(code__icontains=keyword) |
             Q(name__icontains=keyword) |
             Q(description__icontains=keyword) |
-            Q(brand__icontains=keyword),
+            Q(brand__icontains=keyword) |
+            Q(category__category_name__icontains=keyword) |
+            Q(subcategories__subcategory_name__icontains=keyword),
             is_available=True
-        ).order_by('-created_date')
+        ).distinct().order_by('-created_date')
     
     @staticmethod
     def register_product_search(product: Product, user: Account = None, 
@@ -720,6 +755,48 @@ class SearchService:
         
         for product in products[:limit]:
             SearchService.register_product_search(product, user, session_key)
+
+    @classmethod
+    def record_unmatched_search(cls, keyword: str) -> None:
+        """
+        Registra o incrementa el contador de un término de búsqueda que no arrojó resultados.
+        Normaliza el texto y opera de manera atómica sin almacenar IPs, usuarios ni sesiones.
+        Aplica filtro heurístico anti-PII por patrones sobre la entrada completa (evita que la truncación
+        oculte datos sensibles en el límite de longitud).
+        Unifica la normalización con search_products limitando a 100 caracteres.
+        Higiene estricta de logs: no interpola el término crudo ni en logs normales ni en logs de error.
+        search_count cuantifica volumen de solicitudes fallidas, no demandantes únicos.
+        """
+        if not keyword:
+            return
+
+        # 1. Evaluar patrones PII sobre la entrada completa antes de truncar
+        raw_trimmed = keyword.strip()
+        if cls.contains_sensitive_pii(raw_trimmed):
+            return
+
+        # 2. Normalización idéntica a search_products (límite estricto de 100 caracteres)
+        clean_keyword = raw_trimmed[:100].lower()
+        if len(clean_keyword) < 3:
+            return
+
+        try:
+            from store.models import SearchQuery
+            from django.db.models import F
+            from django.utils import timezone
+
+            query_obj, created = SearchQuery.objects.get_or_create(
+                query_text=clean_keyword,
+                defaults={'search_count': 1}
+            )
+            if not created:
+                SearchQuery.objects.filter(pk=query_obj.pk).update(
+                    search_count=F('search_count') + 1,
+                    last_searched_at=timezone.now()
+                )
+            logger.info("Demanda oculta registrada de forma agregada (longitud: %d caracteres)", len(clean_keyword))
+        except Exception as e:
+            logger.error("Error al registrar búsqueda sin resultado (tipo de error: %s)", type(e).__name__)
 
 
 class ReviewService:

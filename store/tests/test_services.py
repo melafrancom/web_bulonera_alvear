@@ -304,13 +304,14 @@ class TestSearchService:
             category=category,
             is_available=True
         )
+        other_cat = Category.objects.create(category_name='Fijaciones', slug='fijaciones')
         p2 = Product.objects.create(
             code='TUERCA',
             name='Tuerca de Latón',
             slug='tuerca-laton',
             price=5.0,
             stock=50,
-            category=category,
+            category=other_cat,
             is_available=True
         )
         

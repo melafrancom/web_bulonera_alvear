@@ -20,7 +20,7 @@ from pathlib import Path
 from django.conf import settings
 
 # local:
-from .models import Product, Variation, ReviewRating, ProductGallery, CarouselImage, ProductSearch, FAQCategory, FAQ, HomeSection, HomeSectionProduct, PromoBanner, ProductTag
+from .models import Product, Variation, ReviewRating, ProductGallery, CarouselImage, ProductSearch, SearchQuery, FAQCategory, FAQ, HomeSection, HomeSectionProduct, PromoBanner, ProductTag
 from category.models import Category, SubCategory
 from store.web.forms import ProductImportForm
 from .utils import ImageProcessor
@@ -308,6 +308,22 @@ class ProductSearchAdmin(admin.ModelAdmin):
     readonly_fields = ('product', 'user', 'session_key', 'search_count', 'created_at', 'updated_at')
 
 admin.site.register(ProductSearch, ProductSearchAdmin)
+
+
+class SearchQueryAdmin(admin.ModelAdmin):
+    list_display = ('query_text', 'search_count', 'last_searched_at', 'created_at')
+    list_filter = ('last_searched_at', 'created_at')
+    search_fields = ('query_text',)
+    readonly_fields = ('query_text', 'search_count', 'last_searched_at', 'created_at')
+    ordering = ('-search_count', '-last_searched_at')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+admin.site.register(SearchQuery, SearchQueryAdmin)
 
 
 class FAQInline(admin.TabularInline):

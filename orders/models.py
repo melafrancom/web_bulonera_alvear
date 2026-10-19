@@ -27,6 +27,15 @@ class Order(models.Model):
         ('Completed', 'Completado'),
         ('Cancelled', 'Cancelado'),
     )
+    DELIVERY_CHOICES = (
+        ('pickup', 'Retiro en Local (Av. Alvear 1301)'),
+        ('shipping', 'Envío a convenir (Interior / NEA)'),
+    )
+    INVOICE_CHOICES = (
+        ('B', 'Consumidor Final (Factura B)'),
+        ('A', 'Responsable Inscripto (Factura A)'),
+    )
+
     #### Datos de order ####
     user = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True)
     order_number = models.CharField(max_length=30, unique=True, db_index=True)
@@ -35,15 +44,21 @@ class Order(models.Model):
     status = models.CharField(max_length=50, choices=STATUS, default='New')
     payment = models.ForeignKey(Payment, on_delete=models.SET_NULL, null=True, blank=True)
     
+    # Modalidad de entrega e identificación fiscal
+    delivery_type = models.CharField(max_length=20, choices=DELIVERY_CHOICES, default='pickup', verbose_name='Modalidad de Entrega')
+    invoice_type = models.CharField(max_length=10, choices=INVOICE_CHOICES, default='B', verbose_name='Tipo de Factura')
+    doc_number = models.CharField(max_length=20, blank=True, verbose_name='DNI o CUIT')
+    business_name = models.CharField(max_length=150, blank=True, verbose_name='Razón Social')
+
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=25)
     email = models.EmailField(max_length=50)
-    address_line_1 = models.CharField(max_length=100)
+    address_line_1 = models.CharField(max_length=100, blank=True)
     address_line_2 = models.CharField(max_length=100, blank=True)
-    country = models.CharField(max_length=50)  # Agregado mio
-    city = models.CharField(max_length=50)  # Agregado mio
-    state = models.CharField(max_length=10)  # Código postal argentino (4 dígitos o CPA de 8 caracteres)
+    country = models.CharField(max_length=50, blank=True)
+    city = models.CharField(max_length=50, blank=True)
+    state = models.CharField(max_length=10, blank=True)  # Código postal argentino (4 dígitos o CPA de 8 caracteres)
     
     ip = models.CharField(max_length=25, blank=True)
     is_ordered = models.BooleanField(default=False)
@@ -55,7 +70,17 @@ class Order(models.Model):
         return f'{self.first_name} {self.last_name}'
 
     def full_address(self):
-        return f'{self.address_line_1} {self.address_line_2}'
+        if self.delivery_type == 'pickup':
+            return 'Retiro en Mostrador (Av. Alvear 1301, Resistencia)'
+        return f'{self.address_line_1} {self.address_line_2}'.strip()
+
+    def get_delivery_display_name(self) -> str:
+        """Retorna el nombre descriptivo de la modalidad de entrega."""
+        return dict(self.DELIVERY_CHOICES).get(self.delivery_type, self.delivery_type)
+
+    def get_invoice_display_name(self) -> str:
+        """Retorna el nombre descriptivo del tipo de factura."""
+        return dict(self.INVOICE_CHOICES).get(self.invoice_type, self.invoice_type)
 
     def get_status_badge_class(self) -> str:
         """Retorna clases de Tailwind CSS para la insignia de estado del pedido."""

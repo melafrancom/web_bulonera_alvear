@@ -755,6 +755,32 @@ class ProductSearch(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.search_count} búsquedas"
 
+
+class SearchQuery(models.Model):
+    """
+    Registra términos de búsqueda agregados que no arrojaron resultados (demanda oculta).
+    
+    Privacidad y Reducción de Riesgo:
+    - No almacena direcciones IP, identificadores de usuario ni claves de sesión.
+    - Aplica un filtro heurístico por patrones (emails, teléfonos y documentos DNI/CUIT)
+      para reducir el riesgo de almacenar datos personales comunes, sin constituir una
+      garantía absoluta frente a nombres o datos personales en texto libre no estructurado.
+    - search_count cuantifica el volumen acumulado de solicitudes de búsqueda fallidas,
+      no la cantidad de usuarios únicos o demandantes individuales.
+    """
+    query_text = models.CharField(max_length=150, unique=True, db_index=True)
+    search_count = models.PositiveIntegerField(default=1)
+    last_searched_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Demanda Oculta (Búsqueda Sin Resultado)"
+        verbose_name_plural = "Demandas Ocultas (Búsquedas Sin Resultados)"
+        ordering = ['-search_count', '-last_searched_at']
+
+    def __str__(self):
+        return f"{self.query_text} ({self.search_count} búsquedas)"
+
 #NO HACE A LAS FUNCIONALIDADES PRINCIPALES DE LA PÁGINA:
 #Creamos un modelo para FAQ (Preguntas Frecuentes)
 
