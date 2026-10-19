@@ -57,3 +57,28 @@ class TestDashboardView:
         assert response.status_code == 200
         content = response.content.decode()
         assert user.email in content or user.first_name in content or user.username in content
+
+
+@pytest.mark.django_db
+class TestAuthLoadingStates:
+    def test_login_form_has_submit_lock_and_brand_cta(self, client):
+        response = client.get(reverse("account:login"))
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "submitting: false" in content
+        assert "@submit=" in content
+        assert ":disabled=\"submitting || !isValid\"" in content
+        assert "#D42B1E" in content
+        assert "Iniciando sesión..." in content
+
+    def test_register_form_has_submit_lock_and_brand_cta(self, client):
+        response = client.get(reverse("account:register"))
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "submitting: false" in content
+        assert "@submit=" in content
+        assert ":disabled=\"submitting || !isValid\"" in content
+        assert "#D42B1E" in content
+        assert "Creando cuenta..." in content

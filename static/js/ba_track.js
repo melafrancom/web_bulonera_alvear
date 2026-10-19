@@ -208,14 +208,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const method = leadBtn.getAttribute('data-ba-lead') || 'whatsapp';
         let href = leadBtn.getAttribute('href') || '';
-        let sku = '';
-        
-        try {
-            if (href.includes('?text=')) {
-                const urlParams = new URLSearchParams(href.split('?')[1]);
-                sku = urlParams.get('text') || '';
-            }
-        } catch (err) {}
+        // El texto libre del mensaje no es un SKU; evitar enviarlo como item_id/product_sku.
+        const sku = leadBtn.getAttribute('data-ba-product-sku') || '';
         
         const btnId = leadBtn.id || (leadBtn.classList.length ? leadBtn.classList[0] : method);
         const eventId = uuidv4();

@@ -65,3 +65,20 @@ class TestCartWebViews:
         assert result['cart_count'] == 0
 
 
+
+
+@pytest.mark.django_db
+class TestEmptyCartCommercialState:
+    def test_empty_cart_links_to_offers_and_dynamic_categories(self, client, category):
+        from django.core.cache import cache
+        from django.urls import reverse
+
+        cache.delete("category:menu_links")
+        response = client.get(reverse("cart:cart"))
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert reverse("store:offers") in content
+        assert "Ver productos en oferta" in content
+        assert category.category_name in content
+        assert category.get_url() in content
