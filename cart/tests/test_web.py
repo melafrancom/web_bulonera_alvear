@@ -255,3 +255,98 @@ class TestCartUpdateAndRemoveWebViews:
         assert response.url == reverse('cart:cart')
         assert not CartItem.objects.filter(id=cart_item.id).exists()
 
+    def test_remove_cart_item_ajax_anonymous_with_remaining_items(self, client, product, category):
+        """
+        QUÉ:
+            Verifica que eliminar un ítem por AJAX en un carrito anónimo con múltiples ítems devuelva
+            is_empty=False, status='deleted' y descuente los totales correctamente.
+        POR QUÉ:
+            Regresión de UX: El carrito no debe entrar a empty state si aún quedan otros ítems activos.
+        """
+        from django.urls import reverse
+        from cart.models import Cart, CartItem
+        from store.models import Product
+
+        # Arrange
+        session = client.session
+        session.save()
+        cart = Cart.objects.create(cart_id=session.session_key)
+
+        item1 = CartItem.objects.create(
+            cart=cart,
+            product=product,
+            quantity=1,
+            purchase_price=product.price
+        )
+        product2 = Product.objects.create(
+            code='SCREW-002-TEST',
+            name='Tuerca Acero Inox 3mm',
+            slug='tuerca-acero-inox-3mm-test',
+            price=20.00,
+            stock=50,
+            category=category,
+            is_available=True
+        )
+        item2 = CartItem.objects.create(
+            cart=cart,
+            product=product2,
+            quantity=2,
+            purchase_price=product2.price
+        )
+
+        # Act
+        url = reverse('cart:remove_cart_item', args=[product.id, item1.id])
+        response = client.post(
+            url,
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json'
+        )
+
+        # Assert
+        assert response.status_code == 200
+        data = response.json()
+        assert data['status'] == 'deleted'
+        assert data['item_id'] == item1.id
+        assert data['cart']['is_empty'] is False
+        assert data['cart']['item_count'] == 1
+        assert data['cart']['quantity'] == 2
+        assert not CartItem.objects.filter(id=item1.id).exists()
+        assert CartItem.objects.filter(id=item2.id).exists()
+
+    def test_remove_cart_item_ajax_authenticated_success(self, client_with_user, user, product):
+        """
+        QUÉ:
+            Verifica que un usuario autenticado pueda eliminar su propio ítem por AJAX.
+        POR QUÉ:
+            Los ítems de usuarios autenticados se asocian mediante user_id (cart_id puede ser null),
+            por lo que CartService.remove_from_cart debe resolver la pertenencia de sesión/usuario.
+        """
+        from django.urls import reverse
+        from cart.models import CartItem
+
+        # Arrange
+        cart_item = CartItem.objects.create(
+            user=user,
+            product=product,
+            quantity=3,
+            purchase_price=product.price
+        )
+
+        # Act
+        url = reverse('cart:remove_cart_item', args=[product.id, cart_item.id])
+        response = client_with_user.post(
+            url,
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json'
+        )
+
+        # Assert
+        assert response.status_code == 200
+        data = response.json()
+        assert data['status'] == 'deleted'
+        assert data['item_id'] == cart_item.id
+        assert data['cart']['is_empty'] is True
+        assert data['cart']['item_count'] == 0
+        assert not CartItem.objects.filter(id=cart_item.id).exists()
+
+

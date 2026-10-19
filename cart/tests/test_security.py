@@ -225,3 +225,129 @@ class TestCartItemFinancialPrecision:
         assert item.purchase_price == Decimal('1499.99')
         assert isinstance(item.sub_total, Decimal)
         assert item.sub_total == Decimal('4499.97')
+
+
+@pytest.mark.django_db
+class TestCartAccessControlAndIsolationSecurity:
+    """
+    SEC-CART-IDOR: Pruebas de control de acceso y prevención de IDOR en CartItem.
+    Un usuario o sesión nunca debe poder modificar o eliminar ítems pertenecientes a otro.
+    """
+
+    def test_authenticated_user_cannot_delete_another_users_cart_item(self, client, user, product):
+        """
+        QUÉ:
+            Verifica que un usuario autenticado B no pueda eliminar el CartItem de un usuario A.
+        POR QUÉ:
+            Mitigación IDOR en /cart/remove_cart_item/: La pertenencia se valida contra request.user.
+        """
+        from account.models import Account
+        from cart.models import CartItem
+
+        # Arrange: Usuario A tiene un item en su carrito
+        user_a = user
+        item_a = CartItem.objects.create(
+            user=user_a,
+            product=product,
+            quantity=2,
+            purchase_price=product.price
+        )
+
+        # Arrange: Usuario B inicia sesión en client
+        user_b = Account.objects.create_user(
+            email='user_b@test.com',
+            username='user_b',
+            password='Password123!',
+            first_name='User',
+            last_name='B'
+        )
+        user_b.is_active = True
+        user_b.save()
+        client.login(email='user_b@test.com', password='Password123!')
+
+        # Act: Usuario B intenta eliminar el item de Usuario A vía AJAX
+        url = reverse('cart:remove_cart_item', args=[product.id, item_a.id])
+        response_ajax = client.post(
+            url,
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json'
+        )
+
+        # Assert: Falla control de pertenencia, respuesta indica error y el ítem sigue existiendo
+        assert response_ajax.status_code == 200
+        assert response_ajax.json()['status'] == 'error'
+        assert CartItem.objects.filter(id=item_a.id).exists()
+
+        # Act: Usuario B intenta eliminar el item de Usuario A vía POST tradicional
+        response_post = client.post(url)
+        assert response_post.status_code == 302
+        # Assert: El ítem de Usuario A sigue en la base de datos
+        assert CartItem.objects.filter(id=item_a.id).exists()
+
+    def test_anonymous_session_cannot_delete_another_sessions_cart_item(self, client, product):
+        """
+        QUÉ:
+            Verifica que una sesión anónima B no pueda eliminar el CartItem de una sesión anónima A.
+        POR QUÉ:
+            Aislamiento de sesiones en carritos anónimos basado en session_key.
+        """
+        from cart.models import Cart, CartItem
+        from django.test import Client
+
+        # Arrange: Sesión A crea carrito e ítem
+        cart_a = Cart.objects.create(cart_id='legitimate-session-aaa')
+        item_a = CartItem.objects.create(
+            cart=cart_a,
+            product=product,
+            quantity=1,
+            purchase_price=product.price
+        )
+
+        # Arrange: Cliente B con sesión diferente
+        client_b = Client()
+        session_b = client_b.session
+        session_b.save()
+
+        # Act: Cliente B intenta eliminar el ítem de Sesión A
+        url = reverse('cart:remove_cart_item', args=[product.id, item_a.id])
+        response = client_b.post(
+            url,
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json'
+        )
+
+        # Assert: Status error y el ítem de Sesión A no es eliminado
+        assert response.status_code == 200
+        assert response.json()['status'] == 'error'
+        assert CartItem.objects.filter(id=item_a.id).exists()
+
+    def test_anonymous_session_cannot_delete_authenticated_user_cart_item(self, client, user, product):
+        """
+        QUÉ:
+            Verifica que un cliente anónimo no pueda eliminar el CartItem de un usuario autenticado.
+        POR QUÉ:
+            Prevenir que un atacante sin credenciales vacíe carritos de usuarios registrados.
+        """
+        from cart.models import CartItem
+
+        # Arrange: Usuario autenticado tiene un ítem
+        item_user = CartItem.objects.create(
+            user=user,
+            product=product,
+            quantity=5,
+            purchase_price=product.price
+        )
+
+        # Act: Cliente anónimo intenta eliminarlo
+        url = reverse('cart:remove_cart_item', args=[product.id, item_user.id])
+        response = client.post(
+            url,
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json'
+        )
+
+        # Assert
+        assert response.status_code == 200
+        assert response.json()['status'] == 'error'
+        assert CartItem.objects.filter(id=item_user.id).exists()
+
