@@ -42,11 +42,13 @@ class TestOrderService:
             'last_name': 'User',
             'phone': '1234567890',
             'email': user.email,
+            'delivery_type': 'shipping',
             'address_line_1': 'Calle Test 123',
             'address_line_2': 'Apt 4B',
             'country': 'Argentina',
             'city': 'Buenos Aires',
             'state': '1000',
+            'invoice_type': 'B',
             'order_note': 'Notas de la orden'
         }
         
@@ -110,10 +112,12 @@ class TestOrderService:
             'last_name': 'User',
             'phone': '123',
             'email': user.email,
+            'delivery_type': 'shipping',
             'address_line_1': 'Test',
             'country': 'AR',
             'city': 'BA',
-            'state': '1000'
+            'state': '1000',
+            'invoice_type': 'B'
         }
         cart_items = CartItem.objects.filter(user=user)
         created_order = OrderService.create_order_from_cart(user, form_data, cart_items)
@@ -232,10 +236,12 @@ class TestCheckoutService:
             'last_name': 'User',
             'phone': '123',
             'email': user.email,
+            'delivery_type': 'shipping',
             'address_line_1': 'Test',
             'country': 'AR',
             'city': 'BA',
-            'state': '1000'
+            'state': '1000',
+            'invoice_type': 'B'
         }
         
         order = CheckoutService.complete_checkout(user, form_data, ip_address='127.0.0.1')

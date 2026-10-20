@@ -24,11 +24,13 @@ ORDER_FORM_DATA = {
     'last_name': 'González',
     'phone': '+5493624733431',
     'email': 'carlos@test.com',
+    'delivery_type': 'shipping',
     'address_line_1': 'Av. Alvear 1234',
     'address_line_2': 'Piso 2',
     'country': 'Argentina',
     'city': 'Resistencia',
     'state': '3500',
+    'invoice_type': 'B',
     'order_note': 'Entregar por la tarde'
 }
 

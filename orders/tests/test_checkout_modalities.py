@@ -45,8 +45,8 @@ def product(db, category):
 class TestOrderFormModalities:
     """Pruebas de validación condicional en OrderForm para entrega y facturación"""
 
-    def test_pickup_mode_defaults_and_passes_without_address(self):
-        """Retiro en mostrador no exige dirección física y autocompleta con la sede de Av. Alvear 1301"""
+    def test_pickup_mode_passes_without_address(self):
+        """Retiro en mostrador no exige dirección física ni inyecta direcciones sintéticas en el formulario"""
         data = {
             'first_name': 'Carlos',
             'last_name': 'López',
@@ -60,9 +60,7 @@ class TestOrderFormModalities:
         assert form.is_valid(), f"Errores inesperados: {form.errors}"
         cleaned = form.cleaned_data
         assert cleaned['delivery_type'] == 'pickup'
-        assert cleaned['address_line_1'] == 'Av. Alvear 1301'
-        assert cleaned['city'] == 'Resistencia'
-        assert cleaned['state'] == '3500'
+        assert cleaned['address_line_1'] == ''
         assert cleaned['doc_number'] == '30111222'
 
     def test_shipping_mode_requires_address_city_state(self):
@@ -251,3 +249,147 @@ class TestOrderServiceAndWhatsAppModalities:
         msg = WhatsAppService.generate_order_message(order)
         assert 'Retiro en Mostrador (Av. Alvear 1301 - Gratis)' in msg
         assert 'Consumidor Final / Factura B (DNI: 28123456)' in msg
+
+    def test_whatsapp_message_shipping_includes_freight_notice(self, user, product):
+        order = Order.objects.create(
+            user=user,
+            order_number='ORD-TEST-SHIP-01',
+            first_name='Juan',
+            last_name='Pérez',
+            phone='+54 362 4112233',
+            email='juan@test.com',
+            delivery_type='shipping',
+            address_line_1='Av. Castelli 1200',
+            city='Resistencia',
+            state='3500',
+            invoice_type='B',
+            order_total=Decimal('5000.00'),
+        )
+        msg = WhatsAppService.generate_order_message(order)
+        assert 'Envío a Coordinar (Interior/NEA)' in msg
+        assert 'Av. Castelli 1200' in msg
+        assert 'Flete a coordinar con transporte (no incluido en el total)' in msg
+
+    def test_whatsapp_message_unspecified_historical_order(self, user, product):
+        order = Order.objects.create(
+            user=user,
+            order_number='ORD-TEST-HIST-01',
+            first_name='Histórico',
+            last_name='Cliente',
+            phone='+54 362 4000000',
+            email='hist@test.com',
+            delivery_type='unspecified',
+            invoice_type='unspecified',
+            order_total=Decimal('1000.00'),
+        )
+        msg = WhatsAppService.generate_order_message(order)
+        assert 'Orden histórica' in msg
+
+
+class TestOrderFullAddressBranching:
+    """Pruebas del método Order.full_address() y tratamiento de órdenes históricas"""
+
+    def test_order_full_address_pickup(self, db):
+        order = Order(delivery_type='pickup')
+        assert order.full_address() == 'Retiro en Mostrador (Av. Alvear 1301, Resistencia)'
+
+    def test_order_full_address_shipping_with_address(self, db):
+        order = Order(delivery_type='shipping', address_line_1='Av. San Martín 500', address_line_2='Piso 2')
+        assert order.full_address() == 'Av. San Martín 500 Piso 2'
+
+    def test_order_full_address_shipping_empty_address(self, db):
+        order = Order(delivery_type='shipping', address_line_1='', address_line_2='')
+        assert order.full_address() == 'Dirección de envío no especificada'
+
+    def test_order_full_address_unspecified_historical_order_never_appears_as_shipping(self, db):
+        """Verifica que una orden histórica no aparezca como envío ni como retiro en mostrador"""
+        # Caso 1: Sin dirección física
+        hist_order_empty = Order(delivery_type='unspecified', address_line_1='', address_line_2='')
+        addr_empty = hist_order_empty.full_address()
+        assert addr_empty == 'Modalidad no especificada (Orden histórica)'
+        assert 'Envío' not in addr_empty
+        assert 'Retiro' not in addr_empty
+        assert 'Mostrador' not in addr_empty
+
+        # Caso 2: Con dirección histórica preservada
+        hist_order_with_addr = Order(delivery_type='unspecified', address_line_1='Calle Antigua 123', address_line_2='')
+        addr_with_val = hist_order_with_addr.full_address()
+        assert addr_with_val == 'Calle Antigua 123'
+        assert 'Envío' not in addr_with_val
+        assert 'Retiro' not in addr_with_val
+
+
+class TestZeroSilentFallbacks:
+    """Pruebas de erradicación total de fallbacks silenciosos en formularios y servicios"""
+
+    def test_form_unbound_initial_modalities_are_none(self):
+        """El formulario no ligado no debe proponer pickup ni B como valor inicial predeterminado"""
+        form = OrderForm()
+        assert form.fields['delivery_type'].initial is None
+        assert form.fields['invoice_type'].initial is None
+        assert form['delivery_type'].value() is None
+        assert form['invoice_type'].value() is None
+
+    def test_form_rejects_empty_delivery_type_without_defaulting(self):
+        """El formulario rechaza POST sin delivery_type y no le asigna 'pickup' por omisión"""
+        data = {
+            'first_name': 'Juan',
+            'last_name': 'Pérez',
+            'email': 'juan@test.com',
+            'phone': '+54 362 4112233',
+            'delivery_type': '',  # Vacío
+            'invoice_type': 'B',
+        }
+        form = OrderForm(data=data)
+        assert not form.is_valid()
+        assert 'delivery_type' in form.errors
+        assert 'delivery_type' not in form.cleaned_data or form.cleaned_data.get('delivery_type') != 'pickup'
+
+    def test_form_rejects_empty_invoice_type_without_defaulting(self):
+        """El formulario rechaza POST sin invoice_type y no le asigna 'B' por omisión"""
+        data = {
+            'first_name': 'Juan',
+            'last_name': 'Pérez',
+            'email': 'juan@test.com',
+            'phone': '+54 362 4112233',
+            'delivery_type': 'pickup',
+            'invoice_type': '',  # Vacío
+        }
+        form = OrderForm(data=data)
+        assert not form.is_valid()
+        assert 'invoice_type' in form.errors
+        assert 'invoice_type' not in form.cleaned_data or form.cleaned_data.get('invoice_type') != 'B'
+
+    def test_order_service_rejects_missing_delivery_type(self, user, product):
+        """OrderService.create_order_from_cart debe lanzar ValueError si falta delivery_type"""
+        cart = Cart.objects.create(cart_id=f'cart-no-del-{user.id}')
+        cart_item = CartItem.objects.create(
+            cart=cart, user=user, product=product, quantity=1, is_active=True, purchase_price=product.price
+        )
+        form_data = {
+            'first_name': 'Juan',
+            'last_name': 'Pérez',
+            'email': 'juan@test.com',
+            'phone': '+54 362 4112233',
+            'delivery_type': '',
+            'invoice_type': 'B',
+        }
+        with pytest.raises(ValueError, match="Modalidad de entrega inválida"):
+            OrderService.create_order_from_cart(user=user, form_data=form_data, cart_items=[cart_item])
+
+    def test_order_service_rejects_missing_invoice_type(self, user, product):
+        """OrderService.create_order_from_cart debe lanzar ValueError si falta invoice_type"""
+        cart = Cart.objects.create(cart_id=f'cart-no-inv-{user.id}')
+        cart_item = CartItem.objects.create(
+            cart=cart, user=user, product=product, quantity=1, is_active=True, purchase_price=product.price
+        )
+        form_data = {
+            'first_name': 'Juan',
+            'last_name': 'Pérez',
+            'email': 'juan@test.com',
+            'phone': '+54 362 4112233',
+            'delivery_type': 'pickup',
+            'invoice_type': '',
+        }
+        with pytest.raises(ValueError, match="Tipo de comprobante fiscal inválido"):
+            OrderService.create_order_from_cart(user=user, form_data=form_data, cart_items=[cart_item])

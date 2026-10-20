@@ -68,6 +68,15 @@ class OrderService:
         # Calcular total
         total = sum(Decimal(str(item.sub_total)) for item in cart_items)
         
+        # Validación estricta en la capa de negocio (cero fallbacks silenciosos)
+        delivery_type = form_data.get('delivery_type')
+        if delivery_type not in ('pickup', 'shipping'):
+            raise ValueError(f"Modalidad de entrega inválida o no seleccionada: {delivery_type}")
+
+        invoice_type = form_data.get('invoice_type')
+        if invoice_type not in ('B', 'A'):
+            raise ValueError(f"Tipo de comprobante fiscal inválido o no seleccionado: {invoice_type}")
+
         # Crear orden
         order = Order.objects.create(
             user=user,
@@ -75,8 +84,8 @@ class OrderService:
             last_name=form_data['last_name'],
             phone=form_data['phone'],
             email=form_data['email'],
-            delivery_type=form_data.get('delivery_type', 'pickup'),
-            invoice_type=form_data.get('invoice_type', 'B'),
+            delivery_type=delivery_type,
+            invoice_type=invoice_type,
             doc_number=form_data.get('doc_number', ''),
             business_name=form_data.get('business_name', ''),
             address_line_1=form_data.get('address_line_1', ''),
@@ -347,22 +356,31 @@ class WhatsAppService:
         Returns:
             str: Mensaje formateado para WhatsApp
         """
-        # Formato de entrega
+        # Formato de entrega con ramas explícitas
         if order.delivery_type == 'pickup':
             delivery_str = "🏪 *Entrega:* Retiro en Mostrador (Av. Alvear 1301 - Gratis)"
-        else:
+        elif order.delivery_type == 'shipping':
             addr2 = f", {order.address_line_2}" if order.address_line_2 else ""
             delivery_str = (
                 f"🚚 *Entrega:* Envío a Coordinar (Interior/NEA)\n"
-                f"📍 *Dirección:* {order.address_line_1}{addr2}, {order.city} (CP: {order.state})"
+                f"📍 *Dirección:* {order.address_line_1}{addr2}, {order.city} (CP: {order.state})\n"
+                f"⚠️ _Nota logística: Flete a coordinar con transporte (no incluido en el total)._"
             )
-
-        # Formato fiscal
-        if order.invoice_type == 'A':
-            fiscal_str = f"🧾 *Comprobante:* Factura A — {order.business_name} (CUIT: {order.doc_number})"
+        elif order.delivery_type == 'unspecified':
+            delivery_str = "📦 *Entrega:* No especificada (Orden histórica pre-digitalización)"
         else:
+            delivery_str = f"📦 *Entrega:* {order.delivery_type}"
+
+        # Formato fiscal con ramas explícitas
+        if order.invoice_type == 'A':
+            fiscal_str = f"🧾 *Comprobante:* Solicitud Factura A — {order.business_name} (CUIT: {order.doc_number})"
+        elif order.invoice_type == 'B':
             dni_suffix = f" (DNI: {order.doc_number})" if order.doc_number else ""
             fiscal_str = f"🧾 *Comprobante:* Consumidor Final / Factura B{dni_suffix}"
+        elif order.invoice_type == 'unspecified':
+            fiscal_str = "🧾 *Comprobante:* No especificado (Orden histórica)"
+        else:
+            fiscal_str = f"🧾 *Comprobante:* {order.invoice_type}"
 
         note_str = f"\n📝 *Nota:* {order.order_note}" if order.order_note else ""
 

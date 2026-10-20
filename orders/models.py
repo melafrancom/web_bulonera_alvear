@@ -30,10 +30,12 @@ class Order(models.Model):
     DELIVERY_CHOICES = (
         ('pickup', 'Retiro en Local (Av. Alvear 1301)'),
         ('shipping', 'Envío a convenir (Interior / NEA)'),
+        ('unspecified', 'No especificado (Histórico)'),
     )
     INVOICE_CHOICES = (
         ('B', 'Consumidor Final (Factura B)'),
         ('A', 'Responsable Inscripto (Factura A)'),
+        ('unspecified', 'No especificado (Histórico)'),
     )
 
     #### Datos de order ####
@@ -45,8 +47,8 @@ class Order(models.Model):
     payment = models.ForeignKey(Payment, on_delete=models.SET_NULL, null=True, blank=True)
     
     # Modalidad de entrega e identificación fiscal
-    delivery_type = models.CharField(max_length=20, choices=DELIVERY_CHOICES, default='pickup', verbose_name='Modalidad de Entrega')
-    invoice_type = models.CharField(max_length=10, choices=INVOICE_CHOICES, default='B', verbose_name='Tipo de Factura')
+    delivery_type = models.CharField(max_length=20, choices=DELIVERY_CHOICES, default='unspecified', verbose_name='Modalidad de Entrega')
+    invoice_type = models.CharField(max_length=15, choices=INVOICE_CHOICES, default='unspecified', verbose_name='Tipo de Factura')
     doc_number = models.CharField(max_length=20, blank=True, verbose_name='DNI o CUIT')
     business_name = models.CharField(max_length=150, blank=True, verbose_name='Razón Social')
 
@@ -69,9 +71,19 @@ class Order(models.Model):
     def full_name(self):
         return f'{self.first_name} {self.last_name}'
 
-    def full_address(self):
+    def full_address(self) -> str:
+        """
+        Retorna la representación textual de la dirección según la modalidad.
+        Garantiza que una orden histórica (unspecified) no aparezca etiquetada como envío.
+        """
         if self.delivery_type == 'pickup':
             return 'Retiro en Mostrador (Av. Alvear 1301, Resistencia)'
+        elif self.delivery_type == 'shipping':
+            addr = f'{self.address_line_1} {self.address_line_2}'.strip()
+            return addr if addr else 'Dirección de envío no especificada'
+        elif self.delivery_type == 'unspecified':
+            addr = f'{self.address_line_1} {self.address_line_2}'.strip()
+            return addr if addr else 'Modalidad no especificada (Orden histórica)'
         return f'{self.address_line_1} {self.address_line_2}'.strip()
 
     def get_delivery_display_name(self) -> str:

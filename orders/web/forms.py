@@ -9,14 +9,22 @@ from orders.utils import validate_cuit, format_cuit, validate_dni
 
 class OrderForm(forms.ModelForm):
     delivery_type = forms.ChoiceField(
-        choices=Order.DELIVERY_CHOICES,
-        required=False,
-        initial='pickup'
+        choices=[
+            ('pickup', 'Retiro en Local (Av. Alvear 1301)'),
+            ('shipping', 'Envío a convenir (Interior / NEA)'),
+        ],
+        required=True,
+        initial=None,
+        error_messages={'required': 'Por favor seleccioná una modalidad de entrega.'}
     )
     invoice_type = forms.ChoiceField(
-        choices=Order.INVOICE_CHOICES,
-        required=False,
-        initial='B'
+        choices=[
+            ('B', 'Consumidor Final (Factura B)'),
+            ('A', 'Responsable Inscripto (Factura A)'),
+        ],
+        required=True,
+        initial=None,
+        error_messages={'required': 'Por favor seleccioná un tipo de comprobante fiscal.'}
     )
 
     class Meta:
@@ -52,33 +60,26 @@ class OrderForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        delivery_type = cleaned_data.get('delivery_type') or 'pickup'
-        invoice_type = cleaned_data.get('invoice_type') or 'B'
-        cleaned_data['delivery_type'] = delivery_type
-        cleaned_data['invoice_type'] = invoice_type
+        delivery_type = cleaned_data.get('delivery_type')
+        invoice_type = cleaned_data.get('invoice_type')
         doc_number = cleaned_data.get('doc_number', '').strip()
         business_name = cleaned_data.get('business_name', '').strip()
 
+        # REGLA: Cero fallbacks automáticos. Si el usuario no seleccionó, ChoiceField ya agregó el error.
+        
         # Validación condicional de entrega
         if delivery_type == 'shipping':
             if not cleaned_data.get('address_line_1'):
-                self.add_error('address_line_1', 'La dirección es obligatoria para envíos.')
+                self.add_error('address_line_1', 'La dirección es obligatoria para envíos al interior/NEA.')
             if not cleaned_data.get('city'):
-                self.add_error('city', 'La ciudad es obligatoria para envíos.')
+                self.add_error('city', 'La ciudad o localidad es obligatoria para envíos.')
             if not cleaned_data.get('state'):
                 self.add_error('state', 'El código postal es obligatorio para envíos.')
             if not cleaned_data.get('country'):
                 cleaned_data['country'] = 'Argentina'
         elif delivery_type == 'pickup':
-            # Asignar valores por defecto del local de Bulonera Alvear
-            if not cleaned_data.get('address_line_1'):
-                cleaned_data['address_line_1'] = 'Av. Alvear 1301'
-            if not cleaned_data.get('city'):
-                cleaned_data['city'] = 'Resistencia'
-            if not cleaned_data.get('state'):
-                cleaned_data['state'] = '3500'
-            if not cleaned_data.get('country'):
-                cleaned_data['country'] = 'Argentina'
+            # No se inyectan direcciones sintéticas; la dirección queda limpia en BD
+            pass
 
         # Validación condicional fiscal
         if invoice_type == 'A':
@@ -87,13 +88,13 @@ class OrderForm(forms.ModelForm):
             if not doc_number:
                 self.add_error('doc_number', 'El CUIT es obligatorio para Factura A.')
             elif not validate_cuit(doc_number):
-                self.add_error('doc_number', 'El CUIT ingresado no es válido (debe tener 11 dígitos y dígito verificador correcto).')
+                self.add_error('doc_number', 'El CUIT no es válido. Ingresá 11 dígitos continuos o con guiones canónicos (ej. 30-71234567-8).')
             else:
                 cleaned_data['doc_number'] = format_cuit(doc_number)
         elif invoice_type == 'B' and doc_number:
             if not validate_dni(doc_number):
-                self.add_error('doc_number', 'El DNI debe tener 7 u 8 dígitos numéricos.')
+                self.add_error('doc_number', 'El DNI debe tener 7 u 8 dígitos numéricos (ej. 28.123.456 o 28123456).')
             else:
-                cleaned_data['doc_number'] = re.sub(r'\D', '', doc_number)
+                cleaned_data['doc_number'] = ''.join(c for c in doc_number if '0' <= c <= '9')
 
         return cleaned_data

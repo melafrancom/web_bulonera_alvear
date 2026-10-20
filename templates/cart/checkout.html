@@ -33,13 +33,13 @@
                      last_name: '{{ form.last_name.value|default:request.user.last_name|escapejs }}',
                      email: '{{ form.email.value|default:request.user.email|escapejs }}',
                      phone: '{{ form.phone.value|default:request.user.phone|default:''|escapejs }}',
-                     delivery_type: '{{ form.delivery_type.value|default:'pickup'|escapejs }}',
+                     delivery_type: '{{ form.delivery_type.value|default:''|escapejs }}',
                      address_line_1: '{{ form.address_line_1.value|default:''|escapejs }}',
                      address_line_2: '{{ form.address_line_2.value|default:''|escapejs }}',
                      country: '{{ form.country.value|default:'Argentina'|escapejs }}',
                      city: '{{ form.city.value|default:''|escapejs }}',
                      state: '{{ form.state.value|default:''|escapejs }}',
-                     invoice_type: '{{ form.invoice_type.value|default:'B'|escapejs }}',
+                     invoice_type: '{{ form.invoice_type.value|default:''|escapejs }}',
                      doc_number: '{{ form.doc_number.value|default:''|escapejs }}',
                      business_name: '{{ form.business_name.value|default:''|escapejs }}',
                      order_note: '{{ form.order_note.value|default:''|escapejs }}'
@@ -61,6 +61,7 @@
 
                  setDelivery(type) {
                      this.formData.delivery_type = type;
+                     delete this.errors.delivery_type;
                      if (type === 'pickup') {
                          delete this.errors.address_line_1;
                          delete this.errors.city;
@@ -75,6 +76,7 @@
 
                  setInvoice(type) {
                      this.formData.invoice_type = type;
+                     delete this.errors.invoice_type;
                      if (type === 'B') {
                          delete this.errors.business_name;
                          this.validateField('doc_number');
@@ -83,6 +85,23 @@
                          this.validateField('doc_number');
                      }
                      this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+                 },
+
+                 get isCuitValid() {
+                     if (this.formData.invoice_type !== 'A') return false;
+                     const cuit = (this.formData.doc_number || '').trim();
+                     const cuitRegex = /^(?:[0-9]{11}|[0-9]{2}-[0-9]{8}-[0-9]{1})$/;
+                     if (!cuitRegex.test(cuit)) return false;
+                     const digits = cuit.replace(/\D/g, '').split('').map(Number);
+                     if (digits.length !== 11) return false;
+                     const prefix = digits[0] * 10 + digits[1];
+                     if (![20, 23, 24, 27, 30, 33, 34].includes(prefix)) return false;
+                     const multipliers = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+                     const total = digits.slice(0, 10).reduce((acc, d, i) => acc + d * multipliers[i], 0);
+                     const mod = total % 11;
+                     const diff = 11 - mod;
+                     const expectedCheck = diff === 11 ? 0 : (diff === 10 ? 9 : diff);
+                     return digits[10] === expectedCheck;
                  },
                  
                  validateField(field) {
@@ -100,6 +119,18 @@
                              this.errors.phone = 'El teléfono es requerido para coordinar por WhatsApp';
                          } else {
                              delete this.errors.phone;
+                         }
+                     } else if (field === 'delivery_type') {
+                         if (!this.formData.delivery_type) {
+                             this.errors.delivery_type = 'Por favor seleccioná una modalidad de entrega';
+                         } else {
+                             delete this.errors.delivery_type;
+                         }
+                     } else if (field === 'invoice_type') {
+                         if (!this.formData.invoice_type) {
+                             this.errors.invoice_type = 'Por favor seleccioná un tipo de comprobante';
+                         } else {
+                             delete this.errors.invoice_type;
                          }
                      } else if (field === 'address_line_1' || field === 'city' || field === 'state') {
                          if (this.formData.delivery_type === 'shipping') {
@@ -122,18 +153,19 @@
                              delete this.errors.business_name;
                          }
                      } else if (field === 'doc_number') {
-                         const cleanDoc = (this.formData.doc_number || '').replace(/\D/g, '');
+                         const doc = (this.formData.doc_number || '').trim();
                          if (this.formData.invoice_type === 'A') {
-                             if (!cleanDoc) {
+                             if (!doc) {
                                  this.errors.doc_number = 'El CUIT es obligatorio para Factura A';
-                             } else if (cleanDoc.length !== 11) {
-                                 this.errors.doc_number = 'El CUIT debe tener 11 dígitos';
+                             } else if (!this.isCuitValid) {
+                                 this.errors.doc_number = 'El CUIT no es válido. Ingresá 11 dígitos continuos o con guiones (ej. 30-71234567-8)';
                              } else {
                                  delete this.errors.doc_number;
                              }
-                         } else if (this.formData.invoice_type === 'B' && cleanDoc) {
-                             if (cleanDoc.length !== 7 && cleanDoc.length !== 8) {
-                                 this.errors.doc_number = 'El DNI debe tener 7 u 8 dígitos';
+                         } else if (this.formData.invoice_type === 'B' && doc) {
+                             const dniRegex = /^(?:[0-9]{7,8}|[0-9]{1,2}\.[0-9]{3}\.[0-9]{3})$/;
+                             if (!dniRegex.test(doc)) {
+                                 this.errors.doc_number = 'El DNI debe tener 7 u 8 dígitos (ej. 28.123.456 o 28123456)';
                              } else {
                                  delete this.errors.doc_number;
                              }
@@ -153,7 +185,9 @@
                      const basicValid = this.formData.first_name && 
                                         this.formData.last_name && 
                                         this.formData.email && 
-                                        this.formData.phone;
+                                        this.formData.phone &&
+                                        this.formData.delivery_type &&
+                                        this.formData.invoice_type;
                      if (!basicValid) return false;
 
                      if (this.formData.delivery_type === 'shipping') {
@@ -163,11 +197,13 @@
                      }
 
                      if (this.formData.invoice_type === 'A') {
-                         if (!this.formData.business_name || !this.formData.doc_number) {
+                         if (!this.formData.business_name || !this.isCuitValid) {
                              return false;
                          }
-                         const cleanCuit = (this.formData.doc_number || '').replace(/\D/g, '');
-                         if (cleanCuit.length !== 11) return false;
+                     } else if (this.formData.invoice_type === 'B' && this.formData.doc_number) {
+                         const doc = (this.formData.doc_number || '').trim();
+                         const dniRegex = /^(?:[0-9]{7,8}|[0-9]{1,2}\.[0-9]{3}\.[0-9]{3})$/;
+                         if (!dniRegex.test(doc)) return false;
                      }
 
                      return Object.keys(this.errors).length === 0;
@@ -214,14 +250,19 @@
                                     1. Modalidad de Entrega
                                 </h2>
                                 
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <!-- Opción 1: Retiro en Local -->
-                                    <button type="button"
-                                            @click="setDelivery('pickup')"
-                                            class="text-left relative flex flex-col p-4 rounded-xl border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
-                                            :class="formData.delivery_type === 'pickup' 
-                                                ? 'border-[#1B3A5C] bg-blue-50/40 dark:bg-slate-700/70 dark:border-blue-400 shadow-sm' 
-                                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800'">
+                                <div id="delivery_group" role="radiogroup" aria-labelledby="delivery-label" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <!-- Opción 1: Retiro en Mostrador -->
+                                    <label class="cursor-pointer text-left relative flex flex-col p-4 rounded-xl border-2 transition-all duration-150 focus-within:ring-2 focus-within:ring-[#1B3A5C]"
+                                           :class="formData.delivery_type === 'pickup' 
+                                               ? 'border-[#1B3A5C] bg-blue-50/40 dark:bg-slate-700/70 dark:border-blue-400 shadow-sm' 
+                                               : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800'">
+                                        <input type="radio" 
+                                               id="delivery_pickup" 
+                                               name="delivery_type" 
+                                               value="pickup" 
+                                               x-model="formData.delivery_type" 
+                                               @change="setDelivery('pickup')" 
+                                               class="sr-only">
                                         <div class="flex items-center justify-between mb-2">
                                             <div class="flex items-center gap-2">
                                                 <i data-lucide="store" class="w-5 h-5 text-[#1B3A5C] dark:text-blue-400"></i>
@@ -237,15 +278,20 @@
                                         <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                                             Lun a Vie 8:00-12:30 y 15:30-20:00 · Sáb 8:00-13:00
                                         </p>
-                                    </button>
+                                    </label>
 
                                     <!-- Opción 2: Envío Interior / NEA -->
-                                    <button type="button"
-                                            @click="setDelivery('shipping')"
-                                            class="text-left relative flex flex-col p-4 rounded-xl border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
-                                            :class="formData.delivery_type === 'shipping' 
-                                                ? 'border-[#1B3A5C] bg-blue-50/40 dark:bg-slate-700/70 dark:border-blue-400 shadow-sm' 
-                                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800'">
+                                    <label class="cursor-pointer text-left relative flex flex-col p-4 rounded-xl border-2 transition-all duration-150 focus-within:ring-2 focus-within:ring-[#1B3A5C]"
+                                           :class="formData.delivery_type === 'shipping' 
+                                               ? 'border-[#1B3A5C] bg-blue-50/40 dark:bg-slate-700/70 dark:border-blue-400 shadow-sm' 
+                                               : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800'">
+                                        <input type="radio" 
+                                               id="delivery_shipping" 
+                                               name="delivery_type" 
+                                               value="shipping" 
+                                               x-model="formData.delivery_type" 
+                                               @change="setDelivery('shipping')" 
+                                               class="sr-only">
                                         <div class="flex items-center justify-between mb-2">
                                             <div class="flex items-center gap-2">
                                                 <i data-lucide="package-check" class="w-5 h-5 text-[#1B3A5C] dark:text-blue-400"></i>
@@ -261,9 +307,12 @@
                                         <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                                             Flete y transporte acordado vía WhatsApp
                                         </p>
-                                    </button>
+                                    </label>
                                 </div>
-                                <input type="hidden" name="delivery_type" :value="formData.delivery_type">
+                                <p x-show="errors.delivery_type" x-text="errors.delivery_type" class="mt-1.5 text-xs text-red-500 font-medium"></p>
+                                {% if form.delivery_type.errors %}
+                                    <p class="mt-1.5 text-xs text-red-500 font-medium">{{ form.delivery_type.errors.0 }}</p>
+                                {% endif %}
                             </div>
 
                             <!-- Banner informativo Retiro en Local -->
@@ -467,29 +516,42 @@
                                     4. Facturación y Comprobante
                                 </h2>
 
-                                <!-- Tabs de Comprobante -->
-                                <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-700/60 rounded-xl mb-4">
-                                    <button type="button"
-                                            @click="setInvoice('B')"
-                                            class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center justify-center gap-2"
-                                            :class="formData.invoice_type === 'B' 
-                                                ? 'bg-white dark:bg-slate-800 text-[#1B3A5C] dark:text-white shadow-sm' 
-                                                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'">
+                                <!-- Tabs/Radios de Comprobante -->
+                                <div id="invoice_group" role="radiogroup" aria-labelledby="invoice-label" class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-700/60 rounded-xl mb-4">
+                                    <label class="cursor-pointer py-2.5 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center justify-center gap-2 focus-within:ring-2 focus-within:ring-[#1B3A5C]"
+                                           :class="formData.invoice_type === 'B' 
+                                               ? 'bg-white dark:bg-slate-800 text-[#1B3A5C] dark:text-white shadow-sm' 
+                                               : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'">
+                                        <input type="radio" 
+                                               id="invoice_b" 
+                                               name="invoice_type" 
+                                               value="B" 
+                                               x-model="formData.invoice_type" 
+                                               @change="setInvoice('B')" 
+                                               class="sr-only">
                                         <i data-lucide="user" class="w-4 h-4"></i>
                                         <span>Consumidor Final (Factura B)</span>
-                                    </button>
+                                    </label>
                                     
-                                    <button type="button"
-                                            @click="setInvoice('A')"
-                                            class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center justify-center gap-2"
-                                            :class="formData.invoice_type === 'A' 
-                                                ? 'bg-white dark:bg-slate-800 text-[#1B3A5C] dark:text-white shadow-sm' 
-                                                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'">
+                                    <label class="cursor-pointer py-2.5 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center justify-center gap-2 focus-within:ring-2 focus-within:ring-[#1B3A5C]"
+                                           :class="formData.invoice_type === 'A' 
+                                               ? 'bg-white dark:bg-slate-800 text-[#1B3A5C] dark:text-white shadow-sm' 
+                                               : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'">
+                                        <input type="radio" 
+                                               id="invoice_a" 
+                                               name="invoice_type" 
+                                               value="A" 
+                                               x-model="formData.invoice_type" 
+                                               @change="setInvoice('A')" 
+                                               class="sr-only">
                                         <i data-lucide="building-2" class="w-4 h-4"></i>
                                         <span>Empresa / Resp. Inscripto (Factura A)</span>
-                                    </button>
+                                    </label>
                                 </div>
-                                <input type="hidden" name="invoice_type" :value="formData.invoice_type">
+                                <p x-show="errors.invoice_type" x-text="errors.invoice_type" class="mt-1.5 text-xs text-red-500 font-medium"></p>
+                                {% if form.invoice_type.errors %}
+                                    <p class="mt-1.5 text-xs text-red-500 font-medium">{{ form.invoice_type.errors.0 }}</p>
+                                {% endif %}
 
                                 <!-- Campos según comprobante -->
                                 <div class="space-y-4">
@@ -526,6 +588,18 @@
                                                    class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#1B3A5C] text-sm font-mono transition-all"
                                                    :class="errors.doc_number ? 'border-red-500 dark:border-red-500' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white'">
                                             <p x-show="errors.doc_number" x-text="errors.doc_number" class="mt-1 text-xs text-red-500"></p>
+                                            <div x-show="formData.invoice_type === 'A' && formData.doc_number" class="mt-1 text-xs">
+                                                <template x-if="isCuitValid">
+                                                    <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                                                        <i data-lucide="check" class="w-3.5 h-3.5"></i> CUIT válido según algoritmo ARCA Módulo 11
+                                                    </span>
+                                                </template>
+                                                <template x-if="!isCuitValid && (formData.doc_number || '').replace(/\D/g, '').length === 11">
+                                                    <span class="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-medium">
+                                                        <i data-lucide="x" class="w-3.5 h-3.5"></i> Dígito verificador de CUIT inválido
+                                                    </span>
+                                                </template>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -623,15 +697,28 @@
                                 </span>
                             </div>
 
-                            <div class="flex items-center justify-between text-slate-600 dark:text-slate-300">
-                                <span class="flex items-center gap-1.5">
-                                    <i data-lucide="truck" class="w-4 h-4 text-slate-500"></i>
-                                    <span>Entrega:</span>
-                                </span>
-                                <span class="font-semibold"
-                                      :class="formData.delivery_type === 'pickup' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'"
-                                      x-text="formData.delivery_type === 'pickup' ? 'Retiro en Mostrador (Gratis)' : 'Envío NEA (A coordinar)'">
-                                </span>
+                            <div class="space-y-1">
+                                <div class="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                                    <span class="flex items-center gap-1.5">
+                                        <i data-lucide="truck" class="w-4 h-4 text-slate-500"></i>
+                                        <span>Entrega:</span>
+                                    </span>
+                                    <span class="font-semibold"
+                                          :class="{
+                                              'text-emerald-600 dark:text-emerald-400': formData.delivery_type === 'pickup',
+                                              'text-slate-700 dark:text-slate-200': formData.delivery_type === 'shipping',
+                                              'text-slate-400 dark:text-slate-500 italic font-normal': !formData.delivery_type
+                                          }"
+                                          x-text="formData.delivery_type === 'pickup' 
+                                              ? 'Retiro en Mostrador (Gratis)' 
+                                              : (formData.delivery_type === 'shipping' ? 'Envío NEA (A coordinar)' : 'Sin seleccionar')">
+                                    </span>
+                                </div>
+                                <div x-show="formData.delivery_type === 'shipping'"
+                                     class="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-1.5 mt-1">
+                                    <i data-lucide="info" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"></i>
+                                    <span>El flete se coordina con el transporte y se abona en destino. No está incluido en el total.</span>
+                                </div>
                             </div>
 
                             <div class="flex items-center justify-between text-slate-600 dark:text-slate-300">
@@ -639,8 +726,14 @@
                                     <i data-lucide="receipt" class="w-4 h-4 text-slate-500"></i>
                                     <span>Comprobante:</span>
                                 </span>
-                                <span class="font-medium text-slate-700 dark:text-slate-300"
-                                      x-text="formData.invoice_type === 'A' ? 'Factura A (Con CUIT)' : 'Factura B (Consumidor Final)'">
+                                <span class="font-medium"
+                                      :class="{
+                                          'text-slate-700 dark:text-slate-200': formData.invoice_type,
+                                          'text-slate-400 dark:text-slate-500 italic font-normal': !formData.invoice_type
+                                      }"
+                                      x-text="formData.invoice_type === 'A' 
+                                          ? 'Factura A (Con CUIT)' 
+                                          : (formData.invoice_type === 'B' ? 'Factura B (Consumidor Final)' : 'Sin seleccionar')">
                                 </span>
                             </div>
                         </div>

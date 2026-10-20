@@ -55,11 +55,25 @@
           <img src="{% static 'images/logo02.png' %}" alt="Bulonera Alvear" class="h-16">
         </div>
         <div class="text-left md:text-right">
-          <p class="text-sm font-semibold text-slate-900 dark:text-white mb-1">Factura a nombre de:</p>
-          <p class="text-slate-700 dark:text-slate-300">{{ order.full_name }}</p>
+          <p class="text-sm font-semibold text-slate-900 dark:text-white mb-1">
+            {% if order.invoice_type == 'unspecified' %}Titular de la orden:{% else %}Factura a nombre de:{% endif %}
+          </p>
+          <p class="text-slate-700 dark:text-slate-300 font-medium">{{ order.full_name }}</p>
+          {% if order.business_name %}
+          <p class="text-slate-700 dark:text-slate-300 font-semibold">{{ order.business_name }}</p>
+          {% endif %}
+          {% if order.doc_number %}
+          <p class="text-slate-700 dark:text-slate-300 text-xs">
+            {% if order.invoice_type == 'A' %}CUIT:{% elif order.invoice_type == 'B' %}DNI:{% else %}Documento (Histórico):{% endif %} {{ order.doc_number }}
+          </p>
+          {% endif %}
           <p class="text-slate-700 dark:text-slate-300">{{ order.full_address }}</p>
-          <p class="text-slate-700 dark:text-slate-300">{{ order.city }}, {{ order.state }}</p>
-          <p class="text-slate-700 dark:text-slate-300">{{ order.country }}</p>
+          {% if order.delivery_type == 'shipping' %}
+            {% if order.city %}<p class="text-slate-700 dark:text-slate-300">{{ order.city }}{% if order.state %}, {{ order.state }}{% endif %}</p>{% endif %}
+            {% if order.country %}<p class="text-slate-700 dark:text-slate-300">{{ order.country }}</p>{% endif %}
+          {% elif order.delivery_type == 'unspecified' %}
+            {% if order.city %}<p class="text-slate-500 dark:text-slate-400 text-xs">Localidad registrada: {{ order.city }}{% if order.state %}, {{ order.state }}{% endif %}</p>{% endif %}
+          {% endif %}
         </div>
       </div>
 
@@ -88,6 +102,14 @@
               {% endif %}">
               {% if order.is_ordered %}{{ order.get_status_display }}{% else %}Nuevo{% endif %}
             </span>
+          </div>
+          <div>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Modalidad de Entrega</p>
+            <p class="text-base font-semibold text-slate-900 dark:text-white">{{ order.get_delivery_display_name }}</p>
+          </div>
+          <div>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Comprobante Fiscal</p>
+            <p class="text-base font-semibold text-slate-900 dark:text-white">{{ order.get_invoice_display_name }}</p>
           </div>
           {% if payment %}
           <div class="md:col-span-2">

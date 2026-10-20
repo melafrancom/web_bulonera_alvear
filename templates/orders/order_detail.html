@@ -86,9 +86,25 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Left Column: Order Info -->
       <div class="lg:col-span-2 space-y-6">
-        <!-- Shipping Information -->
+        <!-- Shipping/Delivery Information -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
-          <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Información de Envío</h2>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
+              {% if order.delivery_type == 'pickup' %}
+                Modalidad de Entrega: Retiro en Mostrador
+              {% elif order.delivery_type == 'shipping' %}
+                Información de Envío
+              {% else %}
+                Modalidad de Entrega
+              {% endif %}
+            </h2>
+            <span class="px-2.5 py-1 text-xs font-semibold rounded-full
+              {% if order.delivery_type == 'pickup' %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300
+              {% elif order.delivery_type == 'shipping' %}bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300
+              {% else %}bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300{% endif %}">
+              {{ order.get_delivery_display_name }}
+            </span>
+          </div>
           
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -103,36 +119,69 @@
               <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Email</p>
               <p class="text-slate-900 dark:text-white font-medium">{{ order.email }}</p>
             </div>
+            {% if order.delivery_type == 'shipping' %}
             <div>
               <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">País</p>
               <p class="text-slate-900 dark:text-white font-medium">{{ order.country }}</p>
             </div>
+            {% endif %}
           </div>
 
           <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Dirección</p>
-            <p class="text-slate-900 dark:text-white font-medium">{{ order.full_address }}</p>
-            <p class="text-slate-900 dark:text-white font-medium">{{ order.city }}, {{ order.state }}</p>
+            {% if order.delivery_type == 'pickup' %}
+              <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Punto de Retiro</p>
+              <p class="text-slate-900 dark:text-white font-medium">Bulonera Alvear — Av. Alvear 1301, Resistencia, Chaco</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Horario: Lun a Vie 8:00-12:30 y 15:30-20:00 · Sáb 8:00-13:00</p>
+            {% elif order.delivery_type == 'shipping' %}
+              <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Dirección de Envío</p>
+              <p class="text-slate-900 dark:text-white font-medium">{{ order.full_address }}</p>
+              <p class="text-slate-900 dark:text-white font-medium">{{ order.city }}, {{ order.state }}</p>
+              <p class="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-lg border border-amber-200 dark:border-amber-900/50 mt-2">
+                El flete se coordina con el transporte y se abona en destino. No está incluido en el total del pedido.
+              </p>
+            {% else %}
+              <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Dirección / Modalidad</p>
+              <p class="text-slate-900 dark:text-white font-medium">{{ order.full_address }}</p>
+              {% if order.city %}
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Localidad registrada: {{ order.city }}{% if order.state %}, {{ order.state }}{% endif %}</p>
+              {% endif %}
+            {% endif %}
           </div>
         </div>
 
-        <!-- Payment Information -->
+        <!-- Fiscal and Payment Information -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6">
-          <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Información de Pago</h2>
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Comprobante y Pago</h2>
           
           <div class="space-y-3">
-            <div class="flex justify-between">
+            <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-700">
+              <span class="text-slate-600 dark:text-slate-400">Tipo de Comprobante:</span>
+              <span class="text-slate-900 dark:text-white font-medium">{{ order.get_invoice_display_name }}</span>
+            </div>
+            {% if order.business_name %}
+            <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-700">
+              <span class="text-slate-600 dark:text-slate-400">Razón Social:</span>
+              <span class="text-slate-900 dark:text-white font-medium">{{ order.business_name }}</span>
+            </div>
+            {% endif %}
+            {% if order.doc_number %}
+            <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-700">
+              <span class="text-slate-600 dark:text-slate-400">{% if order.invoice_type == 'A' %}CUIT:{% elif order.invoice_type == 'B' %}DNI:{% else %}Documento (Histórico):{% endif %}</span>
+              <span class="text-slate-900 dark:text-white font-medium font-mono">{{ order.doc_number }}</span>
+            </div>
+            {% endif %}
+            <div class="flex justify-between items-center pt-1">
               <span class="text-slate-600 dark:text-slate-400">Método de Pago:</span>
               <span class="text-slate-900 dark:text-white font-medium">
-                {% if payment %}{{ payment.payment_method }}{% else %}Pendiente{% endif %}
+                {% if payment %}{{ payment.payment_method }}{% else %}Pendiente / A acordar{% endif %}
               </span>
             </div>
-            <div class="flex justify-between">
+            <div class="flex justify-between items-center">
               <span class="text-slate-600 dark:text-slate-400">ID Transacción:</span>
               <span class="text-slate-900 dark:text-white font-medium">{{ transID|default:"N/A" }}</span>
             </div>
             {% if payment %}
-            <div class="flex justify-between">
+            <div class="flex justify-between items-center">
               <span class="text-slate-600 dark:text-slate-400">Estado del Pago:</span>
               <span class="inline-flex items-center px-2 py-1 rounded text-sm font-medium
                 {% if payment.status == 'Completed' %}bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200

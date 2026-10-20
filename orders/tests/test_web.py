@@ -89,6 +89,30 @@ class TestOrderCompleteNoindex:
         assert response.status_code == 200
         assert b'noindex' in response.content
 
+    def test_order_complete_renders_unspecified_historical_order_without_misleading_labels(self, client_with_user, user):
+        """order_complete muestra ramas explícitas para órdenes históricas sin asumir DNI ni envío."""
+        order = Order.objects.create(
+            user=user,
+            first_name='Juan', last_name='Histórico',
+            phone='+543624000000', email=user.email,
+            delivery_type='unspecified',
+            invoice_type='unspecified',
+            doc_number='12345678',
+            city='Resistencia', state='3500', country='Argentina',
+            order_number='20261019001'
+        )
+        url = reverse('orders:order_complete', args=[order.order_number])
+        response = client_with_user.get(url)
+        assert response.status_code == 200
+        content = response.content.decode('utf-8')
+
+        # Verifica etiqueta neutral para orden histórica
+        assert 'Titular de la orden:' in content
+        assert 'Documento (Histórico): 12345678' in content
+        assert 'DNI/Doc' not in content
+        assert 'Localidad registrada: Resistencia' in content
+        assert 'No especificado (Histórico)' in content
+
 
 @pytest.mark.django_db
 class TestWhatsAppRedirectTracking:
@@ -264,8 +288,9 @@ class TestPlaceOrderCheckoutFlow:
         url = reverse('orders:place_orders')
         post_data = {
             'first_name': 'Juan', 'last_name': 'Perez', 'phone': '+5493624112233',
-            'email': user.email, 'address_line_1': 'Calle Falsa 123',
-            'country': 'Argentina', 'city': 'Resistencia', 'state': 'Chaco'
+            'email': user.email, 'delivery_type': 'shipping', 'address_line_1': 'Calle Falsa 123',
+            'country': 'Argentina', 'city': 'Resistencia', 'state': 'Chaco',
+            'invoice_type': 'B'
         }
         response = client_with_user.post(url, post_data)
         assert response.status_code == 302
