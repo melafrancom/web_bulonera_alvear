@@ -269,17 +269,24 @@
                         <div x-data="{
                             qty: 1,
                             max: {{ single_product.stock }},
+                            adding: false,
                             increase() { if (this.qty < this.max) this.qty++; },
                             decrease() { if (this.qty > 1) this.qty--; },
                             async addToCart() {
-                                const form = this.$refs.cartForm;
-                                const formData = new FormData(form);
-                                
-                                // Generar ID único para deduplicación (Browser + Server CAPI)
-                                const eventId = 'atc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                                formData.append('fb_event_id', eventId);
-                                
+                                if (this.adding) return;
+                                this.adding = true;
+
                                 try {
+                                    const form = this.$refs.cartForm;
+                                    if (!form) {
+                                        throw new Error('Formulario de carrito no encontrado');
+                                    }
+                                    const formData = new FormData(form);
+                                    
+                                    // Generar ID único para deduplicación (Browser + Server CAPI)
+                                    const eventId = 'atc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                                    formData.append('fb_event_id', eventId);
+                                    
                                     const response = await fetch(form.action, {
                                         method: 'POST',
                                         body: formData,
@@ -288,42 +295,58 @@
                                         }
                                     });
                                     
-                                    if (response.ok) {
-                                        // Trigger cart update event (consistent with grid item)
+                                    const data = await response.json().catch(() => ({}));
+
+                                    if (response.ok && data.status === 'success') {
+                                        // 1. Notificar actualización de carrito
                                         window.dispatchEvent(new CustomEvent('cart-updated'));
                                         
-                                        // Show notification (consistent with grid item)
+                                        // 2. Notificación toast de éxito respetando contrato existente
                                         window.dispatchEvent(new CustomEvent('show-toast', {
-                                            detail: { message: 'Producto agregado al carrito', type: 'success' }
+                                            detail: { text: 'Producto agregado al carrito', type: 'success' }
                                         }));
                                         
-                                        // Track Meta Pixel AddToCart
-                                        if (window.baTrack && window.baTrack.meta) {
-                                            window.baTrack.meta('AddToCart', {
-                                                content_type: 'product',
-                                                content_ids: ['{{ meta_pixel_data.id }}'],
-                                                content_name: '{{ meta_pixel_data.title|escapejs }}',
-                                                content_category: '{{ single_product.category.category_name|escapejs }}',
-                                                value: {{ price|default:"0.0"|unlocalize }},
-                                                currency: '{{ CURRENCY }}'
-                                            }, eventId);
-                                        } else if (typeof fbq !== 'undefined') {
-                                            fbq('track', 'AddToCart', {
-                                                content_type: 'product',
-                                                content_ids: ['{{ meta_pixel_data.id }}'],
-                                                content_name: '{{ meta_pixel_data.title|escapejs }}',
-                                                content_category: '{{ single_product.category.category_name|escapejs }}',
-                                                value: {{ price|default:"0.0"|unlocalize }},
-                                                currency: '{{ CURRENCY }}'
-                                            }, { eventID: eventId });
+                                        // 3. Telemetría de navegador aislada (no tumba el resultado del carrito si falla)
+                                        try {
+                                            if (window.baTrack && window.baTrack.meta) {
+                                                window.baTrack.meta('AddToCart', {
+                                                    content_type: 'product',
+                                                    content_ids: ['{{ meta_pixel_data.id }}'],
+                                                    content_name: '{{ meta_pixel_data.title|escapejs }}',
+                                                    content_category: '{{ single_product.category.category_name|escapejs }}',
+                                                    value: {{ price|default:"0.0"|unlocalize }},
+                                                    currency: '{{ CURRENCY }}'
+                                                }, eventId);
+                                            } else if (typeof fbq !== 'undefined') {
+                                                fbq('track', 'AddToCart', {
+                                                    content_type: 'product',
+                                                    content_ids: ['{{ meta_pixel_data.id }}'],
+                                                    content_name: '{{ meta_pixel_data.title|escapejs }}',
+                                                    content_category: '{{ single_product.category.category_name|escapejs }}',
+                                                    value: {{ price|default:"0.0"|unlocalize }},
+                                                    currency: '{{ CURRENCY }}'
+                                                }, { eventID: eventId });
+                                            }
+                                        } catch (trackError) {
+                                            console.warn('Fallo no bloqueante al emitir Meta Pixel AddToCart:', trackError);
                                         }
+                                    } else {
+                                        // Error controlado devuelto por el servidor
+                                        const errorMsg = data.message || 'No se pudo agregar el producto al carrito.';
+                                        window.dispatchEvent(new CustomEvent('show-toast', {
+                                            detail: { text: errorMsg, type: 'error' }
+                                        }));
                                     }
-                                } catch (error) {
-                                    console.error('Error adding to cart:', error);
-                                    this.$dispatch('notify', {
-                                        type: 'error',
-                                        message: 'Error al agregar al carrito'
-                                    });
+                                } catch (networkOrFormError) {
+                                    console.error('Error al agregar al carrito:', networkOrFormError);
+                                    window.dispatchEvent(new CustomEvent('show-toast', {
+                                        detail: { 
+                                            text: 'No pudimos confirmar la adición por un corte de red. Por favor, revisá tu carrito antes de reintentar.', 
+                                            type: 'warning' 
+                                        }
+                                    }));
+                                } finally {
+                                    this.adding = false;
                                 }
                             }
                         }">
@@ -433,9 +456,21 @@
                                     
                                     <!-- Add to Cart Button -->
                                     <button type="submit" 
-                                            class="w-full bg-primary-800 hover:bg-primary-500 dark:bg-primary-700 dark:hover:bg-primary-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6">
-                                        <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-                                        <span>Agregar al Carrito</span>
+                                            :disabled="adding"
+                                            :aria-busy="adding.toString()"
+                                            class="w-full min-h-[48px] bg-primary-800 hover:bg-primary-500 dark:bg-primary-700 dark:hover:bg-primary-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6 disabled:opacity-60 disabled:cursor-not-allowed">
+                                        <!-- Ícono Carrito -->
+                                        <span x-show="!adding" class="inline-flex items-center">
+                                            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                                        </span>
+                                        
+                                        <!-- Spinner SVG de Carga -->
+                                        <svg x-show="adding" x-cloak class="animate-spin w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                        </svg>
+                                        
+                                        <span x-text="adding ? 'Agregando...' : 'Agregar al Carrito'">Agregar al Carrito</span>
                                     </button>
                                     
                                     <!-- Dimensions Selector -->

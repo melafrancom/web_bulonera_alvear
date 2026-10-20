@@ -82,6 +82,7 @@ def add_cart(request, product_id):
                 logger.error(f"Error fetching variation {key}={value}: {e}")
     
     # Agregar al carrito usando el servicio
+    # 1. Operación de negocio central: Agregar al carrito
     try:
         user = request.user if request.user.is_authenticated else None
         CartService.add_to_cart(
@@ -91,31 +92,6 @@ def add_cart(request, product_id):
             variations=variations,
             user=user
         )
-        
-        # Responder según el tipo de request
-        fb_event_id = request.POST.get('fb_event_id')
-        if fb_event_id:
-            from tracking.services import MetaCapiService
-            MetaCapiService.enqueue_add_to_cart(
-                request=request,
-                product=product,
-                quantity=quantity,
-                event_id=fb_event_id
-            )
-
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'success'})
-        else:
-            # SEC-103: Redirigir a la página anterior de forma segura (prevención Open Redirect)
-            referer_url = request.META.get('HTTP_REFERER')
-            if referer_url and url_has_allowed_host_and_scheme(
-                url=referer_url,
-                allowed_hosts={request.get_host()},
-                require_https=request.is_secure(),
-            ):
-                return HttpResponseRedirect(referer_url)
-            return redirect('store:store')
-                
     except ValueError as e:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
@@ -124,13 +100,50 @@ def add_cart(request, product_id):
             }, status=400)
         return redirect('cart:cart')
     except Exception as e:
-        logger.error(f"Error adding to cart: {e}")
+        logger.error(f"Error crítico en CartService.add_to_cart: {e}", exc_info=True)
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'status': 'error',
-                'message': 'Error al agregar al carrito'
+                'message': 'Error al procesar el carrito'
             }, status=500)
         return redirect('cart:cart')
+
+    # 2. Despacho asíncrono CAPI desacoplado (Fallo no bloquea la compra)
+    raw_fb_event_id = request.POST.get('fb_event_id')
+    if raw_fb_event_id:
+        import re
+        # Validación de formato seguro (alfanumérico, guiones y guiones bajos hasta 64 chars)
+        # Preserva la identidad exacta con Meta Pixel sin mutar el ID y previene log injection
+        if re.match(r'^[a-zA-Z0-9_-]{1,64}$', str(raw_fb_event_id)):
+            try:
+                from tracking.services import MetaCapiService
+                MetaCapiService.enqueue_add_to_cart(
+                    request=request,
+                    product=product,
+                    quantity=quantity,
+                    event_id=str(raw_fb_event_id)
+                )
+            except Exception:
+                logger.warning(
+                    f"Fallo no bloqueante al encolar evento Meta CAPI AddToCart (event_id: {raw_fb_event_id})",
+                    exc_info=True
+                )
+        else:
+            logger.warning("fb_event_id recibido descartado por formato o longitud no segura")
+
+    # 3. Respuesta al cliente
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'success'})
+    else:
+        # SEC-103: Redirigir a la página anterior de forma segura (prevención Open Redirect)
+        referer_url = request.META.get('HTTP_REFERER')
+        if referer_url and url_has_allowed_host_and_scheme(
+            url=referer_url,
+            allowed_hosts={request.get_host()},
+            require_https=request.is_secure(),
+        ):
+            return HttpResponseRedirect(referer_url)
+        return redirect('store:store')
 
 
 @require_POST
