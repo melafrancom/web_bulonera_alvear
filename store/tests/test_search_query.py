@@ -80,6 +80,9 @@ class TestSearchProductsRelational:
 
     def test_search_by_unaccented_category_name(self, catalog_setup):
         """Comprueba que en MariaDB utf8mb4_spanish_ci 'buloneria' coincida con 'Bulonería' devolviendo ambos productos"""
+        from django.db import connection
+        if connection.vendor == 'sqlite':
+            pytest.skip("Requiere colación utf8mb4_spanish_ci nativa de MariaDB para insensibilidad a tildes")
         results = SearchService.search_products('buloneria')
         assert results.count() == 2
         assert catalog_setup['prod1'] in results

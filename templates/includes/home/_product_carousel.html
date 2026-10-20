@@ -48,8 +48,11 @@
                                     loading="lazy">
                             </picture>
                             {% else %}
-                            <img src="{% static 'images/placeholder.png' %}" alt="sin imagen" 
-                                class="w-full h-full object-cover">
+                            <picture>
+                                <source srcset="{% static 'images/placeholder.webp' %}" type="image/webp">
+                                <img src="{% static 'images/placeholder.png' %}" alt="sin imagen" 
+                                    class="w-full h-full object-cover">
+                            </picture>
                             {% endif %}
                             
                             <!-- Badge: On Sale -->

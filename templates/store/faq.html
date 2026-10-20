@@ -9,7 +9,7 @@
     <nav class="mb-8" aria-label="breadcrumb">
       <ol class="flex items-center space-x-2 text-sm">
         <li>
-          <a href="{% url 'home' %}" class="text-blue-600 dark:text-blue-400 hover:underline">Inicio</a>
+          <a href="{% url 'home' %}" class="text-[#1B3A5C] dark:text-blue-400 hover:underline">Inicio</a>
         </li>
         <li class="text-slate-400 dark:text-slate-600">/</li>
         <li class="text-slate-600 dark:text-slate-400" aria-current="page">Preguntas Frecuentes</li>
@@ -28,7 +28,7 @@
         {% for category in faq_categories %}
         <a 
           href="#category-{{ category.id }}" 
-          class="px-4 py-2 border border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors font-medium"
+          class="px-4 py-2 border border-[#1B3A5C] text-[#1B3A5C] dark:border-blue-400 dark:text-blue-400 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors font-medium"
         >
           {{ category.name }}
         </a>
@@ -82,7 +82,7 @@
     {% endfor %}
 
     <!-- Help Section -->
-    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-8 text-center">
+    <div class="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center">
       <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">
         ¿No encontraste lo que buscabas?
       </h3>
@@ -91,7 +91,7 @@
       </p>
       <a 
         href="{% url 'contact:contact' %}" 
-        class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+        class="inline-flex items-center px-6 py-3 bg-[#1B3A5C] hover:bg-[#152e4a] text-white font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
       >
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>

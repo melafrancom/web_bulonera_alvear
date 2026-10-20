@@ -299,7 +299,7 @@ def get_cart_data(request):
             'name': item.product.name,
             'price': float(item.sub_total),
             'quantity': item.quantity,
-            'image': item.product.image_url,
+            'image': item.product.webp_image_url or item.product.image_url,
         })
     
     return JsonResponse({

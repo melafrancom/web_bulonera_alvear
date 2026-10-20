@@ -776,10 +776,10 @@
                                 </div>
                             {% endif %}
                         {% else %}
-                            <div class="bg-primary-50 dark:bg-primary-950/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4">
-                                <p class="text-primary-700 dark:text-primary-400">
+                            <div class="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+                                <p class="text-slate-700 dark:text-slate-300 text-sm">
                                     Para enviar un comentario debes estar registrado. 
-                                    <a href="{% url 'account:login' %}" class="font-semibold underline hover:text-primary-800 dark:hover:text-primary-300">
+                                    <a href="{% url 'account:login' %}" class="font-semibold underline text-[#1B3A5C] dark:text-blue-400 hover:text-[#152e4a]">
                                         Inicia Sesión
                                     </a>
                                 </p>
@@ -836,9 +836,17 @@
                             </p>
                         </div>
                         {% empty %}
-                        <p class="text-center text-slate-500 dark:text-slate-400 py-8">
-                            No hay reseñas todavía. ¡Sé el primero en dejar una!
-                        </p>
+                        <div class="py-10 px-6 text-center bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700/80 my-2">
+                            <div class="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400 dark:text-slate-500" aria-hidden="true">
+                                <i data-lucide="message-square" class="w-6 h-6"></i>
+                            </div>
+                            <h4 class="font-heading font-semibold text-slate-800 dark:text-slate-200 text-base mb-1">
+                                Aún no hay opiniones registradas para este artículo
+                            </h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                                Las valoraciones son emitidas exclusivamente por clientes que han adquirido el producto en Bulonera Alvear para garantizar opiniones técnicas reales y verificadas.
+                            </p>
+                        </div>
                         {% endfor %}
                     </div>
                 </div>

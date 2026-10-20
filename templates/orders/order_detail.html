@@ -245,7 +245,7 @@
 
           <div class="flex justify-between mb-6">
             <span class="text-lg font-semibold text-slate-900 dark:text-white">Total:</span>
-            <span class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ order.order_total|floatformat:2 }} $</span>
+            <span class="text-lg font-bold font-sans tabular-nums text-[#1B3A5C] dark:text-blue-400">${{ order.order_total|floatformat:2 }}</span>
           </div>
 
           <!-- Action Buttons -->
@@ -257,13 +257,12 @@
               Volver a Órdenes
             </a>
 
-            <button class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-              <a href="{% url 'contact:contact' %}" class="text-sm hover:text-white transition-colors flex items-center gap-2">
+            <a href="{% url 'contact:contact' %}" class="w-full inline-flex items-center justify-center px-4 py-2 bg-[#1B3A5C] hover:bg-[#152e4a] text-white rounded-lg shadow-sm transition-colors text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]">
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
               </svg>
               Contactar Soporte
-            </button>
+            </a>
           </div>
 
           <!-- Order Number Badge -->
@@ -283,7 +282,7 @@
         </svg>
         Seguir Comprando
       </a>
-      <a href="{% url 'account:dashboard' %}" class="inline-flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">
+      <a href="{% url 'account:dashboard' %}" class="inline-flex items-center justify-center px-6 py-3 bg-[#1B3A5C] hover:bg-[#152e4a] text-white rounded-lg shadow-sm transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>

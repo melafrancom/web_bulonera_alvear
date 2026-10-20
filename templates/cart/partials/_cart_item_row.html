@@ -24,10 +24,17 @@ Props: cart_item
         <div class="flex items-start gap-4">
             <!-- Imagen -->
             <a href="{{ cart_item.product.get_url }}" class="flex-shrink-0">
-                <img src="{{ cart_item.product.image_url }}" 
-                     alt="{{ cart_item.product.name }}"
-                     class="w-20 h-20 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
-                     loading="lazy">
+                <picture>
+                    {% if cart_item.product.webp_image_url %}
+                    <source srcset="{{ cart_item.product.webp_image_url }}" type="image/webp">
+                    {% endif %}
+                    <img src="{{ cart_item.product.image_url }}" 
+                         alt="{{ cart_item.product.name }}"
+                         class="w-20 h-20 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
+                         loading="lazy"
+                         width="80"
+                         height="80">
+                </picture>
             </a>
             
             <!-- Info -->

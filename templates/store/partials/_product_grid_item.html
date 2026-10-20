@@ -114,12 +114,15 @@ class="bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transitio
                  height="300">
         </picture>
         {% else %}
-        <img src="{% static 'images/placeholder.png' %}" 
-             alt="sin imagen"
-             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-             loading="lazy"
-             width="300"
-             height="300">
+        <picture>
+            <source srcset="{% static 'images/placeholder.webp' %}" type="image/webp">
+            <img src="{% static 'images/placeholder.png' %}" 
+                 alt="sin imagen"
+                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                 loading="lazy"
+                 width="300"
+                 height="300">
+        </picture>
         {% endif %}
     </a>
     

@@ -28,7 +28,7 @@
                     Aquí puedes ver tus órdenes, perfil y configuración
                 </p>
             </div>
-            <div class="bg-blue-50 dark:bg-slate-800 border-l-4 border-blue-600 p-3 rounded text-xs text-blue-900 dark:text-blue-200">
+            <div class="bg-slate-50 dark:bg-slate-800/80 border-l-4 border-[#1B3A5C] dark:border-blue-400 p-3 rounded text-xs text-slate-800 dark:text-slate-200">
                 <span class="font-bold">Cliente Verificado Bulonera Alvear</span><br>
                 <span>Despachos prioritarios y atención técnica directa desde Av. Alvear 1301, Resistencia.</span>
             </div>
@@ -56,17 +56,17 @@
                     <!-- Navigation -->
                     <nav class="divide-y divide-slate-200 dark:divide-slate-700">
                         <button @click="activeTab = 'overview'"
-                                :class="activeTab === 'overview' ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600' : 'border-l-4 border-transparent'"
+                                :class="activeTab === 'overview' ? 'bg-slate-100 dark:bg-slate-700/60 border-l-4 border-[#1B3A5C] dark:border-blue-400 text-[#1B3A5C] dark:text-blue-400' : 'border-l-4 border-transparent text-slate-900 dark:text-white'"
                                 class="w-full text-left px-6 py-3 flex items-center gap-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50">
                             <i data-lucide="layout-dashboard" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
-                            <span class="font-medium text-slate-900 dark:text-white">Overview</span>
+                            <span class="font-medium">Overview</span>
                         </button>
                         
                         <button @click="activeTab = 'orders'"
-                                :class="activeTab === 'orders' ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600' : 'border-l-4 border-transparent'"
+                                :class="activeTab === 'orders' ? 'bg-slate-100 dark:bg-slate-700/60 border-l-4 border-[#1B3A5C] dark:border-blue-400 text-[#1B3A5C] dark:text-blue-400' : 'border-l-4 border-transparent text-slate-900 dark:text-white'"
                                 class="w-full text-left px-6 py-3 flex items-center gap-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50">
                             <i data-lucide="shopping-bag" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
-                            <span class="font-medium text-slate-900 dark:text-white">Mis Órdenes</span>
+                            <span class="font-medium">Mis Órdenes</span>
                         </button>
                         
                         <a href="{% url 'account:edit_profile' %}"
@@ -105,8 +105,8 @@
                                     <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Total de Órdenes</p>
                                     <p class="text-3xl font-bold text-slate-900 dark:text-white">{{ orders_count }}</p>
                                 </div>
-                                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                                    <i data-lucide="shopping-bag" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
+                                <div class="w-12 h-12 bg-slate-100 dark:bg-slate-700/60 rounded-lg flex items-center justify-center">
+                                    <i data-lucide="shopping-bag" class="w-6 h-6 text-[#1B3A5C] dark:text-blue-400"></i>
                                 </div>
                             </div>
                         </div>
@@ -155,7 +155,7 @@
                     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                         <div class="flex items-center justify-between mb-6">
                             <h2 class="text-xl font-semibold text-slate-900 dark:text-white">Órdenes Recientes</h2>
-                            <a href="{% url 'account:my_orders' %}" class="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium">
+                            <a href="{% url 'account:my_orders' %}" class="text-sm text-[#1B3A5C] hover:text-[#152e4a] dark:text-blue-400 font-medium hover:underline">
                                 Ver todas →
                             </a>
                         </div>
@@ -168,7 +168,7 @@
                                 <div class="text-center py-8">
                                     <i data-lucide="inbox" class="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3"></i>
                                     <p class="text-slate-600 dark:text-slate-400">No tienes órdenes aún</p>
-                                    <a href="{% url 'store:store' %}" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-sm font-medium mt-2">
+                                    <a href="{% url 'store:store' %}" class="text-[#1B3A5C] hover:text-[#152e4a] dark:text-blue-400 text-sm font-medium hover:underline mt-2 inline-block">
                                         Comenzar a comprar →
                                     </a>
                                 </div>
@@ -190,7 +190,7 @@
                                 <div class="text-center py-12">
                                     <i data-lucide="inbox" class="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4"></i>
                                     <p class="text-slate-600 dark:text-slate-400 mb-4">No tienes órdenes aún</p>
-                                    <a href="{% url 'store:store' %}" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium rounded-lg transition-colors">
+                                    <a href="{% url 'store:store' %}" class="inline-flex items-center gap-2 px-6 py-3 bg-[#1B3A5C] hover:bg-[#152e4a] text-white font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]">
                                         <i data-lucide="shopping-cart" class="w-5 h-5"></i>
                                         Comenzar a comprar
                                     </a>

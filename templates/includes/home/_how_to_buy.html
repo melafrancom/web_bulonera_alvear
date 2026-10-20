@@ -22,7 +22,10 @@
                 </h2>
             </div>
             <div class="flex justify-center items-center">
-                <img src="{% static 'images/mobile-shop.png' %}" alt="Mobile Shop" class="max-w-xs w-full">
+                <picture>
+                    <source srcset="{% static 'images/mobile-shop.webp' %}" type="image/webp">
+                    <img src="{% static 'images/mobile-shop.png' %}" alt="Mobile Shop" class="max-w-xs w-full" width="320" height="437" loading="lazy">
+                </picture>
             </div>
         </div>
         
@@ -33,7 +36,10 @@
                 <div class="w-10 h-10 bg-white text-primary-800 rounded-full flex items-center justify-center font-bold text-xl mb-4 mx-auto">
                     1
                 </div>
-                <img src="{% static 'images/process/seleccionar_productos.png' %}" alt="Seleccionar productos" class="w-16 h-16 mx-auto mb-4">
+                <picture>
+                    <source srcset="{% static 'images/process/seleccionar_productos.webp' %}" type="image/webp">
+                    <img src="{% static 'images/process/seleccionar_productos.png' %}" alt="Seleccionar productos" class="w-16 h-16 mx-auto mb-4" width="64" height="64" loading="lazy">
+                </picture>
                 <h5 class="font-bold text-center mb-2">Seleccionar los productos</h5>
                 <p class="text-sm text-center text-primary-100">Se irán agregando a tu carrito de compras.</p>
             </div>
@@ -43,14 +49,20 @@
                 <div class="w-10 h-10 bg-white text-primary-800 rounded-full flex items-center justify-center font-bold text-xl mb-4 mx-auto">
                     2
                 </div>
-                <img src="{% static 'images/process/ordenarlos.png' %}" alt="Ordenarlos" class="w-16 h-16 mx-auto mb-4">
+                <picture>
+                    <source srcset="{% static 'images/process/ordenarlos.webp' %}" type="image/webp">
+                    <img src="{% static 'images/process/ordenarlos.png' %}" alt="Ordenarlos" class="w-16 h-16 mx-auto mb-4" width="64" height="64" loading="lazy">
+                </picture>
                 <h5 class="font-bold text-center mb-2">Ordenarlos</h5>
                 <p class="text-sm text-center text-primary-100">Luego de ordenarlos, serás redireccionado al WhatsApp.</p>
             </div>
             
             <!-- Estado Nuevo -->
             <div class="bg-slate-800 dark:bg-slate-900 rounded-xl p-4 md:p-6 text-white">
-                <img src="{% static 'images/process/estado_nuevo.png' %}" alt="Estado Nuevo" class="w-16 h-16 mx-auto mb-4">
+                <picture>
+                    <source srcset="{% static 'images/process/estado_nuevo.webp' %}" type="image/webp">
+                    <img src="{% static 'images/process/estado_nuevo.png' %}" alt="Estado Nuevo" class="w-16 h-16 mx-auto mb-4" width="64" height="64" loading="lazy">
+                </picture>
                 <h5 class="font-bold text-center mb-2">ESTADO 'NUEVO'</h5>
                 <p class="text-sm text-center text-slate-300">Se creará una ORDEN en estado 'NUEVO' en tu Dashboard.</p>
             </div>
@@ -60,7 +72,10 @@
                 <div class="w-10 h-10 bg-white text-primary-800 rounded-full flex items-center justify-center font-bold text-xl mb-4 mx-auto">
                     3
                 </div>
-                <img src="{% static 'images/process/coordinar.png' %}" alt="Coordinar con nosotros" class="w-16 h-16 mx-auto mb-4">
+                <picture>
+                    <source srcset="{% static 'images/process/coordinar.webp' %}" type="image/webp">
+                    <img src="{% static 'images/process/coordinar.png' %}" alt="Coordinar con nosotros" class="w-16 h-16 mx-auto mb-4" width="64" height="64" loading="lazy">
+                </picture>
                 <h5 class="font-bold text-center mb-2">Coordinar con nosotros!</h5>
                 <p class="text-sm text-center text-primary-100">Te ayudaremos a ultimar detalles de tu compra, y por último te enviaremos un link de pago o QR.</p>
             </div>
@@ -69,7 +84,10 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
             <!-- Estado Aceptada -->
             <div class="bg-slate-800 dark:bg-slate-900 rounded-xl p-4 md:p-6 text-white">
-                <img src="{% static 'images/process/estado_aceptada.png' %}" alt="Estado Aceptada" class="w-16 h-16 mx-auto mb-4">
+                <picture>
+                    <source srcset="{% static 'images/process/estado_aceptada.webp' %}" type="image/webp">
+                    <img src="{% static 'images/process/estado_aceptada.png' %}" alt="Estado Aceptada" class="w-16 h-16 mx-auto mb-4" width="64" height="64" loading="lazy">
+                </picture>
                 <h5 class="font-bold text-center mb-2">ESTADO 'ACEPTADA'</h5>
                 <p class="text-sm text-center text-slate-300">Tu orden cambia el estado a 'ACEPTADA'.</p>
             </div>
@@ -79,14 +97,20 @@
                 <div class="w-10 h-10 bg-white text-primary-800 rounded-full flex items-center justify-center font-bold text-xl mb-4 mx-auto">
                     4
                 </div>
-                <img src="{% static 'images/process/pagar_disfrutar.png' %}" alt="Pagar y disfrutar" class="w-16 h-16 mx-auto mb-4">
+                <picture>
+                    <source srcset="{% static 'images/process/pagar_disfrutar.webp' %}" type="image/webp">
+                    <img src="{% static 'images/process/pagar_disfrutar.png' %}" alt="Pagar y disfrutar" class="w-16 h-16 mx-auto mb-4" width="64" height="64" loading="lazy">
+                </picture>
                 <h5 class="font-bold text-center mb-2">Pagar y DISFRUTAR!</h5>
                 <p class="text-sm text-center text-primary-100">Luego de realizado el pago, coordinamos el envío en tu transporte de confianza!</p>
             </div>
             
             <!-- Estado Completada -->
             <div class="bg-slate-800 dark:bg-slate-900 rounded-xl p-4 md:p-6 text-white">
-                <img src="{% static 'images/process/estado_completada.png' %}" alt="Estado Completada" class="w-16 h-16 mx-auto mb-4">
+                <picture>
+                    <source srcset="{% static 'images/process/estado_completada.webp' %}" type="image/webp">
+                    <img src="{% static 'images/process/estado_completada.png' %}" alt="Estado Completada" class="w-16 h-16 mx-auto mb-4" width="64" height="64" loading="lazy">
+                </picture>
                 <h5 class="font-bold text-center mb-2">ESTADO 'COMPLETADA'</h5>
                 <p class="text-sm text-center text-slate-300">Tu orden cambia el estado a 'COMPLETADA'.</p>
             </div>

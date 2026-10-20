@@ -271,9 +271,12 @@
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
                                     </picture>
                                     {% else %}
-                                    <img src="{% static 'images/placeholder.png' %}" alt="sin imagen" 
-                                        width="400" height="400"
-                                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    <picture>
+                                        <source srcset="{% static 'images/placeholder.webp' %}" type="image/webp">
+                                        <img src="{% static 'images/placeholder.png' %}" alt="sin imagen" 
+                                            width="400" height="400"
+                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    </picture>
                                     {% endif %}
                                 </div>
                                 <div class="p-2 md:p-3">
@@ -321,9 +324,12 @@
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
                                     </picture>
                                     {% else %}
-                                    <img src="{% static 'images/placeholder.png' %}" alt="sin imagen" 
-                                        width="400" height="400"
-                                        class="w-full h-full object-cover">
+                                    <picture>
+                                        <source srcset="{% static 'images/placeholder.webp' %}" type="image/webp">
+                                        <img src="{% static 'images/placeholder.png' %}" alt="sin imagen" 
+                                            width="400" height="400"
+                                            class="w-full h-full object-cover">
+                                    </picture>
                                     {% endif %}
                                 </div>
                                 <div class="p-2 md:p-3">

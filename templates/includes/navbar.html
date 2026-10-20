@@ -323,36 +323,38 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="translate-x-0"
          x-transition:leave-end="-translate-x-full"
-         class="fixed top-0 left-0 bottom-0 w-80 bg-white dark:bg-slate-800 z-50 overflow-y-auto lg:hidden"
+         class="fixed top-0 left-0 bottom-0 w-80 bg-white dark:bg-slate-800 z-50 overflow-y-auto lg:hidden flex flex-col"
          style="display: none;">
         
-        <div class="p-6">
-            <!-- Cerrar -->
+        <!-- Cabecera Corporativa con fondo Azul Marino BA para contraste nativo de logo -->
+        <div class="bg-navbar-bg p-5 flex items-center justify-between border-b border-slate-700/50">
+            <a href="{% url 'home' %}" @click="mobileOpen = false" class="inline-block focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 rounded">
+                <picture>
+                    <source srcset="{% static 'images/logo-bulonera-alvear.webp' %}" type="image/webp">
+                    <img src="{% static 'images/logo-bulonera-alvear.png' %}" 
+                         alt="Bulonera Alvear" 
+                         class="h-10 w-auto"
+                         width="132"
+                         height="44"
+                         loading="eager">
+                </picture>
+            </a>
             <button @click="mobileOpen = false" 
-                    class="absolute top-4 right-4 p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+                    class="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                     aria-label="Cerrar menú de navegación móvil">
                 <i data-lucide="x" class="w-6 h-6" aria-hidden="true"></i>
             </button>
-            
-            <!-- Logo -->
-            <picture>
-                <source srcset="{% static 'images/logo-bulonera-alvear.webp' %}" type="image/webp">
-                <img src="{% static 'images/logo-bulonera-alvear.png' %}" 
-                     alt="Bulonera Alvear" 
-                     class="h-11 w-auto mb-6"
-                     width="132"
-                     height="44"
-                     loading="eager">
-            </picture>
-            
+        </div>
+        
+        <div class="p-6 flex-1">
             <!-- Usuario Info -->
             <div class="mb-6 pb-6 border-b border-slate-200 dark:border-slate-700">
                 {% if user.id is None %}
-                <div class="space-y-2">
-                    <a href="{% url 'account:login' %}" class="block px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-center font-medium transition-colors">
+                <div class="space-y-2.5">
+                    <a href="{% url 'account:login' %}" class="block px-4 py-2.5 bg-[#1B3A5C] hover:bg-[#152e4a] text-white rounded-lg text-center font-medium shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1B3A5C]">
                         Iniciar Sesión
                     </a>
-                    <a href="{% url 'account:register' %}" class="block px-4 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg text-center font-medium transition-colors">
+                    <a href="{% url 'account:register' %}" class="block px-4 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg text-center font-medium transition-colors">
                         Registrarse
                     </a>
                 </div>
