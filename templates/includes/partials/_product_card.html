@@ -8,7 +8,7 @@
         {% if product.images %}
         <img src="{{ product.image_url }}" 
              alt="{{ product.name }}" 
-             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+             class="w-full h-full object-cover motion-safe:group-hover:scale-[1.02] transition-transform duration-300 ease-out"
              loading="lazy"
              width="400"
              height="400">

@@ -88,7 +88,7 @@
               <source srcset="{{ post.webp_image_url }}" type="image/webp">
               <img src="{{ post.image_url }}" 
                    alt="{% if current_lang != 'es' and post.active_translation and post.active_translation.image_alt %}{{ post.active_translation.image_alt }}{% else %}{{ post.image_alt }}{% endif %}"
-                   class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                   class="w-full h-full object-cover transition-opacity duration-200 ease-out hover:opacity-95"
                    loading="lazy"
                    decoding="async"
                    width="400"

@@ -44,11 +44,11 @@
         <template x-if="images.length > 1">
             <div>
                 <button @click="prev()" 
-                        class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110">
+                        class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-full p-2 shadow-lg transition-colors duration-150 ease-out">
                     <i data-lucide="chevron-left" class="w-6 h-6"></i>
                 </button>
                 <button @click="next()" 
-                        class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110">
+                        class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-full p-2 shadow-lg transition-colors duration-150 ease-out">
                     <i data-lucide="chevron-right" class="w-6 h-6"></i>
                 </button>
             </div>

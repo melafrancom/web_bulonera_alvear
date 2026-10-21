@@ -112,9 +112,9 @@
                             <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center dark:bg-slate-800/50 rounded-lg group-hover:bg-primary-50 dark:group-hover:bg-primary-950/30 transition-colors">
                                 {% if category.image or category.cat_image %}
                                 <img src="{{ category.image_url }}" alt="{{ category.category_name }}" 
-                                    class="w-12 h-12 md:w-16 md:h-16 object-contain group-hover:scale-105 transition-transform duration-300">
+                                    class="w-12 h-12 md:w-16 md:h-16 object-contain">
                                 {% else %}
-                                <i data-lucide="folder" class="w-10 h-10 md:w-12 md:h-12 text-primary-600 dark:text-primary-400 group-hover:scale-105 transition-transform duration-300"></i>
+                                <i data-lucide="folder" class="w-10 h-10 md:w-12 md:h-12 text-primary-600 dark:text-primary-400"></i>
                                 {% endif %}
                             </div>
                             
@@ -166,9 +166,9 @@
                         <!-- Imagen o icono -->
                         {% if category.image or category.cat_image %}
                         <img src="{{ category.image_url }}" alt="{{ category.category_name }}" 
-                            class="w-12 h-12 md:w-16 md:h-16 object-contain group-hover:scale-105 transition-transform duration-300">
+                            class="w-12 h-12 md:w-16 md:h-16 object-contain">
                         {% else %}
-                        <i data-lucide="folder" class="w-12 h-12 md:w-16 md:h-16 text-primary-600 dark:text-primary-400 group-hover:scale-105 transition-transform duration-300"></i>
+                        <i data-lucide="folder" class="w-12 h-12 md:w-16 md:h-16 text-primary-600 dark:text-primary-400"></i>
                         {% endif %}
                         
                         <!-- Nombre -->

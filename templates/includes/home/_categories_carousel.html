@@ -37,7 +37,7 @@
                             {# Fallback a PNG/JPEG #}
                             <img src="{{ category.image_url }}" 
                                  alt="{{ category.category_name }}" 
-                                 class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                                 class="w-full h-full object-contain"
                                  loading="lazy"
                                  width="48"
                                  height="48">
@@ -87,14 +87,14 @@
                             {% if banner.image_desktop_asset and banner.image_desktop_asset.file %}
                             <img src="{{ banner.image_desktop_asset.file.url }}" 
                                  alt="{{ banner.alt_text|default:banner.title }}"
-                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                 class="w-full h-full object-cover"
                                  loading="lazy"
                                  width="80"
                                  height="80">
                             {% elif banner.image_desktop %}
                             <img src="{{ banner.image_desktop.url }}" 
                                  alt="{{ banner.alt_text|default:banner.title }}"
-                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                 class="w-full h-full object-cover"
                                  loading="lazy"
                                  width="80"
                                  height="80">

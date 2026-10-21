@@ -6,7 +6,7 @@
         <div class="grid grid-cols-5 gap-2 md:gap-3">
             <!-- Mis Productos -->
             <a href="{% url 'store:store' %}" class="flex flex-col items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm dark:shadow-lg">
+                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md dark:shadow-lg transition-shadow duration-150 ease-out">
                     <i data-lucide="eye" class="w-5 h-5 md:w-6 md:h-6 text-primary-600 dark:text-primary-400"></i>
                 </div>
                 <p class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 leading-tight">Mis<br/>productos</p>
@@ -14,7 +14,7 @@
             
             <!-- Medios de Pago -->
             <button @click="$dispatch('open-modal', 'mediosPagoModal')" class="flex flex-col items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm dark:shadow-lg">
+                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md dark:shadow-lg transition-shadow duration-150 ease-out">
                     <i data-lucide="credit-card" class="w-5 h-5 md:w-6 md:h-6 text-primary-600 dark:text-primary-400"></i>
                 </div>
                 <p class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 leading-tight">Medios de<br/>pago</p>
@@ -22,7 +22,7 @@
             
             <!-- Ofertas Activas -->
             <a href="{% url 'store:offers' %}" class="flex flex-col items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm dark:shadow-lg">
+                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md dark:shadow-lg transition-shadow duration-150 ease-out">
                     <i data-lucide="zap" class="w-5 h-5 md:w-6 md:h-6 text-accent-500"></i>
                 </div>
                 <p class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 leading-tight">🔥 Ofertas</p>
@@ -30,7 +30,7 @@
             
             <!-- Envíos -->
             <button @click="$dispatch('open-modal', 'enviosModal')" class="flex flex-col items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm dark:shadow-lg">
+                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md dark:shadow-lg transition-shadow duration-150 ease-out">
                     <i data-lucide="truck" class="w-5 h-5 md:w-6 md:h-6 text-primary-600 dark:text-primary-400"></i>
                 </div>
                 <p class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 leading-tight">Envíos</p>
@@ -38,7 +38,7 @@
             
             <!-- Cómo Comprar -->
             <a href="#como-comprar" class="flex flex-col items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm dark:shadow-lg">
+                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md dark:shadow-lg transition-shadow duration-150 ease-out">
                     <i data-lucide="shield-check" class="w-5 h-5 md:w-6 md:h-6 text-primary-600 dark:text-primary-400"></i>
                 </div>
                 <p class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 leading-tight">Cómo<br/>comprar</p>

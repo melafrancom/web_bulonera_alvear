@@ -216,19 +216,19 @@
             <div x-ref="track" class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth">
                 {% for cat in links %}
                 {% if cat == active_category %}
-                    <!-- Categoría Activa (Resaltada en el Rojo de la Marca) -->
+                    <!-- Categoría Activa (Resaltada en Azul Marino BA) -->
                     <a href="{% url 'store:products_by_category' cat.slug %}" 
                        class="group flex-shrink-0 snap-start w-[30%] sm:w-[22%] md:w-[18%] lg:w-[12%]">
-                        <div class="bg-red-50/50 dark:bg-red-950/20 rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden p-4 h-full flex flex-col items-center justify-center gap-3 border-2 border-red-500 ring-2 ring-red-500/10">
-                            <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-red-100/50 dark:bg-red-900/30 rounded-lg">
+                        <div class="bg-slate-100/90 dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden p-4 h-full flex flex-col items-center justify-center gap-3 border-2 border-[#1B3A5C] dark:border-blue-400 ring-2 ring-[#1B3A5C]/15">
+                            <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-slate-200/60 dark:bg-slate-700/60 rounded-lg">
                                 {% if cat.image or cat.cat_image %}
                                 <img src="{{ cat.image_url }}" alt="{{ cat.category_name }}" 
-                                    class="w-14 h-14 md:w-18 md:h-18 object-contain scale-105 transition-transform duration-300">
+                                    class="w-14 h-14 md:w-18 md:h-18 object-contain">
                                 {% else %}
-                                <i data-lucide="folder" class="w-10 h-10 md:w-12 md:h-12 text-red-600 dark:text-red-400 scale-105 transition-transform duration-300"></i>
+                                <i data-lucide="folder" class="w-10 h-10 md:w-12 md:h-12 text-[#1B3A5C] dark:text-blue-400"></i>
                                 {% endif %}
                             </div>
-                            <p class="text-xs md:text-sm font-semibold text-center text-red-600 dark:text-red-400 transition-colors line-clamp-2">
+                            <p class="text-xs md:text-sm font-semibold text-center text-[#1B3A5C] dark:text-blue-400 transition-colors line-clamp-2">
                                 {{ cat.category_name }}
                             </p>
                         </div>
@@ -241,9 +241,9 @@
                             <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center dark:bg-slate-800/50 rounded-lg group-hover:bg-primary-50 dark:group-hover:bg-primary-950/30 transition-colors">
                                 {% if cat.image or cat.cat_image %}
                                 <img src="{{ cat.image_url }}" alt="{{ cat.category_name }}" 
-                                    class="w-12 h-12 md:w-16 md:h-16 object-contain group-hover:scale-105 transition-transform duration-300">
+                                    class="w-12 h-12 md:w-16 md:h-16 object-contain">
                                 {% else %}
-                                <i data-lucide="folder" class="w-10 h-10 md:w-12 md:h-12 text-primary-600 dark:text-primary-400 group-hover:scale-105 transition-transform duration-300"></i>
+                                <i data-lucide="folder" class="w-10 h-10 md:w-12 md:h-12 text-primary-600 dark:text-primary-400"></i>
                                 {% endif %}
                             </div>
                             <p class="text-xs md:text-sm font-medium text-center text-slate-700 dark:text-slate-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2">
@@ -362,19 +362,19 @@
             <div x-ref="track" class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth">
                 {% for sub in carousel_subcategories %}
                 {% if sub == subcategory %}
-                    <!-- Subcategoría Activa (Resaltada en el Rojo de la Marca) -->
+                    <!-- Subcategoría Activa (Resaltada en Azul Marino BA) -->
                     <a href="{{ sub.get_url }}" 
                        class="group flex-shrink-0 snap-start w-[30%] sm:w-[22%] md:w-[18%] lg:w-[12%]">
-                        <div class="bg-red-50/50 dark:bg-red-950/20 rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden p-3 h-full flex flex-col items-center justify-center gap-2 border-2 border-red-500 ring-2 ring-red-500/10">
-                            <div class="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-red-100/50 dark:bg-red-900/30 rounded-lg">
+                        <div class="bg-slate-100/90 dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden p-3 h-full flex flex-col items-center justify-center gap-2 border-2 border-[#1B3A5C] dark:border-blue-400 ring-2 ring-[#1B3A5C]/15">
+                            <div class="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-slate-200/60 dark:bg-slate-700/60 rounded-lg">
                                 {% if sub.image %}
                                 <img src="{{ sub.image_url }}" alt="{{ sub.subcategory_name }}" 
-                                    class="w-10 h-10 md:w-12 md:h-12 object-contain scale-105 transition-transform duration-300">
+                                    class="w-10 h-10 md:w-12 md:h-12 object-contain">
                                 {% else %}
-                                <i data-lucide="folder" class="w-8 h-8 md:w-10 md:h-10 text-red-650 dark:text-red-400 scale-105 transition-transform duration-300"></i>
+                                <i data-lucide="folder" class="w-8 h-8 md:w-10 md:h-10 text-[#1B3A5C] dark:text-blue-400"></i>
                                 {% endif %}
                             </div>
-                            <p class="text-xs md:text-sm font-semibold text-center text-red-600 dark:text-red-400 transition-colors line-clamp-2">
+                            <p class="text-xs md:text-sm font-semibold text-center text-[#1B3A5C] dark:text-blue-400 transition-colors line-clamp-2">
                                 {{ sub.subcategory_name }}
                             </p>
                         </div>
@@ -387,9 +387,9 @@
                             <div class="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center dark:bg-slate-800/50 rounded-lg group-hover:bg-primary-50 dark:group-hover:bg-primary-950/30 transition-colors">
                                 {% if sub.image %}
                                 <img src="{{ sub.image_url }}" alt="{{ sub.subcategory_name }}" 
-                                    class="w-10 h-10 md:w-12 md:h-12 object-contain group-hover:scale-105 transition-transform duration-300">
+                                    class="w-10 h-10 md:w-12 md:h-12 object-contain">
                                 {% else %}
-                                <i data-lucide="folder" class="w-8 h-8 md:w-10 md:h-10 text-primary-600 dark:text-primary-400 group-hover:scale-105 transition-transform duration-300"></i>
+                                <i data-lucide="folder" class="w-8 h-8 md:w-10 md:h-10 text-primary-600 dark:text-primary-400"></i>
                                 {% endif %}
                             </div>
                             <p class="text-xs md:text-sm font-medium text-center text-slate-700 dark:text-slate-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2">
