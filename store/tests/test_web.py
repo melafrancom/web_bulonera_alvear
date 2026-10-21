@@ -161,3 +161,56 @@ class TestCommercialEmptyStates:
         assert "No hay productos que coincidan con los filtros seleccionados" in content
         assert "Limpiar filtros y ver catálogo" in content
         assert "No encontramos productos para" not in content
+
+
+class TestTemplateSyntaxIntegrity:
+    """Valida la integridad y compilación sintáctica de cada plantilla física del proyecto."""
+
+    def test_all_project_templates_compile_without_syntax_errors(self):
+        """
+        QUÉ: Recorre cada archivo físico .html bajo las raíces de los loaders del proyecto y compila su AST.
+        POR QUÉ: Garantiza ausencia de tags huérfanos, filtros inválidos o errores de herencia antes del deploy.
+        NOTA: Esta prueba valida compilación sintáctica; la validación de contextos y renderizado efectivo
+              se verifica mediante los tests de vistas web con client.get().
+        """
+        import os
+        from django.conf import settings
+        from django.template import engines, Template
+        from django.template.base import Origin
+        from django.template.exceptions import TemplateSyntaxError, TemplateDoesNotExist
+
+        base_dir_str = str(settings.BASE_DIR)
+        compiled_count = 0
+        template_errors = []
+
+        for engine in engines.all():
+            django_engine = getattr(engine, 'engine', None)
+            if not django_engine:
+                continue
+            loaders = getattr(django_engine, 'template_loaders', [])
+            for loader in loaders:
+                if not hasattr(loader, 'get_dirs'):
+                    continue
+                for directory in loader.get_dirs():
+                    dir_path = str(directory)
+                    if not dir_path.startswith(base_dir_str):
+                        continue
+                    for root, _, files in os.walk(dir_path):
+                        for f in files:
+                            if f.endswith('.html'):
+                                full_path = os.path.join(root, f)
+                                rel_path = os.path.relpath(full_path, base_dir_str)
+                                try:
+                                    with open(full_path, 'r', encoding='utf-8') as fp:
+                                        content = fp.read()
+                                    Template(content, origin=Origin(full_path), engine=django_engine)
+                                    compiled_count += 1
+                                except (TemplateSyntaxError, TemplateDoesNotExist) as exc:
+                                    template_errors.append(f"{rel_path}: {exc}")
+
+        assert compiled_count > 0, "No se encontraron archivos de plantilla para compilar en el proyecto."
+        assert len(template_errors) == 0, (
+            f"Errores de sintaxis detectados en templates ({len(template_errors)}):\n"
+            + "\n".join(template_errors)
+        )
+

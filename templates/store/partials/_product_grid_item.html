@@ -55,7 +55,7 @@ Note: Requires parent template to load: static, custom_filters, store_filters, h
                 
                 // Show success notification
                 window.dispatchEvent(new CustomEvent('show-toast', {
-                    detail: { message: 'Producto agregado al carrito', type: 'success' }
+                    detail: { text: 'Producto agregado al carrito', type: 'success' }
                 }));
                 
                 // Track Meta Pixel AddToCart
@@ -85,7 +85,7 @@ Note: Requires parent template to load: static, custom_filters, store_filters, h
         } catch (error) {
             console.error('Error adding to cart:', error);
             window.dispatchEvent(new CustomEvent('show-toast', {
-                detail: { message: 'Error al agregar producto', type: 'error' }
+                detail: { text: 'Error al agregar producto', type: 'error' }
             }));
         } finally {
             this.adding = false;

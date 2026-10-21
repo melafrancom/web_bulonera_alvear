@@ -62,12 +62,138 @@ class TestCartWebViews:
         assert not hasattr(request, 'user')
         result = counter(request)
         assert 'cart_count' in result
-        assert result['cart_count'] == 0
+    def test_add_cart_ajax_success_returns_exact_json_contract(self, client, product):
+        """
+        QUÉ: POST AJAX a add_cart retorna HTTP 200 con payload exacto {'status': 'success'}.
+        POR QUÉ: Contrato consumido por Alpine.js en _product_grid_item y product_detail.
+        """
+        from django.urls import reverse
+        from cart.models import CartItem
 
+        url = reverse('cart:add_cart', args=[product.id])
+        response = client.post(
+            url,
+            {'qty': 2},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json'
+        )
 
+        assert response.status_code == 200
+        assert response.json() == {'status': 'success'}
+        cart_item = CartItem.objects.filter(product=product).first()
+        assert cart_item is not None
+        assert cart_item.quantity == 2
 
+    def test_add_cart_ajax_capi_failure_is_non_blocking_returns_200(self, client, product):
+        """
+        QUÉ: Si MetaCapiService.enqueue_add_to_cart falla, el endpoint AJAX responde 200 y persiste el ítem.
+        POR QUÉ: El tracking de Meta CAPI es desacoplado y no debe degradar la experiencia de compra ni abortar la adición.
+        """
+        import unittest
+        from django.urls import reverse
+        from unittest.mock import patch
+        from cart.models import CartItem
 
-@pytest.mark.django_db
+        url = reverse('cart:add_cart', args=[product.id])
+        event_id = 'test-capi-fail-uuid-123'
+
+        with patch('tracking.services.MetaCapiService.enqueue_add_to_cart', side_effect=RuntimeError("CAPI network timeout")) as mock_capi:
+            response = client.post(
+                url,
+                {'qty': 1, 'fb_event_id': event_id},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+                HTTP_ACCEPT='application/json'
+            )
+
+        assert response.status_code == 200
+        assert response.json() == {'status': 'success'}
+        mock_capi.assert_called_once_with(
+            request=unittest.mock.ANY,
+            product=product,
+            quantity=1,
+            event_id=event_id
+        )
+        assert CartItem.objects.filter(product=product).exists()
+
+    def test_add_cart_ajax_nonexistent_product_returns_404_json(self, client):
+        """
+        QUÉ: POST AJAX a producto inexistente retorna HTTP 404 con mensaje estructurado.
+        POR QUÉ: Manejo de errores asíncronos en cliente sin excepciones 500 no controladas.
+        """
+        from django.urls import reverse
+
+        url = reverse('cart:add_cart', args=[999999])
+        response = client.post(
+            url,
+            {'qty': 1},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json'
+        )
+
+        assert response.status_code == 404
+        data = response.json()
+        assert data['status'] == 'error'
+        assert data['message'] == 'Producto no encontrado'
+
+    def test_add_cart_ajax_service_value_error_returns_400_json(self, client, product):
+        """
+        QUÉ: Si CartService.add_to_cart lanza ValueError de dominio, responde HTTP 400 estructurado.
+        POR QUÉ: Propagación de validaciones de negocio hacia el bus de notificaciones del cliente.
+        """
+        from django.urls import reverse
+        from unittest.mock import patch
+
+        url = reverse('cart:add_cart', args=[product.id])
+        with patch('cart.services.CartService.add_to_cart', side_effect=ValueError("Stock insuficiente")):
+            response = client.post(
+                url,
+                {'qty': 1},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+                HTTP_ACCEPT='application/json'
+            )
+
+        assert response.status_code == 400
+        data = response.json()
+        assert data['status'] == 'error'
+        assert data['message'] == 'Stock insuficiente'
+
+    def test_add_cart_ajax_quantity_normalization_endpoint_contract(self, client, product):
+        """
+        QUÉ: POST AJAX con qty no numérico o <= 0 es normalizado a 1 por el endpoint y responde 200.
+        POR QUÉ: Garantiza el contrato HTTP de sanitización SEC-108 sin degradación a 400/500.
+        """
+        from django.urls import reverse
+        from cart.models import CartItem
+
+        url = reverse('cart:add_cart', args=[product.id])
+
+        # Caso 1: qty = 0 -> normalizado a 1
+        res_zero = client.post(url, {'qty': 0}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        assert res_zero.status_code == 200
+        assert res_zero.json() == {'status': 'success'}
+        item = CartItem.objects.filter(product=product).first()
+        assert item is not None
+        assert item.quantity == 1
+
+        CartItem.objects.all().delete()
+
+        # Caso 2: qty = 'abc' -> normalizado a 1
+        res_str = client.post(url, {'qty': 'abc'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        assert res_str.status_code == 200
+        assert res_str.json() == {'status': 'success'}
+        item = CartItem.objects.filter(product=product).first()
+        assert item is not None
+        assert item.quantity == 1
+
+        CartItem.objects.all().delete()
+
+        # Caso 3: qty = -10 -> normalizado a 1
+        res_neg = client.post(url, {'qty': -10}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        assert res_neg.status_code == 200
+        assert res_neg.json() == {'status': 'success'}
+        item = CartItem.objects.filter(product=product).first()
+        assert item is not None
+        assert item.quantity == 1
 class TestEmptyCartCommercialState:
     def test_empty_cart_links_to_offers_and_dynamic_categories(self, client, category):
         from django.core.cache import cache

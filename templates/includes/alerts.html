@@ -12,7 +12,7 @@
         this.messages = this.messages.filter(m => m.id !== id);
     }
 }" 
-@show-toast.window="addMessage($event.detail.text, $event.detail.type)"
+@show-toast.window="addMessage($event.detail.text, $event.detail.type || 'info')"
 class="fixed top-20 right-4 z-50 space-y-2 max-w-md">
     
     <template x-for="message in messages" :key="message.id">
