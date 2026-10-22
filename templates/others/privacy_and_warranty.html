@@ -2,18 +2,18 @@
 {% load static %}
 
 {% block title %}Política de Privacidad y Garantía | Bulonera Alvear{% endblock %}
-{% block meta_description %}Política de privacidad y garantía de productos de Bulonera Alvear. Protección de datos personales y condiciones de garantía.{% endblock %}
+{% block meta_description %}Política de privacidad de datos personales y garantía legal de productos en Bulonera Alvear. Cumplimiento Ley 25.326, Disp. 10/2008 DNPDP y Ley 24.240.{% endblock %}
 
 {% block content %}
 
 <!-- Breadcrumb -->
 <div class="bg-soft-bg dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
   <div class="container mx-auto px-4 py-3">
-    <nav class="flex items-center gap-2 text-sm">
+    <nav class="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
       <a href="{% url 'home' %}" class="text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
-        <i data-lucide="home" class="w-4 h-4"></i>
+        <i data-lucide="home" class="w-4 h-4" aria-hidden="true"></i>
       </a>
-      <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+      <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400" aria-hidden="true"></i>
       <span class="text-slate-900 dark:text-white font-medium">Privacidad y Garantía</span>
     </nav>
   </div>
@@ -23,309 +23,256 @@
 <section class="py-8 md:py-12 bg-soft-bg dark:bg-slate-900">
   <div class="container mx-auto px-4 max-w-5xl">
     
-    <!-- Privacy Policy -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 md:p-8 mb-8">
+    <!-- Privacy Policy Card -->
+    <div id="politica-privacidad" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 md:p-8 mb-8 scroll-mt-24">
       
-      <div class="flex items-center gap-3 mb-6">
-        <div class="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
-          <i data-lucide="shield-check" class="w-6 h-6 text-primary-600 dark:text-primary-400"></i>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+          <i data-lucide="shield-check" class="w-6 h-6 text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
         </div>
-        <h1 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">POLÍTICA DE PRIVACIDAD</h1>
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
+            POLÍTICA DE PRIVACIDAD Y PROTECCIÓN DE DATOS PERSONALES
+          </h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Bulonera Alvear de Mela Miguel Ángel — CUIT 20-18054557-4 · Av. Alvear 1301, Resistencia, Chaco
+          </p>
+        </div>
       </div>
       
-      <div class="mb-4">
-        <p class="text-slate-700 dark:text-slate-300"><strong>Bulonera Alvear</strong> – <a href="https://www.buloneraalvear.online" target="_blank" class="text-primary-600 dark:text-primary-400 hover:underline">www.buloneraalvear.online</a></p>
-        <p class="text-sm text-slate-500 dark:text-slate-400">Última actualización: junio 2025</p>
+      <div class="mb-6 flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 pb-4">
+        <span><strong>Sitio Oficial:</strong> <a href="https://www.buloneraalvear.online" class="text-primary-600 dark:text-primary-400 hover:underline">www.buloneraalvear.online</a></span>
+        <span>·</span>
+        <span>Última actualización: <strong>octubre 2026</strong></span>
       </div>
       
       <p class="text-slate-700 dark:text-slate-300 mb-6 leading-relaxed">
-        En Bulonera Alvear, respetamos la privacidad de nuestros usuarios, clientes y visitantes. Esta Política de Privacidad describe cómo recopilamos, utilizamos, almacenamos y protegemos la información personal que usted nos proporciona a través de nuestros canales digitales y físicos.
+        En Bulonera Alvear respetamos y protegemos la privacidad de nuestros clientes, usuarios y visitantes. Esta Política describe cómo recopilamos, utilizamos, almacenamos y resguardamos la información personal que nos proporcionás a través de nuestro sitio web y de nuestros canales oficiales, en estricto cumplimiento de la <strong>Ley Nacional Nº 25.326 de Protección de los Datos Personales</strong> y sus normas complementarias.
       </p>
       
       <hr class="border-slate-200 dark:border-slate-700 my-6">
       
       <!-- Section 1 -->
       <div class="mb-6">
-        <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-          <i data-lucide="user-check" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
-          1. Responsable del tratamiento de datos
-        </h4>
-        <ul class="space-y-2 text-slate-700 dark:text-slate-300">
-          <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span><strong>Responsable:</strong> Mela Miguel Ángel</span>
-          </li>
-          <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span><strong>CUIT:</strong> 20-18054557-4</span>
-          </li>
-          <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span><strong>Domicilio comercial:</strong> Av. Alvear 1301, Resistencia, Chaco, CP 3500</span>
-          </li>
-          <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span><strong>Correo electrónico:</strong> <a href="mailto:contacto@buloneraalvear.online" class="text-primary-600 dark:text-primary-400 hover:underline">contacto@buloneraalvear.online</a></span>
-          </li>
-          <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span><strong>Teléfono:</strong> <a href="{% url 'contact:whatsapp_lead_redirect' %}?source=legal_privacy" data-ba-lead="whatsapp_legal_privacy" target="_blank" rel="nofollow noopener noreferrer" class="text-primary-600 dark:text-primary-400 hover:underline">+54 362 473-3431</a></span>
-          </li>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+          <i data-lucide="user-check" class="w-5 h-5 text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
+          1. Responsable del Tratamiento de los Datos
+        </h2>
+        <ul class="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+          <li><strong>Responsable / Titular:</strong> Mela Miguel Ángel</li>
+          <li><strong>Nombre de Fantasía:</strong> Bulonera Alvear</li>
+          <li><strong>CUIT:</strong> 20-18054557-4 (IVA Responsable Inscripto)</li>
+          <li><strong>Domicilio Comercial y Legal:</strong> Av. Alvear 1301, Resistencia, Chaco, CP 3500, República Argentina</li>
+          <li><strong>Correo Electrónico de Contacto:</strong> <a href="mailto:contacto@buloneraalvear.online" class="text-primary-600 dark:text-primary-400 hover:underline">contacto@buloneraalvear.online</a></li>
+          <li><strong>Canal Oficial WhatsApp:</strong> <a href="{% url 'contact:whatsapp_lead_redirect' %}?source=legal_privacy" data-ba-lead="whatsapp_legal_privacy" target="_blank" rel="nofollow noopener noreferrer" class="text-primary-600 dark:text-primary-400 hover:underline">+54 362 473-3431</a></li>
         </ul>
       </div>
       
       <!-- Section 2 -->
       <div class="mb-6">
-        <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-          <i data-lucide="database" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
-          2. Datos personales que recopilamos
-        </h4>
-        <ul class="grid md:grid-cols-2 gap-2 mb-4">
-          <li class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-            <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
-            <span>Nombre y apellido</span>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+          <i data-lucide="database" class="w-5 h-5 text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
+          2. Datos Personales que Recopilamos
+        </h2>
+        <p class="text-sm text-slate-700 dark:text-slate-300 mb-3 leading-relaxed">
+          Recopilamos únicamente los datos necesarios y proporcionales para entablar contacto comercial, procesar solicitudes de pedido y emitir los comprobantes fiscales exigidos por ley:
+        </p>
+        <ul class="grid md:grid-cols-2 gap-2 mb-4 text-sm text-slate-700 dark:text-slate-300">
+          <li class="flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400" aria-hidden="true"></i>
+            <span>Nombre y apellido o Razón Social</span>
           </li>
-          <li class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-            <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
+          <li class="flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400" aria-hidden="true"></i>
             <span>Dirección de correo electrónico</span>
           </li>
-          <li class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-            <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
-            <span>Teléfono de contacto</span>
+          <li class="flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400" aria-hidden="true"></i>
+            <span>Teléfono de contacto o WhatsApp</span>
           </li>
-          <li class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-            <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
-            <span>Dirección de envío</span>
+          <li class="flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400" aria-hidden="true"></i>
+            <span>Dirección de entrega (si solicita flete o envío)</span>
           </li>
-          <li class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-            <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
-            <span>CUIT/CUIL o DNI</span>
+          <li class="flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400" aria-hidden="true"></i>
+            <span>CUIT/CUIL o DNI (para emisión de Factura A o B)</span>
           </li>
-          <li class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-            <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
-            <span>Condición fiscal</span>
-          </li>
-          <li class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-            <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
-            <span>Información de pago <span class="text-sm text-slate-500">(no almacenamos tarjetas)</span></span>
-          </li>
-          <li class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-            <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
-            <span>Historial de compras</span>
+          <li class="flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400" aria-hidden="true"></i>
+            <span>Condición fiscal frente al IVA</span>
           </li>
         </ul>
-        <p class="text-slate-700 dark:text-slate-300 mb-2">Esta información puede ser recopilada mediante:</p>
-        <ul class="space-y-2 text-slate-700 dark:text-slate-300">
-          <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span>Formularios del sitio web</span>
-          </li>
-          <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span>Conversaciones por WhatsApp, redes sociales o correo electrónico</span>
-          </li>
-          <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span>Operaciones comerciales y facturación</span>
-          </li>
-          <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span>Registro de usuarios en la tienda online</span>
-          </li>
-        </ul>
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          <em>Aclaración sobre medios de pago:</em> Bulonera Alvear <strong>no almacena</strong> números de tarjetas de crédito o débito, códigos de seguridad (CVV) ni credenciales bancarias. Las transacciones se realizan mediante canales bancarios o plataformas de pago seguras externas.
+        </p>
       </div>
       
       <!-- Section 3 -->
       <div class="mb-6">
-        <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-          <i data-lucide="target" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
-          3. Finalidad del tratamiento
-        </h4>
-        <ul class="space-y-2 text-slate-700 dark:text-slate-300">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+          <i data-lucide="target" class="w-5 h-5 text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
+          3. Finalidad del Tratamiento
+        </h2>
+        <ul class="space-y-2 text-sm text-slate-700 dark:text-slate-300">
           <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span>Procesar pedidos y coordinar envíos</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-0.5 flex-shrink-0" aria-hidden="true"></i>
+            <span>Gestionar reservas, solicitudes de cotización y pedidos coordinados a través del sitio web y WhatsApp.</span>
           </li>
           <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span>Emitir comprobantes fiscales</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-0.5 flex-shrink-0" aria-hidden="true"></i>
+            <span>Cumplir con las obligaciones legales de facturación electrónica y régimen tributario ante ARCA.</span>
           </li>
           <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span>Brindar atención postventa y soporte técnico</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-0.5 flex-shrink-0" aria-hidden="true"></i>
+            <span>Coordinar los envíos postales, transporte y entrega de mercadería con el cliente.</span>
           </li>
           <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span>Gestionar garantías y devoluciones</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-0.5 flex-shrink-0" aria-hidden="true"></i>
+            <span>Tramitar solicitudes de garantía, cambios voluntarios o el derecho legal de revocación (arrepentimiento).</span>
           </li>
           <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span>Enviar comunicaciones comerciales <span class="text-sm text-slate-500">(previa autorización)</span></span>
-          </li>
-          <li class="flex items-start gap-2">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-            <span>Cumplir con obligaciones legales, impositivas y contables</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-0.5 flex-shrink-0" aria-hidden="true"></i>
+            <span>Atención técnica personalizada y respuestas a consultas voluntarias enviadas por el formulario de contacto.</span>
           </li>
         </ul>
       </div>
       
-      <!-- Sections 4-7 (condensed for brevity) -->
-      <div class="space-y-6">
-        <div>
-          <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-            <i data-lucide="lock" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
-            4. Confidencialidad y seguridad
-          </h4>
-          <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
-            Todos los datos son almacenados en servidores protegidos y bases de datos gestionadas con buenas prácticas de seguridad informática. No vendemos, alquilamos ni compartimos datos personales con terceros ajenos a la operación comercial.
+      <!-- Section 4 -->
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+          <i data-lucide="lock" class="w-5 h-5 text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
+          4. Seguridad y No Cesión a Terceros
+        </h2>
+        <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+          Toda la información personal recolectada es almacenada en servidores protegidos con estrictas medidas de seguridad técnica y organizativa. Bulonera Alvear <strong>no comercializa, vende ni alquila</strong> los datos personales a terceros para su explotación comercial independiente. El tratamiento a través de proveedores de servicios tecnológicos (como herramientas de medición y analítica web o empresas de logística y transporte) se realiza estrictamente en calidad de encargados de tratamiento, bajo deber de confidencialidad y conforme a las autorizaciones otorgadas por el usuario en el banner de consentimiento (Sección 6).
+        </p>
+      </div>
+      
+      <!-- Section 5: Leyenda Canónica DNPDP / AAIP -->
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+          <i data-lucide="user-cog" class="w-5 h-5 text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
+          5. Derechos del Titular de los Datos y Órgano de Control
+        </h2>
+        <p class="text-sm text-slate-700 dark:text-slate-300 mb-3 leading-relaxed">
+          De conformidad con la Ley Nº 25.326 y las disposiciones oficiales de la autoridad regulatoria, se hace saber a todos los usuarios:
+        </p>
+        
+        <div class="bg-slate-50 dark:bg-slate-700/40 p-5 rounded-lg border-l-4 border-primary-600 dark:border-primary-400 text-sm text-slate-700 dark:text-slate-300 space-y-3">
+          <p class="font-semibold text-slate-900 dark:text-white text-xs uppercase tracking-wide">
+            Leyendas Normativas Oficiales — Disposición 10/2008 DNPDP (B.O. 18/09/2008):
+          </p>
+          <blockquote class="italic text-xs sm:text-sm text-slate-800 dark:text-slate-200 pl-3 border-l-2 border-slate-300 dark:border-slate-600">
+            <strong>Artículo 1º:</strong> "El titular de los datos personales tiene la facultad de ejercer el derecho de acceso a los mismos en forma gratuita a intervalos no inferiores a seis meses, salvo que se acredite un interés legítimo al efecto conforme lo establecido en el artículo 14, inciso 3 de la Ley Nº 25.326."
+          </blockquote>
+          <blockquote class="italic text-xs sm:text-sm text-slate-800 dark:text-slate-200 pl-3 border-l-2 border-slate-300 dark:border-slate-600">
+            <strong>Artículo 2º:</strong> "LA DIRECCION NACIONAL DE PROTECCION DE DATOS PERSONALES, Organo de Control de la Ley Nº 25.326, tiene la atribución de atender las denuncias y reclamos que se interpongan con relación al incumplimiento de las normas sobre protección de datos personales."
+          </blockquote>
+          <p class="text-xs pt-1 text-slate-600 dark:text-slate-400">
+            <em>Nota de actualización institucional:</em> En virtud del Decreto Nº 746/2017 y de la Ley Nº 27.275, las competencias y facultades como Órgano de Control de la Ley Nº 25.326 son ejercidas actualmente por la <strong>Agencia de Acceso a la Información Pública (AAIP)</strong>.
+          </p>
+          <p class="text-xs">
+            <strong>Órgano de Control Vigente:</strong> Agencia de Acceso a la Información Pública (AAIP) · Sitio Web Oficial: <a href="https://www.argentina.gob.ar/aaip/datospersonales" target="_blank" rel="noopener noreferrer" class="text-primary-600 dark:text-primary-400 font-medium hover:underline">www.argentina.gob.ar/aaip/datospersonales</a>.
+          </p>
+          <p class="text-xs">
+            Para ejercer tus derechos de acceso, actualización, rectificación o supresión de tus datos personales, podés comunicarte enviando un correo a <a href="mailto:contacto@buloneraalvear.online" class="text-primary-600 dark:text-primary-400 font-medium hover:underline">contacto@buloneraalvear.online</a> o mediante solicitud formal en Av. Alvear 1301, Resistencia, Chaco.
           </p>
         </div>
+      </div>
+      
+      <!-- Section 6: Cookies y Terceros -->
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+          <i data-lucide="cookie" class="w-5 h-5 text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
+          6. Cookies y Tecnologías de Medición
+        </h2>
+        <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
+          Nuestro sitio web utiliza cookies técnicas indispensables y tecnologías de terceros para optimizar la experiencia de navegación. El usuario dispone de un banner de configuración que le permite aceptar o rechazar de manera informada las cookies analíticas y publicitarias no esenciales:
+        </p>
         
-        <div>
-          <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-            <i data-lucide="user-cog" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
-            5. Derechos del titular de los datos
-          </h4>
-          <p class="text-slate-700 dark:text-slate-300 mb-3">De conformidad con la Ley 25.326 de Protección de Datos Personales, usted tiene derecho a:</p>
-          <ul class="grid md:grid-cols-2 gap-2">
-            <li class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-              <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
-              <span>Acceder a sus datos personales</span>
-            </li>
-            <li class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-              <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
-              <span>Rectificarlos o actualizarlos</span>
-            </li>
-            <li class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-              <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
-              <span>Solicitar la eliminación</span>
-            </li>
-            <li class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-              <i data-lucide="check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
-              <span>Revocar su consentimiento</span>
-            </li>
-          </ul>
-          <p class="text-slate-700 dark:text-slate-300 mt-3">
-            Podrá ejercer estos derechos enviando un correo a: <a href="mailto:contacto@buloneraalvear.online" class="text-primary-600 dark:text-primary-400 hover:underline">contacto@buloneraalvear.online</a>
-          </p>
-        </div>
-        
-        <div>
-          <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-            <i data-lucide="cookie" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
-            6. Cookies y tecnologías similares
-          </h4>
-          <p class="text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
-            El sitio utiliza cookies propias y de terceros. Al visitar nuestro sitio por primera vez, un banner de consentimiento le permite aceptar o rechazar las cookies no esenciales. Sus preferencias se almacenan localmente y puede modificarlas en cualquier momento.
-          </p>
-          
-          <div class="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 mb-4 border border-slate-200 dark:border-slate-700 space-y-4">
-            <div>
-              <p class="text-sm font-semibold text-slate-900 dark:text-white mb-1">Cookies esenciales (siempre activas)</p>
-              <p class="text-sm text-slate-600 dark:text-slate-400">
-                Necesarias para el funcionamiento del sitio: sesión de usuario, carrito de compras, protección CSRF y preferencias de idioma/tema. No recopilan datos personales con fines comerciales.
-              </p>
-            </div>
-            
-            <hr class="border-slate-200 dark:border-slate-700">
-            
-            <div>
-              <p class="text-sm font-semibold text-slate-900 dark:text-white mb-1">Cookies analíticas (requieren consentimiento)</p>
-              <p class="text-sm text-slate-600 dark:text-slate-400">
-                Utilizamos <strong>Google Analytics</strong>, <strong>Google Tag Manager</strong> y <strong>Microsoft Clarity</strong> para entender cómo los usuarios interactúan con el sitio, detectar problemas de usabilidad y mejorar la experiencia de navegación. Estos servicios pueden registrar datos como la dirección IP (anonimizada), páginas visitadas, duración de la sesión y tipo de dispositivo.
-              </p>
-            </div>
-            
-            <hr class="border-slate-200 dark:border-slate-700">
-            
-            <div>
-              <p class="text-sm font-semibold text-slate-900 dark:text-white mb-1">Cookies publicitarias (requieren consentimiento)</p>
-              <p class="text-sm text-slate-600 dark:text-slate-400">
-                Utilizamos <strong>Google AdSense</strong> para mostrar anuncios relevantes en el sitio. Google y sus socios publicitarios pueden utilizar cookies para personalizar los anuncios en función de visitas previas a este u otros sitios web. También utilizamos el <strong>Meta Pixel (Facebook)</strong> para medir la eficacia de campañas publicitarias en redes sociales.
-              </p>
-              <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">
-                Puede optar por no recibir publicidad personalizada de Google visitando la
-                <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" class="text-primary-600 dark:text-primary-400 hover:underline font-medium">Configuración de Anuncios de Google</a>,
-                o gestionar las cookies de publicidad de terceros en
-                <a href="https://www.aboutads.info/choices/" target="_blank" rel="noopener noreferrer" class="text-primary-600 dark:text-primary-400 hover:underline font-medium">aboutads.info</a>.
-              </p>
-            </div>
+        <div class="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 mb-4 border border-slate-200 dark:border-slate-700 space-y-3 text-sm">
+          <div>
+            <p class="font-semibold text-slate-900 dark:text-white text-xs">Cookies Técnicas y Esenciales (siempre activas)</p>
+            <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+              Requeridas para la sesión de navegación, funcionamiento del carrito de compras, protección CSRF y preferencias de visualización.
+            </p>
           </div>
-          
-          <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
-            En cualquier momento puede revocar su consentimiento eliminando la clave <code class="text-sm bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">ba_cookie_consent</code> del almacenamiento local de su navegador, o usando la opción "Solo esenciales" en el banner de cookies que aparece en su primera visita.
-          </p>
+          <hr class="border-slate-200 dark:border-slate-700">
+          <div>
+            <p class="font-semibold text-slate-900 dark:text-white text-xs">Cookies Analíticas (sujetas a consentimiento del usuario)</p>
+            <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+              Utilizamos Google Analytics y Microsoft Clarity para conocer métricas de navegación y mejorar la usabilidad del sitio. Estos servicios no se inyectan sin previa autorización en el banner.
+            </p>
+          </div>
+          <hr class="border-slate-200 dark:border-slate-700">
+          <div>
+            <p class="font-semibold text-slate-900 dark:text-white text-xs">Cookies Publicitarias (sujetas a consentimiento del usuario)</p>
+            <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+              Permiten evaluar la efectividad de campañas publicitarias mediante Meta Pixel y Google AdSense. Pueden activarse o rechazarse individualmente.
+            </p>
+          </div>
         </div>
         
-        <div>
-          <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-            <i data-lucide="refresh-cw" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
-            7. Actualizaciones
-          </h4>
-          <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
-            Esta política podrá ser modificada en cualquier momento, notificándose su nueva versión mediante publicación en el sitio web. El uso continuado de nuestros servicios implica la aceptación de estos términos.
-          </p>
-        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          Podés modificar o revocar tu consentimiento en cualquier momento utilizando el botón "Configuración de cookies" ubicado en el pie de página de nuestro sitio web.
+        </p>
       </div>
       
     </div>
     
-    <!-- Warranty Policy -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 md:p-8">
+    <!-- Warranty Policy Card -->
+    <div id="politica-garantia" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 md:p-8 scroll-mt-24">
       
-      <div class="flex items-center gap-3 mb-6">
-        <div class="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
-          <i data-lucide="award" class="w-6 h-6 text-primary-600 dark:text-primary-400"></i>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+          <i data-lucide="award" class="w-6 h-6 text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
         </div>
-        <h1 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">POLÍTICA DE GARANTÍA DE PRODUCTOS</h1>
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
+            POLÍTICA DE GARANTÍA LEGAL DE PRODUCTOS
+          </h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Garantía legal conforme a los Artículos 11 y 13 de la Ley 24.240 de Defensa del Consumidor
+          </p>
+        </div>
       </div>
       
-      <p class="text-slate-700 dark:text-slate-300 mb-6 leading-relaxed">
-        En Bulonera Alvear, ofrecemos productos de bulonería y ferretería seleccionados por su calidad y durabilidad. No obstante, entendemos que pueden surgir situaciones que requieran aplicar una garantía.
+      <p class="text-slate-700 dark:text-slate-300 text-sm mb-6 leading-relaxed">
+        En Bulonera Alvear comercializamos exclusivamente mercadería nueva (no vendemos productos usados). Todos los artículos gozan de la garantía legal obligatoria ante defectos o vicios de cualquier índole que afecten su identidad o correcto funcionamiento:
       </p>
       
-      <div class="space-y-6">
-        <div>
-          <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">1. Productos con garantía</h4>
-          <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
-            Los productos que cuenten con garantía de fábrica o marca se entregan con el correspondiente comprobante de compra y/o manual de garantía del fabricante, cuando esté disponible.
+      <div class="space-y-4 text-sm text-slate-700 dark:text-slate-300">
+        <div class="p-4 bg-slate-50 dark:bg-slate-700/40 rounded-lg border border-slate-200 dark:border-slate-600">
+          <h3 class="font-semibold text-slate-900 dark:text-white mb-1">
+            1. Plazo de Garantía Legal Obligatoria (Bienes Nuevos)
+          </h3>
+          <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            De conformidad con el <strong>Artículo 11 de la Ley 24.240</strong>, todos los productos nuevos comercializados cuentan con una garantía legal obligatoria mínima de <strong>seis (6) meses</strong> a partir de la entrega. Por imperio del <strong>Artículo 13 de la Ley 24.240</strong>, Bulonera Alvear como vendedora es solidariamente responsable de su otorgamiento y cumplimiento frente al consumidor. En los casos en que el fabricante oficial de la marca otorgue un plazo mayor (por ejemplo, herramientas eléctricas con 1 o 2 años de garantía), se aplicará el plazo más extenso y favorable para el consumidor.
           </p>
         </div>
         
-        <div>
-          <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">2. Plazos y condiciones</h4>
-          <ul class="space-y-2 text-slate-700 dark:text-slate-300">
-            <li class="flex items-start gap-2">
-              <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-              <span>El plazo de garantía dependerá del producto y de las condiciones ofrecidas por el fabricante.</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-              <span>La garantía no cubre daños por mal uso, instalación incorrecta, sobrecarga o alteración del producto.</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-              <span>En todos los casos, es necesario presentar la factura o ticket original.</span>
-            </li>
-          </ul>
+        <div class="p-4 bg-slate-50 dark:bg-slate-700/40 rounded-lg border border-slate-200 dark:border-slate-600">
+          <h3 class="font-semibold text-slate-900 dark:text-white mb-1">
+            2. Cobertura y Exclusiones
+          </h3>
+          <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-2">
+            La garantía legal cubre defectos o vicios de cualquier índole, incluso si hubieran sido ostensibles o manifiestos al momento de la compra, cuando afecten la individualización o el correcto funcionamiento de los productos adquiridos (Art. 11 Ley 24.240).
+          </p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            <em>Exclusiones legítimas:</em> Daños provocados por uso indebido o abusivo, sobrecarga que exceda las capacidades nominales del producto, negligencia manifiesta en la instalación, caídas accidentales, desgaste natural por uso periódico o intervenciones/reparaciones realizadas por personas no habilitadas por los servicios técnicos oficiales.
+          </p>
         </div>
         
-        <div>
-          <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">3. Procedimiento</h4>
-          <ul class="space-y-2 text-slate-700 dark:text-slate-300">
-            <li class="flex items-start gap-2">
-              <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-              <span>Comunicarse a través de <a href="mailto:contacto@buloneraalvear.online" class="text-primary-600 dark:text-primary-400 hover:underline">contacto@buloneraalvear.online</a> o WhatsApp.</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-              <span>Enviar fotos del producto defectuoso y una breve descripción del problema.</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <i data-lucide="chevron-right" class="w-4 h-4 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0"></i>
-              <span>Coordinar el envío del producto a nuestro local o al fabricante, según corresponda.</span>
-            </li>
-          </ul>
+        <div class="p-4 bg-slate-50 dark:bg-slate-700/40 rounded-lg border border-slate-200 dark:border-slate-600">
+          <h3 class="font-semibold text-slate-900 dark:text-white mb-1">
+            3. Procedimiento para Hacer Efectiva la Garantía
+          </h3>
+          <ol class="list-decimal list-inside space-y-1 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+            <li>Contactarse a nuestro WhatsApp oficial (+54 362 473-3431) o al correo <a href="mailto:contacto@buloneraalvear.online" class="text-primary-600 dark:text-primary-400 underline">contacto@buloneraalvear.online</a> informando el número de factura o remito de compra.</li>
+            <li>Adjuntar fotos o video breve describiendo la falla observada.</li>
+            <li>Bulonera Alvear coordinará sin cargo la revisión del producto en nuestro local de Av. Alvear 1301 o la derivación al servicio técnico oficial de la marca según corresponda.</li>
+          </ol>
         </div>
       </div>
       

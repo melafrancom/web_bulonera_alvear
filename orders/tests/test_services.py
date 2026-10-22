@@ -65,6 +65,8 @@ class TestOrderService:
         assert order.last_name == 'User'
         assert order.order_number is not None
         assert order.order_total > 0
+        assert order.terms_accepted_at is not None
+        assert order.terms_version == '2026-10'
 
     def test_create_order_empty_cart_raises_error(self, user):
         """Lanza ValueError si carrito está vacío"""

@@ -22,6 +22,11 @@ class RegistrationForm(forms.ModelForm):
         'class': 'form-control',
     }))
 
+    accept_terms = forms.BooleanField(
+        required=True,
+        error_messages={'required': 'Debés aceptar los Términos y Condiciones y la Política de Privacidad para registrarte.'}
+    )
+
     class Meta:
         model = Account
         fields = ['first_name', 'last_name', 'phone', 'email', 'password']
@@ -34,7 +39,8 @@ class RegistrationForm(forms.ModelForm):
         self.fields['phone'].widget.attrs['placeholder'] = 'Ingrese su número'
         self.fields['email'].widget.attrs['placeholder'] = 'Ingrese su email'
         for field in self.fields:
-            self.fields[field].widget.attrs['class']='form-control'
+            if field != 'accept_terms':
+                self.fields[field].widget.attrs['class']='form-control'
 
 
     def clean(self):

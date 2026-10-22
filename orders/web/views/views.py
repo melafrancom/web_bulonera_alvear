@@ -43,6 +43,23 @@ def place_order(request):
     if request.method == 'POST':
         form = OrderForm(request.POST)
         
+        # REGLA: Validación obligatoria de aceptación de Términos y Revocación Legal (Ley 24.240 y CCCN)
+        if not request.POST.get('accept_terms'):
+            messages.error(request, "Debés aceptar los Términos y Condiciones y la Política de Devoluciones y Revocación Legal para continuar.")
+            breadcrumb_items = [
+                {'name': 'Inicio', 'url': '/'},
+                {'name': 'Carrito', 'url': '/cart/'},
+                {'name': 'Checkout', 'url': None}
+            ]
+            context = {
+                'form': form,
+                'cart_items': cart_items,
+                'total': total,
+                'quantity': quantity,
+                'breadcrumb_items': breadcrumb_items,
+            }
+            return render(request, 'cart/checkout.html', context)
+
         if form.is_valid():
             try:
                 # Obtener IP

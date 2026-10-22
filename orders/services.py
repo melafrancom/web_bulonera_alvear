@@ -12,6 +12,7 @@ from django.db import transaction
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 from .models import Order, Payment, OrderProduct
 from cart.models import CartItem
@@ -95,6 +96,8 @@ class OrderService:
             state=form_data.get('state', ''),
             order_note=form_data.get('order_note', ''),
             order_total=total,
+            terms_accepted_at=timezone.now(),
+            terms_version='2026-10',
             ip=ip_address or ''
         )
         

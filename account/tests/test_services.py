@@ -38,6 +38,8 @@ class TestAccountRegistrationService:
         assert user.email == 'test@example.com'
         assert user.first_name == 'Test'
         assert user.last_name == 'User'
+        assert user.terms_accepted_at is not None
+        assert user.terms_version == '2026-10'
         assert user.phone == '1234567890'
         assert user.username.startswith('test_')
         assert UserProfile.objects.filter(user=user).exists()

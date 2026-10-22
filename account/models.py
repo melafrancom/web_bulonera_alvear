@@ -60,6 +60,10 @@ class Account(AbstractBaseUser):
     is_admin = models.BooleanField(default=False)
     is_superadmin = models.BooleanField(default=False)
     
+    # Evidencia legal de aceptación de Términos y Privacidad (Ley 25.326 y Ley 24.240)
+    terms_accepted_at = models.DateTimeField(null=True, blank=True, verbose_name='Fecha de Aceptación de Términos')
+    terms_version = models.CharField(max_length=20, default='2026-10', blank=True, verbose_name='Versión de Términos Aceptada')
+    
     # Campos requeridos
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']

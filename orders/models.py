@@ -67,6 +67,10 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    # Evidencia legal de aceptación de Términos y Revocación Legal (Ley 24.240 y CCCN)
+    terms_accepted_at = models.DateTimeField(null=True, blank=True, verbose_name='Fecha de Aceptación de Términos')
+    terms_version = models.CharField(max_length=20, default='2026-10', blank=True, verbose_name='Versión de Términos Aceptada')
+    
     
     def full_name(self):
         return f'{self.first_name} {self.last_name}'

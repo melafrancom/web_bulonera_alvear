@@ -242,12 +242,28 @@
                         <input 
                             type="checkbox"
                             id="terms"
+                            name="accept_terms"
                             x-model="agreedTerms"
+                            required
                             class="w-4 h-4 border-slate-300 rounded focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 mt-1">
                         <label for="terms" class="text-sm text-slate-600 dark:text-slate-400">
-                            Acepto los <a href="#" class="text-blue-600 hover:text-blue-700 dark:text-blue-400">términos y condiciones</a>
+                            Acepto los <a href="{% url 'terms_and_conditions' %}" target="_blank" class="text-blue-600 hover:underline dark:text-blue-400">Términos y Condiciones</a> y la <a href="{% url 'privacy_and_warranty' %}#politica-privacidad" target="_blank" class="text-blue-600 hover:underline dark:text-blue-400">Política de Privacidad</a>
                             <span class="text-red-500">*</span>
                         </label>
+                    </div>
+
+                    <!-- Nota de Protección de Datos Personales (Disp. 10/2008) -->
+                    <div class="p-3 bg-slate-50 dark:bg-slate-700/40 rounded-lg border border-slate-200 dark:border-slate-600 text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed space-y-1 mt-2">
+                        <p class="font-medium text-slate-700 dark:text-slate-300">
+                            <i data-lucide="shield" class="w-3.5 h-3.5 inline mr-1 text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
+                            Tus datos se registran para gestionar tu cuenta conforme a la Ley Nº 25.326.
+                        </p>
+                        <p>
+                            <em>"El titular de los datos personales tiene la facultad de ejercer el derecho de acceso a los mismos en forma gratuita a intervalos no inferiores a seis meses..."</em> (Art. 1º Disp. 10/2008 DNPDP).
+                        </p>
+                        <p>
+                            La <strong>Agencia de Acceso a la Información Pública (AAIP)</strong>, Órgano de Control de la Ley Nº 25.326, tiene la atribución de atender denuncias y reclamos (Art. 2º Disp. 10/2008 DNPDP; Dec. 746/2017).
+                        </p>
                     </div>
                     
                     <!-- Submit Button -->

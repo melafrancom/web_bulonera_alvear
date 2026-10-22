@@ -82,3 +82,31 @@ class TestAuthLoadingStates:
         assert ":disabled=\"submitting || !isValid\"" in content
         assert "#D42B1E" in content
         assert "Creando cuenta..." in content
+
+    def test_register_form_requires_accept_terms(self):
+        """REGLA LEGAL: RegistrationForm rechaza registros sin aceptar Términos y Privacidad."""
+        from account.web.forms import RegistrationForm
+
+        # Caso sin accept_terms
+        form_invalid = RegistrationForm(data={
+            'first_name': 'Pedro',
+            'last_name': 'Gómez',
+            'email': 'pedro@example.com',
+            'phone': '12345678',
+            'password': 'StrongPassword123!',
+            'confirm_password': 'StrongPassword123!',
+        })
+        assert not form_invalid.is_valid()
+        assert 'accept_terms' in form_invalid.errors
+
+        # Caso con accept_terms válido
+        form_valid = RegistrationForm(data={
+            'first_name': 'Pedro',
+            'last_name': 'Gómez',
+            'email': 'pedro@example.com',
+            'phone': '12345678',
+            'password': 'StrongPassword123!',
+            'confirm_password': 'StrongPassword123!',
+            'accept_terms': True,
+        })
+        assert form_valid.is_valid()

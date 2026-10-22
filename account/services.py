@@ -17,6 +17,7 @@ from django.utils.encoding import force_bytes
 from django.core.mail import EmailMessage
 from django.conf import settings
 from django.db.models import QuerySet
+from django.utils import timezone
 
 from account.models import Account, UserProfile
 
@@ -49,6 +50,8 @@ class AccountRegistrationService:
             password=password
         )
         user.phone = phone
+        user.terms_accepted_at = timezone.now()
+        user.terms_version = '2026-10'
         user.save()
         
         # Crear perfil de usuario

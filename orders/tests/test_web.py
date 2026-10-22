@@ -290,7 +290,7 @@ class TestPlaceOrderCheckoutFlow:
             'first_name': 'Juan', 'last_name': 'Perez', 'phone': '+5493624112233',
             'email': user.email, 'delivery_type': 'shipping', 'address_line_1': 'Calle Falsa 123',
             'country': 'Argentina', 'city': 'Resistencia', 'state': 'Chaco',
-            'invoice_type': 'B'
+            'invoice_type': 'B', 'accept_terms': 'on'
         }
         response = client_with_user.post(url, post_data)
         assert response.status_code == 302
@@ -314,11 +314,33 @@ class TestPlaceOrderCheckoutFlow:
         )
 
         url = reverse('orders:place_orders')
-        # Formulario deliberadamente inválido
-        response = client_with_user.post(url, {'first_name': ''})
+        # Formulario deliberadamente inválido con accept_terms activo para evaluar validación de campos
+        response = client_with_user.post(url, {'first_name': '', 'accept_terms': 'on'})
         assert response.status_code == 200
         assert 'cart/checkout.html' in [t.name for t in response.templates if t.name]
         assert 'form' in response.context
         assert response.context['form'].errors
         assert list(response.context['cart_items']) == [item]
+
+    def test_place_order_post_missing_accept_terms_renders_checkout_with_error(self, client_with_user, user, product):
+        """REGLA LEGAL: Si el usuario no tildó accept_terms, la orden se rechaza en servidor."""
+        from cart.models import Cart, CartItem
+        from django.contrib.messages import get_messages
+        cart = Cart.objects.create(cart_id=f'cart-terms-err-{user.id}')
+        CartItem.objects.create(
+            cart=cart, user=user, product=product,
+            quantity=1, is_active=True, purchase_price=product.price
+        )
+
+        url = reverse('orders:place_orders')
+        post_data = {
+            'first_name': 'Juan', 'last_name': 'Perez', 'phone': '+5493624112233',
+            'email': user.email, 'delivery_type': 'pickup', 'invoice_type': 'B'
+            # deliberadamente sin accept_terms
+        }
+        response = client_with_user.post(url, post_data)
+        assert response.status_code == 200
+        assert 'cart/checkout.html' in [t.name for t in response.templates if t.name]
+        messages = list(get_messages(response.wsgi_request))
+        assert any("Términos y Condiciones" in str(m) for m in messages)
 
