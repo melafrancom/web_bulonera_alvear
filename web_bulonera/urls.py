@@ -30,6 +30,7 @@ from . import views
 from store.sitemaps import ProductSitemap, CategorySitemap, SubCategorySitemap
 from blog.sitemaps import sitemaps as blog_sitemaps
 from store.web.views import views as store_views  # Fase 1 - SEO Refactoring
+from orders.web.views.views import arrepentimiento_view
 
 # Sitemaps configuration
 sitemaps = {
@@ -86,6 +87,7 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     
     #Others:
+    path('arrepentimiento/', arrepentimiento_view, name='root_arrepentimiento'),
     path('return-policy/', views.returnPolicy, name='return_policy'),
     path('terms-and-conditions/', views.termsAndConditions, name='terms_and_conditions'),
     path('privacy-and-warranty/', views.privacyAndwarranty, name='privacy_and_warranty'),

@@ -131,7 +131,7 @@
             {% if order.delivery_type == 'pickup' %}
               <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Punto de Retiro</p>
               <p class="text-slate-900 dark:text-white font-medium">Bulonera Alvear — Av. Alvear 1301, Resistencia, Chaco</p>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Horario: Lun a Vie 8:00-12:30 y 15:30-20:00 · Sáb 8:00-13:00</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Horario de retiro: {{ business_hours.short|default:"Lun a Vie 08:00–20:00 · Sáb 08:00–13:00 y 16:00–18:30" }}</p>
             {% elif order.delivery_type == 'shipping' %}
               <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Dirección de Envío</p>
               <p class="text-slate-900 dark:text-white font-medium">{{ order.full_address }}</p>

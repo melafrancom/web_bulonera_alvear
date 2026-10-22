@@ -9,13 +9,14 @@ import json
 import logging
 from django.conf import settings
 
-from orders.models import Order, OrderProduct
-from orders.web.forms import OrderForm
+from orders.models import Order, OrderProduct, OrderRevocation
+from orders.web.forms import OrderForm, OrderRevocationForm
 from orders.services import (
     OrderService,
     PaymentService,
     CheckoutService,
-    WhatsAppService
+    WhatsAppService,
+    RevocationService
 )
 from tracking.services import MetaCapiService
 from cart.models import CartItem
@@ -334,3 +335,42 @@ def whatsapp_redirect(request):
     except Order.DoesNotExist:
         messages.warning(request, "Orden no encontrada")
         return redirect('account:my_orders')
+
+
+def arrepentimiento_view(request):
+    """
+    Vista pública para el ejercicio del derecho legal de revocación
+    (Botón de Arrepentimiento - Disposición 954/2025 y Ley 24.240 art. 34).
+    Accesible sin autenticación ni registro previo.
+    """
+    # Resolución segura de la IP del cliente para monitoreo volátil
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        client_ip = x_forwarded_for.split(',')[0].strip()
+    else:
+        client_ip = request.META.get('REMOTE_ADDR', '')
+
+    if request.method == 'POST':
+        form = OrderRevocationForm(request.POST)
+        if form.is_valid():
+            revocation = RevocationService.create_revocation(
+                data=form.cleaned_data,
+                origin='web',
+                client_ip=client_ip
+            )
+            context = {
+                'revocation': revocation,
+                'submitted': True,
+                'page_title': 'Solicitud Registrada — Botón de Arrepentimiento',
+            }
+            return render(request, 'orders/arrepentimiento.html', context)
+    else:
+        form = OrderRevocationForm()
+
+    context = {
+        'form': form,
+        'submitted': False,
+        'page_title': 'Botón de Arrepentimiento — Bulonera Alvear',
+    }
+    return render(request, 'orders/arrepentimiento.html', context)
+

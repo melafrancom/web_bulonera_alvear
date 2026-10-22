@@ -155,9 +155,12 @@ def llms_txt(request):
     """
     from category.models import Category
     from blog.models import PostTag
+    from web_bulonera.business_hours import get_business_hours_data
     
     categories = Category.objects.all()
     blog_tags = PostTag.objects.filter(posts__is_published=True).distinct()
+    bh_data = get_business_hours_data()
+    bh_short = bh_data.get('short', 'Lunes a Viernes 08:00–20:00, Sábados 08:00–13:00 y 16:00–18:30')
     
     lines = [
         "# Bulonera Alvear — Ferretería Industrial y Bulonería Técnica",
@@ -170,7 +173,7 @@ def llms_txt(request):
         "- **Nombre comercial:** Bulonera Alvear",
         "- **Ubicación:** Av. Alvear 1301, Resistencia, Chaco (C.P. H3500), Argentina",
         "- **Contacto:** WhatsApp +54 362 473-3431 | contacto@buloneraalvear.online",
-        "- **Horario de atención:** Lunes a Viernes 08:00-19:30, Sábados 08:00-13:00",
+        f"- **Horario de atención:** {bh_short}",
         "- **Régimen fiscal/Facturación:** Factura A y B disponible para empresas y particulares",
         "- **Página Web Principal:** https://buloneraalvear.online",
         "",
@@ -197,7 +200,7 @@ def llms_txt(request):
         "## Diferenciales Competitivos",
         "1. **Stock técnico especializado:** Variedad y profundidad en bulonería técnica por norma, grado y rosca (difíciles de conseguir).",
         "2. **Asesoramiento profesional:** Orientación especializada en la selección de anclajes, torques recomendados y compatibilidad galvánica.",
-        "3. **Cotización rápida por WhatsApp:** Respuesta y presupuesto formalizado en menos de 15 minutos al WhatsApp +54 362 473-3431.",
+        "3. **Cotización ágil por WhatsApp:** Asesoramiento técnico y cotización personalizada durante horario comercial al WhatsApp +54 362 473-3431.",
         "4. **Logística ágil en el NEA:** Despacho diario a Chaco, Corrientes, Formosa y Misiones.",
         "5. **Precios mayoristas:** Condiciones comerciales por volumen para constructoras, metalúrgicas y obras públicas.",
         "",

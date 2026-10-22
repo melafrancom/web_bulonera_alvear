@@ -140,5 +140,172 @@ class OrderProduct(models.Model):
 
     def __str__(self):
         return self.product.name
+
+
+class OrderRevocation(models.Model):
+    """
+    Modela las solicitudes de revocación legal (Botón de Arrepentimiento),
+    conforme al Art. 34 de la Ley 24.240 y las Disposiciones 954/2025 y 3/2026.
+
+    Reglas de diseño:
+    - revocation_code es una referencia de gestión, inmutable y única (ARR-YYYYMMDD-XXXXXXXXXX).
+    - Simplificación: contact_method y contact_value unificados.
+    - Minimización de datos: NO persiste la dirección IP.
+    - Auditoría de 24hs: registra canal de origen, acuse al cliente y medidas tomadas.
+    """
+    ORIGIN_CHOICES = (
+        ('web', 'Formulario Web'),
+        ('whatsapp', 'Atención Directa WhatsApp'),
+    )
+
+    METHOD_CHOICES = (
+        ('whatsapp', 'WhatsApp / Teléfono'),
+        ('email', 'Correo electrónico'),
+    )
+
+    STATUS_CHOICES = (
+        ('pending', 'Pendiente de Atención'),
+        ('contacted', 'Contacto Iniciado'),
+        ('in_review', 'En Evaluación Logística / Producto'),
+        ('resolved', 'Revocación Efectivizada / Resuelta'),
+        ('not_eligible_exception', 'No aplica: excepción legal verificada'),
+        ('cancelled', 'Cancelada por el Cliente'),
+    )
+
+    # Código interno de gestión de la solicitud
+    revocation_code = models.CharField(
+        max_length=35,
+        unique=True,
+        db_index=True,
+        verbose_name='Código de Revocación'
+    )
+
+    origin = models.CharField(
+        max_length=15,
+        choices=ORIGIN_CHOICES,
+        default='web',
+        verbose_name='Canal de Origen'
+    )
+
+    # Identificación básica (sin DNI obligatorio)
+    customer_name = models.CharField(
+        max_length=150,
+        verbose_name='Nombre completo o Razón Social'
+    )
+    contact_method = models.CharField(
+        max_length=20,
+        choices=METHOD_CHOICES,
+        default='whatsapp',
+        verbose_name='Medio de Contacto'
+    )
+    contact_value = models.CharField(
+        max_length=150,
+        verbose_name='Teléfono o Correo según medio'
+    )
+
+    # Referencias comerciales opcionales
+    order_reference = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Número de pedido o factura informado'
+    )
+    order = models.ForeignKey(
+        'Order',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='revocations',
+        verbose_name='Orden vinculada en sistema'
+    )
+    details = models.TextField(
+        blank=True,
+        verbose_name='Detalles o comentarios del consumidor'
+    )
+
+    exception_basis = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Excepción legal evaluada'
+    )
+    exception_reason = models.TextField(
+        blank=True,
+        verbose_name='Fundamento documentado de la excepción'
+    )
+
+    # Auditoría del cumplimiento legal de las 24 horas
+    acknowledgment_sent = models.BooleanField(
+        default=False,
+        verbose_name='Acuse de código emitido al cliente'
+    )
+    acknowledgment_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha/hora de emisión del acuse'
+    )
+    acknowledgment_channel = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='Canal por el que se emitió el acuse'
+    )
+    acknowledged_by = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='acknowledged_revocations',
+        verbose_name='Operador que envió el acuse manual'
+    )
+    measures_taken = models.BooleanField(
+        default=False,
+        verbose_name='Medidas operativas adoptadas (< 24hs)'
+    )
+    measures_description = models.TextField(
+        blank=True,
+        verbose_name='Descripción de las medidas operativas iniciadas'
+    )
+    measures_taken_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha/hora de la primera medida operativa'
+    )
+    handled_by = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='handled_revocations',
+        verbose_name='Operador asignado'
+    )
+    contacted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha/hora del primer contacto'
+    )
+
+    # Gestión de estados y resolución
+    status = models.CharField(
+        max_length=25,
+        choices=STATUS_CHOICES,
+        default='pending',
+        db_index=True,
+        verbose_name='Estado'
+    )
+    internal_notes = models.TextField(
+        blank=True,
+        verbose_name='Notas internas de seguimiento'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de solicitud')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Última actualización')
+    resolved_at = models.DateTimeField(null=True, blank=True, verbose_name='Fecha de resolución')
+
+    class Meta:
+        verbose_name = 'Solicitud de Arrepentimiento'
+        verbose_name_plural = 'Solicitudes de Arrepentimiento'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.revocation_code} — {self.customer_name} ({self.get_origin_display()})"
+
     
 

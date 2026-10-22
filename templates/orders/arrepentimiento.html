@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title|default:"Botón de Arrepentimiento — Bulonera Alvear" }}{% endblock %}
+
+{% block meta %}
+<meta name="robots" content="noindex, follow">
+<meta name="description" content="Formulario oficial del Botón de Arrepentimiento de Bulonera Alvear conforme a la Ley 24.240 y la Disposición 954/2025.">
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-soft-bg dark:bg-slate-900 py-10 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-2xl mx-auto">
+
+    <!-- Breadcrumb accesible -->
+    <nav aria-label="Breadcrumb" class="mb-6">
+      <ol class="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
+        <li><a href="{% url 'home' %}" class="hover:text-primary-600 transition-colors">Inicio</a></li>
+        <li><span class="mx-1">/</span></li>
+        <li class="font-semibold text-slate-800 dark:text-slate-200" aria-current="page">Botón de Arrepentimiento</li>
+      </ol>
+    </nav>
+
+    {% if submitted and revocation %}
+    <!-- ================================================================= -->
+    <!-- ESTADO 2: ACUSE INMEDIATO EN PANTALLA (Disposición 954/2025) -->
+    <!-- ================================================================= -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 sm:p-8" x-data="{ copied: false }">
+      <div class="flex items-center justify-center w-14 h-14 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-full mx-auto mb-5">
+        <i data-lucide="check-circle-2" class="w-8 h-8"></i>
+      </div>
+
+      <h1 class="text-2xl sm:text-3xl font-heading font-bold text-center text-slate-900 dark:text-white mb-2">
+        Solicitud de Revocación Registrada
+      </h1>
+      <p class="text-sm text-center text-slate-600 dark:text-slate-400 mb-6">
+        Tu trámite ha sido registrado con éxito conforme al Art. 34 de la Ley 24.240 y la Disposición 954/2025.
+      </p>
+
+      <!-- Código de Gestión Destacado -->
+      <div class="bg-slate-50 dark:bg-slate-900/60 rounded-xl p-5 mb-6 border border-slate-200 dark:border-slate-700 text-center">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+          Código de Gestión Asignado
+        </span>
+        <div class="flex items-center justify-center gap-3">
+          <span class="font-mono text-2xl sm:text-3xl font-bold text-[#1B3A5C] dark:text-blue-400 select-all tabular-nums tracking-wide">
+            {{ revocation.revocation_code }}
+          </span>
+          <button type="button"
+                  @click="navigator.clipboard.writeText('{{ revocation.revocation_code }}'); copied = true; setTimeout(() => copied = false, 2500)"
+                  class="p-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
+                  title="Copiar código al portapapeles"
+                  aria-label="Copiar código de gestión">
+            <i x-show="!copied" data-lucide="copy" class="w-5 h-5"></i>
+            <i x-show="copied" data-lucide="check" class="w-5 h-5 text-emerald-500" style="display: none;"></i>
+          </button>
+        </div>
+        <p x-show="copied" class="text-xs text-emerald-600 dark:text-emerald-400 mt-2 font-medium" style="display: none;">
+          ¡Código copiado al portapapeles!
+        </p>
+      </div>
+
+      <!-- Información Operativa de Seguimiento -->
+      <div class="space-y-4 text-sm text-slate-700 dark:text-slate-300 bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-xl border border-slate-100 dark:border-slate-800 mb-6">
+        <div class="flex items-start gap-3">
+          <i data-lucide="clock" class="w-5 h-5 text-[#1B3A5C] dark:text-blue-400 flex-shrink-0 mt-0.5"></i>
+          <div>
+            <strong class="text-slate-900 dark:text-white block font-heading">Gestión Comercial en Horario Habitual</strong>
+            <span>
+              Conservá tu código de gestión. Nuestro equipo comercial tomará contacto a través de tu medio elegido (<strong>{{ revocation.get_contact_method_display }}</strong>: <em>{{ revocation.contact_value }}</em>) durante el horario de atención para arbitrar las medidas de devolución o retiro del producto y la gestión de reintegro.
+            </span>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3">
+          <i data-lucide="shield-check" class="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5"></i>
+          <div>
+            <strong class="text-slate-900 dark:text-white block font-heading">Validez Legal del Acuse</strong>
+            <span>
+              La emisión y exhibición en pantalla de este código constituye constancia fehaciente de la recepción de tu manifestación unilateral de arrepentimiento.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acciones de Navegación -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <a href="{% url 'store:store' %}" 
+           class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-[#1B3A5C] hover:bg-[#142c47] text-white font-semibold text-sm transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          <span>Volver al Catálogo</span>
+        </a>
+        <a href="{% url 'return_policy' %}" 
+           class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-semibold transition-colors">
+          <i data-lucide="file-text" class="w-4 h-4"></i>
+          <span>Consultar Política de Devoluciones</span>
+        </a>
+      </div>
+    </div>
+
+    {% else %}
+    <!-- ================================================================= -->
+    <!-- ESTADO 1: FORMULARIO PÚBLICO DE ARREPENTIMIENTO -->
+    <!-- ================================================================= -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 sm:p-8">
+      
+      <!-- Encabezado -->
+      <div class="border-b border-slate-100 dark:border-slate-700 pb-5 mb-6">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 dark:bg-red-950/40 text-[#D42B1E] dark:text-red-400 text-xs font-bold tracking-wider uppercase mb-3">
+          <i data-lucide="undo-2" class="w-3.5 h-3.5"></i>
+          <span>Derecho de Revocación Legal</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-heading font-bold text-slate-900 dark:text-white">
+          Botón de Arrepentimiento
+        </h1>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+          Conforme al Art. 34 de la Ley 24.240 de Defensa del Consumidor y las Disposiciones 954/2025 y 3/2026, tenés derecho a revocar la aceptación de tu compra a distancia dentro de los <strong>10 (diez) días corridos</strong> contados a partir de la entrega del bien o de la celebración del contrato, lo que ocurra último, sin costo ni penalidad alguna.
+        </p>
+      </div>
+
+      <!-- Formulario -->
+      <form method="POST" action="{% url 'orders:arrepentimiento' %}" class="space-y-5" novalidate>
+        {% csrf_token %}
+
+        <!-- Honeypot anti-spam (invisible para humanos) -->
+        <div class="hidden" aria-hidden="true">
+          {{ form.website }}
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm" role="alert">
+          {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <!-- Campo: Nombre y Apellido -->
+        <div>
+          <label for="{{ form.customer_name.id_for_label }}" class="block text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
+            Nombre y Apellido o Razón Social <span class="text-red-500" aria-hidden="true">*</span>
+          </label>
+          {{ form.customer_name }}
+          {% if form.customer_name.errors %}
+          <p class="mt-1 text-xs text-red-600 dark:text-red-400 font-medium" role="alert">
+            {{ form.customer_name.errors|first }}
+          </p>
+          {% endif %}
+        </div>
+
+        <!-- Campo: Medio de Contacto -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">
+            Medio por el cual preferís que te contactemos <span class="text-red-500" aria-hidden="true">*</span>
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {% for radio in form.contact_method %}
+            <label class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 cursor-pointer hover:border-[#1B3A5C] dark:hover:border-blue-400 transition-colors">
+              {{ radio.tag }}
+              <span class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ radio.choice_label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          {% if form.contact_method.errors %}
+          <p class="mt-1 text-xs text-red-600 dark:text-red-400 font-medium" role="alert">
+            {{ form.contact_method.errors|first }}
+          </p>
+          {% endif %}
+        </div>
+
+        <!-- Campo: Valor de Contacto (Teléfono o Email) -->
+        <div>
+          <label for="{{ form.contact_value.id_for_label }}" class="block text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
+            Teléfono / WhatsApp o Correo electrónico <span class="text-red-500" aria-hidden="true">*</span>
+          </label>
+          {{ form.contact_value }}
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Indica tu número con código de área (ej. 3624733431) o tu dirección de email según el medio seleccionado arriba.
+          </p>
+          {% if form.contact_value.errors %}
+          <p class="mt-1 text-xs text-red-600 dark:text-red-400 font-medium" role="alert">
+            {{ form.contact_value.errors|first }}
+          </p>
+          {% endif %}
+        </div>
+
+        <!-- Campo: Referencia de Pedido (Opcional) -->
+        <div>
+          <label for="{{ form.order_reference.id_for_label }}" class="block text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
+            Número de pedido o factura <span class="text-xs text-slate-500 dark:text-slate-400 font-normal">(Opcional)</span>
+          </label>
+          {{ form.order_reference }}
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Si tenés a mano el número de orden o comprobante de compra, agilizará la localización de tu compra.
+          </p>
+          {% if form.order_reference.errors %}
+          <p class="mt-1 text-xs text-red-600 dark:text-red-400 font-medium" role="alert">
+            {{ form.order_reference.errors|first }}
+          </p>
+          {% endif %}
+        </div>
+
+        <!-- Campo: Comentarios / Motivo (Opcional) -->
+        <div>
+          <label for="{{ form.details.id_for_label }}" class="block text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
+            Aclaraciones adicionales <span class="text-xs text-slate-500 dark:text-slate-400 font-normal">(Opcional)</span>
+          </label>
+          {{ form.details }}
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Podés especificar artículos a devolver o aclaraciones operativas. No es obligatorio fundamentar el motivo.
+          </p>
+          {% if form.details.errors %}
+          <p class="mt-1 text-xs text-red-600 dark:text-red-400 font-medium" role="alert">
+            {{ form.details.errors|first }}
+          </p>
+          {% endif %}
+        </div>
+
+        <!-- Botón de Envío -->
+        <div class="pt-2">
+          <button type="submit" 
+                  class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-lg bg-[#D42B1E] hover:bg-[#B82419] text-white font-semibold text-sm transition-colors duration-150 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#D42B1E]">
+            <i data-lucide="undo-2" class="w-4 h-4"></i>
+            <span>Confirmar Revocación de Compra</span>
+          </button>
+        </div>
+
+        <!-- Leyenda Legal de Protección de Datos Personales (Disp. 10/2008 DNPDP / AAIP) -->
+        <div class="border-t border-slate-100 dark:border-slate-700/80 pt-4 mt-6 text-xs text-slate-500 dark:text-slate-400 space-y-2">
+          <p>
+            <strong>Protección de Datos Personales (Disposición 10/2008 DNPDP):</strong> "El titular de los datos personales tiene la facultad de ejercer el derecho de acceso a los mismos en forma gratuita a intervalos no inferiores a seis meses, salvo que se acredite un interés legítimo al efecto conforme lo establecido en el artículo 14, inciso 3 de la Ley Nº 25.326."
+          </p>
+          <p>
+            "La AGENCIA DE ACCESO A LA INFORMACIÓN PÚBLICA (órgano de control de la Ley Nº 25.326) tiene la atribución de atender las denuncias y reclamos que se interpongan con relación al incumplimiento de las normas sobre protección de datos personales."
+          </p>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

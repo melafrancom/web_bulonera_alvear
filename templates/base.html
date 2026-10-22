@@ -230,26 +230,7 @@
         "longitude": -59.00549753201314
       },
       "hasMap": "https://www.google.com/maps/?cid=5589626616767849255",
-      "openingHoursSpecification": [
-        {
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-          "opens": "08:00",
-          "closes": "20:00"
-        },
-        {
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": "Saturday",
-          "opens": "08:00",
-          "closes": "13:00"
-        },
-        {
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": "Saturday",
-          "opens": "16:00",
-          "closes": "18:30"
-        }
-      ],
+      "openingHoursSpecification": {{ business_hours.schema_specifications_json|default:"[]"|safe }},
       "contactPoint": {
         "@type": "ContactPoint",
         "telephone": "+543624733431",

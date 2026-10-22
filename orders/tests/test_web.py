@@ -344,3 +344,91 @@ class TestPlaceOrderCheckoutFlow:
         messages = list(get_messages(response.wsgi_request))
         assert any("Términos y Condiciones" in str(m) for m in messages)
 
+
+@pytest.mark.django_db
+class TestArrepentimientoView:
+    """Tests para Botón de Arrepentimiento (Disposiciones 954/2025 y 3/2026)."""
+
+    def test_get_arrepentimiento_canonical_and_root_urls(self, client):
+        """GET /orders/arrepentimiento/ y /arrepentimiento/ devuelven 200 OK."""
+        url_canonical = reverse('orders:arrepentimiento')
+        url_root = reverse('root_arrepentimiento')
+        
+        resp1 = client.get(url_canonical)
+        assert resp1.status_code == 200
+        assert 'orders/arrepentimiento.html' in [t.name for t in resp1.templates if t.name]
+        assert 'Botón de Arrepentimiento' in resp1.content.decode('utf-8')
+        
+        resp2 = client.get(url_root)
+        assert resp2.status_code == 200
+
+    def test_post_valid_whatsapp_creates_revocation_and_displays_code(self, client):
+        """POST válido crea la solicitud y muestra el código real inmediatamente."""
+        from orders.models import OrderRevocation
+        url = reverse('orders:arrepentimiento')
+        payload = {
+            'customer_name': 'Esteban Quito',
+            'contact_method': 'whatsapp',
+            'contact_value': '3624556677',
+            'order_reference': '202610221',
+            'details': 'Compré por error dos unidades',
+            'website': '',  # Honeypot vacío
+        }
+        response = client.post(url, payload)
+        assert response.status_code == 200
+        assert 'revocation' in response.context
+        revocation = response.context['revocation']
+        assert revocation.customer_name == 'Esteban Quito'
+        assert revocation.contact_method == 'whatsapp'
+        assert revocation.contact_value == '3624556677'
+        assert revocation.origin == 'web'
+        assert revocation.acknowledgment_sent is True
+        assert revocation.revocation_code in response.content.decode('utf-8')
+        assert OrderRevocation.objects.filter(revocation_code=revocation.revocation_code).exists()
+
+    def test_post_valid_email_creates_revocation(self, client):
+        """POST válido con correo electrónico como medio de contacto."""
+        url = reverse('orders:arrepentimiento')
+        payload = {
+            'customer_name': 'Lucia Mendez',
+            'contact_method': 'email',
+            'contact_value': 'lucia@example.com',
+            'order_reference': '',
+            'details': '',
+            'website': '',
+        }
+        response = client.post(url, payload)
+        assert response.status_code == 200
+        assert response.context['revocation'] is not None
+
+    def test_post_honeypot_rejects_and_creates_no_record(self, client):
+        """# REGLA: Si honeypot viene lleno, rechaza y NUNCA emite código falso ni persiste."""
+        from orders.models import OrderRevocation
+        url = reverse('orders:arrepentimiento')
+        initial_count = OrderRevocation.objects.count()
+        payload = {
+            'customer_name': 'Bot Spammer',
+            'contact_method': 'whatsapp',
+            'contact_value': '123456789',
+            'website': 'https://spamsite.xyz',  # Honeypot completado
+        }
+        response = client.post(url, payload)
+        assert response.status_code == 200
+        assert 'form' in response.context
+        assert response.context['form'].errors
+        assert OrderRevocation.objects.count() == initial_count
+        assert 'revocation' not in response.context
+
+    def test_post_invalid_phone_shows_validation_error(self, client):
+        """Validación de teléfono con menos de 7 dígitos genera error."""
+        url = reverse('orders:arrepentimiento')
+        payload = {
+            'customer_name': 'Juan',
+            'contact_method': 'whatsapp',
+            'contact_value': '123',  # Inválido
+        }
+        response = client.post(url, payload)
+        assert response.status_code == 200
+        assert 'contact_value' in response.context['form'].errors
+
+

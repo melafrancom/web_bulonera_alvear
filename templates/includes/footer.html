@@ -88,6 +88,13 @@
                             <span>Nuestra misión, visión e historia</span>
                         </a>
                     </li>
+                    <li class="pt-2">
+                        <a href="{% url 'orders:arrepentimiento' %}" 
+                           class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-red-500/60 bg-red-950/30 text-red-300 hover:bg-red-900/50 hover:text-white text-xs font-bold tracking-wide uppercase transition-colors duration-150">
+                            <i data-lucide="undo-2" class="w-4 h-4 text-red-400"></i>
+                            <span>BOTÓN DE ARREPENTIMIENTO</span>
+                        </a>
+                    </li>
                 </ul>
             </div>
             
@@ -98,7 +105,7 @@
                     <li class="flex items-start gap-3">
                         <a href="{% url 'location' %}" class="text-sm hover:text-white transition-colors flex items-center gap-2">
                             <i data-lucide="map-pin" class="w-5 h-5 text-primary-400 flex-shrink-0 mt-0.5"></i>
-                            <span class="text-sm">Resistencia, Chaco, Argentina</span>
+                            <span class="text-sm">Av. Alvear 1301, Resistencia, Chaco</span>
                         </a>
                     </li>
                     <li class="flex items-start gap-3">
@@ -116,8 +123,15 @@
                     <li class="flex items-start gap-3">
                         <i data-lucide="clock" class="w-5 h-5 text-primary-400 flex-shrink-0 mt-0.5"></i>
                         <div class="flex flex-col text-sm text-slate-400">
-                            <span>Lun - Vie: 08:00 - 20:00 (Corrido)</span>
-                            <span>Sáb: 08:00 - 13:00 y 16:00 - 18:30</span>
+                            {% if business_hours.lines %}
+                                {% for line in business_hours.lines %}
+                                    <span>{{ line.label }}: {{ line.hours }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span>Lun - Vie: 08:00 - 20:00 (Corrido)</span>
+                                <span>Sáb: 08:00 - 13:00 y 16:00 - 18:30</span>
+                                <span>Domingos y feriados cerrado</span>
+                            {% endif %}
                         </div>
                     </li>
                 </ul>
@@ -128,20 +142,32 @@
     <!-- Bottom Bar -->
     <div class="border-t border-slate-800">
         <div class="container mx-auto px-4 py-6">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-400">
-                <div class="space-y-1 text-center md:text-left">
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-6 text-sm text-slate-400">
+                <div class="space-y-2 text-center lg:text-left">
                     <p>
                         © {{ current_year|default:"2026" }} Bulonera Alvear. Todos los derechos reservados.
                     </p>
                     <p class="text-xs text-slate-500">
                         MELA MIGUEL ANGEL | CUIT: 20180545574 | Responsable Inscripto IVA
                     </p>
+                    <div class="text-xs text-slate-500 space-y-1">
+                        <p>
+                            <a href="https://www.argentina.gob.ar/servicio/iniciar-un-reclamo-ante-defensa-del-consumidor" target="_blank" rel="noopener noreferrer" class="hover:text-slate-300 underline">
+                                Defensa de las y los Consumidores — Ventanilla Federal Única (Disposición 890/2025)
+                            </a>
+                        </p>
+                        <p>
+                            Dirección de Defensa del Consumidor de la Provincia del Chaco (Ley 2068-D) · Tel: 0800-444-3346 · WhatsApp: 362 474-7346
+                        </p>
+                    </div>
                 </div>
-                <p class="flex items-center gap-2">
-                    <span>Actualizado a</span>
-                    <i data-lucide="bolt" class="w-4 h-4 text-red-500 fill-current"></i>
-                    <span>07-2026, en Chaco, Argentina</span>
-                </p>
+
+                <!-- Data Fiscal ARCA Oficial (Formulario 960/D) -->
+                <div class="flex items-center gap-4">
+                    <a href="http://qr.afip.gob.ar/?qr=iUgKCKKYh2Kk7bZmyMJnNg,," target="_F960AFIPInfo" rel="noopener noreferrer" aria-label="Formulario 960/D Data Fiscal ARCA">
+                        <img src="https://www.afip.gob.ar/images/f960/DATAWEB.jpg" border="0" alt="Formulario 960/D Data Fiscal ARCA" class="h-auto w-24 sm:w-28 max-w-full hover:opacity-90 transition-opacity">
+                    </a>
+                </div>
             </div>
         </div>
     </div>

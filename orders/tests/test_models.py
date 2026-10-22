@@ -164,3 +164,49 @@ class TestOrderProductModel:
         )
         
         assert str(order_product) == product.name
+
+
+@pytest.mark.django_db
+class TestOrderRevocationModel:
+    """Tests del modelo OrderRevocation (Botón de Arrepentimiento)."""
+
+    def test_revocation_creation_and_defaults(self):
+        """Verifica creación con campos requeridos y valores por defecto."""
+        from orders.models import OrderRevocation
+        rev = OrderRevocation.objects.create(
+            revocation_code="ARR-20261022-A1B2C3D4E5",
+            customer_name="Juan Perez",
+            contact_method="whatsapp",
+            contact_value="3624733431"
+        )
+        assert rev.status == 'pending'
+        assert rev.origin == 'web'
+        assert rev.acknowledgment_sent is False
+        assert rev.measures_taken is False
+        assert "ARR-20261022-A1B2C3D4E5" in str(rev)
+
+    def test_revocation_no_ip_address_field(self):
+        """# REGLA: Minimización de datos (Ley 25.326) - No se persiste IP en la BD."""
+        from orders.models import OrderRevocation
+        field_names = [f.name for f in OrderRevocation._meta.get_fields()]
+        assert 'ip_address' not in field_names
+        assert 'ip' not in field_names
+
+    def test_revocation_unique_code_constraint(self):
+        """El código de revocación es estrictamente único."""
+        from django.db import IntegrityError
+        from orders.models import OrderRevocation
+        OrderRevocation.objects.create(
+            revocation_code="ARR-DUPLICATE-0001",
+            customer_name="Cliente 1",
+            contact_method="whatsapp",
+            contact_value="11111111"
+        )
+        with pytest.raises(IntegrityError):
+            OrderRevocation.objects.create(
+                revocation_code="ARR-DUPLICATE-0001",
+                customer_name="Cliente 2",
+                contact_method="email",
+                contact_value="cliente2@test.com"
+            )
+

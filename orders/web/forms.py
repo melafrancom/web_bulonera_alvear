@@ -98,3 +98,95 @@ class OrderForm(forms.ModelForm):
                 cleaned_data['doc_number'] = ''.join(c for c in doc_number if '0' <= c <= '9')
 
         return cleaned_data
+
+
+class OrderRevocationForm(forms.Form):
+    """
+    Formulario público para Botón de Arrepentimiento (Disposiciones 954/2025 y 3/2026).
+    Campos mínimos: nombre y único dato de contacto (método y valor).
+    """
+    website = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'autocomplete': 'off',
+            'tabindex': '-1',
+            'aria-hidden': 'true',
+            'style': 'display: none;',
+        }),
+        label=''
+    )
+
+    customer_name = forms.CharField(
+        max_length=150,
+        required=True,
+        label="Nombre y Apellido o Razón Social",
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Ej: Juan Pérez',
+            'class': 'w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]',
+            'autocomplete': 'name',
+        }),
+        error_messages={'required': 'Por favor, ingresá tu nombre o razón social.'}
+    )
+
+    contact_method = forms.ChoiceField(
+        choices=[
+            ('whatsapp', 'WhatsApp / Teléfono'),
+            ('email', 'Correo electrónico'),
+        ],
+        initial='whatsapp',
+        required=True,
+        label="¿Por qué medio preferís que te contactemos?",
+        widget=forms.RadioSelect(attrs={'class': 'text-[#1B3A5C] focus:ring-[#1B3A5C]'})
+    )
+
+    contact_value = forms.CharField(
+        max_length=150,
+        required=True,
+        label="Teléfono / WhatsApp o Correo electrónico",
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Ej: 3624733431 o tu@email.com',
+            'class': 'w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]',
+        }),
+        error_messages={'required': 'Ingresá el dato de contacto para comunicarnos.'}
+    )
+
+    order_reference = forms.CharField(
+        max_length=100,
+        required=False,
+        label="Número de pedido o factura (opcional)",
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Ej: 202610221 (opcional, si lo tenés a mano)',
+            'class': 'w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]',
+        })
+    )
+
+    details = forms.CharField(
+        required=False,
+        label="Aclaraciones o motivo (opcional)",
+        widget=forms.Textarea(attrs={
+            'rows': 3,
+            'placeholder': 'Podés indicar los artículos a devolver o cualquier detalle relevante...',
+            'class': 'w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]',
+        })
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('website'):
+            raise forms.ValidationError("Solicitud no válida.")
+
+        method = cleaned_data.get('contact_method')
+        val = cleaned_data.get('contact_value', '').strip()
+
+        if method == 'email':
+            validator = forms.EmailField().clean
+            try:
+                validator(val)
+            except forms.ValidationError:
+                self.add_error('contact_value', 'Ingresá una dirección de correo electrónico válida.')
+        elif method == 'whatsapp':
+            digits = re.sub(r'\D', '', val)
+            if len(digits) < 7:
+                self.add_error('contact_value', 'Ingresá un número de teléfono o WhatsApp válido con código de área.')
+
+        return cleaned_data

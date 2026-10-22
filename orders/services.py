@@ -8,13 +8,15 @@ import datetime
 import urllib.parse
 from typing import Dict, List, Optional, Tuple
 from decimal import Decimal
-from django.db import transaction
+import secrets
+from django.db import transaction, IntegrityError
 from django.conf import settings
+from django.core.cache import cache
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.utils import timezone
 
-from .models import Order, Payment, OrderProduct
+from .models import Order, Payment, OrderProduct, OrderRevocation
 from cart.models import CartItem
 from store.models import Product
 from account.models import Account
@@ -468,3 +470,92 @@ class WhatsAppService:
         
         logger.info(f"Orden {order.order_number} procesada para WhatsApp")
         return payment, whatsapp_link
+
+
+class RevocationService:
+    """
+    Servicio de dominio para el registro, validación y gestión auditable
+    de revocaciones legales conforme a la Disposición 954/2025.
+    """
+    DEFAULT_RATE_ALERT_THRESHOLD = 15
+
+    @classmethod
+    def check_rate_limit(cls, client_ip: str) -> bool:
+        """
+        Señal antiabuso volátil en Redis. Usa la IP como clave temporal en caché
+        sin persistirla jamás en MariaDB ni incluirla en logs de usuario.
+        """
+        if not client_ip:
+            return False
+
+        limit = getattr(settings, 'REVOCATION_RATE_ALERT_THRESHOLD_PER_HOUR', cls.DEFAULT_RATE_ALERT_THRESHOLD)
+        key = f"orders:revocation:rate_limit:{client_ip}"
+        try:
+            cache.add(key, 0, timeout=3600)
+            count = cache.incr(key)
+        except Exception:
+            logger.warning("No se pudo consultar el umbral antiabuso de arrepentimiento")
+            return False
+        if count > limit:
+            logger.warning("Umbral antiabuso de arrepentimiento superado (count=%s, max=%s)", count, limit)
+            return True
+        return False
+
+    @classmethod
+    def generate_revocation_code(cls) -> str:
+        """
+        Genera un candidato de código de gestión ARR-YYYYMMDD-XXXXXXXXXX.
+        La unicidad la garantiza la restricción UNIQUE de MariaDB y reintentos ante IntegrityError.
+        """
+        today_str = timezone.now().strftime("%Y%m%d")
+        suffix = secrets.token_hex(5).upper()  # 10 caracteres hex aleatorios
+        return f"ARR-{today_str}-{suffix}"
+
+    @classmethod
+    def _persist_with_unique_code(cls, **fields) -> OrderRevocation:
+        """Inserta con restricción UNIQUE y reintenta candidatos ante colisión."""
+        for attempt in range(5):
+            try:
+                with transaction.atomic():
+                    return OrderRevocation.objects.create(
+                        revocation_code=cls.generate_revocation_code(),
+                        **fields
+                    )
+            except IntegrityError:
+                if attempt == 4:
+                    raise
+
+    @classmethod
+    @transaction.atomic
+    def create_revocation(cls, data: dict, origin: str = 'web', client_ip: str = None) -> OrderRevocation:
+        """
+        Registra una solicitud de revocación real.
+        - Para origin == 'web': acknowledgment_sent=True (se exhibe en pantalla de inmediato).
+        - Para origin == 'whatsapp': acknowledgment_sent=False (requiere envío manual por el operador).
+        """
+        if origin == 'web' and client_ip:
+            cls.check_rate_limit(client_ip)
+
+        order_ref = data.get('order_reference', '').strip()
+        is_web = (origin == 'web')
+        now = timezone.now()
+
+        revocation = cls._persist_with_unique_code(
+            origin=origin,
+            customer_name=data['customer_name'].strip(),
+            contact_method=data['contact_method'],
+            contact_value=data['contact_value'].strip(),
+            order_reference=order_ref,
+            details=data.get('details', '').strip(),
+            acknowledgment_sent=is_web,
+            acknowledgment_sent_at=now if is_web else None,
+            acknowledgment_channel='web' if is_web else '',
+            status='pending'
+        )
+
+        # Encolar notificación interna vía Celery tras confirmarse la transacción
+        from orders.tasks import send_revocation_notification_task
+        transaction.on_commit(lambda: send_revocation_notification_task.delay(revocation.id))
+
+        return revocation
+

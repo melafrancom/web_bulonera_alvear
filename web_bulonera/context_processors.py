@@ -56,3 +56,13 @@ def site_theme(request):
             return {'site_theme': SiteTheme()}  # usa defaults sin guardar y sin cachear
         cache.set('site_theme_active', theme, timeout=3600)
     return {'site_theme': theme}
+
+
+def business_hours(request):
+    """
+    Inyecta los horarios comerciales activos en todos los templates.
+    """
+    from .business_hours import get_business_hours_data
+    return {
+        'business_hours': get_business_hours_data()
+    }

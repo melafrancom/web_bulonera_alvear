@@ -6,7 +6,8 @@ from orders.web.views.views import (
     order_complete,
     order_detail,
     whatsapp_redirect,
-    orders_index
+    orders_index,
+    arrepentimiento_view
 )
 
 app_name = 'orders'
@@ -18,5 +19,6 @@ urlpatterns = [
     path('order_complete/<str:order_number>/', order_complete, name='order_complete'),
     path('order_detail/<str:order_number>/', order_detail, name='order_detail'),
     path('whatsapp_redirect/', whatsapp_redirect, name='whatsapp_redirect'),
+    path('arrepentimiento/', arrepentimiento_view, name='arrepentimiento'),
 ]
 

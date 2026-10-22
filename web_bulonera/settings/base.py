@@ -108,7 +108,7 @@ TEMPLATES = [
                 'category.context_processors.menu_links',
                 'cart.context_processors.counter',
                 'web_bulonera.context_processors.site_theme',
-                
+                'web_bulonera.context_processors.business_hours',
             ],
         },
     },

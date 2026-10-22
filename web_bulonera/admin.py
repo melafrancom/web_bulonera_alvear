@@ -89,3 +89,56 @@ class SiteThemeAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
         messages.success(request, "✅ Tema guardado. Los cambios se aplican de inmediato.")
+
+
+from django.core.cache import cache
+from .models import BusinessHoursSetting, BusinessHoursPeriod, BusinessHoursException
+from .business_hours import get_business_hours_data
+
+
+class BusinessHoursPeriodInline(admin.TabularInline):
+    model = BusinessHoursPeriod
+    extra = 1
+    fields = ('day', 'opening_time', 'closing_time', 'is_closed')
+    ordering = ('day', 'opening_time')
+
+
+class BusinessHoursExceptionInline(admin.TabularInline):
+    model = BusinessHoursException
+    extra = 0
+    fields = ('date', 'description', 'is_closed', 'opening_time', 'closing_time')
+    ordering = ('date',)
+
+
+@admin.register(BusinessHoursSetting)
+class BusinessHoursSettingAdmin(admin.ModelAdmin):
+    """
+    Administración centralizada de horarios comerciales (Fuente única de la web).
+    # REGLA: Invalida y refresca la caché para actualización inmediata sin redeploy.
+    """
+    inlines = [BusinessHoursPeriodInline, BusinessHoursExceptionInline]
+    fieldsets = (
+        ('Información General', {
+            'description': 'Configuración horaria semanal única para la web, Google Schema.org y metadatos.',
+            'fields': ('name', 'holiday_note')
+        }),
+    )
+
+    def has_add_permission(self, request):
+        if BusinessHoursSetting.objects.exists():
+            return False
+        return super().has_add_permission(request)
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        cache.delete('business_hours_active')
+        get_business_hours_data()
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        cache.delete('business_hours_active')
+        get_business_hours_data()
+        messages.success(
+            request,
+            "✅ Horarios comerciales guardados. Los cambios se reflejan en toda la web y Schema.org de inmediato."
+        )

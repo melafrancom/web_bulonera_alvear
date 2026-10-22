@@ -374,3 +374,54 @@ class TestAtomicity:
         assert order.payment == payment
         assert product.stock == initial_stock - 3
         assert wa_link is not None
+
+
+@pytest.mark.django_db
+class TestRevocationService:
+    """Tests para RevocationService (Disposición 954/2025)."""
+
+    def test_generate_revocation_code_format(self):
+        """Genera código candidato ARR-YYYYMMDD-XXXXXXXXXX con 10 chars hex."""
+        import re
+        from orders.services import RevocationService
+        code = RevocationService.generate_revocation_code()
+        assert re.match(r"^ARR-\d{8}-[A-F0-9]{10}$", code)
+
+    def test_create_revocation_web_immediate_acknowledgment(self):
+        """Para origin='web', el acuse se marca como emitido inmediatamente."""
+        from orders.services import RevocationService
+        data = {
+            'customer_name': 'Carlos Gomez',
+            'contact_method': 'whatsapp',
+            'contact_value': '3624123456',
+            'order_reference': 'PED-1234',
+            'details': 'Deseo cancelar compra'
+        }
+        revocation = RevocationService.create_revocation(data, origin='web', client_ip='127.0.0.1')
+        assert revocation.origin == 'web'
+        assert revocation.acknowledgment_sent is True
+        assert revocation.acknowledgment_sent_at is not None
+        assert revocation.acknowledgment_channel == 'web'
+        assert revocation.status == 'pending'
+        assert revocation.revocation_code.startswith('ARR-')
+
+    def test_create_revocation_whatsapp_pending_acknowledgment(self):
+        """Para origin='whatsapp', el acuse queda pendiente para envío humano por chat."""
+        from orders.services import RevocationService
+        data = {
+            'customer_name': 'Maria Lopez',
+            'contact_method': 'whatsapp',
+            'contact_value': '3624999999',
+        }
+        revocation = RevocationService.create_revocation(data, origin='whatsapp')
+        assert revocation.origin == 'whatsapp'
+        assert revocation.acknowledgment_sent is False
+        assert revocation.acknowledgment_sent_at is None
+        assert revocation.status == 'pending'
+
+    def test_rate_limit_monitoring_signal(self):
+        """check_rate_limit provee monitoreo volátil en caché sin bloquear."""
+        from orders.services import RevocationService
+        assert RevocationService.check_rate_limit('') is False
+        assert RevocationService.check_rate_limit('192.168.1.100') is False
+

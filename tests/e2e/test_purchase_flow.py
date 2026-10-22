@@ -31,7 +31,8 @@ ORDER_FORM_DATA = {
     'city': 'Resistencia',
     'state': '3500',
     'invoice_type': 'B',
-    'order_note': 'Entregar por la tarde'
+    'order_note': 'Entregar por la tarde',
+    'accept_terms': 'on',
 }
 
 
