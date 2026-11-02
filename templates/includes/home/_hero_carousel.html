@@ -5,19 +5,38 @@
         currentSlide: 0,
         slides: {{ carousel_count|default:1 }},
         autoplay: null,
+        isPlaying: true,
         
         init() {
-            this.startAutoplay();
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                this.isPlaying = false;
+            } else {
+                this.startAutoplay();
+            }
         },
         
         startAutoplay() {
+            if (!this.isPlaying) return;
+            this.stopAutoplay();
             this.autoplay = setInterval(() => {
                 this.next();
             }, 5000);
         },
         
         stopAutoplay() {
-            clearInterval(this.autoplay);
+            if (this.autoplay) {
+                clearInterval(this.autoplay);
+                this.autoplay = null;
+            }
+        },
+
+        togglePlay() {
+            this.isPlaying = !this.isPlaying;
+            if (this.isPlaying) {
+                this.startAutoplay();
+            } else {
+                this.stopAutoplay();
+            }
         },
         
         next() {
@@ -30,15 +49,17 @@
         
         goTo(index) {
             this.currentSlide = index;
-            this.stopAutoplay();
-            this.startAutoplay();
+            if (this.isPlaying) {
+                this.stopAutoplay();
+                this.startAutoplay();
+            }
         }
     }" 
-    @mouseenter="stopAutoplay()" 
-    @mouseleave="startAutoplay()"
+    @mouseenter="if(isPlaying) stopAutoplay()" 
+    @mouseleave="if(isPlaying) startAutoplay()"
     class="relative">
         
-        <!-- Slides Container - Más alto y con mejor proporción -->
+        <!-- Slides Container - Altura canónica por breakpoint (Art Direction: mobile, tablet, desktop) -->
         <div class="carousel-container relative overflow-hidden h-[360px] sm:h-[300px] md:h-[400px] lg:h-[450px] 2xl:h-[480px]">
             
             <!-- Image Slides (FASE 2: Solo imágenes, sin productos populares) -->
@@ -326,7 +347,7 @@
                                     {% else %}
                                     <picture>
                                         <source srcset="{% static 'images/placeholder.webp' %}" type="image/webp">
-                                        <img src="{% static 'images/placeholder.png' %}" alt="sin imagen" 
+                                        <img src="{% static 'images/placeholder.png' %}" alt="" aria-hidden="true" 
                                             width="400" height="400"
                                             class="w-full h-full object-cover">
                                     </picture>
@@ -352,24 +373,34 @@
             {% if carousel_count > 1 %}
             <button @click="prev()" 
                     aria-label="Diapositiva anterior"
-                    class="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-2 md:p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all z-10">
-                <i data-lucide="chevron-left" class="w-5 h-5 md:w-6 md:h-6 text-white"></i>
+                    class="absolute left-1.5 sm:left-2 md:left-4 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 md:p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                <i data-lucide="chevron-left" class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white"></i>
             </button>
             <button @click="next()" 
                     aria-label="Diapositiva siguiente"
-                    class="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-2 md:p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all z-10">
-                <i data-lucide="chevron-right" class="w-5 h-5 md:w-6 md:h-6 text-white"></i>
+                    class="absolute right-1.5 sm:right-2 md:right-4 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 md:p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white"></i>
             </button>
             
-            <!-- Indicators -->
-            <div class="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex gap-1 md:gap-2 z-10">
+            <!-- Indicators & Pause/Play Control -->
+            <div class="absolute bottom-1.5 sm:bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 sm:gap-2 md:gap-3 z-10 bg-black/30 backdrop-blur-sm px-2 py-0.5 sm:px-3 sm:py-1 rounded-full scale-90 sm:scale-100 origin-bottom">
                 <template x-for="i in {{ carousel_count }}" :key="i">
                     <button @click="goTo(i - 1)" 
                             :aria-label="'Ir a la diapositiva ' + i"
-                            class="w-2 h-2 rounded-full transition-all"
-                            :class="currentSlide === i - 1 ? 'bg-white w-6 md:w-8' : 'bg-white/50'">
+                            class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                            :class="currentSlide === i - 1 ? 'bg-white w-4 sm:w-6 md:w-8' : 'bg-white/50'">
                     </button>
                 </template>
+                <button @click="togglePlay()"
+                        :aria-label="isPlaying ? 'Pausar reproducción automática' : 'Reanudar reproducción automática'"
+                        class="p-0.5 sm:p-1 text-white hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
+                    <span x-show="isPlaying" class="inline-flex" aria-hidden="true">
+                        <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
+                    </span>
+                    <span x-show="!isPlaying" class="inline-flex" aria-hidden="true" style="display: none;">
+                        <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </span>
+                </button>
             </div>
             {% endif %}
         </div>

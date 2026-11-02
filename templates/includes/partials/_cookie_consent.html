@@ -7,6 +7,8 @@ terceros (Analytics, GTM, Meta Pixel, Clarity, AdSense).
 <div x-data="cookieConsent()"
      x-show="showBanner"
      x-cloak
+     @keydown.escape.window="if(showBanner) closeModal()"
+     @keydown.tab="handleTab($event)"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0 translate-y-4"
      x-transition:enter-end="opacity-100 translate-y-0"
@@ -15,6 +17,7 @@ terceros (Analytics, GTM, Meta Pixel, Clarity, AdSense).
      x-transition:leave-end="opacity-0 translate-y-4"
      class="fixed bottom-0 inset-x-0 z-[60] p-4 md:p-6"
      role="dialog"
+     aria-modal="true"
      aria-label="Configuración de cookies"
      style="display: none;">
 
@@ -139,23 +142,102 @@ function cookieConsent() {
     return {
         showBanner: false,
         showDetails: false,
+        lastFocusedElement: null,
         preferences: {
-            analytics: true,
-            advertising: true,
+            analytics: false,
+            advertising: false,
         },
 
         init() {
+            // Reabrir panel desde footer o política de privacidad
+            window.addEventListener('ba-open-cookie-settings', (e) => {
+                const stored = localStorage.getItem('ba_cookie_consent');
+                if (stored) {
+                    try {
+                        this.preferences = JSON.parse(stored);
+                    } catch(e) {}
+                }
+                this.showDetails = true;
+                this.openModal(e && e.target ? e.target : document.activeElement);
+            });
+
             const stored = localStorage.getItem('ba_cookie_consent');
             if (!stored) {
-                // First visit: show the banner with a delay to avoid LCP issues on load
+                // Primera visita: mostrar el banner con retraso para no bloquear LCP
                 setTimeout(() => {
-                    this.showBanner = true;
+                    this.openModal();
                 }, 1500);
             } else {
-                // Returning visitor: load scripts according to saved prefs
-                const prefs = JSON.parse(stored);
-                this.preferences = prefs;
-                this._activateScripts(prefs);
+                // Visitante recurrente: aplicar Consent Mode de inmediato antes de activar scripts
+                try {
+                    const prefs = JSON.parse(stored);
+                    this.preferences = prefs;
+                    if (typeof gtag === 'function') {
+                        gtag('consent', 'update', {
+                            'analytics_storage': prefs.analytics ? 'granted' : 'denied',
+                            'ad_storage': prefs.advertising ? 'granted' : 'denied',
+                            'ad_user_data': prefs.advertising ? 'granted' : 'denied',
+                            'ad_personalization': prefs.advertising ? 'granted' : 'denied'
+                        });
+                    }
+                    this._activateScripts(prefs);
+                } catch(e) {}
+            }
+        },
+
+        openModal(triggerEl = null) {
+            this.lastFocusedElement = triggerEl || document.activeElement;
+            this.showBanner = true;
+            this.$nextTick(() => {
+                this.focusFirstElement();
+            });
+        },
+
+        closeModal() {
+            this.showBanner = false;
+            this.restoreFocus();
+        },
+
+        focusFirstElement() {
+            const focusables = this.getFocusableElements();
+            if (focusables.length > 0) {
+                focusables[0].focus();
+            }
+        },
+
+        restoreFocus() {
+            if (this.lastFocusedElement && typeof this.lastFocusedElement.focus === 'function') {
+                this.$nextTick(() => {
+                    try {
+                        this.lastFocusedElement.focus();
+                    } catch (e) {}
+                });
+            }
+        },
+
+        getFocusableElements() {
+            if (!this.$el) return [];
+            return Array.from(this.$el.querySelectorAll(
+                'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            )).filter(el => el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0);
+        },
+
+        handleTab(e) {
+            if (!this.showBanner) return;
+            const focusables = this.getFocusableElements();
+            if (!focusables.length) return;
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            if (e.shiftKey) {
+                if (document.activeElement === first || !this.$el.contains(document.activeElement)) {
+                    e.preventDefault();
+                    last.focus();
+                }
+            } else {
+                if (document.activeElement === last || !this.$el.contains(document.activeElement)) {
+                    e.preventDefault();
+                    first.focus();
+                }
             }
         },
 
@@ -183,7 +265,7 @@ function cookieConsent() {
             const advertising = this.preferences.advertising ? '1' : '0';
             document.cookie = "ba_consent=a=" + analytics + "|d=" + advertising + "; expires=" + d.toUTCString() + "; path=/; SameSite=Lax";
             
-            this.showBanner = false;
+            this.closeModal();
 
             // Notificación reactiva inmediata a baTrack y listeners globales para revocación o aplicación activa
             window.dispatchEvent(new CustomEvent('ba:consent-applied', { detail: this.preferences }));

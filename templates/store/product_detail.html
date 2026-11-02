@@ -402,9 +402,15 @@
                                                 -{{ single_product.discount_percentage }}%
                                             </span>
                                         </div>
+                                        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-1">
+                                            Precio final con impuestos
+                                        </span>
                                     {% else %}
-                                        <span class="text-4xl font-bold text-slate-900 dark:text-white">
+                                        <span class="text-4xl font-bold text-slate-900 dark:text-white block">
                                             {{ single_product.price|argentina_currency }}
+                                        </span>
+                                        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-1">
+                                            Precio final con impuestos
                                         </span>
                                     {% endif %}
                                 </div>
@@ -430,21 +436,24 @@
                                 {% else %}
                                     <!-- Quantity Selector -->
                                     <div class="mb-6">
-                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                        <label for="quantity" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                             Cantidad:
                                         </label>
                                         <div class="flex items-center gap-3">
                                             <div class="flex items-center border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden">
                                                 <button type="button" @click="decrease()" 
-                                                        class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors">
+                                                        aria-label="Disminuir cantidad"
+                                                        class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] dark:focus-visible:ring-blue-400">
                                                     <i data-lucide="minus" class="w-4 h-4"></i>
                                                 </button>
-                                                <input type="number" name="quantity" x-model.number="qty" 
+                                                <input id="quantity" type="number" name="quantity" x-model.number="qty" 
+                                                       aria-label="Cantidad"
                                                        :max="max" min="1"
                                                        @change="qty = Math.max(1, Math.min(parseInt($event.target.value) || 1, max))"
                                                        class="w-20 text-center border-0 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-0">
                                                 <button type="button" @click="increase()" 
-                                                        class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors">
+                                                        aria-label="Aumentar cantidad"
+                                                        class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] dark:focus-visible:ring-blue-400">
                                                     <i data-lucide="plus" class="w-4 h-4"></i>
                                                 </button>
                                             </div>

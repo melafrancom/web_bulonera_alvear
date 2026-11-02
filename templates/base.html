@@ -40,12 +40,22 @@
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     {% block meta %}{% endblock %}
     
-    <!-- Preconnect and DNS Prefetch (Sprint 1) -->
+    <!-- Preconnect (Fonts) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
-    <link rel="dns-prefetch" href="https://www.clarity.ms">
-    <link rel="dns-prefetch" href="https://connect.facebook.net">
+
+    <!-- Google Consent Mode v2: Modo Básico por Defecto (Ley 25.326 y bloqueo previo) -->
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('consent', 'default', {
+            'ad_storage': 'denied',
+            'analytics_storage': 'denied',
+            'ad_user_data': 'denied',
+            'ad_personalization': 'denied',
+            'wait_for_update': 500
+        });
+    </script>
 
     <!-- Barlow (títulos) & Inter (datos/body) — Brand Book -->
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -101,6 +111,14 @@
         @media (min-width: 1024px) {
             .sticky-nav-placeholder {
                 height: 120px;
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, ::before, ::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
             }
         }
     </style>
@@ -346,6 +364,12 @@
 </head>
 
 <body class="bg-soft-bg dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased">
+    <!-- Skip link al contenido principal (WCAG 2.2 AA) -->
+    <a href="#main-content"
+       class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2.5 focus:bg-[#1B3A5C] focus:text-white focus:rounded-lg focus:shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1B3A5C] text-sm font-semibold transition-all">
+        Saltar al contenido principal
+    </a>
+
     <!-- GTM noscript: only rendered if user previously accepted analytics cookies -->
     <script>
         (function() {
@@ -366,7 +390,7 @@
     {% include 'includes/alerts.html' %}
     
     <!-- Main Content -->
-    <main class="min-h-screen">
+    <main id="main-content" tabindex="-1" class="min-h-screen focus:outline-none">
         {% block content %}{% endblock %}
     </main>
     

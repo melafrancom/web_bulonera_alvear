@@ -214,9 +214,17 @@
           </div>
         </div>
         
-        <p class="text-xs text-slate-500 dark:text-slate-400">
-          Podés modificar o revocar tu consentimiento en cualquier momento utilizando el botón "Configuración de cookies" ubicado en el pie de página de nuestro sitio web.
-        </p>
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Podés modificar o revocar tu consentimiento en cualquier momento utilizando el enlace del pie de página o el siguiente botón:
+          </p>
+          <button type="button" 
+                  @click="$dispatch('ba-open-cookie-settings')" 
+                  class="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] flex-shrink-0">
+            <i data-lucide="settings-2" class="w-4 h-4"></i>
+            <span>Configuración de Cookies</span>
+          </button>
+        </div>
       </div>
       
     </div>

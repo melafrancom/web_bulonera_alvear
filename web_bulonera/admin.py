@@ -99,14 +99,14 @@ from .business_hours import get_business_hours_data
 class BusinessHoursPeriodInline(admin.TabularInline):
     model = BusinessHoursPeriod
     extra = 1
-    fields = ('day', 'opening_time', 'closing_time', 'is_closed')
+    fields = ('day', 'opening_time', 'closing_time')
     ordering = ('day', 'opening_time')
 
 
 class BusinessHoursExceptionInline(admin.TabularInline):
     model = BusinessHoursException
     extra = 0
-    fields = ('date', 'description', 'is_closed', 'opening_time', 'closing_time')
+    fields = ('date', 'reason', 'is_closed', 'opening_time', 'closing_time')
     ordering = ('date',)
 
 

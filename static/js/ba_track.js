@@ -62,10 +62,25 @@ window.baTrack = window.baTrack || {
     // Actualiza preferencias en memoria (usado internamente por el event listener)
     setPreferences: function(prefs) {
         this._prefs = prefs;
-        if (prefs && prefs.advertising === false) {
-            // Si el usuario revoca o rechaza publicidad, purga la cola inmediatamente
+        if (!prefs || prefs.advertising !== true) {
+            // Si el usuario revoca o no otorga publicidad, purgar la cola interna y la del stub de Meta
             this.metaQueue = [];
-            console.debug("baTrack: Consentimiento de publicidad revocado/rechazado. Cola Meta purgada.");
+            if (typeof window.fbq === 'function') {
+                try {
+                    window.fbq('consent', 'revoke');
+                } catch (e) {}
+                if (Array.isArray(window.fbq.queue)) {
+                    window.fbq.queue = [];
+                }
+            }
+            console.debug("baTrack: Consentimiento de publicidad no activo. Cola Meta interna y stub fbq purgados.");
+        }
+        if (!prefs || prefs.analytics !== true) {
+            if (typeof window.clarity === 'function') {
+                try {
+                    window.clarity('stop');
+                } catch (e) {}
+            }
         }
     },
 
@@ -85,18 +100,20 @@ window.baTrack = window.baTrack || {
     // Función pública para Meta Pixel
     meta: function(eventName, data, eventID) {
         const prefs = this.getConsentPreferences();
-        // Si el usuario rechazó o revocó publicidad explícitamente, abortar
-        if (prefs.advertising === false) {
-            console.debug("baTrack: Publicidad no consentida, descartando Meta event:", eventName);
+        // REGLA: Si el usuario NO otorgó consentimiento afirmativo (pendiente o rechazado),
+        // descartar el evento de inmediato. Cero tracking retroactivo.
+        if (prefs.advertising !== true) {
+            console.debug("baTrack: Publicidad no autorizada o pendiente; descartando Meta event:", eventName);
             return;
         }
 
         const _fbq = this._getFbq();
         let options = eventID ? { eventID: eventID } : undefined;
-        if (_fbq && prefs.advertising === true) {
+        if (_fbq) {
             _fbq('track', eventName, data, options);
         } else {
-            console.debug("baTrack: fbq no disponible o consentimiento pendiente, encolando", eventName);
+            // El usuario YA autorizó, pero fbq está completando su carga asíncrona
+            console.debug("baTrack: fbq cargando asíncronamente post-consentimiento; encolando temporalmente:", eventName);
             this.metaQueue.push({ action: 'track', eventName: eventName, data: data, options: options });
         }
     },
@@ -104,17 +121,17 @@ window.baTrack = window.baTrack || {
     // Función pública para Meta Pixel Custom
     metaCustom: function(eventName, data, eventID) {
         const prefs = this.getConsentPreferences();
-        if (prefs.advertising === false) {
-            console.debug("baTrack: Publicidad no consentida, descartando Meta custom event:", eventName);
+        if (prefs.advertising !== true) {
+            console.debug("baTrack: Publicidad no autorizada o pendiente; descartando Meta custom event:", eventName);
             return;
         }
 
         const _fbq = this._getFbq();
         let options = eventID ? { eventID: eventID } : undefined;
-        if (_fbq && prefs.advertising === true) {
+        if (_fbq) {
             _fbq('trackCustom', eventName, data, options);
         } else {
-            console.debug("baTrack: fbq no disponible o consentimiento pendiente, encolando custom", eventName);
+            console.debug("baTrack: fbq cargando asíncronamente post-consentimiento; encolando custom temporalmente:", eventName);
             this.metaQueue.push({ action: 'trackCustom', eventName: eventName, data: data, options: options });
         }
     },
@@ -122,8 +139,8 @@ window.baTrack = window.baTrack || {
     // Helper de limpieza para ecommerce (GA4)
     ecommerce: function(eventName, payload) {
         const prefs = this.getConsentPreferences();
-        if (prefs.analytics === false) {
-            console.debug("baTrack: Analítica no consentida, descartando ecommerce event:", eventName);
+        if (prefs.analytics !== true) {
+            console.debug("baTrack: Analítica no autorizada o pendiente; descartando ecommerce event:", eventName);
             return;
         }
 
@@ -143,8 +160,8 @@ window.baTrack = window.baTrack || {
     // Función pública directa para GA4 (array nativo)
     pushGA4: function(payload) {
         const prefs = this.getConsentPreferences();
-        if (prefs.analytics === false) {
-            console.debug("baTrack: Analítica no consentida, descartando GA4 push:", payload);
+        if (prefs.analytics !== true) {
+            console.debug("baTrack: Analítica no autorizada o pendiente; descartando GA4 push:", payload);
             return;
         }
 

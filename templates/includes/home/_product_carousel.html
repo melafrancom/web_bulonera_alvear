@@ -50,7 +50,7 @@
                             {% else %}
                             <picture>
                                 <source srcset="{% static 'images/placeholder.webp' %}" type="image/webp">
-                                <img src="{% static 'images/placeholder.png' %}" alt="sin imagen" 
+                                <img src="{% static 'images/placeholder.png' %}" alt="" aria-hidden="true" 
                                     class="w-full h-full object-cover">
                             </picture>
                             {% endif %}
@@ -70,19 +70,24 @@
                             </h5>
                             
                             <!-- Price -->
-                            <div class="flex items-center gap-2 mt-auto">
-                                {% if product.is_on_sale %}
-                                <span class="text-xs line-through text-slate-500">
-                                    ${{ product.price|floatformat:0 }}
+                            <div class="mt-auto">
+                                <div class="flex items-center gap-2">
+                                    {% if product.is_on_sale %}
+                                    <span class="text-xs line-through text-slate-500">
+                                        ${{ product.price|floatformat:0 }}
+                                    </span>
+                                    <span class="text-base md:text-lg font-bold text-[#D42B1E]">
+                                        ${{ product.sale_price|floatformat:0 }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400">
+                                        ${{ product.price|floatformat:0 }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <span class="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
+                                    Precio final con impuestos
                                 </span>
-                                <span class="text-base md:text-lg font-bold text-[#D42B1E]">
-                                    ${{ product.sale_price|floatformat:0 }}
-                                </span>
-                                {% else %}
-                                <span class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400">
-                                    ${{ product.price|floatformat:0 }}
-                                </span>
-                                {% endif %}
                             </div>
 
                             <!-- Material & Grade Badges -->

@@ -83,6 +83,14 @@
                         </a>
                     </li>
                     <li>
+                        <button type="button" 
+                                @click="$dispatch('ba-open-cookie-settings')" 
+                                class="text-sm hover:text-white transition-colors flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] rounded">
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            <span>Configuración de Cookies</span>
+                        </button>
+                    </li>
+                    <li>
                         <a href="{% url 'history' %}" class="text-sm hover:text-white transition-colors flex items-center gap-2">
                             <i data-lucide="chevron-right" class="w-4 h-4"></i>
                             <span>Nuestra misión, visión e historia</span>

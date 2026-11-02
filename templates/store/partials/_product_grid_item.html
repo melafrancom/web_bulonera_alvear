@@ -96,7 +96,9 @@ class="bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transitio
     {% csrf_token %}
     
     <!-- Product Image -->
-    <a href="{{ product.get_url }}" class="block relative aspect-square overflow-hidden bg-slate-100 dark:bg-slate-700">
+    <a href="{{ product.get_url }}" 
+       aria-label="{{ product.name }}"
+       class="block relative aspect-square overflow-hidden bg-slate-100 dark:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] dark:focus-visible:ring-blue-400">
         {% if product.discount_percentage %}
         <span class="absolute top-2 right-2 z-10 px-2 py-1 text-xs font-bold text-white bg-[#D42B1E] rounded-full">
             -{{ product.discount_percentage }}%
@@ -117,7 +119,8 @@ class="bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transitio
         <picture>
             <source srcset="{% static 'images/placeholder.webp' %}" type="image/webp">
             <img src="{% static 'images/placeholder.png' %}" 
-                 alt="sin imagen"
+                 alt="" 
+                 aria-hidden="true"
                  class="w-full h-full object-cover motion-safe:group-hover:scale-[1.02] transition-transform duration-300 ease-out"
                  loading="lazy"
                  width="300"
@@ -130,7 +133,7 @@ class="bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transitio
     <div class="p-4">
         <!-- Title -->
         <a href="{{ product.get_url }}" 
-           class="block text-sm md:text-base font-semibold text-slate-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 line-clamp-2 mb-2 min-h-[2.5rem] transition-colors">
+           class="block text-sm md:text-base font-semibold text-slate-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 line-clamp-2 mb-2 min-h-[2.5rem] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] dark:focus-visible:ring-blue-400 rounded">
             {{ product.name }}
         </a>
         
@@ -147,9 +150,15 @@ class="bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transitio
                 </span>
                 {% endif %}
             </div>
+            <span class="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
+                Precio final con impuestos
+            </span>
             {% elif not product.is_on_sale and product.price and product.price > 0 %}
-            <span class="text-lg md:text-xl font-bold text-slate-900 dark:text-white">
+            <span class="text-lg md:text-xl font-bold text-slate-900 dark:text-white block">
                 {{ product.price|argentina_currency }}
+            </span>
+            <span class="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
+                Precio final con impuestos
             </span>
             {% else %}
             <span class="text-sm font-medium text-slate-500 dark:text-slate-400">Consultar precio</span>
@@ -177,19 +186,20 @@ class="bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transitio
             <button @click="decrease()" 
                     type="button"
                     aria-label="Disminuir cantidad"
-                    class="flex items-center justify-center w-11 h-11 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors">
+                    class="flex items-center justify-center w-11 h-11 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] dark:focus-visible:ring-blue-400">
                 <i data-lucide="minus" class="w-5 h-5"></i>
             </button>
             <input x-model.number="qty" 
                    type="number" 
                    :max="max"
                    min="1"
+                   aria-label="Cantidad de {{ product.name }}"
                    @change="qty = Math.max(1, Math.min(parseInt($event.target.value) || 1, max))"
                    class="w-16 h-11 text-center text-sm font-medium text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
             <button @click="increase()" 
                     type="button"
                     aria-label="Aumentar cantidad"
-                    class="flex items-center justify-center w-11 h-11 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors">
+                    class="flex items-center justify-center w-11 h-11 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] dark:focus-visible:ring-blue-400">
                 <i data-lucide="plus" class="w-5 h-5"></i>
             </button>
         </div>
@@ -198,7 +208,7 @@ class="bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transitio
         <button @click="addToCart()" 
                 :disabled="adding"
                 type="button"
-                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-primary-800 hover:bg-primary-500 dark:bg-primary-700 dark:hover:bg-primary-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-primary-800 hover:bg-primary-500 dark:bg-primary-700 dark:hover:bg-primary-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] dark:focus-visible:ring-blue-400 focus-visible:ring-offset-2">
             <template x-if="!adding">
                 <i data-lucide="shopping-cart" class="w-4 h-4"></i>
             </template>

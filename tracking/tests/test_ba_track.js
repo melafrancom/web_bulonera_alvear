@@ -86,9 +86,9 @@ function runTests() {
         console.log("   PASSED");
     }
 
-    // TEST 2: Encolamiento pre-consentimiento y vaciado seguro
+    // TEST 2: Descarte estricto pre-consentimiento y encolamiento seguro post-consentimiento
     {
-        console.log("-> Test 2: Encolamiento de eventos Meta y vaciado tras consentimiento...");
+        console.log("-> Test 2: Descarte pre-consentimiento y encolamiento post-consentimiento...");
         const env = createDOMEnvironment();
         const ctxFunction = new Function('window', 'document', 'localStorage', 'CustomEvent', scriptCode);
         ctxFunction(env.window, env.document, env.localStorage, env.CustomEvent);
@@ -98,17 +98,25 @@ function runTests() {
             fbqCalls.push(args);
         };
 
-        // Emitir llamada sin consentimiento previo (debe encolarse)
-        env.window.baTrack.meta('Lead', { cta: 'whatsapp' }, 'lead-123');
-        assert.strictEqual(env.window.baTrack.metaQueue.length, 1, "metaQueue debe contener 1 evento encolado");
+        // 1. Emitir llamada sin consentimiento previo (debe descartarse inmediatamente, cero tracking retroactivo)
+        env.window.baTrack.meta('Lead', { cta: 'whatsapp' }, 'lead-pre');
+        assert.strictEqual(env.window.baTrack.metaQueue.length, 0, "metaQueue debe estar vacía: eventos pre-consentimiento se descartan");
         assert.strictEqual(fbqCalls.length, 0, "fbq no debe haber sido llamado todavía");
 
-        // Disparar consentimiento publicitario
+        // 2. Disparar consentimiento publicitario afirmativo (pero simular que fbq está aún cargando en DOM)
+        delete env.window.fbq;
         env.window.dispatchEvent(new env.CustomEvent('ba:consent-applied', {
             detail: { analytics: true, advertising: true }
         }));
 
-        // Esperar vaciado o forzar flush
+        // 3. Emitir llamada POST-consentimiento mientras fbq carga asíncronamente (debe encolarse temporalmente)
+        env.window.baTrack.meta('Lead', { cta: 'whatsapp' }, 'lead-123');
+        assert.strictEqual(env.window.baTrack.metaQueue.length, 1, "metaQueue debe contener 1 evento encolado post-consentimiento");
+
+        // 4. Se carga la librería externa fbq y se vacía la cola
+        env.window.fbq = function(...args) {
+            fbqCalls.push(args);
+        };
         env.window.baTrack.flushMetaQueue();
         assert.strictEqual(env.window.baTrack.metaQueue.length, 0, "metaQueue debe estar vacía tras flush");
         assert.strictEqual(fbqCalls.length, 1, "fbq debe haberse llamado exactamente 1 vez");
@@ -117,9 +125,9 @@ function runTests() {
         console.log("   PASSED");
     }
 
-    // TEST 3: Purgado inmediato de cola y bloqueo ante revocación activa (advertising: false)
+    // TEST 3: Purgado inmediato de cola interna, stub de Meta y parada de Clarity ante revocación
     {
-        console.log("-> Test 3: Purgado de cola y bloqueo total tras revocación de publicidad...");
+        console.log("-> Test 3: Purgado de cola interna, stub fbq.queue y parada de Clarity tras revocación...");
         const env = createDOMEnvironment();
         const ctxFunction = new Function('window', 'document', 'localStorage', 'CustomEvent', scriptCode);
         ctxFunction(env.window, env.document, env.localStorage, env.CustomEvent);
@@ -128,23 +136,51 @@ function runTests() {
         env.window.fbq = function(...args) {
             fbqCalls.push(args);
         };
+        env.window.fbq.queue = [{ event: 'stale_pre_stub' }];
 
-        // Encolar evento inicial
-        env.window.baTrack.meta('AddToCart', { content_id: '123' });
-        assert.strictEqual(env.window.baTrack.metaQueue.length, 1, "Evento encolado");
+        const clarityCalls = [];
+        env.window.clarity = function(...args) {
+            clarityCalls.push(args);
+        };
 
-        // Usuario desmarca Publicidad y guarda en el banner (revocación activa)
+        // Otorgar consentimiento pero con fbq ausente para simular encolamiento en carga asíncrona
+        delete env.window.fbq;
         env.window.dispatchEvent(new env.CustomEvent('ba:consent-applied', {
-            detail: { analytics: true, advertising: false }
+            detail: { analytics: true, advertising: true }
         }));
 
-        // La cola debe haber sido purgada de inmediato
-        assert.strictEqual(env.window.baTrack.metaQueue.length, 0, "metaQueue DEBE purgarse a 0 ante advertising: false");
+        // Encolar evento post-consentimiento
+        env.window.baTrack.meta('AddToCart', { content_id: '123' });
+        assert.strictEqual(env.window.baTrack.metaQueue.length, 1, "Evento encolado post-consentimiento");
 
-        // Intentar nueva llamada posterior a meta()
+        // Simular que el stub fbq ahora existe con una cola interna previa
+        env.window.fbq = function(...args) {
+            fbqCalls.push(args);
+        };
+        env.window.fbq.queue = [{ event: 'stale_pre_stub' }];
+
+        // Usuario desmarca Publicidad y Analítica en el banner (revocación activa)
+        env.window.dispatchEvent(new env.CustomEvent('ba:consent-applied', {
+            detail: { analytics: false, advertising: false }
+        }));
+
+        // 1. La cola interna de baTrack debe haber sido purgada a 0
+        assert.strictEqual(env.window.baTrack.metaQueue.length, 0, "metaQueue DEBE purgarse a 0 ante advertising: false");
+        
+        // 2. La cola interna del stub de Meta fbq.queue DEBE haber sido purgada a 0
+        assert.strictEqual(env.window.fbq.queue.length, 0, "fbq.queue DEBE purgarse a 0 ante advertising: false");
+        
+        // 3. Debe haberse invocado fbq('consent', 'revoke')
+        const consentRevokeCalled = fbqCalls.some(call => call[0] === 'consent' && call[1] === 'revoke');
+        assert.strictEqual(consentRevokeCalled, true, "fbq('consent', 'revoke') DEBE ser llamado ante revocación");
+
+        // 4. Clarity debe haber sido detenido con clarity('stop')
+        const clarityStopCalled = clarityCalls.some(call => call[0] === 'stop');
+        assert.strictEqual(clarityStopCalled, true, "clarity('stop') DEBE ser llamado ante analytics: false");
+
+        // 5. Intentar nueva llamada posterior a meta()
         env.window.baTrack.meta('Purchase', { value: 100 }, 'purchase-456');
         assert.strictEqual(env.window.baTrack.metaQueue.length, 0, "No debe encolar nada tras revocación");
-        assert.strictEqual(fbqCalls.length, 0, "fbq no debe ser llamado tras revocación");
         console.log("   PASSED");
     }
 
@@ -175,12 +211,21 @@ function runTests() {
         ctxFunction(env.window, env.document, env.localStorage, env.CustomEvent);
 
         const fbqCalls = [];
-        env.window.fbq = function(...args) {
-            fbqCalls.push(args);
-        };
+
+        // Consentimiento previo pero fbq ausente (cargando asíncronamente)
+        delete env.window.fbq;
+        env.window.dispatchEvent(new env.CustomEvent('ba:consent-applied', {
+            detail: { analytics: true, advertising: true }
+        }));
 
         // Encolar evento
         env.window.baTrack.meta('Lead', { cta: 'button' }, 'uuid-1');
+        assert.strictEqual(env.window.baTrack.metaQueue.length, 1, "Evento encolado");
+
+        // Se inicializa fbq
+        env.window.fbq = function(...args) {
+            fbqCalls.push(args);
+        };
 
         // Primer despacho (inmediato al guardar)
         env.window.dispatchEvent(new env.CustomEvent('ba:consent-applied', {
