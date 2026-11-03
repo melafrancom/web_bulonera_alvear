@@ -117,10 +117,14 @@ def whatsapp_lead_redirect(request):
     whatsapp_number = getattr(settings, 'WHATSAPP_NUMBER', '')
     
     # CAPI: Registrar evento de Lead
-    MetaCapiService.enqueue_generate_lead(request, lead_method=source, event_id=event_id)
+    try:
+        MetaCapiService.enqueue_generate_lead(request, lead_method=source, event_id=event_id)
+    except Exception as e:
+        logger.warning("No se pudo encolar evento CAPI en whatsapp_lead_redirect: %s", e)
     
     # Construir URL real de WhatsApp
-    wa_url = f"https://wa.me/{whatsapp_number}"
+    clean_number = "".join(filter(str.isdigit, str(whatsapp_number))) if whatsapp_number else "5493624733431"
+    wa_url = f"https://wa.me/{clean_number}"
     if text:
         wa_url += f"?text={urllib.parse.quote(text)}"
         

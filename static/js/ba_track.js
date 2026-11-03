@@ -252,11 +252,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // CAPI Híbrido: Si el botón apunta a nuestra vista interna de redirección, 
         // inyectamos el event_id en la URL para que el backend deduplique.
+        // REGLA DE ARQUITECTURA: Nunca usar e.preventDefault() ni window.open() en enlaces nativos.
+        // Los navegadores móviles y bloqueadores de popups bloquean window.open() al cancelar
+        // el evento nativo. Mutar directamente el href permite que el navegador ejecute su navegación
+        // nativa con target="_blank", habilitando deep linking a la app de WhatsApp sin bloqueo.
         if (href.includes('/contact/whatsapp-lead/')) {
-            e.preventDefault(); // Detenemos la navegación nativa
-            const connector = href.includes('?') ? '&' : '?';
-            // Abrimos la ruta interna (que registra el CAPI y redirige a wa.me)
-            window.open(href + connector + 'event_id=' + eventId, leadBtn.target || '_blank');
+            if (!href.includes('event_id=')) {
+                const connector = href.includes('?') ? '&' : '?';
+                const targetUrl = href + connector + 'event_id=' + eventId;
+                leadBtn.setAttribute('href', targetUrl);
+                leadBtn.href = targetUrl;
+            }
         }
     });
 });

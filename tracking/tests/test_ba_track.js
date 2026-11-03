@@ -25,6 +25,9 @@ function createDOMEnvironment() {
     const storage = {};
     let cookieStr = '';
 
+    const docListeners = {};
+    const bodyListeners = {};
+
     const env = {
         window: {
             dataLayer: [],
@@ -45,8 +48,24 @@ function createDOMEnvironment() {
                 cookieStr = val;
             },
             getElementById: function() { return null; },
-            addEventListener: function() {},
-            body: { addEventListener: function() {} }
+            addEventListener: function(event, callback) {
+                docListeners[event] = docListeners[event] || [];
+                docListeners[event].push(callback);
+            },
+            dispatchEvent: function(event) {
+                const cbs = docListeners[event.type] || [];
+                cbs.forEach(cb => cb(event));
+            },
+            body: {
+                addEventListener: function(event, callback) {
+                    bodyListeners[event] = bodyListeners[event] || [];
+                    bodyListeners[event].push(callback);
+                },
+                dispatchEvent: function(event) {
+                    const cbs = bodyListeners[event.type] || [];
+                    cbs.forEach(cb => cb(event));
+                }
+            }
         },
         localStorage: {
             getItem: function(key) { return storage[key] || null; },
@@ -241,6 +260,62 @@ function runTests() {
         env.window.baTrack.flushMetaQueue();
 
         assert.strictEqual(fbqCalls.length, 1, "NO DEBE duplicar la llamada tras la segunda emisión");
+        console.log("   PASSED");
+    }
+
+    // TEST 6: Navegación nativa preservada en enlaces de WhatsApp (Sin popup blocker ni preventDefault)
+    {
+        console.log("-> Test 6: Preservación de navegación nativa y enriquecimiento de URL en WhatsApp lead...");
+        const env = createDOMEnvironment();
+        const ctxFunction = new Function('window', 'document', 'localStorage', 'CustomEvent', scriptCode);
+        ctxFunction(env.window, env.document, env.localStorage, env.CustomEvent);
+
+        // Inicializar DOMContentLoaded para activar el listener delegado en document.body
+        env.document.dispatchEvent(new env.CustomEvent('DOMContentLoaded'));
+
+        const initialHref = '/contact/whatsapp-lead/?text=Hola&source=floating';
+        const leadBtn = {
+            href: initialHref,
+            id: 'floating-whatsapp-btn',
+            classList: ['whatsapp-btn'],
+            dataset: {
+                trackLead: 'whatsapp'
+            },
+            getAttribute: function(name) {
+                if (name === 'data-track-lead') return 'whatsapp';
+                if (name === 'href') return this.href;
+                return null;
+            },
+            setAttribute: function(name, val) {
+                if (name === 'href') this.href = val;
+            },
+            closest: function(sel) {
+                if (sel.includes('data-ba-lead') || sel.includes('/contact/whatsapp-lead/')) return this;
+                return null;
+            }
+        };
+
+        let preventDefaultCalled = false;
+        let windowOpenCalled = false;
+        env.window.open = function() {
+            windowOpenCalled = true;
+        };
+
+        const clickEvent = {
+            type: 'click',
+            target: leadBtn,
+            preventDefault: function() {
+                preventDefaultCalled = true;
+            }
+        };
+
+        // Disparar click en document.body (como sucede en el browser al clickear el botón flotante)
+        env.document.body.dispatchEvent(clickEvent);
+
+        assert.strictEqual(preventDefaultCalled, false, "CRÍTICO: preventDefault NO debe ser llamado para evitar bloqueo de popup en móviles");
+        assert.strictEqual(windowOpenCalled, false, "CRÍTICO: window.open NO debe ser llamado; el enlace nativo target=_blank realiza la navegación");
+        assert.ok(leadBtn.href.startsWith('/contact/whatsapp-lead/?text=Hola&source=floating&event_id='), "leadBtn.href debe haberse enriquecido con event_id para CAPI");
+
         console.log("   PASSED");
     }
 
