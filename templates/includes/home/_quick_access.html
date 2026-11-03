@@ -3,43 +3,43 @@
 <!-- ========================= SECTION CATEGORÍAS RÁPIDAS ========================= -->
 <section x-data="{}" class="{% if section.highlight_color %}{{ section.highlight_color }}{% else %}bg-quickcat-bg dark:bg-slate-900{% endif %} border-b border-slate-200 dark:border-slate-700">
     <div class="container mx-auto px-4">
-        <div class="grid grid-cols-5 gap-2 md:gap-3">
+        <div class="grid grid-cols-5 gap-2 md:gap-3 py-1.5 md:py-2">
             <!-- Mis Productos -->
-            <a href="{% url 'store:store' %}" class="flex flex-col items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md dark:shadow-lg transition-shadow duration-150 ease-out">
-                    <i data-lucide="eye" class="w-5 h-5 md:w-6 md:h-6 text-primary-600 dark:text-primary-400"></i>
+            <a href="{% url 'store:store' %}" class="flex flex-col items-center justify-center gap-1.5 md:gap-2 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors duration-150 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 dark:focus-visible:ring-primary-400">
+                <div class="flex items-center justify-center transition-transform duration-150 motion-safe:group-hover:scale-110">
+                    <i data-lucide="eye" class="w-5 h-5 md:w-6 md:h-6 text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
                 </div>
                 <p class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 leading-tight">Mis<br/>productos</p>
             </a>
             
             <!-- Medios de Pago -->
-            <button @click="$dispatch('open-modal', 'mediosPagoModal')" class="flex flex-col items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md dark:shadow-lg transition-shadow duration-150 ease-out">
-                    <i data-lucide="credit-card" class="w-5 h-5 md:w-6 md:h-6 text-primary-600 dark:text-primary-400"></i>
+            <button type="button" @click="$dispatch('open-modal', 'mediosPagoModal')" class="flex flex-col items-center justify-center gap-1.5 md:gap-2 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors duration-150 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 dark:focus-visible:ring-primary-400">
+                <div class="flex items-center justify-center transition-transform duration-150 motion-safe:group-hover:scale-110">
+                    <i data-lucide="credit-card" class="w-5 h-5 md:w-6 md:h-6 text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
                 </div>
                 <p class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 leading-tight">Medios de<br/>pago</p>
             </button>
             
             <!-- Ofertas Activas -->
-            <a href="{% url 'store:offers' %}" class="flex flex-col items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md dark:shadow-lg transition-shadow duration-150 ease-out">
-                    <i data-lucide="zap" class="w-5 h-5 md:w-6 md:h-6 text-accent-500"></i>
+            <a href="{% url 'store:offers' %}" class="flex flex-col items-center justify-center gap-1.5 md:gap-2 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors duration-150 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 dark:focus-visible:ring-primary-400">
+                <div class="flex items-center justify-center transition-transform duration-150 motion-safe:group-hover:scale-110">
+                    <i data-lucide="zap" class="w-5 h-5 md:w-6 md:h-6 text-accent-500" aria-hidden="true"></i>
                 </div>
                 <p class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 leading-tight">🔥 Ofertas</p>
             </a>
             
             <!-- Envíos -->
-            <button @click="$dispatch('open-modal', 'enviosModal')" class="flex flex-col items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md dark:shadow-lg transition-shadow duration-150 ease-out">
-                    <i data-lucide="truck" class="w-5 h-5 md:w-6 md:h-6 text-primary-600 dark:text-primary-400"></i>
+            <button type="button" @click="$dispatch('open-modal', 'enviosModal')" class="flex flex-col items-center justify-center gap-1.5 md:gap-2 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors duration-150 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 dark:focus-visible:ring-primary-400">
+                <div class="flex items-center justify-center transition-transform duration-150 motion-safe:group-hover:scale-110">
+                    <i data-lucide="truck" class="w-5 h-5 md:w-6 md:h-6 text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
                 </div>
                 <p class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 leading-tight">Envíos</p>
             </button>
             
             <!-- Cómo Comprar -->
-            <a href="#como-comprar" class="flex flex-col items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                <div class="bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md dark:shadow-lg transition-shadow duration-150 ease-out">
-                    <i data-lucide="shield-check" class="w-5 h-5 md:w-6 md:h-6 text-primary-600 dark:text-primary-400"></i>
+            <a href="#como-comprar" class="flex flex-col items-center justify-center gap-1.5 md:gap-2 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors duration-150 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 dark:focus-visible:ring-primary-400">
+                <div class="flex items-center justify-center transition-transform duration-150 motion-safe:group-hover:scale-110">
+                    <i data-lucide="shield-check" class="w-5 h-5 md:w-6 md:h-6 text-primary-600 dark:text-primary-400" aria-hidden="true"></i>
                 </div>
                 <p class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 leading-tight">Cómo<br/>comprar</p>
             </a>
