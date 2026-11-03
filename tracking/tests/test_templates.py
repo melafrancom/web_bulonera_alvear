@@ -82,3 +82,33 @@ def test_ba_track_browser_node_suite_passes():
         f"La suite de pruebas Node de baTrack falló con código {result.returncode}.\n"
         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
+
+
+def test_cookie_settings_triggers_and_modal_contracts():
+    """
+    Verifica que los disparadores de Configuración de Cookies en el footer y política
+    de privacidad usen delegación declarativa (data-ba-cookie-settings) y que el modal
+    incluya el listener delegado, botón de cierre y gestión accesible de foco.
+    """
+    footer_rendered = render_to_string("includes/footer.html", {
+        "current_year": 2026,
+        "WHATSAPP_NUMBER": "3624733431",
+        "CONTACT_EMAIL": "contacto@buloneraalvear.online",
+    })
+    privacy_rendered = render_to_string("others/privacy_and_warranty.html", {})
+    modal_rendered = render_to_string("includes/partials/_cookie_consent.html", {})
+
+    # 1. Los disparadores deben usar data-ba-cookie-settings
+    assert "data-ba-cookie-settings" in footer_rendered, "El footer debe incluir el atributo data-ba-cookie-settings"
+    assert "data-ba-cookie-settings" in privacy_rendered, "La política de privacidad debe incluir data-ba-cookie-settings"
+
+    # 2. No deben tener directivas @click="$dispatch(...)" huérfanas
+    assert '@click="$dispatch(\'ba-open-cookie-settings\')"' not in footer_rendered
+    assert '@click="$dispatch(\'ba-open-cookie-settings\')"' not in privacy_rendered
+
+    # 3. El modal debe registrar delegación global y botón de cierre
+    assert "data-ba-cookie-settings" in modal_rendered
+    assert "ba-open-cookie-settings" in modal_rendered
+    assert "closeModal()" in modal_rendered
+    assert 'aria-label="Cerrar ventana de cookies"' in modal_rendered
+

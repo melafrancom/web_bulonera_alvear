@@ -41,8 +41,13 @@ terceros (Analytics, GTM, Meta Pixel, Clarity, AdSense).
                         </a>
                     </p>
                 </div>
+                <button type="button" 
+                        @click="closeModal()" 
+                        class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                        aria-label="Cerrar ventana de cookies">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
-
             <!-- Expandable: Cookie details -->
             <div x-show="showDetails"
                  x-collapse
@@ -149,23 +154,40 @@ function cookieConsent() {
         },
 
         init() {
+            // Delegación global para disparadores declarativos con data-ba-cookie-settings
+            if (!window.__baCookieTriggerBound) {
+                window.__baCookieTriggerBound = true;
+                document.addEventListener('click', (e) => {
+                    const btn = e.target && e.target.closest ? e.target.closest('[data-ba-cookie-settings]') : null;
+                    if (btn) {
+                        e.preventDefault();
+                        window.dispatchEvent(new CustomEvent('ba-open-cookie-settings', {
+                            detail: { trigger: btn }
+                        }));
+                    }
+                });
+            }
+
             // Reabrir panel desde footer o política de privacidad
             window.addEventListener('ba-open-cookie-settings', (e) => {
                 const stored = localStorage.getItem('ba_cookie_consent');
                 if (stored) {
                     try {
                         this.preferences = JSON.parse(stored);
-                    } catch(e) {}
+                    } catch(err) {}
                 }
                 this.showDetails = true;
-                this.openModal(e && e.target ? e.target : document.activeElement);
+                const trigger = (e && e.detail && e.detail.trigger) || (e && e.target && e.target !== window ? e.target : document.activeElement);
+                this.openModal(trigger);
             });
 
             const stored = localStorage.getItem('ba_cookie_consent');
             if (!stored) {
                 // Primera visita: mostrar el banner con retraso para no bloquear LCP
                 setTimeout(() => {
-                    this.openModal();
+                    if (!this.showBanner && !localStorage.getItem('ba_cookie_consent')) {
+                        this.openModal();
+                    }
                 }, 1500);
             } else {
                 // Visitante recurrente: aplicar Consent Mode de inmediato antes de activar scripts

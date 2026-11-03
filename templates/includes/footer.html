@@ -84,7 +84,8 @@
                     </li>
                     <li>
                         <button type="button" 
-                                @click="$dispatch('ba-open-cookie-settings')" 
+                                data-ba-cookie-settings
+                                aria-haspopup="dialog" 
                                 class="text-sm hover:text-white transition-colors flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] rounded">
                             <i data-lucide="chevron-right" class="w-4 h-4"></i>
                             <span>Configuración de Cookies</span>
