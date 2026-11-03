@@ -1,6 +1,7 @@
 {% load static %}
 {% load custom_filters %}
 
+{% if data.products %}
 <!-- Product Carousel Section - CSS Scroll Snap Architecture -->
 <section class="py-2 md:py-3 {% if section.highlight_color %}{{ section.highlight_color }}{% else %}bg-white dark:bg-slate-900{% endif %} dark:bg-slate-900">
     <div class="container mx-auto px-4">
@@ -151,3 +152,4 @@
         </div>
     </div>
 </section>
+{% endif %}

@@ -1,6 +1,6 @@
 import pytest
 from django.urls import reverse
-from store.models import Product, HomeSection, HomeSectionProduct, PromoBanner, CarouselImage
+from store.models import Product, HomeSection, HomeSectionProduct, PromoBanner, CarouselImage, ProductSearch
 from category.models import Category
 from store.services import HomeSectionService
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -33,6 +33,43 @@ class TestHomeBuilder:
         # Even without orders, check if it doesn't crash and returns empty if no orders
         products = HomeSectionService._resolve_products(self.section)
         assert isinstance(products, list)
+
+    def test_source_type_most_searched_deduplication_and_order(self, setup_data):
+        # product1 tiene 2 registros de búsquedas en distintas sesiones (5 + 3 = 8 búsquedas)
+        ProductSearch.objects.create(product=self.product1, session_key="session_1", search_count=5)
+        ProductSearch.objects.create(product=self.product1, session_key="session_2", search_count=3)
+
+        # product2 tiene 1 registro (2 búsquedas)
+        ProductSearch.objects.create(product=self.product2, session_key="session_3", search_count=2)
+
+        section_searched = HomeSection.objects.create(
+            title="Lo que más buscan",
+            section_type="product_carousel",
+            source_type="most_searched",
+            position=2,
+            max_products=10
+        )
+
+        resolved_products = HomeSectionService._resolve_products(section_searched)
+
+        # REGLA: Cada producto debe aparecer exactamente una vez (sin duplicados)
+        assert len(resolved_products) == 2
+        assert len(set(p.id for p in resolved_products)) == 2
+
+        # REGLA: El orden debe ser por suma acumulada total (product1 con 8 búsquedas antes que product2 con 2)
+        assert resolved_products[0] == self.product1
+        assert resolved_products[1] == self.product2
+
+    def test_source_type_most_searched_empty_when_no_searches(self, setup_data):
+        section_searched = HomeSection.objects.create(
+            title="Lo que más buscan",
+            section_type="product_carousel",
+            source_type="most_searched",
+            position=2,
+            max_products=10
+        )
+        resolved_products = HomeSectionService._resolve_products(section_searched)
+        assert resolved_products == []
 
     def test_manual_priority_over_auto(self, setup_data):
         # Set to bestsellers but add a manual product

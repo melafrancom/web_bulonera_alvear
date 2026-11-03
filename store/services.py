@@ -1121,9 +1121,13 @@ class HomeSectionService:
             if limit <= 0:
                 return []
             selected = []
+            seen_ids = set()
             for product in products:
+                if product.id in seen_ids:
+                    continue
                 if (product.is_available and product.has_valid_price
                         and product.has_valid_image):
+                    seen_ids.add(product.id)
                     selected.append(product)
                     if len(selected) >= limit:
                         break
@@ -1164,7 +1168,13 @@ class HomeSectionService:
             ).order_by('-order_count')
 
         elif source == 'most_searched':
-            candidates = base_qs.order_by('-productsearch__search_count')
+            # POR QUÉ: Agrupar por producto y sumar búsquedas de todas las sesiones/usuarios.
+            # REGLA: Usar INNER JOIN (productsearch__isnull=False) para evitar filesort en disco de todo el catálogo.
+            candidates = base_qs.filter(
+                productsearch__isnull=False
+            ).annotate(
+                total_searches=Sum('productsearch__search_count')
+            ).order_by('-total_searches', '-id')
 
         elif source == 'by_category' and section.category:
             candidates = base_qs.filter(category=section.category).order_by('-sold_count')
