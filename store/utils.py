@@ -150,11 +150,9 @@ class BannerImageProcessor:
         
         try:
             with Image.open(self.image_path) as img:
-                # Convertir a RGB si es necesario (maneja RGBA/LA con fondo blanco)
-                if img.mode in ('RGBA', 'LA'):
-                    background = Image.new('RGB', img.size, (255, 255, 255))
-                    background.paste(img, mask=img.split()[-1])
-                    img = background
+                # REGLA: Preservar canal alfa (transparencia RGBA) en WebP si el origen tiene transparencia
+                if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                    img = img.convert('RGBA')
                 elif img.mode != 'RGB':
                     img = img.convert('RGB')
                 
@@ -203,11 +201,9 @@ class CategoryImageProcessor:
         
         try:
             with Image.open(self.image_path) as img:
-                # Convertir a RGB si es necesario (maneja RGBA/LA con fondo blanco)
-                if img.mode in ('RGBA', 'LA'):
-                    background = Image.new('RGB', img.size, (255, 255, 255))
-                    background.paste(img, mask=img.split()[-1])
-                    img = background
+                # REGLA: Preservar canal alfa (transparencia RGBA) en WebP si el origen tiene transparencia
+                if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                    img = img.convert('RGBA')
                 elif img.mode != 'RGB':
                     img = img.convert('RGB')
                 

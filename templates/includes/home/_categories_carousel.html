@@ -1,7 +1,7 @@
 {% load static %}
 {% load custom_filters %}
 
-<!-- Local Introduction (Sprint 3: Tarea 3.1) -->
+<!-- Local Introduction -->
 <div class="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 py-6">
     <div class="container mx-auto px-4 text-center max-w-3xl">
         <h2 class="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2 font-heading">
@@ -12,7 +12,9 @@
         </p>
     </div>
 </div>
+<!-- Local Introduction END -->
 
+<!-- Categories Carrusel Section -->
 {# Carrusel de categorías (Dual: Auto con categorías reales o Manual con banners) #}
 <section class="py-3 md:py-4 {% if section.highlight_color %}{{ section.highlight_color }}{% else %}bg-soft-bg dark:bg-slate-900{% endif %} dark:bg-slate-900">
     <div class="container mx-auto px-4">
@@ -122,8 +124,8 @@
                 {% if data.categories %}
                     {# MODO AUTOMÁTICO: Usa las categorías del sistema con <picture> y WebP #}
                     {% for category in data.categories %}
-                    <a href="{{ category.get_url }}" class="flex-shrink-0 snap-start flex flex-col items-center gap-2 group">
-                        <div class="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden bg-white dark:bg-slate-800 shadow-sm group-hover:shadow-md border-2 border-transparent group-hover:border-primary-500 dark:group-hover:border-primary-400 transition-all flex items-center justify-center p-2 dark:border-slate-700">
+                    <a href="{{ category.get_url }}" class="flex-shrink-0 snap-start flex flex-col items-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-lg p-1">
+                        <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center transition-transform duration-200 motion-safe:group-hover:scale-105">
                             {% if category.image or category.cat_image %}
                             <picture>
                                 {# WebP primero si existe #}
@@ -135,14 +137,14 @@
                                      alt="{{ category.category_name }}" 
                                      class="w-full h-full object-contain"
                                      loading="lazy"
-                                     width="48"
-                                     height="48">
+                                     width="80"
+                                     height="80">
                             </picture>
                             {% else %}
-                            <i data-lucide="folder" class="w-8 h-8 md:w-10 md:h-10 text-primary-600 dark:text-primary-400"></i>
+                            <i data-lucide="folder" class="w-10 h-10 md:w-12 md:h-12 text-primary-600 dark:text-primary-400"></i>
                             {% endif %}
                         </div>
-                        <p class="text-[10px] md:text-xs font-medium text-center text-slate-700 dark:text-slate-300 max-w-[70px] line-clamp-2">
+                        <p class="text-[11px] md:text-xs font-medium text-center text-slate-700 dark:text-slate-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors max-w-[84px] md:max-w-[96px] leading-tight line-clamp-2">
                             {{ category.category_name }}
                         </p>
                     </a>
@@ -153,10 +155,10 @@
                     {% for banner in data.banners %}
                     <a href="{{ banner.get_link_url|default:'#' }}"
                        {% if banner.open_new_tab %}target="_blank" rel="noopener"{% endif %}
-                       class="flex-shrink-0 snap-start flex flex-col items-center gap-2 group">
+                       class="flex-shrink-0 snap-start flex flex-col items-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-lg p-1">
                         
                         {# Imagen de categoría #}
-                        <div class="w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-white dark:bg-slate-800 shadow-sm group-hover:shadow-md border-2 border-transparent group-hover:border-primary-500 dark:group-hover:border-primary-400 transition-all flex items-center justify-center dark:border-slate-700">
+                        <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center transition-transform duration-200 motion-safe:group-hover:scale-105">
                             <picture>
                                 {# Mobile Art Direction (≤768px) - WebP first #}
                                 {% if banner.image_mobile_asset and banner.image_mobile_asset.get_webp_url %}
@@ -183,26 +185,26 @@
                                 {% if banner.image_desktop_asset and banner.image_desktop_asset.file %}
                                 <img src="{{ banner.image_desktop_asset.file.url }}" 
                                      alt="{{ banner.alt_text|default:banner.title }}"
-                                     class="w-full h-full object-cover"
+                                     class="w-full h-full object-contain"
                                      loading="lazy"
                                      width="80"
                                      height="80">
                                 {% elif banner.image_desktop %}
                                 <img src="{{ banner.image_desktop.url }}" 
                                      alt="{{ banner.alt_text|default:banner.title }}"
-                                     class="w-full h-full object-cover"
+                                     class="w-full h-full object-contain"
                                      loading="lazy"
                                      width="80"
                                      height="80">
                                 {% else %}
-                                <i data-lucide="image" class="w-8 h-8 md:w-10 md:h-10 text-slate-400 dark:text-slate-500"></i>
+                                <i data-lucide="image" class="w-10 h-10 md:w-12 md:h-12 text-slate-400 dark:text-slate-500"></i>
                                 {% endif %}
                             </picture>
                         </div>
                         
                         {# Título (si existe) #}
                         {% if banner.title %}
-                        <p class="text-[10px] md:text-xs font-medium text-center text-slate-700 dark:text-slate-300 max-w-[70px] line-clamp-2">
+                        <p class="text-[11px] md:text-xs font-medium text-center text-slate-700 dark:text-slate-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors max-w-[84px] md:max-w-[96px] leading-tight line-clamp-2">
                             {{ banner.title }}
                         </p>
                         {% endif %}
@@ -228,3 +230,4 @@
         </div>
     </div>
 </section>
+<!-- Categories Carrusel Section END -->

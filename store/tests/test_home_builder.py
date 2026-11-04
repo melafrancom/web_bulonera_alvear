@@ -213,3 +213,59 @@ class TestHomeSectionCommercialSanitation:
         products = HomeSectionService._resolve_products(section)
         assert len(products) == 1
         assert products[0].code == "MANUAL-OK"
+
+
+class TestImageProcessorsAlphaPreservation:
+    """Valida la preservacion de transparencia RGBA en variantes WebP."""
+
+    def test_category_image_processor_preserves_alpha(self, tmp_path, settings):
+        from store.utils import CategoryImageProcessor
+        from PIL import Image, ImageDraw
+
+        settings.MEDIA_ROOT = str(tmp_path)
+
+        # Crear imagen con zona transparente y bloque opaco
+        img = Image.new('RGBA', (120, 100), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        draw.rectangle([30, 30, 70, 70], fill=(255, 0, 0, 255))
+        src_path = tmp_path / 'test_cat.png'
+        img.save(src_path, format='PNG')
+
+        processor = CategoryImageProcessor(str(src_path))
+        assert processor.process_image() is True
+
+        webp_path = tmp_path / 'photos' / 'categories' / 'webp' / 'test_cat.webp'
+        assert webp_path.exists()
+
+        with Image.open(webp_path) as webp_img:
+            assert webp_img.mode == 'RGBA'
+            # Canal alfa transparente en esquinas (alpha == 0)
+            assert webp_img.getpixel((0, 0))[3] == 0
+            # Canal alfa opaco en el centro (alpha == 255)
+            assert webp_img.getpixel((50, 50))[3] == 255
+
+    def test_banner_image_processor_preserves_alpha(self, tmp_path, settings):
+        from store.utils import BannerImageProcessor
+        from PIL import Image, ImageDraw
+
+        settings.MEDIA_ROOT = str(tmp_path)
+
+        # Crear imagen con zona transparente y bloque opaco
+        img = Image.new('RGBA', (200, 200), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        draw.rectangle([30, 30, 70, 70], fill=(0, 128, 255, 255))
+        src_path = tmp_path / 'test_banner.png'
+        img.save(src_path, format='PNG')
+
+        processor = BannerImageProcessor(str(src_path))
+        assert processor.process_image() is True
+
+        webp_path = tmp_path / 'photos' / 'banners' / 'webp' / 'test_banner.webp'
+        assert webp_path.exists()
+
+        with Image.open(webp_path) as webp_img:
+            assert webp_img.mode == 'RGBA'
+            # Canal alfa transparente en esquinas (alpha == 0)
+            assert webp_img.getpixel((0, 0))[3] == 0
+            # Canal alfa opaco en el centro (alpha == 255)
+            assert webp_img.getpixel((50, 50))[3] == 255
