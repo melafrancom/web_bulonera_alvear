@@ -36,6 +36,7 @@ def cart_view(request):
     context = {
         'cart_items': cart_data['items'],
         'total': cart_data['total'],
+        'total_without_taxes': cart_data['total_without_taxes'],
         'quantity': cart_data['quantity'],
         'breadcrumb_items': breadcrumb_items,
     }
@@ -214,9 +215,12 @@ def update_cart_quantity(request, cart_item_id: int):
                     'quantity': updated_item.quantity,
                     'unit_price': f"{updated_item.purchase_price:.2f}",
                     'subtotal': f"{updated_item.sub_total:.2f}",
+                    'unit_price_without_taxes': f"{updated_item.unit_price_without_taxes:.2f}",
+                    'subtotal_without_taxes': f"{updated_item.sub_total_without_taxes:.2f}",
                 },
                 'cart': {
                     'total': f"{cart_data['total']:.2f}",
+                    'total_without_taxes': f"{cart_data['total_without_taxes']:.2f}",
                     'quantity': total_units,
                     'item_count': item_count,
                     'is_empty': item_count == 0,
@@ -273,6 +277,7 @@ def remove_cart_item(request, product_id, cart_item_id):
             'item_id': cart_item_id,
             'cart': {
                 'total': f"{cart_data['total']:.2f}",
+                'total_without_taxes': f"{cart_data['total_without_taxes']:.2f}",
                 'quantity': cart_data['quantity'],
                 'item_count': item_count,
                 'is_empty': item_count == 0,
@@ -339,6 +344,7 @@ def checkout(request):
         'form': form,
         'cart_items': cart_data['items'],
         'total': cart_data['total'],
+        'total_without_taxes': cart_data['total_without_taxes'],
         'quantity': cart_data['quantity'],
         'breadcrumb_items': breadcrumb_items,
     }

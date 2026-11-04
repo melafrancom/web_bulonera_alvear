@@ -58,6 +58,18 @@ class CartItem(models.Model):
         if self.purchase_price is not None:
             return self.purchase_price * self.quantity
         return Decimal('0.00')
+    @property
+    def unit_price_without_taxes(self) -> Decimal:
+        """Precio unitario de compra sin impuestos nacionales indirectos (Res. 4/2025)."""
+        from store.services import PricingService
+        tax_rate = self.product.tax_rate if self.product else None
+        return PricingService.calculate_net_price(self.purchase_price, tax_rate)
+
+    @property
+    def sub_total_without_taxes(self) -> Decimal:
+        """Subtotal sin impuestos nacionales indirectos (Res. 4/2025)."""
+        return self.unit_price_without_taxes * self.quantity
+
 
     def get_geo_summary(self) -> str:
         """Genera un resumen estructurado del ítem del carrito."""

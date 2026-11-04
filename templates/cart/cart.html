@@ -82,6 +82,8 @@
                                  initialQty: {{ cart_item.quantity }},
                                  unitPrice: '{% if cart_item.product.is_on_sale and cart_item.product.sale_price %}{{ cart_item.product.sale_price|floatformat:2 }}{% else %}{{ cart_item.product.price|floatformat:2 }}{% endif %}',
                                  initialSubtotal: '{{ cart_item.sub_total|floatformat:2 }}',
+                unitPriceWithoutTaxes: '{{ cart_item.unit_price_without_taxes|floatformat:2 }}',
+                initialSubtotalWithoutTaxes: '{{ cart_item.sub_total_without_taxes|floatformat:2 }}',
                                  updateUrl: '{% url 'cart:update_cart_quantity' cart_item.id %}',
                                  removeUrl: '{% url 'cart:remove_cart_item' cart_item.product.id cart_item.id %}',
                                  csrfToken: '{{ csrf_token }}'
@@ -136,6 +138,9 @@
                                 </div>
                                 <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
                                     Precio final con impuestos
+                                </span>
+                                <span class="text-[10px] text-slate-400 block mt-0.5">
+                                    PRECIO SIN IMPUESTOS NACIONALES: <span x-text="formatCurrency(subtotalWithoutTaxes)">{{ cart_item.sub_total_without_taxes|argentina_currency }}</span>
                                 </span>
                             </div>
                             
@@ -248,8 +253,9 @@
     function registerCartComponents() {
         if (window.Alpine) {
             // Componente de Resumen Global del Carrito
-            Alpine.data('cartSummary', ({ initialTotal }) => ({
+            Alpine.data('cartSummary', ({ initialTotal, initialTotalWithoutTaxes }) => ({
                 total: initialTotal,
+                totalWithoutTaxes: initialTotalWithoutTaxes || (parseFloat(initialTotal) / 1.21).toFixed(2),
 
                 formatCurrency(val) {
                     const n = parseFloat(val) || 0;
@@ -264,12 +270,17 @@
                 updateCart(cartData) {
                     if (cartData && cartData.total !== undefined) {
                         this.total = cartData.total;
+                        if (cartData.total_without_taxes !== undefined) {
+                            this.totalWithoutTaxes = cartData.total_without_taxes;
+                        } else {
+                            this.totalWithoutTaxes = (parseFloat(cartData.total) / 1.21).toFixed(2);
+                        }
                     }
                 }
             }));
 
             // Componente de Fila/Tarjeta de Ítem de Carrito
-            Alpine.data('cartItemRow', ({ itemId, productId, initialQty, unitPrice, initialSubtotal, updateUrl, removeUrl, csrfToken }) => ({
+            Alpine.data('cartItemRow', ({ itemId, productId, initialQty, unitPrice, initialSubtotal, unitPriceWithoutTaxes, initialSubtotalWithoutTaxes, updateUrl, removeUrl, csrfToken }) => ({
                 itemId: itemId,
                 productId: productId,
                 qty: parseInt(initialQty, 10) || 1,
@@ -277,6 +288,8 @@
                 lastAttemptedQty: parseInt(initialQty, 10) || 1,
                 unitPrice: unitPrice,
                 subtotal: initialSubtotal,
+                unitPriceWithoutTaxes: unitPriceWithoutTaxes || (parseFloat(unitPrice) / 1.21).toFixed(2),
+                subtotalWithoutTaxes: initialSubtotalWithoutTaxes || (parseFloat(initialSubtotal) / 1.21).toFixed(2),
                 isLoading: false,
                 isRemoving: false,
                 errorMessage: '',
@@ -372,6 +385,7 @@
                         this.lastConfirmedQty = data.item.quantity;
                         this.qty = data.item.quantity;
                         this.subtotal = data.item.subtotal;
+                        if (data.item.subtotal_without_taxes) { this.subtotalWithoutTaxes = data.item.subtotal_without_taxes; }
                         this.errorMessage = '';
                         this.showRetry = false;
 

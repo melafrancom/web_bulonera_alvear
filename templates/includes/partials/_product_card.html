@@ -82,16 +82,28 @@
         <div class="mb-3">
             {% if product.is_on_sale and product.sale_price %}
             <div class="flex items-center gap-2">
-                <span class="text-lg md:text-xl font-bold text-primary-600 dark:text-primary-400">
-                    ${{ product.sale_price|floatformat:0 }}
+                <span class="text-lg md:text-xl font-bold text-[#D42B1E]">
+                    {{ product.sale_price|argentina_currency }}
                 </span>
                 <span class="text-sm text-slate-400 line-through">
-                    ${{ product.price|floatformat:0 }}
+                    {{ product.price|argentina_currency }}
                 </span>
             </div>
+            <span class="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
+                Precio final con impuestos
+            </span>
+            <span class="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                PRECIO SIN IMPUESTOS NACIONALES: {{ product.sale_price_without_taxes|argentina_currency }}
+            </span>
             {% else %}
             <span class="text-lg md:text-xl font-bold text-primary-600 dark:text-primary-400">
-                ${{ product.price|floatformat:0 }}
+                {{ product.price|argentina_currency }}
+            </span>
+            <span class="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
+                Precio final con impuestos
+            </span>
+            <span class="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                PRECIO SIN IMPUESTOS NACIONALES: {{ product.price_without_taxes|argentina_currency }}
             </span>
             {% endif %}
         </div>

@@ -8,7 +8,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Tuple
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 
 import pandas as pd
@@ -40,6 +40,44 @@ class ImportResult:
     image_warnings: int = 0
     error_details: List[Tuple[int, str]] = field(default_factory=list)
     tags_created: List[str] = field(default_factory=list)
+
+
+
+class PricingService:
+    """
+    Servicio de cálculo y desglose de precios conforme a la Resolución 4/2025 (Secretaría de Comercio).
+    
+    # REGLA: Exige exhibir el precio final con IVA y, en tipografía menor, el precio neto sin impuestos
+    # nacionales indirectos. Si un producto no tiene alícuota explícita, se aplica la tasa general (21.00%).
+    """
+    DEFAULT_TAX_RATE = Decimal('21.00')
+
+    @classmethod
+    def calculate_net_price(cls, gross_amount, tax_rate=None) -> Decimal:
+        """
+        Calcula el precio neto sin impuestos indirectos nacionales a partir del precio final.
+        Fórmula: Precio Neto = Precio Final / (1 + (Alícuota / 100))
+        """
+        if gross_amount is None:
+            return Decimal('0.00')
+        try:
+            d_gross = Decimal(str(gross_amount))
+        except (ValueError, TypeError, InvalidOperation):
+            return Decimal('0.00')
+
+        if d_gross <= Decimal('0.00'):
+            return Decimal('0.00')
+
+        if tax_rate is not None:
+            try:
+                d_rate = Decimal(str(tax_rate))
+            except (ValueError, TypeError, InvalidOperation):
+                d_rate = cls.DEFAULT_TAX_RATE
+        else:
+            d_rate = cls.DEFAULT_TAX_RATE
+
+        divisor = Decimal('1.00') + (d_rate / Decimal('100.00'))
+        return (d_gross / divisor).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
 
 class ProductService:
@@ -505,6 +543,19 @@ class ProductService:
         for field in optional_fields:
             if field in item and item[field] and not pd.isna(item[field]):
                 setattr(product, field, str(item[field]))
+
+        # Alícuota impositiva (Res. 4/2025)
+        tax_col = None
+        for col_name in ['tax_rate', 'iva', 'alicuota_iva', 'alicuota']:
+            if col_name in item and item[col_name] is not None and not pd.isna(item[col_name]):
+                tax_col = item[col_name]
+                break
+        if tax_col is not None:
+            try:
+                clean_rate_str = str(tax_col).replace('%', '').replace(',', '.').strip()
+                product.tax_rate = Decimal(clean_rate_str)
+            except Exception:
+                pass
         
         # Guardar producto
         product.save()

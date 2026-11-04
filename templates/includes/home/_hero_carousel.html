@@ -1,4 +1,5 @@
 {% load static %}
+{% load store_filters %}
 <!-- ========================= SECTION MAIN - CARRUSEL HERO ========================= -->
 <section class="relative bg-gradient-to-br from-slate-900 via-primary-900 to-slate-900 overflow-hidden">
     <div x-data="{
@@ -294,7 +295,7 @@
                                     {% else %}
                                     <picture>
                                         <source srcset="{% static 'images/placeholder.webp' %}" type="image/webp">
-                                        <img src="{% static 'images/placeholder.png' %}" alt="sin imagen" 
+                                        <img src="{% static 'images/placeholder.png' %}" alt="" aria-hidden="true" 
                                             width="400" height="400"
                                             class="w-full h-full object-cover motion-safe:group-hover:scale-[1.02] transition-transform duration-300 ease-out">
                                     </picture>
@@ -305,8 +306,14 @@
                                         {{ product.name }}
                                     </h5>
                                     <p class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400">
-                                        ${{ product.price|floatformat:0 }}
+                                        {{ product.price|argentina_currency }}
                                     </p>
+                                    <span class="text-[10px] text-slate-400 block mt-0.5">
+                                        Precio final con impuestos
+                                    </span>
+                                    <span class="text-[10px] text-slate-400 block">
+                                        PRECIO SIN IMPUESTOS NACIONALES: {{ product.price_without_taxes|argentina_currency }}
+                                    </span>
                                 </div>
                             </a>
                             {% endfor %}
@@ -337,7 +344,7 @@
                             {% for product in group %}
                             <a href="{{ product.get_url }}" class="group bg-white dark:bg-slate-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all">
                                 <div class="aspect-square relative overflow-hidden">
-                                    {% if product.images %}
+                                    {% if product.image or product.images %}
                                     <picture>
                                         <source srcset="{{ product.webp_image_url }}" type="image/webp">
                                         <img src="{{ product.image_url }}" alt="{{ product.name }}" 
@@ -358,8 +365,14 @@
                                         {{ product.name }}
                                     </h5>
                                     <p class="text-base md:text-lg font-bold text-primary-600 dark:text-primary-400">
-                                        ${{ product.price|floatformat:0 }}
+                                        {{ product.price|argentina_currency }}
                                     </p>
+                                    <span class="text-[10px] text-slate-400 block mt-0.5">
+                                        Precio final con impuestos
+                                    </span>
+                                    <span class="text-[10px] text-slate-400 block">
+                                        PRECIO SIN IMPUESTOS NACIONALES: {{ product.price_without_taxes|argentina_currency }}
+                                    </span>
                                 </div>
                             </a>
                             {% endfor %}

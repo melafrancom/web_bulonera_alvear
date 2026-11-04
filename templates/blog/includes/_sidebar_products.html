@@ -1,5 +1,6 @@
 <!-- Blog Sidebar — Featured Products -->
 {% load i18n %}
+{% load store_filters %}
 {% if featured_products %}
 <aside class="mt-12 p-6 bg-gray-50 dark:bg-slate-900 rounded-2xl border dark:border-slate-800">
   <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
@@ -22,8 +23,11 @@
         </p>
         {% if product.price %}
         <p class="text-sm text-accent-600 dark:text-accent-400 font-bold">
-          ${{ product.price|floatformat:0 }}
+          {{ product.price|argentina_currency }}
         </p>
+        <span class="text-[10px] text-slate-400 block">
+          PRECIO SIN IMPUESTOS NACIONALES: {{ product.price_without_taxes|argentina_currency }}
+        </span>
         {% endif %}
       </div>
     </a>

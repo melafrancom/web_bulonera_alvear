@@ -1,3 +1,4 @@
+from decimal import Decimal, ROUND_HALF_UP
 from django.db import models
 from django.urls import reverse
 from django.db.models import Avg, Count
@@ -81,6 +82,20 @@ class Product(models.Model):
     is_on_sale = models.BooleanField(default=False, verbose_name="En oferta")
     sale_price = models.FloatField(blank=True, null=True, verbose_name="Precio de oferta")
     discount_percentage = models.IntegerField(blank=True, null=True, verbose_name="Porcentaje de descuento")
+    # Régimen Impositivo y Exhibición Res. 4/2025
+    tax_rate = models.DecimalField(
+        "Alícuota IVA (%)",
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        choices=[
+            (Decimal('21.00'), '21.00% (General)'),
+            (Decimal('10.50'), '10.50% (Reducida)'),
+            (Decimal('0.00'), '0.00% (Exento)'),
+        ],
+        help_text="Alícuota de IVA aplicable. Si es nula, se asume la tasa general del 21% por defecto."
+    )
     # Nuevos campos para META PIXEL y Google Merchant
     brand = models.CharField(max_length=100, blank=True)
     condition = models.CharField(max_length=20, choices=[
@@ -278,6 +293,31 @@ class Product(models.Model):
         if not self.is_on_sale and self.price is not None and self.price > 0:
             return self.price
         return 0
+
+    @property
+    def effective_tax_rate(self) -> Decimal:
+        """Retorna la alícuota de IVA aplicable o 21.00% por defecto si no está especificada."""
+        if self.tax_rate is not None:
+            return Decimal(str(self.tax_rate))
+        return Decimal('21.00')
+
+    @property
+    def price_without_taxes(self) -> Decimal:
+        """Precio estándar sin impuestos nacionales indirectos (Res. 4/2025)."""
+        from store.services import PricingService
+        return PricingService.calculate_net_price(self.price, self.tax_rate)
+
+    @property
+    def sale_price_without_taxes(self) -> Decimal:
+        """Precio de oferta sin impuestos nacionales indirectos (Res. 4/2025)."""
+        from store.services import PricingService
+        return PricingService.calculate_net_price(self.sale_price, self.tax_rate)
+
+    @property
+    def effective_price_without_taxes(self) -> Decimal:
+        """Precio efectivo vigente sin impuestos nacionales indirectos (Res. 4/2025)."""
+        from store.services import PricingService
+        return PricingService.calculate_net_price(self.effective_price, self.tax_rate)
 
     @property
     def has_valid_price(self):

@@ -94,14 +94,17 @@ class CartService:
             Dict con 'total', 'quantity', 'items'
         """
         total = Decimal('0.00')
+        total_without_taxes = Decimal('0.00')
         quantity = 0
         
         for item in cart_items:
             total += Decimal(str(item.sub_total))
+            total_without_taxes += Decimal(str(item.sub_total_without_taxes))
             quantity += item.quantity
         
         return {
             'total': total,
+            'total_without_taxes': total_without_taxes,
             'quantity': quantity,
             'items': cart_items
         }

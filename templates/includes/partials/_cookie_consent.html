@@ -278,6 +278,12 @@ function cookieConsent() {
         },
 
         _save() {
+            const previousStored = localStorage.getItem('ba_cookie_consent');
+            let prevPrefs = { analytics: false, advertising: false };
+            if (previousStored) {
+                try { prevPrefs = JSON.parse(previousStored); } catch(e) {}
+            }
+
             localStorage.setItem('ba_cookie_consent', JSON.stringify(this.preferences));
             
             // Crear cookie espejo (1 año) para que el servidor pueda leer el consentimiento
@@ -300,6 +306,36 @@ function cookieConsent() {
                     'ad_user_data': this.preferences.advertising ? 'granted' : 'denied',
                     'ad_personalization': this.preferences.advertising ? 'granted' : 'denied'
                 });
+            }
+
+            // Endurecimiento de Revocación de Terceros:
+            // Si el usuario retira un consentimiento previamente concedido:
+            const revokedAdvertising = prevPrefs.advertising && !this.preferences.advertising;
+            const revokedAnalytics = prevPrefs.analytics && !this.preferences.analytics;
+
+            if (revokedAdvertising) {
+                if (typeof fbq === 'function') {
+                    try { fbq('consent', 'revoke'); } catch(e) {}
+                }
+                // Limpiar cookies de Meta
+                document.cookie = "_fbp=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "_fbc=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            }
+
+            if (revokedAnalytics) {
+                if (typeof window.clarity === 'function') {
+                    try { window.clarity('consent', false); } catch(e) {}
+                }
+                // Limpiar cookies de Google Analytics y Clarity
+                document.cookie = "_ga=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "_clck=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "_clsk=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            }
+
+            // Si se revocó activamente un script que ya estaba en memoria, recargar página para descarga definitiva
+            if (revokedAdvertising || revokedAnalytics) {
+                window.location.reload();
+                return;
             }
 
             this._activateScripts(this.preferences);
