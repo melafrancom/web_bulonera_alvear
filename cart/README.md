@@ -27,21 +27,21 @@ graph LR
 
 ## 🛠️ Modelos Clave / Entidades (DB)
 - **Cart** (Hereda de `models.Model`): Modela el carro de compras para usuarios anónimos a través de un `cart_id` ligado al identificador de la sesión de Django (`session_key`).
-- **CartItem** (Hereda de `models.Model`): Vincula los productos agregados al carro. Soporta ForeignKey a `Account` (usuario autenticado), ForeignKey a `Cart` (usuario anónimo), ForeignKey a `Product`, cantidad, variación elegida (`Variation` Many-to-Many) y el precio de compra en el momento de agregado (`purchase_price` como `DecimalField(max_digits=12, decimal_places=2)` congelado).
+- **CartItem** (Hereda de `models.Model`): Vincula los productos agregados al carro. Soporta ForeignKey a `Account` (usuario autenticado), ForeignKey a `Cart` (usuario anónimo), ForeignKey a `Product`, cantidad, variación elegida (`Variation` Many-to-Many) y el precio de compra en el momento de agregado (`purchase_price` como `DecimalField(max_digits=12, decimal_places=2)` congelado). Expone las propiedades `unit_price_without_taxes` y `sub_total_without_taxes` calculadas a través de `PricingService` para el desglose impositivo de la Resolución 4/2025.
 
 ## ⚡ Servicios y Casos de Uso Críticos (services.py)
 - **CartService.get_or_create_cart_id**: Inicializa u obtiene de forma segura la sesión del visitante para identificar su carrito.
 - **CartService.get_cart_items**: Recupera los items del carro activos. Si el usuario está logueado, prioriza la consulta por clave de usuario; de lo contrario, por el ID de sesión.
-- **CartService.calculate_cart_totals**: Calcula de manera centralizada la cantidad de artículos y el total del carrito.
+- **CartService.calculate_cart_totals**: Calcula de manera centralizada la cantidad de artículos, el total final acumulado (`total`) y el subtotal neto sin impuestos nacionales indirectos (`total_without_taxes`).
 - **CartService.add_to_cart**: Añade un producto o incrementa su cantidad. Compara las combinaciones de variaciones existentes para decidir si incrementa un item existente o añade una nueva línea. Aplica validación estricta y clamping defensivo de cantidad `[1, 1000]`.
 - **CartService.update_quantity**: Actualiza explícitamente la cantidad de un `CartItem` validando límites comerciales `[1, 1000]` y control de pertenencia (usuario o sesión). No borra ítems silenciosamente ante entradas inválidas (lanza `ValueError`).
 - **CartService.remove_from_cart**: Decrementa o remueve completamente un `CartItem`. Resiliente a contextos autenticados (`user_id`) y anónimos (`cart__cart_id`), validando propiedad y previniendo excepciones por desajustes de sesión.
 - **CartService.merge_cart_on_login**: Resuelve la conciliación al iniciar sesión. Traspasa los items del carrito anónimo al carrito persistente de la cuenta de usuario, unificando duplicados y limpiando la sesión previa.
 
 ## 🌐 Controladores y Vistas Web (web/views/views.py)
-- **cart_view**: Renderiza la vista principal del carrito (`cart.html`) con resumen financiero y empty state reactivo.
-- **update_cart_quantity**: Endpoint POST dual para actualizar cantidad. Responde con JSON (cadenas decimales formateadas a 2 decimales para precisión contable y estado del carrito) si la petición es AJAX, o con redirección 302 hacia `cart:cart` si proviene de formulario nativo.
-- **remove_cart_item**: Endpoint POST dual para eliminación de ítems. Devuelve `{ status: 'deleted', item_id, cart: { total, quantity, item_count, is_empty } }` para sincronización en caliente en el cliente, o 302 al carrito.
+- **cart_view**: Renderiza la vista principal del carrito (`cart.html`) con resumen financiero, desglose neto según Res. 4/2025 y empty state reactivo.
+- **update_cart_quantity**: Endpoint POST dual para actualizar cantidad. Responde con JSON (cadenas decimales formateadas a 2 decimales para precisión contable, montos sin impuestos `unit_price_without_taxes`, `sub_total_without_taxes` y `cart.total_without_taxes`, y estado global del carrito) si la petición es AJAX, o con redirección 302 hacia `cart:cart` si proviene de formulario nativo.
+- **remove_cart_item**: Endpoint POST dual para eliminación de ítems. Devuelve `{ status: 'deleted', item_id, cart: { total, total_without_taxes, quantity, item_count, is_empty } }` para sincronización en caliente en el cliente, o 302 al carrito.
 - **get_cart_data**: Endpoint AJAX para telemetría y actualización del contador flotante.
 
 ## 🎨 Componentes y Frontend Progresivo (Alpine.js)

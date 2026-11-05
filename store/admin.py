@@ -61,6 +61,7 @@ class ProductAdmin(admin.ModelAdmin):
         custom_urls = [
             path('import-products/', self.admin_site.admin_view(self.import_products), name='import_products'),
             path('update-prices/', self.admin_site.admin_view(self.update_prices), name='update_prices'),
+            path('download-import-template/', self.admin_site.admin_view(self.download_import_template), name='store_product_download_import_template'),
         ]
         return custom_urls + urls
     
@@ -92,6 +93,34 @@ class ProductAdmin(admin.ModelAdmin):
             form = ProductImportForm()
         
         return render(request, 'admin/store/product/import_products.html', {'form': form})
+
+    def download_import_template(self, request):
+        """Descarga la plantilla oficial en Excel para importación de productos o actualización de precios."""
+        if request.method != 'GET':
+            from django.http import HttpResponseNotAllowed
+            return HttpResponseNotAllowed(['GET'])
+        
+        if not (self.has_add_permission(request) or self.has_change_permission(request)):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied
+        
+        mode = 'prices' if request.GET.get('mode') == 'prices' else 'full'
+        from store.services import ProductService
+        buffer = ProductService.generate_import_template_workbook(mode=mode)
+        
+        if mode == 'prices':
+            filename = 'plantilla_actualizar_precios_bulonera.xlsx'
+        else:
+            filename = 'plantilla_importacion_productos_bulonera.xlsx'
+        
+        from django.http import FileResponse
+        response = FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=filename,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        return response
 
     def update_prices(self, request):
         if request.method == 'POST':
@@ -209,6 +238,7 @@ class ProductAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         extra_context['show_import_button'] = True
         extra_context['show_price_update_button'] = True
+        extra_context['show_template_download_button'] = True
         return super().changelist_view(request, extra_context=extra_context)
 
     def display_subcategories(self, obj):

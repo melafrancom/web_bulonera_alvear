@@ -32,7 +32,7 @@ graph LR
 ```
 
 ## 🛠️ Modelos Clave / Entidades (DB)
-- **Product** (Hereda de `models.Model`): Modela el producto físico. Almacena código de barras/código interno (`code`), medidas (`diameter`, `length`), precios (estándar y en oferta), stock, SEO tags, relación M2M a `ProductTag` y metadatos para integración publicitaria en redes (Meta Pixel y Google Merchant Feed).
+- **Product** (Hereda de `models.Model`): Modela el producto físico. Almacena código de barras/código interno (`code`), medidas (`diameter`, `length`), precios (estándar y en oferta), alícuota impositiva opcional (`tax_rate` como `DecimalField` para IVA 21%, 10.5%, etc.), stock, SEO tags, relación M2M a `ProductTag` y metadatos para integración publicitaria en redes (Meta Pixel y Google Merchant Feed). Expone propiedades calculadas para el precio neto sin impuestos nacionales (`price_without_taxes`, `sale_price_without_taxes`, `effective_price_without_taxes`) conforme a la Resolución 4/2025.
 - **ProductTag** (Hereda de `models.Model`): Modela etiquetas o agrupadores de productos para filtrado rápido por características especiales o promocionales (ej. "CyberMonday", "Oferta", "Inoxidable"), con `name`, `slug` y estado `is_active`.
 - **ProductGallery** (Hereda de `models.Model`): Colección de imágenes adicionales para el producto.
 - **Variation** (Hereda de `models.Model`): Mapea opciones del producto por categorías (ej. Rosca, Material, Medida).
@@ -43,9 +43,11 @@ graph LR
 - **CarouselImage**: Banners principales del carrusel de bienvenida.
 
 ## ⚡ Servicios y Casos de Uso Críticos (services.py)
+- **PricingService.calculate_net_price**: Calcula el importe neto sin impuestos nacionales indirectos a partir de un precio bruto final y una alícuota porcentual (por defecto `21.00%` según `DEFAULT_TAX_RATE`), aplicando la fórmula `neto = bruto / (1 + tasa / 100)` con redondeo financiero canónico `ROUND_HALF_UP` a 2 decimales para dar cumplimiento a la Resolución 4/2025.
 - **ProductService.filter_products / paginate_products**: Filtra y pagina productos en el catálogo; soporta filtrado multi-tag con semántica AND estricta mediante subconsultas (`pk__in`) para evitar producto cartesiano en anotaciones de reviews.
 - **ProductService.get_available_tags**: Obtiene tags activos vinculados a productos disponibles para alimentar los filtros de la barra lateral.
-- **ProductService.import_from_file**: Lee y analiza archivos Excel/CSV utilizando pandas, centraliza la importación de productos, imágenes y categorías, y procesa la columna `tags` (creando automáticamente tags inexistentes o reutilizando existentes sin duplicación).
+- **ProductService.generate_import_template_workbook**: Genera en memoria (`io.BytesIO`) con openpyxl la plantilla oficial de Excel (`.xlsx`) para importación masiva de productos (`mode='full'`) con 30 columnas canónicas estilizadas por código cromático corporativo, paneles inmovilizados, validaciones desplegables (`condition`, `tax_rate`), formato texto `@` en códigos y dimensiones para prevenir corrupción de datos en Excel, y 2 hojas de documentación integrada (*Guía y Ejemplos* con 3 casos reales ferreteros y *Guía de Imágenes*). Soporta también `mode='prices'` para actualización rápida de precios (2 columnas: `code` y `price`).
+- **ProductService.import_from_file**: Lee y analiza archivos Excel/CSV utilizando pandas, descarta filas 100% vacías defensivamente, centraliza la importación de productos, imágenes y categorías, procesa la columna opcional `tax_rate` para alícuotas personalizadas (con fallback a `21.00`), y procesa la columna `tags` (creando automáticamente tags inexistentes o reutilizando existentes sin duplicación).
 - **SearchService.search_products**: Implementa búsquedas de productos en código, nombre, descripción, marca, categoría y subcategorías con deduplicación `.distinct()`.
 - **SearchService.record_unmatched_search**: Registra e incrementa conteos de solicitudes de búsqueda sin resultados en `SearchQuery` aplicando filtro heurístico por patrones (emails, teléfonos, documentos) e higiene estricta de logs (sin volcar términos crudos).
 - **ReviewService.create_review**: Gestiona el guardado y actualización de reviews recalculando la media de estrellas del producto.
@@ -53,6 +55,14 @@ graph LR
 - **GoogleReviewsService**: Consulta e integra calificaciones externas desde la API oficial de Google Maps con almacenamiento en caché de Redis.
 
 ## 📝 Notas de Detalle (Obsidian Vault)
+- **Cumplimiento Legal y Transparencia de Precios (Resolución 4/2025 - Fase 5)**:
+  - Todas las superficies de catálogo (tarjetas de productos, carruseles, modales de vista rápida, fichas de detalle) desglosan debajo del precio final el valor sin impuestos nacionales con la leyenda estricta `"PRECIO SIN IMPUESTOS NACIONALES: $... "`.
+  - Soporte de cálculo dinámico configurable mediante `Product.tax_rate` y fallback general a `21.00%`.
+  - Suite de auditoría legal y financiera dedicada: `store/tests/test_pricing_and_legal_audit.py` (14 tests verificando fórmulas, redondeos, tags de template, importador y filtros).
+- **Descarga de Plantilla Excel Oficial en Django Admin**:
+  - Endpoint administrativo seguro `/admin/store/product/download-import-template/` (`ProductAdmin.download_import_template`) con verificación de permisos `add_product`/`change_product`.
+  - Integración en la interfaz de administración: botón en `change_list.html`, tarjeta destacada e instrucciones corregidas en `import_products.html` y botón rápido en `update_prices.html`.
+  - Suite de importación y plantillas en `store/tests/test_import.py`: 24 tests unitarios, round-trip y de permisos en admin.
 - **Algoritmo de Regeneración de Slugs**: Los productos importados reciben slugs temporales automáticos. El sistema detecta cuando el nombre ha sido curado profesionalmente por un operario para gatillar la regeneración limpia y definitiva del slug.
 - **Seguridad y Hardening (AppSec - Fase 19)**:
   - **BOLA en Reseñas (SEC-101)**: `submit_review` verifica `ReviewService.user_can_review()`, prohibiendo que usuarios califiquen productos sin haberlos comprado previamente.

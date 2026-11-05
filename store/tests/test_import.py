@@ -360,3 +360,225 @@ class TestERPClient:
         assert ERPClient is not None
         assert ERPUnavailableError is not None
         assert ERPAuthError is not None
+
+
+@pytest.mark.django_db
+class TestImportTemplateGeneration:
+    """Tests unitarios y de integración para la generación de plantillas Excel de importación"""
+
+    def test_generate_full_template_structure_and_headers(self):
+        """Test: Genera la plantilla completa con 30 columnas canónicas y 3 hojas bien formateadas"""
+        import openpyxl
+        from openpyxl.utils import get_column_letter
+
+        buffer = ProductService.generate_import_template_workbook(mode='full')
+        
+        # Validar que es un archivo Excel válido
+        wb = openpyxl.load_workbook(buffer, data_only=False)
+        assert wb.sheetnames == ['Productos', 'Guía y Ejemplos', 'Guía de Imágenes']
+        
+        ws1 = wb['Productos']
+        # Fila 1 debe tener exactamente las 30 columnas canónicas
+        header_row = [cell.value for cell in ws1[1]]
+        expected_columns = [col['name'] for col in ProductService.IMPORT_TEMPLATE_COLUMNS]
+        assert len(header_row) == 30
+        assert header_row == expected_columns
+        assert 'tax_rate' in header_row
+        assert 'tags' in header_row
+        assert 'code' in header_row
+        assert 'price' in header_row
+
+        # Hoja 1 NO debe tener filas de datos pre-cargadas para evitar crear registros basura
+        assert ws1.max_row == 1
+
+        # Paneles inmovilizados
+        assert ws1.freeze_panes == 'A2'
+
+        # Formato texto '@' en columnas sensibles
+        for col_name in ['code', 'diameter', 'length', 'gtin', 'mpn']:
+            col_idx = header_row.index(col_name) + 1
+            col_letter = get_column_letter(col_idx)
+            assert ws1.column_dimensions[col_letter].number_format == '@'
+
+        # Hoja 2 y 3 deben tener contenido explicativo
+        ws2 = wb['Guía y Ejemplos']
+        assert ws2.max_row > 10
+        ws3 = wb['Guía de Imágenes']
+        assert ws3.max_row > 5
+
+    def test_generate_prices_template_structure(self):
+        """Test: Genera la plantilla rápida de actualización de precios con 2 columnas"""
+        import openpyxl
+        buffer = ProductService.generate_import_template_workbook(mode='prices')
+        
+        wb = openpyxl.load_workbook(buffer, data_only=False)
+        assert wb.sheetnames == ['Lista_Precios', 'Instrucciones']
+        
+        ws1 = wb['Lista_Precios']
+        header_row = [cell.value for cell in ws1[1]]
+        assert header_row == ['code', 'price']
+        assert ws1.max_row == 1
+        assert ws1.freeze_panes == 'A2'
+
+    def test_roundtrip_generated_template_imports_cleanly(self):
+        """Test round-trip: Escribir datos en la plantilla generada e importarla crea el producto correctamente"""
+        import openpyxl
+        from store.models import Product, ProductTag
+
+        # 1. Generar plantilla oficial
+        template_buffer = ProductService.generate_import_template_workbook(mode='full')
+        
+        # 2. Abrir con openpyxl y agregar una fila realista
+        wb = openpyxl.load_workbook(template_buffer)
+        ws = wb['Productos']
+        headers = [c.value for c in ws[1]]
+        
+        row_data = {
+            'code': '00100200099',
+            'price': '1250.50',
+            'name': 'Bulón Cabeza Hexagonal G2 UNC Zincado',
+            'diameter': '1/4"',
+            'length': '1-1/2"',
+            'stock': '300',
+            'category': 'Bulonería',
+            'subcategories': 'Hexagonales, Grado 2',
+            'tags': 'Inoxidable, Industrial',
+            'tax_rate': '10.50',
+            'brand': 'Bulonera Alvear',
+            'condition': 'new',
+        }
+        
+        new_row = [row_data.get(h, '') for h in headers]
+        ws.append(new_row)
+        
+        save_buf = BytesIO()
+        wb.save(save_buf)
+        save_buf.seek(0)
+        save_buf.name = 'template_test.xlsx'
+        
+        # 3. Importar a través de ProductService
+        result = ProductService.import_from_file(save_buf)
+        assert result.errors == 0
+        assert result.created == 1
+        
+        # 4. Verificar en base de datos
+        product = Product.objects.get(code='00100200099')
+        assert product.price == 1250.50
+        assert product.tax_rate == Decimal('10.50')
+        assert product.category.category_name == 'Bulonería'
+        assert product.subcategories.count() == 2
+        assert product.tags.count() == 2
+        tag_slugs = set(product.tags.values_list('slug', flat=True))
+        assert 'inoxidable' in tag_slugs
+        assert 'industrial' in tag_slugs
+
+    def test_parse_file_ignores_completely_empty_rows(self):
+        """Test: Filas completamente en blanco no generan falsos errores de importación"""
+        data = [
+            {'code': 'EMPTYROW01', 'name': 'Bulón Normal', 'price': 100.0, 'category': 'General'},
+            {'code': None, 'name': None, 'price': None, 'category': None},
+            {'code': '', 'name': '', 'price': '', 'category': ''},
+        ]
+        excel_file = TestProductImport().create_test_excel(data)
+        result = ProductService.import_from_file(excel_file)
+        
+        assert result.created == 1
+        assert result.errors == 0
+        assert Product.objects.filter(code='EMPTYROW01').exists()
+
+
+@pytest.mark.django_db
+class TestAdminImportTemplateDownload:
+    """Tests de integración para el endpoint de descarga en Django Admin"""
+
+    def test_admin_download_full_template_returns_xlsx(self, client, admin_user):
+        """Test: Usuario admin puede descargar la plantilla completa en .xlsx"""
+        import openpyxl
+        from django.urls import reverse
+
+        client.force_login(admin_user)
+        url = reverse('admin:store_product_download_import_template')
+        response = client.get(url)
+
+        assert response.status_code == 200
+        assert response['Content-Type'] == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        assert 'attachment; filename="plantilla_importacion_productos_bulonera.xlsx"' in response['Content-Disposition']
+
+        # Verificar que el contenido es un Excel válido
+        content_bytes = b"".join(response.streaming_content)
+        wb = openpyxl.load_workbook(BytesIO(content_bytes))
+        assert wb.sheetnames == ['Productos', 'Guía y Ejemplos', 'Guía de Imágenes']
+
+    def test_admin_download_prices_template_returns_xlsx(self, client, admin_user):
+        """Test: Usuario admin puede descargar la plantilla de precios con ?mode=prices"""
+        import openpyxl
+        from django.urls import reverse
+
+        client.force_login(admin_user)
+        url = f"{reverse('admin:store_product_download_import_template')}?mode=prices"
+        response = client.get(url)
+
+        assert response.status_code == 200
+        assert response['Content-Type'] == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        assert 'attachment; filename="plantilla_actualizar_precios_bulonera.xlsx"' in response['Content-Disposition']
+
+        content_bytes = b"".join(response.streaming_content)
+        wb = openpyxl.load_workbook(BytesIO(content_bytes))
+        assert wb.sheetnames == ['Lista_Precios', 'Instrucciones']
+
+    def test_anonymous_user_redirected_to_admin_login(self, client):
+        """Test: Usuario anónimo es redirigido al login de admin"""
+        from django.urls import reverse
+        url = reverse('admin:store_product_download_import_template')
+        response = client.get(url)
+        assert response.status_code == 302
+        assert '/admin/login/' in response.url
+
+    def test_staff_without_product_permissions_gets_403(self, client):
+        """Test: Usuario staff sin permisos sobre Product recibe 403 Forbidden"""
+        from django.urls import reverse
+        from account.models import Account
+
+        staff_user = Account.objects.create_user(
+            email='restricted_staff@test.com',
+            username='restricted_staff',
+            password='StaffPass123',
+            first_name='Restricted',
+            last_name='Staff'
+        )
+        staff_user.is_staff = True
+        staff_user.is_admin = False
+        staff_user.is_superadmin = False
+        staff_user.is_active = True
+        staff_user.save()
+
+        client.force_login(staff_user)
+        url = reverse('admin:store_product_download_import_template')
+        response = client.get(url)
+        assert response.status_code == 403
+
+    def test_import_and_changelist_views_render_download_link(self, client, admin_user):
+        """Test: Las vistas de importación y changelist contienen los enlaces de descarga"""
+        from django.urls import reverse
+
+        client.force_login(admin_user)
+
+        # 1. Changelist
+        res_change = client.get(reverse('admin:store_product_changelist'))
+        assert res_change.status_code == 200
+        assert 'download-import-template/' in res_change.content.decode('utf-8')
+
+        # 2. Import products
+        res_import = client.get(reverse('admin:import_products'))
+        assert res_import.status_code == 200
+        content_import = res_import.content.decode('utf-8')
+        assert 'download-import-template/' in content_import
+        assert 'Plantilla Excel Oficial de Importación' in content_import
+        assert 'code' in content_import and 'price' in content_import
+
+        # 3. Update prices
+        res_prices = client.get(reverse('admin:update_prices'))
+        assert res_prices.status_code == 200
+        content_prices = res_prices.content.decode('utf-8')
+        assert 'download-import-template/?mode=prices' in content_prices
+        assert 'Plantilla Rápida para Precios' in content_prices

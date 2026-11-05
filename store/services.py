@@ -5,11 +5,17 @@ Contiene la lógica de negocio pura para gestión de productos, búsqueda, revie
 """
 import logging
 import os
+import io
 import re
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Tuple
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
+
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.datavalidation import DataValidation
 
 import pandas as pd
 from django.db.models import Q, QuerySet, Avg, Count, Sum
@@ -198,6 +204,611 @@ class ProductService:
     # ============================================================
     # MÉTODOS DE IMPORTACIÓN (Migrados desde admin.py)
     # ============================================================
+
+    # Especificación canónica de las 30 columnas del importador masivo
+    IMPORT_TEMPLATE_COLUMNS: List[Dict[str, any]] = [
+        {
+            'name': 'code',
+            'required': True,
+            'group': 'required',
+            'format': '@',
+            'type_desc': 'Texto',
+            'rule': 'Código único de producto (SKU o código interno del ERP). Preserva ceros a la izquierda.',
+            'sample_1': '00100100025',
+            'sample_2': 'MAQ-TAL-001',
+            'sample_3': '00100400015',
+        },
+        {
+            'name': 'price',
+            'required': True,
+            'group': 'required',
+            'format': '#,##0.00',
+            'type_desc': 'Decimal',
+            'rule': 'Precio final de venta con IVA incluido. Admite formato con punto o coma decimal.',
+            'sample_1': '1250.50',
+            'sample_2': '185000.00',
+            'sample_3': '340.00',
+        },
+        {
+            'name': 'name',
+            'required': False,
+            'group': 'catalog',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'Nombre del producto. Si se omite, se autogenera como "Producto {code}". Si incluye diámetro y largo se concatenan.',
+            'sample_1': 'Bulón Cabeza Hexagonal G2 UNC Zincado',
+            'sample_2': 'Taladro Percutor Inalámbrico 18V Brushless',
+            'sample_3': 'Arandela Grover Inoxidable A2',
+        },
+        {
+            'name': 'diameter',
+            'required': False,
+            'group': 'tech',
+            'format': '@',
+            'type_desc': 'Texto',
+            'rule': 'Diámetro o medida nominal (ej. 1/4", 3/8", M8). Se formatea como texto para evitar conversión a fechas en Excel.',
+            'sample_1': '1/4"',
+            'sample_2': '',
+            'sample_3': '5/16"',
+        },
+        {
+            'name': 'length',
+            'required': False,
+            'group': 'tech',
+            'format': '@',
+            'type_desc': 'Texto',
+            'rule': 'Longitud o largo del producto (ej. 1-1/2", 50mm, 2"). Se formatea como texto para evitar conversión a fechas.',
+            'sample_1': '1-1/2"',
+            'sample_2': '',
+            'sample_3': '',
+        },
+        {
+            'name': 'description',
+            'required': False,
+            'group': 'catalog',
+            'format': 'General',
+            'type_desc': 'Texto largo',
+            'rule': 'Descripción detallada del producto para la ficha técnica y tienda online.',
+            'sample_1': 'Bulón cabeza hexagonal rosca gruesa zincado brillante para uso general en herrería y carpintería.',
+            'sample_2': 'Taladro percutor a batería 18V motor sin carbones con 2 baterías de 4Ah y maletín.',
+            'sample_3': 'Arandela de presión Grover en acero inoxidable AISI 304 calidad náutica e industrial.',
+        },
+        {
+            'name': 'stock',
+            'required': False,
+            'group': 'catalog',
+            'format': '#,##0',
+            'type_desc': 'Entero',
+            'rule': 'Stock físico disponible. Valor por defecto: 0.',
+            'sample_1': '500',
+            'sample_2': '15',
+            'sample_3': '2000',
+        },
+        {
+            'name': 'category',
+            'required': False,
+            'group': 'catalog',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'Categoría principal. Si no existe, el sistema la crea automáticamente. Por defecto: "Sin categoría".',
+            'sample_1': 'Bulonería',
+            'sample_2': 'Herramientas',
+            'sample_3': 'Bulonería',
+        },
+        {
+            'name': 'subcategories',
+            'required': False,
+            'group': 'catalog',
+            'format': 'General',
+            'type_desc': 'Texto (separado por comas)',
+            'rule': 'Subcategorías asociadas separadas por comas. Si no existen, se crean vinculadas a la categoría.',
+            'sample_1': 'Tornillos y Bulones, Hexagonales',
+            'sample_2': 'Máquinas Eléctricas, Herramientas a Batería',
+            'sample_3': 'Arandelas, Arandelas de Presión',
+        },
+        {
+            'name': 'tags',
+            'required': False,
+            'group': 'catalog',
+            'format': 'General',
+            'type_desc': 'Texto (separado por comas)',
+            'rule': 'Etiquetas comerciales transversales (ProductTag) separadas por comas. Se crean automáticamente si no existen.',
+            'sample_1': 'Zincado, Fijaciones, Estándar',
+            'sample_2': 'Inalámbrico, Profesional, 18V, Oferta',
+            'sample_3': 'Inoxidable, Grover, Náutico, Industria',
+        },
+        {
+            'name': 'tax_rate',
+            'required': False,
+            'group': 'catalog',
+            'format': '0.00',
+            'type_desc': 'Decimal / Lista',
+            'rule': 'Alícuota IVA (%) según Resolución 4/2025. Opciones: 21.00, 10.50, 0.00. Si se omite, se aplica 21.00% por defecto.',
+            'sample_1': '21.00',
+            'sample_2': '10.50',
+            'sample_3': '21.00',
+        },
+        {
+            'name': 'brand',
+            'required': False,
+            'group': 'catalog',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'Marca o fabricante del producto.',
+            'sample_1': 'Bulonera Alvear',
+            'sample_2': 'DeWalt',
+            'sample_3': 'Bulonera Alvear',
+        },
+        {
+            'name': 'condition',
+            'required': False,
+            'group': 'catalog',
+            'format': 'General',
+            'type_desc': 'Lista (new/used/refurbished)',
+            'rule': 'Condición del producto: new (Nuevo), used (Usado), refurbished (Reacondicionado). Por defecto: new.',
+            'sample_1': 'new',
+            'sample_2': 'new',
+            'sample_3': 'new',
+        },
+        {
+            'name': 'images',
+            'required': False,
+            'group': 'catalog',
+            'format': 'General',
+            'type_desc': 'Nombre de archivo',
+            'rule': 'Nombre del archivo de imagen principal en media/photos/products/original/ (ej. tornillo.jpg).',
+            'sample_1': 'bulon-hexagonal-g2-zincado.jpg',
+            'sample_2': 'taladro-dewalt-18v.jpg',
+            'sample_3': 'arandela-grover-inox.jpg',
+        },
+        {
+            'name': 'gallery',
+            'required': False,
+            'group': 'catalog',
+            'format': 'General',
+            'type_desc': 'Nombres separados por coma',
+            'rule': 'Imágenes secundarias en media/photos/products/original/ separadas por comas sin espacios.',
+            'sample_1': 'bulon-hex-detalle.jpg',
+            'sample_2': 'taladro-dewalt-kit.jpg,taladro-dewalt-maletin.jpg',
+            'sample_3': '',
+        },
+        {
+            'name': 'norm',
+            'required': False,
+            'group': 'tech',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'Norma técnica industrial (ej. DIN 933, SAE J429, ISO 4017).',
+            'sample_1': 'SAE J429',
+            'sample_2': '',
+            'sample_3': 'DIN 127 B',
+        },
+        {
+            'name': 'grade',
+            'required': False,
+            'group': 'tech',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'Grado o dureza del material (ej. Grado 2, Grado 5, 8.8, 10.9, AISI 304).',
+            'sample_1': 'Grado 2',
+            'sample_2': '',
+            'sample_3': 'AISI 304 / A2',
+        },
+        {
+            'name': 'material',
+            'required': False,
+            'group': 'tech',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'Material de composición (ej. Acero al carbono, Acero Inoxidable, Bronce).',
+            'sample_1': 'Acero al carbono',
+            'sample_2': 'Poliamida y engranajes metálicos',
+            'sample_3': 'Acero Inoxidable A2-70',
+        },
+        {
+            'name': 'colour',
+            'required': False,
+            'group': 'tech',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'Color o terminación superficial (ej. Zincado azul, Negro pavonado, Amarillo/Negro).',
+            'sample_1': 'Zincado brillante',
+            'sample_2': 'Amarillo / Negro',
+            'sample_3': 'Inox natural',
+        },
+        {
+            'name': 'type',
+            'required': False,
+            'group': 'tech',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'Tipo de sistema de rosca o herramienta (ej. Pulgadas UNC, Métrico, Inalámbrico).',
+            'sample_1': 'Pulgadas UNC',
+            'sample_2': 'Inalámbrico',
+            'sample_3': 'Pulgadas',
+        },
+        {
+            'name': 'form',
+            'required': False,
+            'group': 'tech',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'Forma geométrica del producto (ej. Cabeza hexagonal, Cilíndrica, Grower helicoidal).',
+            'sample_1': 'Cabeza hexagonal',
+            'sample_2': 'Pistola ergonómica',
+            'sample_3': 'Grower helicoidal',
+        },
+        {
+            'name': 'thread_formats',
+            'required': False,
+            'group': 'tech',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'Paso o formato de rosca / mandril (ej. Paso grueso, Fina, Mandril 13mm).',
+            'sample_1': 'Paso grueso (UNC)',
+            'sample_2': 'Mandril autoajustable 13mm',
+            'sample_3': '',
+        },
+        {
+            'name': 'origin',
+            'required': False,
+            'group': 'tech',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'País de origen o fabricación.',
+            'sample_1': 'Argentina',
+            'sample_2': 'Brasil',
+            'sample_3': 'Argentina',
+        },
+        {
+            'name': 'gtin',
+            'required': False,
+            'group': 'seo',
+            'format': '@',
+            'type_desc': 'Texto',
+            'rule': 'Código universal de producto (EAN-13, UPC). Preserva ceros iniciales.',
+            'sample_1': '7791234567890',
+            'sample_2': '885911234567',
+            'sample_3': '7791234567999',
+        },
+        {
+            'name': 'mpn',
+            'required': False,
+            'group': 'seo',
+            'format': '@',
+            'type_desc': 'Texto',
+            'rule': 'Número de parte del fabricante (Manufacturer Part Number).',
+            'sample_1': 'BH-G2-14112',
+            'sample_2': 'DCD796D2',
+            'sample_3': 'AG-INOX-516',
+        },
+        {
+            'name': 'google_category',
+            'required': False,
+            'group': 'seo',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'Taxonomía de Google Merchant Feed (ej. Hardware > Fasteners > Bolts).',
+            'sample_1': 'Hardware > Fasteners > Bolts',
+            'sample_2': 'Hardware > Tools > Drills',
+            'sample_3': 'Hardware > Fasteners > Washers',
+        },
+        {
+            'name': 'faq',
+            'required': False,
+            'group': 'seo',
+            'format': 'General',
+            'type_desc': 'Texto estructurado',
+            'rule': 'Preguntas y respuestas frecuentes vinculadas a la subcategoría en formato: "¿Pregunta?" Respuesta, "¿Pregunta 2?" Respuesta 2',
+            'sample_1': '"¿Viene con tuerca?" No, las tuercas se adquieren por separado',
+            'sample_2': '"¿Incluye batería y cargador?" Sí, 2 baterías y maletín',
+            'sample_3': '"¿Es resistente al agua?" Sí, apto náutica y exteriores',
+        },
+        {
+            'name': 'meta_title',
+            'required': False,
+            'group': 'seo',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'Meta título SEO personalizado (máx 70 caracteres). Si está vacío se autogenera en save().',
+            'sample_1': 'Bulón Hexagonal G2 1/4 x 1-1/2 | Bulonera Alvear',
+            'sample_2': 'Taladro Percutor DeWalt 18V Brushless | Bulonera Alvear',
+            'sample_3': 'Arandela Grover Inoxidable 5/16 | Bulonera Alvear',
+        },
+        {
+            'name': 'meta_description',
+            'required': False,
+            'group': 'seo',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'Meta descripción SEO personalizada (máx 160 caracteres). Si está vacía se autogenera en save().',
+            'sample_1': 'Bulón cabeza hexagonal rosca gruesa zincado. Stock en Resistencia Chaco.',
+            'sample_2': 'Taladro percutor a batería DeWalt 18V con 2 baterías. Garantía oficial.',
+            'sample_3': 'Arandelas de presión Grover de acero inoxidable AISI 304 calidad A2.',
+        },
+        {
+            'name': 'meta_keywords',
+            'required': False,
+            'group': 'seo',
+            'format': 'General',
+            'type_desc': 'Texto (separado por comas)',
+            'rule': 'Palabras clave SEO separadas por comas. Si está vacío se autogenera a partir del nombre.',
+            'sample_1': 'bulon, hexagonal, zincado, resistencia',
+            'sample_2': 'taladro, percutor, dewalt, 18v',
+            'sample_3': 'arandela, grover, inox, aisi 304',
+        },
+    ]
+
+    @classmethod
+    def generate_import_template_workbook(cls, mode: str = 'full') -> io.BytesIO:
+        """
+        Genera en memoria un archivo Excel (.xlsx) estructurado y formateado
+        para la carga masiva de productos o actualización rápida de precios.
+
+        # POR QUÉ:
+        # Los operadores de Django Admin necesitan una plantilla con las 30 columnas
+        # exactas soportadas por el importador, con formato texto '@' en códigos y
+        # dimensiones para evitar que Excel transforme '1/4' en fechas o trunque ceros
+        # iniciales, y con hojas de guía pedagógicas integradas.
+        #
+        # REGLA:
+        # En mode='full' la Hoja 1 ('Productos') se entrega limpia (solo encabezados)
+        # para que el operador no ingiera accidentalmente filas de ejemplo a producción.
+        # Los ejemplos y guías residen en la Hoja 2 ('Guía y Ejemplos') y Hoja 3 ('Guía de Imágenes').
+        """
+        wb = openpyxl.Workbook()
+
+        fill_green = PatternFill(start_color="166534", end_color="166534", fill_type="solid")
+        fill_navy = PatternFill(start_color="1B3A5C", end_color="1B3A5C", fill_type="solid")
+        fill_slate = PatternFill(start_color="334155", end_color="334155", fill_type="solid")
+        fill_blue = PatternFill(start_color="1E40AF", end_color="1E40AF", fill_type="solid")
+        fill_light_gray = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+
+        font_header = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+        font_title = Font(name="Calibri", size=14, bold=True, color="1B3A5C")
+        font_subtitle = Font(name="Calibri", size=11, italic=True, color="475569")
+        font_bold = Font(name="Calibri", size=11, bold=True, color="1E293B")
+        font_regular = Font(name="Calibri", size=11, color="334155")
+
+        align_center = Alignment(horizontal="center", vertical="center")
+        align_left = Alignment(horizontal="left", vertical="center")
+        align_wrap = Alignment(horizontal="left", vertical="top", wrap_text=True)
+
+        border_thin = Border(
+            left=Side(style='thin', color='CBD5E1'),
+            right=Side(style='thin', color='CBD5E1'),
+            top=Side(style='thin', color='CBD5E1'),
+            bottom=Side(style='thin', color='CBD5E1')
+        )
+
+        if mode == 'prices':
+            ws1 = wb.active
+            ws1.title = "Lista_Precios"
+            ws1.views.sheetView[0].showGridLines = True
+            ws1.freeze_panes = "A2"
+            ws1.row_dimensions[1].height = 28
+
+            headers = ['code', 'price']
+            for col_idx, h in enumerate(headers, 1):
+                cell = ws1.cell(row=1, column=col_idx, value=h)
+                cell.font = font_header
+                cell.fill = fill_green
+                cell.alignment = align_center
+                cell.border = border_thin
+                col_letter = get_column_letter(col_idx)
+                ws1.column_dimensions[col_letter].width = 20
+                if h == 'code':
+                    ws1.column_dimensions[col_letter].number_format = '@'
+
+            ws2 = wb.create_sheet(title="Instrucciones")
+            ws2.views.sheetView[0].showGridLines = True
+            ws2.append(["INSTRUCCIONES PARA ACTUALIZACIÓN RÁPIDA DE PRECIOS"])
+            ws2.cell(row=1, column=1).font = font_title
+            ws2.append(["Bulonera Alvear - Gestión Administrativa"])
+            ws2.cell(row=2, column=1).font = font_subtitle
+            ws2.append([])
+
+            instrucciones = [
+                ("1. Columna 'code'", "Debe coincidir exactamente con el código del producto en el catálogo. Se preservan ceros a la izquierda."),
+                ("2. Columna 'price'", "Nuevo precio final con IVA incluido. Admite formatos '1234.56', '1.234,56' o '$ 1234,56'."),
+                ("3. Códigos inexistentes", "Los códigos que no existan en la base de datos se informarán como error en el resumen y no afectarán al resto."),
+                ("4. Campos inalterados", "Esta planilla solo actualiza el precio y la fecha de modificación; no altera descripciones, categorías ni SEO."),
+            ]
+            for title, desc in instrucciones:
+                r = ws2.max_row + 1
+                c1 = ws2.cell(row=r, column=1, value=title)
+                c1.font = font_bold
+                c2 = ws2.cell(row=r, column=2, value=desc)
+                c2.font = font_regular
+
+            ws2.column_dimensions['A'].width = 25
+            ws2.column_dimensions['B'].width = 85
+
+        else:
+            ws1 = wb.active
+            ws1.title = "Productos"
+            ws1.views.sheetView[0].showGridLines = True
+            ws1.freeze_panes = "A2"
+            ws1.row_dimensions[1].height = 28
+
+            for col_idx, col_spec in enumerate(cls.IMPORT_TEMPLATE_COLUMNS, 1):
+                h_name = col_spec['name']
+                cell = ws1.cell(row=1, column=col_idx, value=h_name)
+                cell.font = font_header
+                cell.alignment = align_center
+                cell.border = border_thin
+
+                grp = col_spec['group']
+                if grp == 'required':
+                    cell.fill = fill_green
+                elif grp == 'catalog':
+                    cell.fill = fill_navy
+                elif grp == 'tech':
+                    cell.fill = fill_slate
+                else:
+                    cell.fill = fill_blue
+
+                col_letter = get_column_letter(col_idx)
+                if col_spec.get('format') == '@':
+                    ws1.column_dimensions[col_letter].number_format = '@'
+                ws1.column_dimensions[col_letter].width = max(len(h_name) + 5, 14)
+
+            col_names = [c['name'] for c in cls.IMPORT_TEMPLATE_COLUMNS]
+
+            if 'condition' in col_names:
+                c_idx = col_names.index('condition') + 1
+                c_letter = get_column_letter(c_idx)
+                dv_cond = DataValidation(type="list", formula1='"new,used,refurbished"', allow_blank=True)
+                dv_cond.error = 'Selecciona un valor válido: new, used, refurbished'
+                dv_cond.errorTitle = 'Condición no válida'
+                ws1.add_data_validation(dv_cond)
+                dv_cond.add(f"{c_letter}2:{c_letter}2000")
+
+            if 'tax_rate' in col_names:
+                t_idx = col_names.index('tax_rate') + 1
+                t_letter = get_column_letter(t_idx)
+                dv_tax = DataValidation(type="list", formula1='"21.00,10.50,0.00"', allow_blank=True)
+                dv_tax.error = 'Selecciona una alícuota válida: 21.00, 10.50 o 0.00'
+                dv_tax.errorTitle = 'Alícuota IVA no válida'
+                ws1.add_data_validation(dv_tax)
+                dv_tax.add(f"{t_letter}2:{t_letter}2000")
+
+            ws2 = wb.create_sheet(title="Guía y Ejemplos")
+            ws2.views.sheetView[0].showGridLines = True
+
+            ws2.append(["GUÍA DE CAMPOS PARA IMPORTACIÓN MASIVA DE PRODUCTOS"])
+            ws2.cell(row=1, column=1).font = font_title
+            ws2.append(["Bulonera Alvear - Plantilla Oficial de Carga"])
+            ws2.cell(row=2, column=1).font = font_subtitle
+            ws2.append([])
+
+            ws2.append(["Explicación de Colores en la Hoja 'Productos':"])
+            ws2.cell(row=4, column=1).font = font_bold
+
+            legend_items = [
+                ("Verde", "Campos obligatorios requeridos para todo producto (code y price).", fill_green),
+                ("Azul Marino", "Datos del catálogo comercial e impositivos (categoría, stock, IVA Res. 4/2025, tags, imágenes).", fill_navy),
+                ("Acero / Gris", "Dimensiones y especificaciones técnicas para bulonería y ferretería (diámetro, largo, norma, grado).", fill_slate),
+                ("Azul Claro", "Identificadores universales EAN/MPN, categorización de Google, SEO y FAQs.", fill_blue),
+            ]
+            for color_name, desc, fill in legend_items:
+                r = ws2.max_row + 1
+                c1 = ws2.cell(row=r, column=1, value=color_name)
+                c1.fill = fill
+                c1.font = font_header
+                c1.alignment = align_center
+                c1.border = border_thin
+                c2 = ws2.cell(row=r, column=2, value=desc)
+                c2.font = font_regular
+                c2.alignment = align_left
+
+            ws2.append([])
+            ws2.append(["Regla de Nombres Automáticos:"])
+            ws2.cell(row=ws2.max_row, column=1).font = font_bold
+            ws2.append(["Si un producto incluye 'diameter' y 'length', y su 'name' no contiene las medidas, el sistema genera automáticamente: {nombre} {diámetro} x {longitud}."])
+            ws2.cell(row=ws2.max_row, column=1).font = font_regular
+            ws2.append([])
+
+            table_header_row = ws2.max_row + 1
+            guide_headers = ["Columna", "Obligatorio", "Tipo de Dato", "Regla de Negocio / Valor por Defecto"]
+            for c_idx, gh in enumerate(guide_headers, 1):
+                cell = ws2.cell(row=table_header_row, column=c_idx, value=gh)
+                cell.font = font_header
+                cell.fill = fill_navy
+                cell.alignment = align_center
+                cell.border = border_thin
+            ws2.row_dimensions[table_header_row].height = 24
+
+            for col_spec in cls.IMPORT_TEMPLATE_COLUMNS:
+                r = ws2.max_row + 1
+                c1 = ws2.cell(row=r, column=1, value=col_spec['name'])
+                c1.font = font_bold
+                c1.alignment = align_left
+                c1.border = border_thin
+
+                req_text = "SÍ (Obligatorio)" if col_spec['required'] else "Opcional"
+                c2 = ws2.cell(row=r, column=2, value=req_text)
+                c2.font = font_bold if col_spec['required'] else font_regular
+                c2.alignment = align_center
+                c2.border = border_thin
+                if col_spec['required']:
+                    c2.fill = fill_light_gray
+
+                c3 = ws2.cell(row=r, column=3, value=col_spec['type_desc'])
+                c3.font = font_regular
+                c3.alignment = align_left
+                c3.border = border_thin
+
+                c4 = ws2.cell(row=r, column=4, value=col_spec['rule'])
+                c4.font = font_regular
+                c4.alignment = align_left
+                c4.border = border_thin
+
+            ws2.append([])
+            ws2.append(["EJEMPLOS PRÁCTICOS DE CARGA (3 CASOS REALES)"])
+            ws2.cell(row=ws2.max_row, column=1).font = font_title
+            ws2.append(["Puedes consultar y copiar estos ejemplos para familiarizarte con los formatos:"])
+            ws2.cell(row=ws2.max_row, column=1).font = font_subtitle
+            ws2.append([])
+
+            ex_header_row = ws2.max_row + 1
+            for c_idx, col_spec in enumerate(cls.IMPORT_TEMPLATE_COLUMNS, 1):
+                cell = ws2.cell(row=ex_header_row, column=c_idx, value=col_spec['name'])
+                cell.font = font_header
+                cell.fill = fill_slate
+                cell.alignment = align_center
+                cell.border = border_thin
+            ws2.row_dimensions[ex_header_row].height = 22
+
+            sample_keys = ['sample_1', 'sample_2', 'sample_3']
+            for s_key in sample_keys:
+                r = ws2.max_row + 1
+                for c_idx, col_spec in enumerate(cls.IMPORT_TEMPLATE_COLUMNS, 1):
+                    val = col_spec.get(s_key, '')
+                    cell = ws2.cell(row=r, column=c_idx, value=val)
+                    cell.font = font_regular
+                    cell.alignment = align_left
+                    cell.border = border_thin
+
+            ws2.column_dimensions['A'].width = 18
+            ws2.column_dimensions['B'].width = 18
+            ws2.column_dimensions['C'].width = 24
+            ws2.column_dimensions['D'].width = 80
+
+            ws3 = wb.create_sheet(title="Guía de Imágenes")
+            ws3.views.sheetView[0].showGridLines = True
+            ws3.append(["GUÍA DE CARGA Y GESTIÓN DE IMÁGENES"])
+            ws3.cell(row=1, column=1).font = font_title
+            ws3.append(["Bulonera Alvear - Pipeline WebP y CDN"])
+            ws3.cell(row=2, column=1).font = font_subtitle
+            ws3.append([])
+
+            img_rules = [
+                ("1. Directorio en el Servidor", "Las fotos deben subirse previamente a la carpeta:\nmedia/photos/products/original/\n(a través del panel de Media Bank o SSH/SFTP)."),
+                ("2. Formatos Soportados", "Se admiten formatos .jpg, .jpeg, .png y .webp. El servidor optimiza y genera automáticamente las variantes responsivas en WebP."),
+                ("3. Nombres de Archivo", "Usar nombres en minúsculas, sin espacios ni caracteres especiales (ej. 'tornillo-hexagonal-m8.jpg')."),
+                ("4. Imagen Principal ('images')", "Se especifica el nombre exacto de un único archivo (ej. 'bulon-g2-14112.jpg'). Si el producto ya existe y este campo se deja vacío, conserva la imagen actual."),
+                ("5. Galería Secundaria ('gallery')", "Múltiples imágenes separadas por comas SIN espacios (ej. 'foto1.jpg,foto2.jpg,foto3.jpg'). En actualizaciones, si se especifican fotos en este campo, reemplaza la galería anterior."),
+                ("6. Preguntas Frecuentes ('faq')", "Se cargan asociadas a la subcategoría en formato:\n\"¿Pregunta 1?\" Respuesta 1, \"¿Pregunta 2?\" Respuesta 2"),
+            ]
+            for title, desc in img_rules:
+                r = ws3.max_row + 1
+                c1 = ws3.cell(row=r, column=1, value=title)
+                c1.font = font_bold
+                c1.alignment = Alignment(horizontal="left", vertical="top")
+                c1.border = border_thin
+                c2 = ws3.cell(row=r, column=2, value=desc)
+                c2.font = font_regular
+                c2.alignment = align_wrap
+                c2.border = border_thin
+
+            ws3.column_dimensions['A'].width = 30
+            ws3.column_dimensions['B'].width = 85
+
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        return buffer
     
     @staticmethod
     def import_from_file(file_or_path, dry_run: bool = False, update_prices: bool = False) -> ImportResult:
@@ -389,8 +1000,13 @@ class ProductService:
         else:
             raise ValueError(f"Formato de archivo no soportado: {name}")
         
+        # REGLA DEFENSIVA: Descartar filas 100% vacías generadas por formateo de celdas en Excel
+        df = df.dropna(how='all')
+        if df.empty:
+            return []
+        
         # PASO 2: Normalizar headers
-        df.columns = df.columns.str.lower().str.strip()
+        df.columns = df.columns.astype(str).str.lower().str.strip()
         
         # PASO 3: Limpieza de basuras de representación string
         for col in ['code', 'internal_code']:
