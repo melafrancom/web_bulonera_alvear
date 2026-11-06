@@ -153,7 +153,7 @@ class TestProductImport:
         assert product.category == category
     
     def test_update_prices_actualiza_precio(self):
-        """Test: Actualización de precios solo modifica el precio"""
+        """Test: Actualización de precios modifica precio y recalcula descuento de ofertas"""
         category = Category.objects.create(
             category_name='Test Category',
             slug='test-category'
@@ -163,12 +163,15 @@ class TestProductImport:
             name='Producto Test',
             price=100.00,
             stock=10,
-            category=category
+            category=category,
+            is_on_sale=True,
+            sale_price=50.00,
+            discount_percentage=50
         )
         
         data = [{
             'code': 'TEST001',
-            'price': 150.00
+            'price': 200.00
         }]
         
         excel_file = self.create_test_excel(data)
@@ -178,9 +181,42 @@ class TestProductImport:
         assert result.errors == 0
         
         product.refresh_from_db()
-        assert product.price == 150.00
+        assert product.price == 200.00
+        assert product.discount_percentage == 75
         assert product.name == 'Producto Test'  # No cambió
         assert product.stock == 10  # No cambió
+
+    def test_import_skips_celery_image_task_during_bulk_processing(self, monkeypatch):
+        """Test: Carga masiva omite encolar tareas Celery redundantes a redis"""
+        from unittest.mock import MagicMock
+        mock_delay = MagicMock()
+        monkeypatch.setattr('store.tasks.process_product_image.delay', mock_delay)
+
+        category = Category.objects.create(category_name='Cat Celery', slug='cat-celery')
+        product = Product.objects.create(
+            code='CELERY01',
+            name='Producto Con Foto',
+            price=100.00,
+            stock=10,
+            category=category,
+            images='photos/products/original/test.jpg'
+        )
+        # Resetear el mock si la creación previa lo llamó
+        mock_delay.reset_mock()
+
+        data = [{
+            'code': 'CELERY01',
+            'name': 'Producto Con Foto Actualizado',
+            'price': 120.00,
+            'category': 'Cat Celery'
+        }]
+
+        excel_file = self.create_test_excel(data)
+        result = ProductService.import_from_file(excel_file)
+
+        assert result.updated == 1
+        # No debe haber llamado a Celery .delay() durante la importación
+        assert mock_delay.call_count == 0
     
     def test_update_prices_codigo_inexistente(self):
         """Test: Actualizar precio de código inexistente genera error"""
@@ -582,3 +618,307 @@ class TestAdminImportTemplateDownload:
         content_prices = res_prices.content.decode('utf-8')
         assert 'download-import-template/?mode=prices' in content_prices
         assert 'Plantilla Rápida para Precios' in content_prices
+
+
+@pytest.mark.django_db
+class TestBulkChunkedUploadService:
+    """Tests unitarios y de integración para la lógica de carga masiva por lotes (chunking)"""
+
+    def create_excel_with_n_rows(self, n: int) -> BytesIO:
+        data = [{'code': f'BULK_{i:05d}', 'price': 100.0 + i} for i in range(n)]
+        df = pd.DataFrame(data)
+        buf = BytesIO()
+        df.to_excel(buf, index=False)
+        buf.seek(0)
+        buf.name = 'bulk_test.xlsx'
+        return buf
+
+    def test_start_bulk_upload_session_partitioning_and_cache(self, admin_user):
+        """Test: start_bulk_upload_session particiona correctamente en lotes y guarda en caché"""
+        from django.core.cache import cache
+        buf = self.create_excel_with_n_rows(600)
+
+        # En modo 'prices', chunk_size=500 -> 600 filas deben ser 2 chunks (500 + 100)
+        res = ProductService.start_bulk_upload_session(buf, mode='prices', user_id=admin_user.id)
+
+        assert res['success'] is True
+        upload_id = res['upload_id']
+        assert res['total_rows'] == 600
+        assert res['total_chunks'] == 2
+        assert res['chunk_size'] == 500
+
+        # Verificar presencia en caché
+        meta_key = f"store:bulk:{upload_id}:meta"
+        meta = cache.get(meta_key)
+        assert meta is not None
+        assert meta['user_id'] == admin_user.id
+        assert meta['total_rows'] == 600
+
+        assert cache.get(f"store:bulk:{upload_id}:chunk:0") is not None
+        assert cache.get(f"store:bulk:{upload_id}:chunk:1") is not None
+
+    def test_process_price_chunks_bulk_update_and_discount_calc(self, admin_user):
+        """Test: Procesa lotes de precios con bulk_update y recalcula porcentajes de oferta"""
+        # Crear categoría y productos en BD
+        cat = Category.objects.create(category_name='Ferretería', slug='ferreteria')
+        p1 = Product.objects.create(code='PRICE01', name='Bulón 1', price=100.0, stock=10, category=cat)
+        p2 = Product.objects.create(
+            code='PRICE02', name='Bulón 2', price=200.0, stock=5, category=cat,
+            is_on_sale=True, sale_price=100.0
+        )
+
+        excel_data = [
+            {'code': 'PRICE01', 'price': '150.00'},
+            {'code': 'PRICE02', 'price': '250.00'},
+            {'code': 'PRICE_MISSING', 'price': '99.00'},
+        ]
+        df = pd.DataFrame(excel_data)
+        buf = BytesIO()
+        df.to_excel(buf, index=False)
+        buf.seek(0)
+        buf.name = 'prices.xlsx'
+
+        start_res = ProductService.start_bulk_upload_session(buf, mode='prices', user_id=admin_user.id)
+        upload_id = start_res['upload_id']
+
+        # Procesar lote 0
+        chunk_res = ProductService.process_bulk_upload_chunk(upload_id, chunk_index=0, user_id=admin_user.id)
+
+        assert chunk_res['success'] is True
+        assert chunk_res['processed_rows'] == 3
+        assert chunk_res['updated'] == 2
+        assert chunk_res['errors'] == 1
+        assert chunk_res['percent'] == 100
+        assert chunk_res['is_done'] is True
+
+        p1.refresh_from_db()
+        assert p1.price == 150.00
+
+        p2.refresh_from_db()
+        assert p2.price == 250.00
+        # Descuento: (250 - 100) / 250 = 60%
+        assert p2.discount_percentage == 60
+
+    def test_process_import_chunks_full_catalog(self, admin_user):
+        """Test: Procesa lote de importación completa con creación de categorías, tags e IVA"""
+        excel_data = [
+            {
+                'code': 'IMP001',
+                'name': 'Tornillo Autoperforante Hexagonal',
+                'price': '350.50',
+                'category': 'Fijaciones Industriales',
+                'subcategories': 'Autoperforantes, Hexagonales',
+                'tags': 'Chapa, Zincado',
+                'tax_rate': '10.50',
+                'stock': '500'
+            }
+        ]
+        df = pd.DataFrame(excel_data)
+        buf = BytesIO()
+        df.to_excel(buf, index=False)
+        buf.seek(0)
+        buf.name = 'import.xlsx'
+
+        start_res = ProductService.start_bulk_upload_session(buf, mode='import', user_id=admin_user.id)
+        upload_id = start_res['upload_id']
+
+        chunk_res = ProductService.process_bulk_upload_chunk(upload_id, chunk_index=0, user_id=admin_user.id)
+
+        assert chunk_res['success'] is True
+        assert chunk_res['created'] == 1
+        assert chunk_res['is_done'] is True
+
+        prod = Product.objects.get(code='IMP001')
+        assert prod.price == 350.50
+        assert prod.tax_rate == Decimal('10.50')
+        assert prod.category.category_name == 'Fijaciones Industriales'
+        assert prod.subcategories.count() == 2
+        assert prod.tags.count() == 2
+
+    def test_chunk_idempotency_on_retry(self, admin_user):
+        """Test: Si se reintenta un lote ya procesado por fallo de red, responde idempotentemente"""
+        cat = Category.objects.create(category_name='General', slug='general')
+        Product.objects.create(code='IDEMP01', name='P1', price=10.0, stock=5, category=cat)
+
+        excel_data = [{'code': 'IDEMP01', 'price': '20.00'}]
+        df = pd.DataFrame(excel_data)
+        buf = BytesIO()
+        df.to_excel(buf, index=False)
+        buf.seek(0)
+        buf.name = 'idem.xlsx'
+
+        start_res = ProductService.start_bulk_upload_session(buf, mode='prices', user_id=admin_user.id)
+        upload_id = start_res['upload_id']
+
+        res1 = ProductService.process_bulk_upload_chunk(upload_id, chunk_index=0, user_id=admin_user.id)
+        assert res1['updated'] == 1
+
+        # Segundo intento idéntico
+        res2 = ProductService.process_bulk_upload_chunk(upload_id, chunk_index=0, user_id=admin_user.id)
+        assert res2['success'] is True
+        assert res2['updated'] == 1
+        assert res2['processed_rows'] == 1  # No se duplicó a 2
+
+    def test_cancel_bulk_upload_session(self, admin_user):
+        """Test: Cancelar sesión elimina los chunks y metadata de la caché"""
+        from django.core.cache import cache
+        buf = self.create_excel_with_n_rows(10)
+        start_res = ProductService.start_bulk_upload_session(buf, mode='prices', user_id=admin_user.id)
+        upload_id = start_res['upload_id']
+
+        meta_key = f"store:bulk:{upload_id}:meta"
+        assert cache.get(meta_key) is not None
+
+        cancelled = ProductService.cancel_bulk_upload_session(upload_id, user_id=admin_user.id)
+        assert cancelled is True
+        assert cache.get(meta_key) is None
+        assert cache.get(f"store:bulk:{upload_id}:chunk:0") is None
+
+    def test_start_bulk_upload_empty_file_rejected(self, admin_user):
+        """Test: Archivo vacío o sin filas es rechazado con error claro"""
+        df = pd.DataFrame([])
+        buf = BytesIO()
+        df.to_excel(buf, index=False)
+        buf.seek(0)
+        buf.name = 'empty.xlsx'
+
+        res = ProductService.start_bulk_upload_session(buf, mode='prices', user_id=admin_user.id)
+        assert res['success'] is False
+        assert 'vacío' in res['error'].lower()
+
+
+@pytest.mark.django_db
+class TestAdminBulkChunkedUploadViews:
+    """Tests de integración para los endpoints HTTP administrativos de carga por lotes"""
+
+    def test_admin_bulk_upload_start_chunk_end_to_end(self, client, admin_user):
+        """Test: Ciclo completo HTTP (start -> chunk -> done) en Django Admin"""
+        import json
+        from django.urls import reverse
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        client.force_login(admin_user)
+
+        cat = Category.objects.create(category_name='Tornillería', slug='tornilleria')
+        Product.objects.create(code='E2E_01', name='Bulón E2E', price=100.0, stock=5, category=cat)
+
+        excel_data = [{'code': 'E2E_01', 'price': '199.99'}]
+        df = pd.DataFrame(excel_data)
+        buf = BytesIO()
+        df.to_excel(buf, index=False)
+        buf.seek(0)
+        uploaded_file = SimpleUploadedFile(
+            'prices_e2e.xlsx',
+            buf.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+        # 1. Start session
+        start_url = reverse('admin:store_product_bulk_upload_start')
+        resp_start = client.post(start_url, {'file': uploaded_file, 'mode': 'prices'})
+        assert resp_start.status_code == 200
+        data_start = resp_start.json()
+        assert data_start['success'] is True
+        upload_id = data_start['upload_id']
+        assert data_start['total_chunks'] == 1
+
+        # 2. Process chunk 0 via JSON POST
+        chunk_url = reverse('admin:store_product_bulk_upload_chunk')
+        resp_chunk = client.post(
+            chunk_url,
+            data=json.dumps({'upload_id': upload_id, 'chunk_index': 0}),
+            content_type='application/json'
+        )
+        assert resp_chunk.status_code == 200
+        data_chunk = resp_chunk.json()
+        assert data_chunk['success'] is True
+        assert data_chunk['updated'] == 1
+        assert data_chunk['percent'] == 100
+        assert data_chunk['is_done'] is True
+
+        prod = Product.objects.get(code='E2E_01')
+        assert prod.price == 199.99
+
+    def test_admin_bulk_upload_anonymous_forbidden_or_redirect(self, client):
+        """Test: Usuario anónimo no puede acceder a los endpoints de carga por lotes"""
+        from django.urls import reverse
+        start_url = reverse('admin:store_product_bulk_upload_start')
+        resp = client.post(start_url, {})
+        assert resp.status_code == 302
+        assert '/admin/login/' in resp.url
+
+    def test_admin_bulk_upload_staff_without_permissions_gets_403(self, client):
+        """Test: Usuario staff sin permisos sobre Product recibe 403 Forbidden"""
+        from django.urls import reverse
+        from account.models import Account
+
+        staff = Account.objects.create_user(
+            email='staff_unauthorized@test.com',
+            username='staff_unauth',
+            password='Password123',
+            first_name='Unauth',
+            last_name='Staff'
+        )
+        staff.is_staff = True
+        staff.is_active = True
+        staff.save()
+
+        client.force_login(staff)
+
+        start_url = reverse('admin:store_product_bulk_upload_start')
+        resp = client.post(start_url, {})
+        assert resp.status_code == 403
+
+        chunk_url = reverse('admin:store_product_bulk_upload_chunk')
+        resp_chunk = client.post(chunk_url, {})
+        assert resp_chunk.status_code == 403
+
+    def test_admin_bulk_upload_anti_idor_other_user_blocked(self, client, admin_user):
+        """Test: Anti-IDOR: un usuario no puede manipular la sesión de carga iniciada por otro usuario"""
+        import json
+        from django.urls import reverse
+        from django.core.cache import cache
+        from account.models import Account
+
+        # Usuario B (otro admin)
+        admin_b = Account.objects.create_superuser(
+            email='admin_b@test.com',
+            username='admin_b',
+            password='AdminPass123',
+            first_name='Admin',
+            last_name='B'
+        )
+
+        # Sesión creada por admin_user
+        upload_id = 'test_idor_session_123'
+        meta = {
+            'upload_id': upload_id,
+            'mode': 'prices',
+            'user_id': admin_user.id,
+            'total_rows': 1,
+            'total_chunks': 1,
+            'chunk_size': 500,
+            'processed_rows': 0,
+            'created': 0,
+            'updated': 0,
+            'errors': 0,
+            'image_warnings': 0,
+            'completed_chunks': [],
+            'error_details': [],
+            'tags_created': [],
+            'created_at': '2026-11-05T00:00:00Z',
+            'is_done': False,
+        }
+        cache.set(f"store:bulk:{upload_id}:meta", meta, timeout=600)
+
+        # Admin B intenta procesar el chunk de admin_user
+        client.force_login(admin_b)
+        chunk_url = reverse('admin:store_product_bulk_upload_chunk')
+        resp = client.post(
+            chunk_url,
+            data=json.dumps({'upload_id': upload_id, 'chunk_index': 0}),
+            content_type='application/json'
+        )
+        assert resp.status_code == 403
+        data = resp.json()
+        assert data['permission_denied'] is True

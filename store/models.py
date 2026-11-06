@@ -223,11 +223,20 @@ class Product(models.Model):
         # Guardar primero para tener el ID si es nuevo
         super().save(*args, **kwargs)
         
-        # Procesar la imagen de forma asincrónica usando Celery
-        if self.images:
-            from store.tasks import process_product_image
-            # Lanzar tarea asincrónica en background
-            process_product_image.delay(self.id, self.images.path)
+        # PERF: Procesar imagen en Celery solo si no se solicitó omitirlo y si
+        # la operación no es una actualización parcial de otros campos (ej. precio o stock).
+        update_fields = kwargs.get('update_fields')
+        should_process_image = (
+            self.images and
+            not getattr(self, '_skip_image_task', False) and
+            (update_fields is None or 'images' in update_fields)
+        )
+        if should_process_image:
+            try:
+                from store.tasks import process_product_image
+                process_product_image.delay(self.id, self.images.path)
+            except Exception:
+                pass
         
     def get_url(self):
         # Estructura plana de URL: /p/<slug>/

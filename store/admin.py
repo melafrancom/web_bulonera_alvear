@@ -5,9 +5,12 @@ from django.urls import path
 from django.contrib import messages
 from django.utils.safestring import mark_safe
 from django.utils.html import format_html
+from django.http import JsonResponse, HttpResponseNotAllowed, FileResponse
+from django.core.exceptions import PermissionDenied
 import pandas as pd
 import csv
 import io
+import json
 import openpyxl
 from io import TextIOWrapper
 from django.utils.text import slugify
@@ -62,6 +65,9 @@ class ProductAdmin(admin.ModelAdmin):
             path('import-products/', self.admin_site.admin_view(self.import_products), name='import_products'),
             path('update-prices/', self.admin_site.admin_view(self.update_prices), name='update_prices'),
             path('download-import-template/', self.admin_site.admin_view(self.download_import_template), name='store_product_download_import_template'),
+            path('bulk-upload/start/', self.admin_site.admin_view(self.bulk_upload_start), name='store_product_bulk_upload_start'),
+            path('bulk-upload/chunk/', self.admin_site.admin_view(self.bulk_upload_chunk), name='store_product_bulk_upload_chunk'),
+            path('bulk-upload/cancel/', self.admin_site.admin_view(self.bulk_upload_cancel), name='store_product_bulk_upload_cancel'),
         ]
         return custom_urls + urls
     
@@ -76,6 +82,9 @@ class ProductAdmin(admin.ModelAdmin):
     image_preview_method.short_description = "Vista previa de imagen"
     
     def import_products(self, request):
+        if not (self.has_add_permission(request) or self.has_change_permission(request)):
+            raise PermissionDenied
+
         if request.method == 'POST':
             form = ProductImportForm(request.POST, request.FILES)
             if form.is_valid():
@@ -123,6 +132,9 @@ class ProductAdmin(admin.ModelAdmin):
         return response
 
     def update_prices(self, request):
+        if not (self.has_add_permission(request) or self.has_change_permission(request)):
+            raise PermissionDenied
+
         if request.method == 'POST':
             form = ProductImportForm(request.POST, request.FILES)
             if form.is_valid():
@@ -175,64 +187,92 @@ class ProductAdmin(admin.ModelAdmin):
         else:
             messages.success(request, f"Se actualizaron correctamente los precios de {result.updated} productos.")
         
-    def process_price_update(self, products_data):
-        """Procesar y actualizar precios de productos desde los datos analizados"""
+    def bulk_upload_start(self, request):
+        """Inicia una sesión de carga masiva fraccionada en lotes."""
+        if request.method != 'POST':
+            return HttpResponseNotAllowed(['POST'])
+
+        if not (self.has_add_permission(request) or self.has_change_permission(request)):
+            raise PermissionDenied
+
+        form = ProductImportForm(request.POST, request.FILES)
+        if not form.is_valid():
+            error_msg = form.errors.get('file', ['Archivo no válido o ausente'])[0]
+            return JsonResponse({'success': False, 'error': str(error_msg)}, status=400)
+
+        file = request.FILES['file']
+        mode = request.POST.get('mode', 'import')
+        if mode not in ('import', 'prices'):
+            mode = 'import'
+
         from store.services import ProductService
-        
-        success_count = 0
-        failed_count = 0
-        validation_errors = []
-        
-        for item in products_data:
+        result = ProductService.start_bulk_upload_session(file, mode=mode, user_id=request.user.id)
+        if not result.get('success'):
+            return JsonResponse(result, status=400)
+
+        return JsonResponse(result)
+
+    def bulk_upload_chunk(self, request):
+        """Procesa un lote individual de la sesión de carga masiva."""
+        if request.method != 'POST':
+            return HttpResponseNotAllowed(['POST'])
+
+        if not (self.has_add_permission(request) or self.has_change_permission(request)):
+            raise PermissionDenied
+
+        upload_id = None
+        chunk_index = -1
+
+        if request.content_type == 'application/json':
             try:
-                # Omitir si no se proporciona código o precio o si son NaN
-                if 'code' not in item or not item['code'] or pd.isna(item['code']):
-                    validation_errors.append(f"Fila rechazada: Falta el código del producto")
-                    failed_count += 1
-                    continue
-                    
-                if 'price' not in item or not item['price'] or pd.isna(item['price']):
-                    validation_errors.append(f"Producto {item['code']}: Falta el precio")
-                    failed_count += 1
-                    continue
-                
-                # Convertir código a string para asegurar la búsqueda correcta
-                product_code = str(item['code']).strip()
-                
-                # Verificar si el producto existe
-                try:
-                    product = Product.objects.get(code=product_code)
-                    
-                    # Sanitizar precio usando el método canónico de services.py
-                    try:
-                        product.price = ProductService._sanitize_price(item['price'])
-                        product.save(update_fields=['price', 'modified_date'])
-                        success_count += 1
-                    except ValueError as e:
-                        validation_errors.append(f"Producto {product_code}: {str(e)}")
-                        failed_count += 1
-                    
-                except Product.DoesNotExist:
-                    validation_errors.append(f"Producto {product_code}: No existe en la base de datos")
-                    failed_count += 1
-                    
-            except Exception as e:
-                error_msg = f"Error al actualizar precio para producto {item.get('code', 'desconocido')}: {str(e)}"
-                print(error_msg)
-                validation_errors.append(error_msg)
-                failed_count += 1
-        
-        # Registrar errores en el log
-        if validation_errors:
-            print(f"\nErrores durante la actualización de precios:")
-            for error in validation_errors:
-                print(f"- {error}")
-        
-        return {
-            'success': success_count,
-            'failed': failed_count,
-            'validation_errors': validation_errors
-        }
+                body = json.loads(request.body.decode('utf-8'))
+                upload_id = body.get('upload_id')
+                chunk_index = int(body.get('chunk_index', -1))
+            except Exception:
+                return JsonResponse({'success': False, 'error': 'Payload JSON malformado.'}, status=400)
+        else:
+            upload_id = request.POST.get('upload_id')
+            try:
+                chunk_index = int(request.POST.get('chunk_index', -1))
+            except (ValueError, TypeError):
+                chunk_index = -1
+
+        if not upload_id or chunk_index < 0:
+            return JsonResponse({'success': False, 'error': 'upload_id o chunk_index faltante o inválido.'}, status=400)
+
+        from store.services import ProductService
+        result = ProductService.process_bulk_upload_chunk(upload_id, chunk_index, user_id=request.user.id)
+        if result.get('permission_denied'):
+            return JsonResponse(result, status=403)
+        if not result.get('success'):
+            return JsonResponse(result, status=400)
+
+        return JsonResponse(result)
+
+    def bulk_upload_cancel(self, request):
+        """Cancela y purga una sesión de carga masiva en caché."""
+        if request.method != 'POST':
+            return HttpResponseNotAllowed(['POST'])
+
+        if not (self.has_add_permission(request) or self.has_change_permission(request)):
+            raise PermissionDenied
+
+        upload_id = None
+        if request.content_type == 'application/json':
+            try:
+                body = json.loads(request.body.decode('utf-8'))
+                upload_id = body.get('upload_id')
+            except Exception:
+                upload_id = None
+        else:
+            upload_id = request.POST.get('upload_id')
+
+        if not upload_id:
+            return JsonResponse({'success': False, 'error': 'upload_id faltante.'}, status=400)
+
+        from store.services import ProductService
+        cancelled = ProductService.cancel_bulk_upload_session(upload_id, user_id=request.user.id)
+        return JsonResponse({'success': cancelled})
     
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}

@@ -219,6 +219,139 @@
         background: #166534;
         color: white;
     }
+
+    /* Progress and Chunked Upload Styles */
+    .progress-card {
+        display: none;
+        background: white;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        border: 1px solid #bbf7d0;
+    }
+    
+    .progress-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .progress-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .spinner-ring {
+        width: 28px;
+        height: 28px;
+        border: 3px solid #dcfce7;
+        border-top-color: #16a34a;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        flex-shrink: 0;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .progress-percent-badge {
+        font-size: 20px;
+        font-weight: 700;
+        color: #15803d;
+        font-variant-numeric: tabular-nums;
+    }
+    
+    .progress-bar-track {
+        width: 100%;
+        height: 16px;
+        background: #e2e8f0;
+        border-radius: 9999px;
+        overflow: hidden;
+        margin-bottom: 16px;
+        position: relative;
+    }
+    
+    .progress-bar-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #16a34a, #22c55e);
+        border-radius: 9999px;
+        transition: width 0.3s ease-in-out;
+    }
+    
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+    }
+    
+    .metric-badge {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 10px 14px;
+        text-align: center;
+    }
+    
+    .metric-badge .val {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e293b;
+        display: block;
+        font-variant-numeric: tabular-nums;
+    }
+    
+    .metric-badge .lbl {
+        font-size: 12px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+    }
+    
+    .metric-badge.updated .val { color: #16a34a; }
+    .metric-badge.errors .val { color: #dc2626; }
+    
+    .error-details-box {
+        margin-top: 16px;
+        padding: 12px 16px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 6px;
+        max-height: 180px;
+        overflow-y: auto;
+        font-size: 13px;
+        color: #991b1b;
+        display: none;
+    }
+    
+    .btn-cancel {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 13px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+    
+    .btn-cancel:hover {
+        background: #fee2e2;
+        color: #dc2626;
+        border-color: #fca5a5;
+    }
 </style>
 {% endblock %}
 
@@ -301,6 +434,54 @@
         </ul>
     </div>
     
+    <!-- Progress Card (Hidden initially, active during bulk chunk processing) -->
+    <div id="progress-card" class="progress-card" role="region" aria-live="polite">
+        <div class="progress-header">
+            <div class="progress-title-wrap">
+                <div id="progress-spinner" class="spinner-ring"></div>
+                <div>
+                    <h3 id="progress-status-title" style="margin: 0; font-size: 16px; font-weight: 600; color: #1e293b;">
+                        {% trans 'Iniciando actualización de precios...' %}
+                    </h3>
+                    <p id="progress-status-desc" style="margin: 2px 0 0 0; font-size: 13px; color: #64748b;">
+                        {% trans 'Preparando lotes...' %}
+                    </p>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <span id="progress-percent" class="progress-percent-badge">0%</span>
+                <button type="button" id="btn-cancel-upload" class="btn-cancel">
+                    <i data-lucide="x-circle" style="width: 14px; height: 14px;"></i>
+                    {% trans 'Cancelar' %}
+                </button>
+            </div>
+        </div>
+
+        <div class="progress-bar-track">
+            <div id="progress-bar-fill" class="progress-bar-fill" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-badge">
+                <span id="count-processed" class="val">0</span>
+                <span class="lbl">{% trans 'Procesados' %}</span>
+            </div>
+            <div class="metric-badge updated">
+                <span id="count-updated" class="val">0</span>
+                <span class="lbl">{% trans 'Actualizados' %}</span>
+            </div>
+            <div class="metric-badge errors">
+                <span id="count-errors" class="val">0</span>
+                <span class="lbl">{% trans 'Errores' %}</span>
+            </div>
+        </div>
+
+        <div id="error-details-box" class="error-details-box">
+            <strong>{% trans 'Detalle de errores detectados:' %}</strong>
+            <ul id="error-details-list" style="margin: 6px 0 0 0; padding-left: 20px;"></ul>
+        </div>
+    </div>
+    
     <!-- Form -->
     <div class="form-card">
         <h3>{% trans 'Seleccionar Archivo' %}</h3>
@@ -322,4 +503,231 @@
     </div>
     
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.form-card form');
+    if (!form) return;
+
+    const submitBtn = form.querySelector('input[type="submit"]');
+    const fileInput = form.querySelector('input[type="file"]');
+    const progressCard = document.getElementById('progress-card');
+    const progressSpinner = document.getElementById('progress-spinner');
+    const progressTitle = document.getElementById('progress-status-title');
+    const progressDesc = document.getElementById('progress-status-desc');
+    const progressPercent = document.getElementById('progress-percent');
+    const progressBarFill = document.getElementById('progress-bar-fill');
+    const countProcessed = document.getElementById('count-processed');
+    const countUpdated = document.getElementById('count-updated');
+    const countErrors = document.getElementById('count-errors');
+    const errorDetailsBox = document.getElementById('error-details-box');
+    const errorDetailsList = document.getElementById('error-details-list');
+    const cancelBtn = document.getElementById('btn-cancel-upload');
+
+    let currentUploadId = null;
+    let isUploading = false;
+    let isCancelled = false;
+
+    window.addEventListener('beforeunload', function(e) {
+        if (isUploading) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    form.addEventListener('submit', async function(e) {
+        if (!fileInput.files || fileInput.files.length === 0) {
+            return;
+        }
+
+        e.preventDefault();
+
+        isUploading = true;
+        isCancelled = false;
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.6';
+        submitBtn.style.cursor = 'not-allowed';
+        fileInput.disabled = true;
+
+        progressCard.style.display = 'block';
+        progressCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        progressSpinner.style.display = 'block';
+        cancelBtn.style.display = 'inline-flex';
+        cancelBtn.disabled = false;
+        cancelBtn.innerHTML = '<i data-lucide="x-circle" style="width: 14px; height: 14px;"></i> {% trans "Cancelar" %}';
+        progressTitle.textContent = "{% trans 'Iniciando actualización de precios...' %}";
+        progressTitle.style.color = '#1e293b';
+        progressDesc.textContent = "{% trans 'Analizando archivo y preparando lotes...' %}";
+        progressPercent.textContent = "0%";
+        progressBarFill.style.width = "0%";
+        countProcessed.textContent = "0";
+        countUpdated.textContent = "0";
+        countErrors.textContent = "0";
+        errorDetailsBox.style.display = 'none';
+        errorDetailsList.innerHTML = '';
+        if (window.lucide) lucide.createIcons();
+
+        const formData = new FormData(form);
+        formData.append('mode', 'prices');
+
+        try {
+            const startResp = await fetch("{% url 'admin:store_product_bulk_upload_start' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                },
+                body: formData
+            });
+
+            const startData = await startResp.json();
+            if (!startResp.ok || !startData.success) {
+                throw new Error(startData.error || "{% trans 'Error al iniciar la sesión de actualización' %}");
+            }
+
+            currentUploadId = startData.upload_id;
+            const totalChunks = startData.total_chunks;
+            const totalRows = startData.total_rows;
+
+            progressTitle.textContent = "{% trans 'Actualizando precios por partes...' %}";
+            progressDesc.textContent = `0 de ${totalRows.toLocaleString()} productos procesados (0 de ${totalChunks} partes)`;
+
+            for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+                if (isCancelled) {
+                    break;
+                }
+
+                let chunkSuccess = false;
+                let attempts = 0;
+                let chunkData = null;
+
+                while (!chunkSuccess && attempts < 3 && !isCancelled) {
+                    attempts++;
+                    try {
+                        const chunkResp = await fetch("{% url 'admin:store_product_bulk_upload_chunk' %}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                            },
+                            body: JSON.stringify({
+                                upload_id: currentUploadId,
+                                chunk_index: chunkIndex
+                            })
+                        });
+
+                        chunkData = await chunkResp.json();
+                        if (chunkResp.ok && chunkData.success) {
+                            chunkSuccess = true;
+                        } else {
+                            if (attempts >= 3) {
+                                throw new Error(chunkData.error || `Error en parte ${chunkIndex + 1}`);
+                            }
+                            await new Promise(r => setTimeout(r, 1500));
+                        }
+                    } catch (err) {
+                        if (attempts >= 3) {
+                            throw err;
+                        }
+                        await new Promise(r => setTimeout(r, 1500));
+                    }
+                }
+
+                if (!chunkSuccess) {
+                    throw new Error(`No se pudo procesar la parte ${chunkIndex + 1} tras varios intentos.`);
+                }
+
+                const percent = chunkData.percent;
+                progressBarFill.style.width = percent + '%';
+                progressBarFill.setAttribute('aria-valuenow', percent);
+                progressPercent.textContent = percent + '%';
+                progressDesc.textContent = `${chunkData.processed_rows.toLocaleString()} de ${chunkData.total_rows.toLocaleString()} productos procesados (parte ${chunkIndex + 1} de ${totalChunks})`;
+
+                countProcessed.textContent = chunkData.processed_rows.toLocaleString();
+                countUpdated.textContent = chunkData.updated.toLocaleString();
+                countErrors.textContent = chunkData.errors.toLocaleString();
+
+                if (chunkData.error_details && chunkData.error_details.length > 0) {
+                    errorDetailsBox.style.display = 'block';
+                    errorDetailsList.innerHTML = chunkData.error_details.map(e => `<li><strong>Fila ${e[0]}:</strong> ${e[1]}</li>`).join('');
+                }
+            }
+
+            isUploading = false;
+            progressSpinner.style.display = 'none';
+            cancelBtn.style.display = 'none';
+
+            if (isCancelled) {
+                progressTitle.textContent = "{% trans 'Actualización cancelada por el usuario' %}";
+                progressDesc.textContent = "{% trans 'El proceso se detuvo. Los precios actualizados hasta el momento se guardaron correctamente.' %}";
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+                fileInput.disabled = false;
+            } else {
+                progressTitle.textContent = "{% trans '¡Precios actualizados con éxito!' %}";
+                progressBarFill.style.width = '100%';
+                progressPercent.textContent = '100%';
+
+                const existingDone = document.getElementById('done-actions-row');
+                if (!existingDone) {
+                    const completionRow = document.createElement('div');
+                    completionRow.id = 'done-actions-row';
+                    completionRow.style.marginTop = '20px';
+                    completionRow.style.display = 'flex';
+                    completionRow.style.gap = '12px';
+                    completionRow.innerHTML = `
+                        <a href="{% url 'admin:store_product_changelist' %}" class="button default" style="background:#16a34a; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                            <i data-lucide="check" style="width:16px; height:16px;"></i>
+                            {% trans 'Ver productos en catálogo' %}
+                        </a>
+                        <button type="button" class="button" onclick="location.reload()" style="background:#64748b; color:white;">
+                            {% trans 'Actualizar otra planilla' %}
+                        </button>
+                    `;
+                    progressCard.appendChild(completionRow);
+                    if (window.lucide) lucide.createIcons();
+                }
+            }
+
+        } catch (error) {
+            isUploading = false;
+            progressSpinner.style.display = 'none';
+            cancelBtn.style.display = 'none';
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+            fileInput.disabled = false;
+
+            progressTitle.textContent = "{% trans 'Error al actualizar precios' %}";
+            progressTitle.style.color = '#dc2626';
+            progressDesc.textContent = error.message;
+            errorDetailsBox.style.display = 'block';
+            errorDetailsList.innerHTML = `<li>${error.message}</li>`;
+        }
+    });
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', async function() {
+            if (!isUploading || !currentUploadId) return;
+            if (confirm("{% trans '¿Deseas detener la actualización? Los precios guardados hasta ahora se conservarán.' %}")) {
+                isCancelled = true;
+                cancelBtn.disabled = true;
+                cancelBtn.textContent = "{% trans 'Cancelando...' %}";
+                try {
+                    await fetch("{% url 'admin:store_product_bulk_upload_cancel' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': form.querySelector('input[name="csrfmiddlewaretoken"]').value,
+                        },
+                        body: JSON.stringify({ upload_id: currentUploadId })
+                    });
+                } catch (e) {
+                    console.error("Error cancelling upload:", e);
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
