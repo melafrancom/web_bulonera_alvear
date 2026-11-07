@@ -922,3 +922,40 @@ class TestAdminBulkChunkedUploadViews:
         assert resp.status_code == 403
         data = resp.json()
         assert data['permission_denied'] is True
+
+    def test_bulk_upload_start_without_file_returns_400_json(self, client, admin_user):
+        """Test: Endpoint start responde 400 con JSON claro si no se adjunta archivo"""
+        from django.urls import reverse
+
+        client.force_login(admin_user)
+        start_url = reverse('admin:store_product_bulk_upload_start')
+        resp = client.post(start_url, {'mode': 'import'})
+
+        assert resp.status_code == 400
+        data = resp.json()
+        assert data['success'] is False
+        assert 'requerido' in data['error'].lower()
+
+    def test_import_and_prices_views_render_local_assets_only(self, client, admin_user):
+        """Test: Vistas administrativas renderizan activos locales y no CDNs bloqueados por CSP"""
+        from django.urls import reverse
+
+        client.force_login(admin_user)
+        for url_name in ('admin:import_products', 'admin:update_prices'):
+            resp = client.get(reverse(url_name))
+            assert resp.status_code == 200
+            content = resp.content.decode('utf-8')
+            assert 'js/vendor/lucide.min.js' in content
+            assert 'unpkg.com' not in content
+            assert 'cdn.tailwindcss.com' not in content
+
+    def test_import_and_prices_views_build_formdata_explicitly(self, client, admin_user):
+        """Test: Script en plantillas construye FormData explícitamente evitando omisión por input disabled"""
+        from django.urls import reverse
+
+        client.force_login(admin_user)
+        for url_name in ('admin:import_products', 'admin:update_prices'):
+            resp = client.get(reverse(url_name))
+            assert resp.status_code == 200
+            content = resp.content.decode('utf-8')
+            assert "formData.append('file', file" in content

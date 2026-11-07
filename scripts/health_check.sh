@@ -59,7 +59,7 @@ if docker compose -f /var/www/bulonera/web_bulonera_alvear/docker-compose.produc
     docker compose -f /var/www/bulonera/web_bulonera_alvear/docker-compose.production.yml ps
 else
     echo -e "${RED}❌ Docker Compose${NC}"
-    ((ERRORS++))
+    ERRORS=$((ERRORS + 1))
 fi
 echo ""
 
@@ -73,26 +73,30 @@ fi
 
 echo "🗄️  Database"
 echo "------------"
-# REGLA: Usar variable de entorno para credenciales, nunca hardcodear (SEC-INF-008)
-check_service "MariaDB" "mysql -u bulonera_user -p\"${DB_PASSWORD}\" -e 'SELECT 1' buloneraalvearDB" || ((ERRORS++))
+# REGLA: Usar variable de entorno para credenciales, nunca hardcodear (SEC-INF-008).
+# Si no hay acceso a .env (permisos 600), se advierte en lugar de bloquear la terminal interactiva pidiendo password.
+if [ -z "${DB_PASSWORD:-}" ]; then
+    echo -e "${YELLOW}⚠️  MariaDB: omitido chequeo directo en host (sin acceso a .env, se valida en Deep Health /api/health/)${NC}"
+else
+    check_service "MariaDB" "mysql -u bulonera_user -p\"${DB_PASSWORD}\" -e 'SELECT 1' buloneraalvearDB" || ERRORS=$((ERRORS + 1))
+fi
 echo ""
 
 echo "🔴 Redis"
 echo "--------"
-# REGLA: Autenticar con REDIS_PASSWORD para evitar fallos silenciosos (SEC-INF-009)
-check_service "Redis Ping" "redis-cli -a \"${REDIS_PASSWORD}\" ping" || ((ERRORS++))
-check_service "Redis DB 3 (Celery Broker)" "redis-cli -a \"${REDIS_PASSWORD}\" -n 3 ping" || ((ERRORS++))
-check_service "Redis DB 4 (Celery Result)" "redis-cli -a \"${REDIS_PASSWORD}\" -n 4 ping" || ((ERRORS++))
-check_service "Redis DB 5 (Cache)" "redis-cli -a \"${REDIS_PASSWORD}\" -n 5 ping" || ((ERRORS++))
+# REGLA: Validar Redis dentro del contenedor oficial usando sus variables internas (SEC-INF-009).
+# No se ejecuta redis-cli en el host porque Redis no publica el puerto 6379 fuera de la red Docker.
+check_service "Redis Container Ping" "docker exec bulonera_web_redis sh -c 'redis-cli --no-auth-warning -a \"\$REDIS_PASSWORD\" ping | grep -q PONG'" || ERRORS=$((ERRORS + 1))
 echo ""
 
 echo "🌐 Web Services"
 echo "---------------"
-check_url "Django Local" "http://127.0.0.1:8003/" || ((ERRORS++))
-check_url "HTTPS Public" "https://buloneraalvear.online/" || ((ERRORS++))
-check_url "API Products" "https://buloneraalvear.online/api/v1/store/products/" || ((ERRORS++))
-check_url "API Docs" "https://buloneraalvear.online/api/docs/" || ((ERRORS++))
-check_url "Static Files" "https://buloneraalvear.online/static/css/style.css" || ((ERRORS++))
+check_url "Django Local" "http://127.0.0.1:8003/" || ERRORS=$((ERRORS + 1))
+check_url "Deep Health (DB + Redis)" "http://127.0.0.1:8003/api/health/" || ERRORS=$((ERRORS + 1))
+check_url "HTTPS Public" "https://buloneraalvear.online/" || ERRORS=$((ERRORS + 1))
+check_url "API Products" "https://buloneraalvear.online/api/v1/store/products/" || ERRORS=$((ERRORS + 1))
+check_url "API Docs" "https://buloneraalvear.online/api/docs/" || ERRORS=$((ERRORS + 1))
+check_url "Static Files" "https://buloneraalvear.online/static/css/style.css" || ERRORS=$((ERRORS + 1))
 echo ""
 
 echo "🔒 SSL Certificate"
@@ -104,13 +108,13 @@ if openssl s_client -connect buloneraalvear.online:443 -servername buloneraalvea
     echo "   Expira: $EXPIRY"
 else
     echo -e "${RED}❌ SSL Certificate Invalid${NC}"
-    ((ERRORS++))
+    ERRORS=$((ERRORS + 1))
 fi
 echo ""
 
 echo "🌐 OpenLiteSpeed"
 echo "----------------"
-check_service "OLS Running" "systemctl is-active lsws" || ((ERRORS++))
+check_service "OLS Running" "systemctl is-active lsws" || ERRORS=$((ERRORS + 1))
 echo ""
 
 echo "📊 Disk Space"
