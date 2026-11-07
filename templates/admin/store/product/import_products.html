@@ -519,6 +519,45 @@ document.addEventListener('DOMContentLoaded', function() {
     let isUploading = false;
     let isCancelled = false;
 
+    function clearDoneActions() {
+        const existingDone = document.getElementById('done-actions-row');
+        if (existingDone) {
+            existingDone.remove();
+        }
+    }
+
+    function renderErrorItems(container, items) {
+        container.innerHTML = '';
+        if (!items || !items.length) return;
+        items.forEach(function(item) {
+            const li = document.createElement('li');
+            if (Array.isArray(item) && item.length >= 2) {
+                const strong = document.createElement('strong');
+                strong.textContent = 'Fila ' + item[0] + ': ';
+                li.appendChild(strong);
+                li.appendChild(document.createTextNode(String(item[1])));
+            } else {
+                li.textContent = String(item);
+            }
+            container.appendChild(li);
+        });
+    }
+
+    async function readJsonResponse(response, defaultMsg) {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            try {
+                return await response.json();
+            } catch (e) {
+                // Fallback a objeto de error controlado si el JSON está truncado
+            }
+        }
+        return {
+            success: false,
+            error: defaultMsg || ('El servidor respondió con código ' + response.status)
+        };
+    }
+
     window.addEventListener('beforeunload', function(e) {
         if (isUploading) {
             e.preventDefault();
@@ -533,6 +572,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         e.preventDefault();
 
+        // POR QUÉ: Los controles disabled son omitidos deliberadamente por new FormData(form) (spec WHATWG).
+        // Extraemos explícitamente el archivo y token antes de deshabilitar la interfaz de usuario.
+        const file = fileInput.files[0];
+        const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', csrfToken);
+        formData.append('file', file, file.name);
+        formData.append('mode', 'import');
+
         isUploading = true;
         isCancelled = false;
         submitBtn.disabled = true;
@@ -540,6 +588,7 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.style.cursor = 'not-allowed';
         fileInput.disabled = true;
 
+        clearDoneActions();
         progressCard.style.display = 'block';
         progressCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         progressSpinner.style.display = 'block';
@@ -559,19 +608,16 @@ document.addEventListener('DOMContentLoaded', function() {
         errorDetailsList.innerHTML = '';
         if (window.lucide) lucide.createIcons();
 
-        const formData = new FormData(form);
-        formData.append('mode', 'import');
-
         try {
             const startResp = await fetch("{% url 'admin:store_product_bulk_upload_start' %}", {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                    'X-CSRFToken': csrfToken,
                 },
                 body: formData
             });
 
-            const startData = await startResp.json();
+            const startData = await readJsonResponse(startResp, "{% trans 'Error al iniciar la sesión de carga' %}");
             if (!startResp.ok || !startData.success) {
                 throw new Error(startData.error || "{% trans 'Error al iniciar la sesión de carga' %}");
             }
@@ -599,7 +645,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                                'X-CSRFToken': csrfToken,
                             },
                             body: JSON.stringify({
                                 upload_id: currentUploadId,
@@ -607,17 +653,22 @@ document.addEventListener('DOMContentLoaded', function() {
                             })
                         });
 
-                        chunkData = await chunkResp.json();
+                        chunkData = await readJsonResponse(chunkResp, `Error en parte ${chunkIndex + 1} (HTTP ${chunkResp.status})`);
                         if (chunkResp.ok && chunkData.success) {
                             chunkSuccess = true;
                         } else {
+                            // REGLA: Errores 4xx (permiso denegado, sesión expirada, payload inválido) son definitivos.
+                            // No reintentar pues no cambiarán; solo reintentar ante 5xx o fallos de red.
+                            if (chunkResp.status >= 400 && chunkResp.status < 500) {
+                                throw new Error(chunkData.error || `Error en parte ${chunkIndex + 1} (HTTP ${chunkResp.status})`);
+                            }
                             if (attempts >= 3) {
                                 throw new Error(chunkData.error || `Error en parte ${chunkIndex + 1}`);
                             }
                             await new Promise(r => setTimeout(r, 1500));
                         }
                     } catch (err) {
-                        if (attempts >= 3) {
+                        if (attempts >= 3 || (err.message && err.message.includes('HTTP 4'))) {
                             throw err;
                         }
                         await new Promise(r => setTimeout(r, 1500));
@@ -641,7 +692,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (chunkData.error_details && chunkData.error_details.length > 0) {
                     errorDetailsBox.style.display = 'block';
-                    errorDetailsList.innerHTML = chunkData.error_details.map(e => `<li><strong>Fila ${e[0]}:</strong> ${e[1]}</li>`).join('');
+                    renderErrorItems(errorDetailsList, chunkData.error_details);
                 }
             }
 
@@ -695,7 +746,7 @@ document.addEventListener('DOMContentLoaded', function() {
             progressTitle.style.color = '#dc2626';
             progressDesc.textContent = error.message;
             errorDetailsBox.style.display = 'block';
-            errorDetailsList.innerHTML = `<li>${error.message}</li>`;
+            renderErrorItems(errorDetailsList, [error.message]);
         }
     });
 
