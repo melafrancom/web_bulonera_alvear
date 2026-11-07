@@ -4,8 +4,8 @@
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Bulonera Alvear Admin{% endblock %}
 
 {% block branding %}
-<div class="flex items-center gap-3 px-4 py-3">
-    <img src="{% static 'images/logo-bulonera-alvear.png' %}" alt="Bulonera Alvear" class="h-8 w-auto">
+<div class="admin-branding">
+    <img src="{% static 'images/logo-bulonera-alvear.png' %}" alt="Bulonera Alvear" class="admin-branding-logo">
     <h1 style="color: white; font-size: 1.25rem; font-weight: 700; margin: 0;">Bulonera Alvear</h1>
 </div>
 {% endblock %}
@@ -14,11 +14,22 @@
 
 {% block extrastyle %}
 {{ block.super }}
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
+<script defer src="{% static 'js/vendor/lucide.min.js' %}"></script>
 <style>
-    /* Tailwind Config */
+    /* Tipografía corporativa para Django Admin (permitida por CSP en OLS) */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    /* Branding cabecera (reemplazo de utilidades Tailwind eliminadas para cumplir CSP) */
+    .admin-branding {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+    }
+    .admin-branding-logo {
+        height: 32px;
+        width: auto;
+    }
     
     :root {
         --primary-50: #eff6ff;
@@ -411,7 +422,16 @@
     <p>Bulonera Alvear Admin Panel | Powered by Django</p>
 </div>
 <script>
-    // Initialize Lucide icons
-    lucide.createIcons();
+    // Initialize Lucide icons con guarda defensiva y compatibilidad con script defer
+    function initAdminLucide() {
+        if (window.lucide && typeof lucide.createIcons === 'function') {
+            lucide.createIcons();
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAdminLucide);
+    } else {
+        initAdminLucide();
+    }
 </script>
 {% endblock %}
