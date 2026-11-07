@@ -246,6 +246,9 @@
       },
       "hasMap": "https://www.google.com/maps/?cid=5589626616767849255",
       "openingHoursSpecification": {{ business_hours.schema_specifications_json|default:"[]"|safe }},
+      {% if business_hours.special_schema_specifications %}
+      "specialOpeningHoursSpecification": {{ business_hours.special_schema_specifications_json|safe }},
+      {% endif %}
       "contactPoint": {
         "@type": "ContactPoint",
         "telephone": "+543624733431",

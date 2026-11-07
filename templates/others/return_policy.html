@@ -217,7 +217,7 @@
           <div>
             <p><strong>WhatsApp Oficial:</strong> <a href="{% url 'contact:whatsapp_lead_redirect' %}?source=returns_page" data-ba-lead="whatsapp_returns_page" target="_blank" rel="nofollow noopener noreferrer" class="text-primary-600 dark:text-primary-400 hover:underline">+54 362 473-3431</a></p>
             <p><strong>Correo Electrónico:</strong> <a href="mailto:contacto@buloneraalvear.online" class="text-primary-600 dark:text-primary-400 hover:underline">contacto@buloneraalvear.online</a></p>
-            <p><strong>Horarios:</strong> {{ business_hours.short|default:"Lun a Vie 08:00–20:00 · Sáb 08:00–13:00 y 16:00–18:30" }}</p>
+            <p><strong>Horarios:</strong> {{ business_hours.short|default:"Lun a Vie 08:00–12:30 | 15:30-20:00 · Sáb 08:00–13:00 y 16:00–18:30" }}{% if business_hours.today_exception %} <span class="font-semibold text-amber-600 dark:text-amber-400">({{ business_hours.today_exception.badge_text }})</span>{% endif %}</p>
           </div>
         </div>
       </div>

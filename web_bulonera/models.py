@@ -138,6 +138,17 @@ class BusinessHoursSetting(models.Model):
     def __str__(self):
         return self.name
 
+    @classmethod
+    def load(cls):
+        """
+        Obtiene la única instancia de configuración de horarios o crea una inicial.
+        # REGLA: Patrón Singleton para configuración global editable desde Admin.
+        """
+        instance = cls.objects.first()
+        if not instance:
+            instance = cls.objects.create(name="Horario Comercial Principal")
+        return instance
+
     def save(self, *args, **kwargs):
         if not self.pk and BusinessHoursSetting.objects.exists():
             logger.warning("Intento bloqueado de crear segunda instancia de BusinessHoursSetting.")

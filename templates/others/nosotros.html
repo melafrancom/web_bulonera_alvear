@@ -247,7 +247,7 @@
         </div>
         <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Local Propio en Resistencia</h3>
         <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-          Ubicados en Av. Alvear 1301, con atención presencial de lunes a viernes 8–20hs y sábados 8–13hs. Vení, consultá y llevate lo que necesitás con asesoramiento cara a cara.
+          Ubicados en Av. Alvear 1301, con atención presencial ({{ business_hours.short|default:"Lunes a viernes 08:00-12:30 | 15:30-20:00 y sábados 08:00 a 13:00 y 16:00 a 18:30" }}). Vení, consultá y llevate lo que necesitás con asesoramiento cara a cara.
         </p>
       </div>
 
@@ -461,7 +461,7 @@
       </span>
       <span class="inline-flex items-center gap-2">
         <i data-lucide="clock" class="w-4 h-4"></i>
-        Lun–Vie 8:00–20:00 · Sáb 8:00–13:00
+        {{ business_hours.short|default:"Lun–Vie 8:00–20:00 · Sáb 8:00–13:00 y 16:00–18:30" }}
       </span>
       <a href="tel:+543624733431" class="inline-flex items-center gap-2 hover:text-white transition-colors">
         <i data-lucide="phone" class="w-4 h-4"></i>

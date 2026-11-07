@@ -32,7 +32,8 @@
     "latitude": -27.4560,
     "longitude": -58.9950
   },
-  "openingHoursSpecification": {{ business_hours.schema_specifications_json|default:"[]"|safe }}
+  "openingHoursSpecification": {{ business_hours.schema_specifications_json|default:"[]"|safe }}{% if business_hours.special_schema_specifications %},
+  "specialOpeningHoursSpecification": {{ business_hours.special_schema_specifications_json|safe }}{% endif %}
 }
 </script>
 
@@ -174,6 +175,11 @@
                 Horarios de Atención
               </h3>
               <div class="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                {% if business_hours.today_exception %}
+                <div class="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 font-medium mb-3">
+                  ⚠️ {{ business_hours.today_exception.badge_text }}
+                </div>
+                {% endif %}
                 {% for line in business_hours.lines %}
                 <div class="flex justify-between gap-4">
                   <span>{{ line.label }}:</span>

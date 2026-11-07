@@ -41,6 +41,9 @@ graph TD
 
 ## 🛠️ Modelos Clave / Entidades (DB)
 - **SiteTheme** (Hereda de `models.Model`): Modelo tipo Singleton (máximo una sola instancia en BD) que permite a los administradores ajustar en tiempo real el diseño y los colores del sitio (gamas cromáticas en HEX para botones, navbars, opacidades y fondos) desde el Panel de Administración de Django sin necesidad de redeploy.
+- **BusinessHoursSetting** (Hereda de `models.Model`): Configuración centralizada tipo Singleton (método `BusinessHoursSetting.load()`) para los horarios comerciales de toda la plataforma. Fuente única de verdad consumida por vistas, templates y datos estructurados.
+- **BusinessHoursPeriod** (Hereda de `models.Model`): Intervalos semanales de atención por día de la semana (`day` 1..7, `opening_time`, `closing_time`), permitiendo jornadas corridas o turnos partidos (ej. mañana y tarde).
+- **BusinessHoursException** (Hereda de `models.Model`): Excepciones puntuales de calendario para feriados nacionales o jornadas especiales (`date`, `is_closed`, `opening_time`, `closing_time`, `reason`). Expone alertas del día actual y especificaciones `specialOpeningHoursSpecification` para Google / Schema.org.
 
 ## ⚡ Componentes Críticos y Context Processors
 - **Settings Multi-Entorno (`settings/`)**:
@@ -50,11 +53,15 @@ graph TD
 - **Context Processors (`context_processors.py`)**:
   - `meta_settings`: Inyecta automáticamente variables globales en los templates (e.g. `WHATSAPP_NUMBER`, `META_PIXEL_ID`, claves de Google Maps).
   - `site_theme`: Inyecta el tema activo de colores (`SiteTheme`) en todos los templates con almacenamiento en caché de Redis por 1 hora.
+  - `business_hours`: Inyecta el horario comercial dinámico estructurado (`short`, `lines`, `schema_specifications_json`, `special_schema_specifications_json`, `today_exception`) en todas las plantillas.
+- **Servicios Centrales (`business_hours.py`)**:
+  - `get_business_hours_data()`: Obtiene y cachea (`business_hours_active`) la estructura horaria completa con recálculo automático al pasar la medianoche local (`America/Argentina/Buenos_Aires`).
 - **Middlewares (`middleware.py`)**:
   - `ErrorLoggingMiddleware`: Captura y registra excepciones imprevistas en los logs del servidor.
 
 ## 📝 Notas de Detalle (Obsidian Vault)
-- **Invalida Caché**: Cada vez que se actualiza el tema visual en el panel de control, el método `save()` de `SiteTheme` purga la clave `site_theme_active` de Redis para aplicar los cambios estéticos de manera instantánea. Emite un `logger.warning` si se intenta crear una segunda instancia.
+- **Invalida Caché**: Cada vez que se actualiza el tema visual o el horario comercial en el panel de control, los métodos `save()` y `save_related()` purgan las claves `site_theme_active` y `business_hours_active` de Redis para aplicar los cambios de manera instantánea.
+- **Administración 1-Clic de Horarios**: `BusinessHoursSettingAdmin` redirige el changelist directamente a la edición del Singleton e implementa `BusinessHoursPeriodInlineFormSet` para evitar solapamientos horarios en el mismo día.
 - **Seguridad y Hardening (AppSec)**:
   - Cargas y exploración de archivos en CKEditor restringidas a `staff_member_required`. Subidas de archivos no-imagen bloqueadas (`CKEDITOR_ALLOW_NONIMAGE_FILES = False`).
   - Documentación de API (`/api/schema/` y `/api/docs/`) accesible únicamente para usuarios staff/admin (`IsAdminUser`).
