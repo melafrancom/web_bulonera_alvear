@@ -14,11 +14,13 @@ import json
 import openpyxl
 from io import TextIOWrapper
 from django.utils.text import slugify
+from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 import os
 import uuid
 from django.db import transaction
+from django.db.models import Count
 from pathlib import Path
 from django.conf import settings
 
@@ -57,7 +59,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ('category', 'subcategories', 'tags', 'is_available', 'is_on_sale', 'brand', 'condition')
     filter_horizontal = ('subcategories', 'tags')
     autocomplete_fields = ['image']
-    actions = ['make_available', 'make_unavailable']
+    actions = ['make_available', 'make_unavailable', 'export_selected_products_excel']
     # Agrega una url personalizada
     def get_urls(self):
         urls = super().get_urls()
@@ -65,6 +67,8 @@ class ProductAdmin(admin.ModelAdmin):
             path('import-products/', self.admin_site.admin_view(self.import_products), name='import_products'),
             path('update-prices/', self.admin_site.admin_view(self.update_prices), name='update_prices'),
             path('download-import-template/', self.admin_site.admin_view(self.download_import_template), name='store_product_download_import_template'),
+            path('export-products/', self.admin_site.admin_view(self.export_products), name='store_product_export'),
+            path('export-products/download/', self.admin_site.admin_view(self.download_export_products), name='store_product_export_download'),
             path('bulk-upload/start/', self.admin_site.admin_view(self.bulk_upload_start), name='store_product_bulk_upload_start'),
             path('bulk-upload/chunk/', self.admin_site.admin_view(self.bulk_upload_chunk), name='store_product_bulk_upload_chunk'),
             path('bulk-upload/cancel/', self.admin_site.admin_view(self.bulk_upload_cancel), name='store_product_bulk_upload_cancel'),
@@ -130,6 +134,80 @@ class ProductAdmin(admin.ModelAdmin):
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         return response
+
+    def export_products(self, request):
+        """Renderiza la interfaz administrativa para exportar catálogo completo o filtrado a Excel."""
+        if not (self.has_view_permission(request) or self.has_change_permission(request)):
+            raise PermissionDenied
+
+        categories = Category.objects.annotate(product_count=Count('product')).order_by('category_name')
+        subcategories = SubCategory.objects.select_related('category').annotate(
+            product_count=Count('product')
+        ).order_by('category__category_name', 'subcategory_name')
+
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'Exportar Productos Excel',
+            'categories': categories,
+            'subcategories': subcategories,
+            'total_products': Product.objects.count(),
+            'available_products': Product.objects.filter(is_available=True).count(),
+            'opts': self.model._meta,
+        }
+        return render(request, 'admin/store/product/export_products.html', context)
+
+    def download_export_products(self, request):
+        """Descarga en streaming el archivo .xlsx del catálogo completo o filtrado."""
+        if request.method != 'GET':
+            return HttpResponseNotAllowed(['GET'])
+
+        if not (self.has_view_permission(request) or self.has_change_permission(request)):
+            raise PermissionDenied
+
+        raw_cat = request.GET.get('category_id', '').strip()
+        raw_subcat = request.GET.get('subcategory_id', '').strip()
+        category_id = int(raw_cat) if raw_cat.isdigit() else None
+        subcategory_id = int(raw_subcat) if raw_subcat.isdigit() else None
+        only_available = request.GET.get('only_available') in ('1', 'true', 'on')
+
+        from store.services import ProductService
+        buffer = ProductService.export_products_workbook(
+            category_id=category_id,
+            subcategory_id=subcategory_id,
+            only_available=only_available,
+        )
+
+        date_str = timezone.now().strftime('%Y-%m-%d')
+        filename = f"catalogo_productos_bulonera_{date_str}.xlsx"
+
+        if subcategory_id is not None:
+            subcat_slug = SubCategory.objects.filter(pk=subcategory_id).values_list('slug', flat=True).first()
+            if subcat_slug:
+                filename = f"productos_bulonera_{slugify(subcat_slug)}_{date_str}.xlsx"
+        elif category_id is not None:
+            cat_slug = Category.objects.filter(pk=category_id).values_list('slug', flat=True).first()
+            if cat_slug:
+                filename = f"productos_bulonera_{slugify(cat_slug)}_{date_str}.xlsx"
+
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=filename,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+
+    def export_selected_products_excel(self, request, queryset):
+        """Acción masiva de Django Admin para exportar los productos seleccionados a Excel."""
+        from store.services import ProductService
+        buffer = ProductService.export_products_workbook(queryset=queryset)
+        date_str = timezone.now().strftime('%Y-%m-%d')
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=f"productos_seleccionados_bulonera_{date_str}.xlsx",
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+    export_selected_products_excel.short_description = "📥 Exportar productos seleccionados a Excel (.xlsx)"
 
     def update_prices(self, request):
         if not (self.has_add_permission(request) or self.has_change_permission(request)):
@@ -276,6 +354,7 @@ class ProductAdmin(admin.ModelAdmin):
     
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
+        extra_context['show_export_button'] = True
         extra_context['show_import_button'] = True
         extra_context['show_price_update_button'] = True
         extra_context['show_template_download_button'] = True

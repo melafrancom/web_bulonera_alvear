@@ -1,0 +1,377 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .export-container {
+        max-width: 840px;
+        margin: 0 auto;
+    }
+
+    .export-header {
+        background: linear-gradient(135deg, #1B3A5C 0%, #1e40af 100%);
+        border-radius: 12px;
+        padding: 32px;
+        margin-bottom: 28px;
+        color: white;
+    }
+
+    .export-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0 0 12px 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .export-header p {
+        font-size: 16px;
+        opacity: 0.92;
+        margin: 0;
+    }
+
+    .quick-export-card {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 10px;
+        padding: 22px 24px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .quick-export-card .info-text strong {
+        color: #166534;
+        font-size: 16px;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .quick-export-card .info-text span {
+        color: #334155;
+        font-size: 13.5px;
+    }
+
+    .btn-export-primary {
+        background: #166534;
+        color: white;
+        text-decoration: none;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+    }
+
+    .btn-export-primary:hover {
+        background: #15803d;
+        color: white;
+    }
+
+    .info-card,
+    .filter-card {
+        background: white;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    }
+
+    .info-card h3,
+    .filter-card h3 {
+        font-size: 17px;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0 0 16px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .info-list li {
+        padding: 8px 0;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        color: #475569;
+        font-size: 14px;
+    }
+
+    .info-list li:last-child {
+        border-bottom: none;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .form-group select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background: #f8fafc;
+        color: #1e293b;
+        font-size: 14px;
+    }
+
+    .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        margin-bottom: 22px;
+    }
+
+    .checkbox-row label {
+        margin: 0;
+        font-weight: 500;
+        color: #334155;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .submit-row {
+        padding-top: 18px;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .btn-export-filtered {
+        background: #1B3A5C;
+        color: white;
+        border: none;
+        padding: 12px 22px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+    }
+
+    .btn-export-filtered:hover {
+        background: #1e40af;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #2563eb;
+        text-decoration: none;
+        font-weight: 500;
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: background 0.2s;
+    }
+
+    .back-link:hover {
+        background: #f1f5f9;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:store_product_changelist' %}">{% trans 'Products' %}</a>
+    &rsaquo; {% trans 'Exportar Productos Excel' %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="export-container">
+
+    <!-- Header -->
+    <div class="export-header">
+        <h1>
+            <i data-lucide="file-spreadsheet" style="width: 32px; height: 32px;"></i>
+            {% trans 'Exportar Catálogo de Productos (.xlsx)' %}
+        </h1>
+        <p>{% trans 'Descarga el listado completo o filtrado por categoría/subcategoría usando el formato oficial de importación.' %}</p>
+    </div>
+
+    <!-- Quick Full Export Card -->
+    <div class="quick-export-card">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <i data-lucide="database" style="width: 32px; height: 32px; color: #166534; flex-shrink: 0;"></i>
+            <div class="info-text">
+                <strong>{% trans 'Exportar Catálogo Completo' %} ({{ total_products }} {% trans 'productos' %})</strong>
+                <span>{% trans 'Incluye todos los productos registrados actualmente en el sitio web (' %}{{ available_products }} {% trans 'disponibles).' %}</span>
+            </div>
+        </div>
+        <a href="{% url 'admin:store_product_export_download' %}" class="btn-export-primary">
+            <i data-lucide="download" style="width: 18px; height: 18px;"></i>
+            {% trans 'Descargar Todo (.xlsx)' %}
+        </a>
+    </div>
+
+    <!-- Filtered Export Form -->
+    <div class="filter-card">
+        <h3>
+            <i data-lucide="filter" style="width: 20px; height: 20px; color: #1B3A5C;"></i>
+            {% trans 'Exportación Filtrada por Categoría o Subcategoría' %}
+        </h3>
+        <form action="{% url 'admin:store_product_export_download' %}" method="get">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="id_category_id">{% trans 'Categoría' %}</label>
+                    <select name="category_id" id="id_category_id">
+                        <option value="">{% trans 'Todas las categorías' %} ({{ total_products }})</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.category_name }} ({{ cat.product_count }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_subcategory_id">{% trans 'Subcategoría' %}</label>
+                    <select name="subcategory_id" id="id_subcategory_id">
+                        <option value="" data-category-id="">{% trans 'Todas las subcategorías' %}</option>
+                        {% for sub in subcategories %}
+                        <option value="{{ sub.id }}" data-category-id="{{ sub.category_id }}">
+                            {{ sub.category.category_name }} &rsaquo; {{ sub.subcategory_name }} ({{ sub.product_count }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="checkbox-row">
+                <input type="checkbox" name="only_available" id="id_only_available" value="1">
+                <label for="id_only_available">
+                    {% trans 'Exportar únicamente productos disponibles/activos en la tienda web' %}
+                </label>
+            </div>
+
+            <div class="submit-row">
+                <button type="submit" class="btn-export-filtered">
+                    <i data-lucide="download" style="width: 18px; height: 18px;"></i>
+                    {% trans 'Exportar Lista Filtrada (.xlsx)' %}
+                </button>
+                <a href="{% url 'admin:store_product_changelist' %}" class="back-link">
+                    <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+                    {% trans 'Volver a lista' %}
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Format & Re-import Info -->
+    <div class="info-card">
+        <h3>
+            <i data-lucide="info" style="width: 20px; height: 20px; color: #2563eb;"></i>
+            {% trans 'Detalles del Archivo Exportado' %}
+        </h3>
+        <ul class="info-list">
+            <li>
+                <i data-lucide="check-circle" style="width: 16px; height: 16px; color: #16a34a; flex-shrink: 0; margin-top: 2px;"></i>
+                <div>
+                    <strong>{% trans '100% Compatible con el Importador:' %}</strong>
+                    {% trans 'Contiene exactamente las 30 columnas oficiales y las 3 hojas (Productos, Guía y Ejemplos, Guía de Imágenes).' %}
+                </div>
+            </li>
+            <li>
+                <i data-lucide="shield-check" style="width: 16px; height: 16px; color: #2563eb; flex-shrink: 0; margin-top: 2px;"></i>
+                <div>
+                    <strong>{% trans 'Preservación de Códigos y Medidas:' %}</strong>
+                    {% trans 'Columnas sensibles como code, diameter, length, gtin y mpn se exportan como texto para conservar ceros iniciales y fracciones.' %}
+                </div>
+            </li>
+            <li>
+                <i data-lucide="zap" style="width: 16px; height: 16px; color: #f59e0b; flex-shrink: 0; margin-top: 2px;"></i>
+                <div>
+                    <strong>{% trans 'Optimizado para Catálogos Grandes:' %}</strong>
+                    {% trans 'Generado en streaming de baja memoria para exportar miles de productos rápidamente sin saturar el servidor.' %}
+                </div>
+            </li>
+        </ul>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('id_category_id');
+    const subcategorySelect = document.getElementById('id_subcategory_id');
+    if (!categorySelect || !subcategorySelect) return;
+
+    // Capturar snapshot inicial de opciones para reconstrucción compatible con todos los navegadores (incluyendo Safari).
+    const allSubcategoryOptions = Array.from(subcategorySelect.options).map(function(opt) {
+        return {
+            value: opt.value,
+            text: opt.textContent,
+            categoryId: opt.getAttribute('data-category-id') || ''
+        };
+    });
+
+    function filterSubcategories() {
+        const selectedCategoryId = categorySelect.value;
+        const previousSubcatValue = subcategorySelect.value;
+
+        subcategorySelect.innerHTML = '';
+        let previousStillValid = false;
+
+        allSubcategoryOptions.forEach(function(item) {
+            const isDefaultOption = item.value === '';
+            const matchesCategory = !selectedCategoryId || item.categoryId === selectedCategoryId;
+
+            if (isDefaultOption || matchesCategory) {
+                const optionEl = document.createElement('option');
+                optionEl.value = item.value;
+                optionEl.textContent = item.text;
+                if (item.categoryId) {
+                    optionEl.setAttribute('data-category-id', item.categoryId);
+                }
+                subcategorySelect.appendChild(optionEl);
+
+                if (item.value === previousSubcatValue) {
+                    previousStillValid = true;
+                }
+            }
+        });
+
+        subcategorySelect.value = previousStillValid ? previousSubcatValue : '';
+    }
+
+    categorySelect.addEventListener('change', filterSubcategories);
+});
+</script>
+{% endblock %}

@@ -959,3 +959,287 @@ class TestAdminBulkChunkedUploadViews:
             assert resp.status_code == 200
             content = resp.content.decode('utf-8')
             assert "formData.append('file', file" in content
+
+
+@pytest.mark.django_db
+class TestProductExport:
+    """Tests unitarios y de integración para la exportación masiva de productos a Excel."""
+
+    def test_export_products_workbook_structure_matches_import_template(self):
+        """Test: El Excel exportado conserva exactamente las 3 hojas y 30 columnas de la plantilla oficial."""
+        import openpyxl
+        from openpyxl.utils import get_column_letter
+
+        cat = Category.objects.create(category_name='Bulonería', slug='buloneria')
+        Product.objects.create(
+            code='00100100025',
+            name='Bulón Hexagonal G2',
+            price=1250.50,
+            stock=100,
+            category=cat,
+        )
+
+        buffer = ProductService.export_products_workbook()
+        wb = openpyxl.load_workbook(buffer, data_only=False)
+
+        assert wb.sheetnames == ['Productos', 'Guía y Ejemplos', 'Guía de Imágenes']
+
+        ws1 = wb['Productos']
+        header_row = [cell.value for cell in ws1[1]]
+        expected_columns = [col['name'] for col in ProductService.IMPORT_TEMPLATE_COLUMNS]
+        assert len(header_row) == 30
+        assert header_row == expected_columns
+        assert ws1.freeze_panes == 'A2'
+        assert ws1.max_row == 2
+
+        for col_name in ['code', 'diameter', 'length', 'gtin', 'mpn']:
+            col_idx = header_row.index(col_name) + 1
+            col_letter = get_column_letter(col_idx)
+            assert ws1.column_dimensions[col_letter].number_format == '@'
+
+        assert wb['Guía y Ejemplos'].max_row > 10
+        assert wb['Guía de Imágenes'].max_row > 5
+
+    def test_export_and_reimport_full_roundtrip(self):
+        """Test round-trip: Exportar catálogo, editar valores y re-importar preserva todos los datos."""
+        import openpyxl
+        from store.models import ProductTag
+
+        cat = Category.objects.create(category_name='Bulonería', slug='buloneria')
+        sub1 = SubCategory.objects.create(subcategory_name='Hexagonales', slug='hexagonales', category=cat)
+        sub2 = SubCategory.objects.create(subcategory_name='Grado 2', slug='grado-2', category=cat)
+        tag1 = ProductTag.objects.create(name='Zincado', slug='zincado')
+        tag2 = ProductTag.objects.create(name='Industrial', slug='industrial')
+
+        p1 = Product.objects.create(
+            code='00100100025',
+            name='Bulón Hexagonal G2',
+            diameter='1/4"',
+            length='1-1/2"',
+            description='Bulón estándar zincado.',
+            price=1250.50,
+            stock=500,
+            category=cat,
+            tax_rate=Decimal('10.50'),
+            brand='Bulonera Alvear',
+            condition='new',
+            norm='SAE J429',
+            grade='Grado 2',
+            material='Acero al carbono',
+            gtin='7791234567890',
+            mpn='BH-G2-14112',
+            meta_title='Bulón Hexagonal G2 | Bulonera Alvear',
+            meta_description='Stock en Resistencia, Chaco.',
+            meta_keywords='bulon, hexagonal',
+        )
+        p1.subcategories.add(sub1, sub2)
+        p1.tags.add(tag1, tag2)
+
+        p2 = Product.objects.create(
+            code='MAQ-TAL-001',
+            name='Taladro Percutor 18V',
+            price=185000.00,
+            stock=15,
+            category=cat,
+        )
+        p2.subcategories.add(sub1)
+
+        # Exportar a Excel
+        export_buffer = ProductService.export_products_workbook()
+        wb = openpyxl.load_workbook(export_buffer)
+        ws = wb['Productos']
+        headers = [c.value for c in ws[1]]
+        code_idx = headers.index('code') + 1
+        price_idx = headers.index('price') + 1
+        stock_idx = headers.index('stock') + 1
+
+        # Verificar preservación de ceros iniciales y medidas fraccionarias
+        assert ws.cell(row=2, column=code_idx).value == '00100100025'
+        assert ws.cell(row=2, column=headers.index('diameter') + 1).value == '1/4"'
+        assert ws.cell(row=2, column=headers.index('length') + 1).value == '1-1/2"'
+        assert ws.cell(row=2, column=headers.index('tax_rate') + 1).value == '10.50'
+
+        # Editar precio y stock en el Excel exportado antes de re-importar
+        ws.cell(row=2, column=price_idx).value = 1400.75
+        ws.cell(row=2, column=stock_idx).value = 420
+
+        reupload_buf = BytesIO()
+        wb.save(reupload_buf)
+        reupload_buf.seek(0)
+        reupload_buf.name = 'catalogo_reimport.xlsx'
+
+        result = ProductService.import_from_file(reupload_buf)
+        assert result.errors == 0
+        assert result.updated == 2
+
+        p1.refresh_from_db()
+        assert p1.code == '00100100025'
+        assert p1.price == 1400.75
+        assert p1.stock == 420
+        assert p1.diameter == '1/4"'
+        assert p1.length == '1-1/2"'
+        assert p1.tax_rate == Decimal('10.50')
+        assert p1.subcategories.count() == 2
+        assert p1.tags.count() == 2
+
+    def test_export_products_filters_by_category_subcategory_and_availability(self):
+        """Test: Los filtros de categoría, subcategoría y disponibilidad exportan el subconjunto exacto sin duplicar."""
+        import openpyxl
+
+        cat1 = Category.objects.create(category_name='Bulonería', slug='buloneria')
+        cat2 = Category.objects.create(category_name='Herramientas', slug='herramientas')
+        sub1 = SubCategory.objects.create(subcategory_name='Tuercas', slug='tuercas', category=cat1)
+        sub2 = SubCategory.objects.create(subcategory_name='Arandelas', slug='arandelas', category=cat1)
+        sub3 = SubCategory.objects.create(subcategory_name='Eléctricas', slug='electricas', category=cat2)
+
+        p1 = Product.objects.create(code='F001', name='Tuerca M8', price=10.0, stock=5, category=cat1, is_available=True)
+        p1.subcategories.add(sub1, sub2)
+        p2 = Product.objects.create(code='F002', name='Arandela M8 Inactivo', price=5.0, stock=0, category=cat1, is_available=False)
+        p2.subcategories.add(sub2)
+        p3 = Product.objects.create(code='F003', name='Amoladora', price=500.0, stock=2, category=cat2, is_available=True)
+        p3.subcategories.add(sub3)
+
+        def read_codes(buf):
+            wb = openpyxl.load_workbook(buf)
+            ws = wb['Productos']
+            return [ws.cell(row=r, column=1).value for r in range(2, ws.max_row + 1)]
+
+        assert read_codes(ProductService.export_products_workbook(category_id=cat1.id)) == ['F001', 'F002']
+        assert read_codes(ProductService.export_products_workbook(category_id=cat1.id, only_available=True)) == ['F001']
+        assert read_codes(ProductService.export_products_workbook(subcategory_id=sub2.id)) == ['F001', 'F002']
+        assert read_codes(ProductService.export_products_workbook(subcategory_id=sub2.id, only_available=True)) == ['F001']
+        assert read_codes(ProductService.export_products_workbook(only_available=True)) == ['F001', 'F003']
+
+    def test_export_products_sanitizes_control_chars_and_formula_strings(self):
+        """Test: Caracteres XML ilegales y textos que inician con '=' no rompen ni generan fórmulas en Excel."""
+        import openpyxl
+
+        cat = Category.objects.create(category_name='General', slug='general')
+        Product.objects.create(
+            code='=BAD01',
+            name='Producto Especial',
+            description='=== OFERTA ESPECIAL ===\x0bTexto con control',
+            price=99.0,
+            stock=10,
+            category=cat,
+        )
+
+        buf = ProductService.export_products_workbook()
+        wb = openpyxl.load_workbook(buf, data_only=False)
+        ws = wb['Productos']
+        headers = [c.value for c in ws[1]]
+
+        code_cell = ws.cell(row=2, column=headers.index('code') + 1)
+        desc_cell = ws.cell(row=2, column=headers.index('description') + 1)
+
+        assert code_cell.value == '=BAD01'
+        assert code_cell.data_type == 's'
+        assert desc_cell.value == '=== OFERTA ESPECIAL ===Texto con control'
+        assert desc_cell.data_type == 's'
+
+    def test_export_products_constant_query_count_anti_n_plus_1(self, django_assert_num_queries):
+        """Test: La exportación ejecuta un número constante de queries SQL sin importar la cantidad de productos."""
+        from store.models import ProductTag
+
+        cat = Category.objects.create(category_name='Bulonería', slug='buloneria')
+        sub = SubCategory.objects.create(subcategory_name='Hexagonales', slug='hexagonales', category=cat)
+        tag = ProductTag.objects.create(name='Zincado', slug='zincado')
+
+        for i in range(15):
+            prod = Product.objects.create(
+                code=f'N1_{i:04d}',
+                name=f'Bulón Test {i}',
+                price=100.0 + i,
+                stock=10,
+                category=cat,
+            )
+            prod.subcategories.add(sub)
+            prod.tags.add(tag)
+
+        # 5 queries planas: subcats + tags + gallery + faqs + products iterator
+        with django_assert_num_queries(5):
+            buf = ProductService.export_products_workbook()
+        buf.close()
+
+    def test_admin_export_endpoints_and_action(self, client, admin_user):
+        """Test: Permisos, página de filtros, descarga filtrada y acción de seleccionados en Django Admin."""
+        import openpyxl
+        from django.urls import reverse
+        from account.models import Account
+
+        cat1 = Category.objects.create(category_name='Bulonería', slug='buloneria')
+        cat2 = Category.objects.create(category_name='Herramientas', slug='herramientas')
+        sub1 = SubCategory.objects.create(subcategory_name='Hexagonales', slug='hexagonales', category=cat1)
+
+        p1 = Product.objects.create(code='ADM001', name='Bulón Admin 1', price=50.0, stock=10, category=cat1, is_available=True)
+        p1.subcategories.add(sub1)
+        p2 = Product.objects.create(code='ADM002', name='Taladro Admin 2', price=500.0, stock=3, category=cat2, is_available=True)
+
+        export_page_url = reverse('admin:store_product_export')
+        download_url = reverse('admin:store_product_export_download')
+
+        # 1. Anónimo redirigido al login
+        resp_anon = client.get(export_page_url)
+        assert resp_anon.status_code == 302
+        assert '/admin/login/' in resp_anon.url
+
+        # 2. Staff sin permisos recibe 403
+        staff = Account.objects.create_user(
+            email='staff_no_export@test.com',
+            username='staff_no_export',
+            password='Password123',
+            first_name='No',
+            last_name='Perm',
+        )
+        staff.is_staff = True
+        staff.is_active = True
+        staff.save()
+        client.force_login(staff)
+
+        assert client.get(export_page_url).status_code == 403
+        assert client.get(download_url).status_code == 403
+
+        # 3. Admin autenticado accede a vista de exportación y botones en changelist
+        client.force_login(admin_user)
+        changelist_resp = client.get(reverse('admin:store_product_changelist'))
+        assert changelist_resp.status_code == 200
+        assert 'export-products/' in changelist_resp.content.decode('utf-8')
+
+        page_resp = client.get(export_page_url)
+        assert page_resp.status_code == 200
+        page_html = page_resp.content.decode('utf-8')
+        assert 'Bulonería' in page_html
+        assert 'Hexagonales' in page_html
+        assert 'unpkg.com' not in page_html
+
+        # 4. Descarga filtrada por categoría
+        dl_resp = client.get(f"{download_url}?category_id={cat1.id}")
+        assert dl_resp.status_code == 200
+        assert dl_resp['Content-Type'] == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        assert 'productos_bulonera_buloneria_' in dl_resp['Content-Disposition']
+
+        wb = openpyxl.load_workbook(BytesIO(b''.join(dl_resp.streaming_content)))
+        ws = wb['Productos']
+        assert ws.max_row == 2
+        assert ws.cell(row=2, column=1).value == 'ADM001'
+
+        # 4b. Descarga filtrada por subcategoría
+        dl_sub_resp = client.get(f"{download_url}?subcategory_id={sub1.id}&only_available=1")
+        assert dl_sub_resp.status_code == 200
+        assert 'productos_bulonera_hexagonales_' in dl_sub_resp['Content-Disposition']
+        wb_sub = openpyxl.load_workbook(BytesIO(b''.join(dl_sub_resp.streaming_content)))
+        ws_sub = wb_sub['Productos']
+        assert ws_sub.max_row == 2
+        assert ws_sub.cell(row=2, column=1).value == 'ADM001'
+
+        # 5. Acción sobre productos seleccionados en changelist
+        action_resp = client.post(
+            reverse('admin:store_product_changelist'),
+            {'action': 'export_selected_products_excel', '_selected_action': [str(p2.id)]},
+        )
+        assert action_resp.status_code == 200
+        assert action_resp['Content-Type'] == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        wb_sel = openpyxl.load_workbook(BytesIO(b''.join(action_resp.streaming_content)))
+        ws_sel = wb_sel['Productos']
+        assert ws_sel.max_row == 2
+        assert ws_sel.cell(row=2, column=1).value == 'ADM002'

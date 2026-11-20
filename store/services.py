@@ -10,12 +10,16 @@ import re
 import uuid
 import zlib
 import json
+import tempfile
+from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Tuple
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 
 import openpyxl
+from openpyxl.cell import WriteOnlyCell
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
@@ -547,6 +551,334 @@ class ProductService:
         },
     ]
 
+    @staticmethod
+    def _get_excel_styles() -> Dict[str, object]:
+        """Retorna la paleta de estilos corporativos compartida entre plantillas y exportaciones Excel."""
+        return {
+            'fill_green': PatternFill(start_color="166534", end_color="166534", fill_type="solid"),
+            'fill_navy': PatternFill(start_color="1B3A5C", end_color="1B3A5C", fill_type="solid"),
+            'fill_slate': PatternFill(start_color="334155", end_color="334155", fill_type="solid"),
+            'fill_blue': PatternFill(start_color="1E40AF", end_color="1E40AF", fill_type="solid"),
+            'fill_light_gray': PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid"),
+            'font_header': Font(name="Calibri", size=11, bold=True, color="FFFFFF"),
+            'font_title': Font(name="Calibri", size=14, bold=True, color="1B3A5C"),
+            'font_subtitle': Font(name="Calibri", size=11, italic=True, color="475569"),
+            'font_bold': Font(name="Calibri", size=11, bold=True, color="1E293B"),
+            'font_regular': Font(name="Calibri", size=11, color="334155"),
+            'align_center': Alignment(horizontal="center", vertical="center"),
+            'align_left': Alignment(horizontal="left", vertical="center"),
+            'align_wrap': Alignment(horizontal="left", vertical="top", wrap_text=True),
+            'border_thin': Border(
+                left=Side(style='thin', color='CBD5E1'),
+                right=Side(style='thin', color='CBD5E1'),
+                top=Side(style='thin', color='CBD5E1'),
+                bottom=Side(style='thin', color='CBD5E1'),
+            ),
+        }
+
+    @staticmethod
+    def _create_write_only_cell(
+        ws,
+        value,
+        font=None,
+        fill=None,
+        alignment=None,
+        border=None,
+        number_format: Optional[str] = None,
+    ) -> WriteOnlyCell:
+        """
+        Construye una celda compatible con WriteOnlyWorksheet sanitizando caracteres XML
+        ilegales y protegiendo strings que comiencen con operadores de fórmula.
+        """
+        if isinstance(value, str):
+            value = ILLEGAL_CHARACTERS_RE.sub('', value)
+
+        cell = WriteOnlyCell(ws, value=value)
+        # REGLA: Forzar data_type='s' cuando el texto inicia con operadores interpretables como
+        # fórmula ('=', '+', '-', '@') para evitar corrupción de celdas y Formula Injection.
+        if isinstance(value, str) and value.startswith(('=', '+', '-', '@')):
+            cell.data_type = 's'
+        if font is not None:
+            cell.font = font
+        if fill is not None:
+            cell.fill = fill
+        if alignment is not None:
+            cell.alignment = alignment
+        if border is not None:
+            cell.border = border
+        if number_format is not None:
+            cell.number_format = number_format
+        return cell
+
+    @classmethod
+    def _sanitize_export_scalar(cls, ws, value, force_text: bool = False):
+        """
+        Normaliza valores de celda para exportación en streaming: limpia caracteres XML
+        inválidos y envuelve en WriteOnlyCell cuando se exige formato texto o tipo literal.
+        """
+        if value is None:
+            clean_val = ''
+        elif isinstance(value, str):
+            clean_val = ILLEGAL_CHARACTERS_RE.sub('', value)
+        else:
+            clean_val = value
+
+        if force_text:
+            str_val = str(clean_val) if clean_val != '' else ''
+            return cls._create_write_only_cell(ws, str_val, number_format='@')
+
+        if isinstance(clean_val, str) and clean_val.startswith(('=', '+', '-', '@')):
+            return cls._create_write_only_cell(ws, clean_val)
+
+        return clean_val
+
+    @classmethod
+    def _append_styled_row(
+        cls,
+        ws,
+        row_idx: int,
+        cells_spec: List[Tuple[object, Dict[str, object]]],
+        write_only: bool,
+        height: Optional[int] = None,
+    ) -> int:
+        """Agrega una fila estilizada de manera uniforme en hojas normales o write-only."""
+        if write_only:
+            if height is not None:
+                ws.row_dimensions[row_idx].height = height
+            if not cells_spec:
+                ws.append([])
+            else:
+                ws.append([
+                    cls._create_write_only_cell(ws, val, **style_kwargs)
+                    for val, style_kwargs in cells_spec
+                ])
+        else:
+            if height is not None:
+                ws.row_dimensions[row_idx].height = height
+            if not cells_spec:
+                ws.append([])
+            else:
+                for c_idx, (val, style_kwargs) in enumerate(cells_spec, 1):
+                    cell = ws.cell(row=row_idx, column=c_idx, value=val)
+                    for attr, attr_val in style_kwargs.items():
+                        setattr(cell, attr, attr_val)
+        return row_idx + 1
+
+    @classmethod
+    def _configure_products_sheet(
+        cls,
+        ws,
+        styles: Dict[str, object],
+        write_only: bool = False,
+        validation_max_row: int = 2000,
+    ) -> None:
+        """
+        Configura dimensiones, congelamiento de encabezado, validaciones desplegables y fila
+        de encabezados de las 30 columnas canónicas en la hoja 'Productos'.
+        """
+        ws.views.sheetView[0].showGridLines = True
+        ws.freeze_panes = "A2"
+        ws.row_dimensions[1].height = 28
+
+        header_specs = []
+        for col_idx, col_spec in enumerate(cls.IMPORT_TEMPLATE_COLUMNS, 1):
+            h_name = col_spec['name']
+            grp = col_spec['group']
+            if grp == 'required':
+                header_fill = styles['fill_green']
+            elif grp == 'catalog':
+                header_fill = styles['fill_navy']
+            elif grp == 'tech':
+                header_fill = styles['fill_slate']
+            else:
+                header_fill = styles['fill_blue']
+
+            col_letter = get_column_letter(col_idx)
+            if col_spec.get('format') == '@':
+                ws.column_dimensions[col_letter].number_format = '@'
+            ws.column_dimensions[col_letter].width = max(len(h_name) + 5, 14)
+
+            header_specs.append((
+                h_name,
+                {
+                    'font': styles['font_header'],
+                    'fill': header_fill,
+                    'alignment': styles['align_center'],
+                    'border': styles['border_thin'],
+                },
+            ))
+
+        col_names = [c['name'] for c in cls.IMPORT_TEMPLATE_COLUMNS]
+
+        if 'condition' in col_names:
+            c_idx = col_names.index('condition') + 1
+            c_letter = get_column_letter(c_idx)
+            dv_cond = DataValidation(type="list", formula1='"new,used,refurbished"', allow_blank=True)
+            dv_cond.error = 'Selecciona un valor válido: new, used, refurbished'
+            dv_cond.errorTitle = 'Condición no válida'
+            if write_only:
+                ws.data_validations.append(dv_cond)
+            else:
+                ws.add_data_validation(dv_cond)
+            dv_cond.add(f"{c_letter}2:{c_letter}{validation_max_row}")
+
+        if 'tax_rate' in col_names:
+            t_idx = col_names.index('tax_rate') + 1
+            t_letter = get_column_letter(t_idx)
+            dv_tax = DataValidation(type="list", formula1='"21.00,10.50,0.00"', allow_blank=True)
+            dv_tax.error = 'Selecciona una alícuota válida: 21.00, 10.50 o 0.00'
+            dv_tax.errorTitle = 'Alícuota IVA no válida'
+            if write_only:
+                ws.data_validations.append(dv_tax)
+            else:
+                ws.add_data_validation(dv_tax)
+            dv_tax.add(f"{t_letter}2:{t_letter}{validation_max_row}")
+
+        cls._append_styled_row(ws, 1, header_specs, write_only=write_only, height=28)
+
+    @classmethod
+    def _populate_guide_sheets(cls, wb, styles: Dict[str, object], write_only: bool = False) -> None:
+        """Genera las hojas 'Guía y Ejemplos' y 'Guía de Imágenes' compartidas con el importador."""
+        ws2 = wb.create_sheet(title="Guía y Ejemplos")
+        ws2.views.sheetView[0].showGridLines = True
+        ws2.column_dimensions['A'].width = 18
+        ws2.column_dimensions['B'].width = 18
+        ws2.column_dimensions['C'].width = 24
+        ws2.column_dimensions['D'].width = 80
+
+        r = 1
+        r = cls._append_styled_row(
+            ws2, r, [("GUÍA DE CAMPOS PARA IMPORTACIÓN MASIVA DE PRODUCTOS", {'font': styles['font_title']})], write_only
+        )
+        r = cls._append_styled_row(
+            ws2, r, [("Bulonera Alvear - Plantilla Oficial de Carga", {'font': styles['font_subtitle']})], write_only
+        )
+        r = cls._append_styled_row(ws2, r, [], write_only)
+        r = cls._append_styled_row(
+            ws2, r, [("Explicación de Colores en la Hoja 'Productos':", {'font': styles['font_bold']})], write_only
+        )
+
+        legend_items = [
+            ("Verde", "Campos obligatorios requeridos para todo producto (code y price).", styles['fill_green']),
+            ("Azul Marino", "Datos del catálogo comercial e impositivos (categoría, stock, IVA Res. 4/2025, tags, imágenes).", styles['fill_navy']),
+            ("Acero / Gris", "Dimensiones y especificaciones técnicas para bulonería y ferretería (diámetro, largo, norma, grado).", styles['fill_slate']),
+            ("Azul Claro", "Identificadores universales EAN/MPN, categorización de Google, SEO y FAQs.", styles['fill_blue']),
+        ]
+        for color_name, desc, fill in legend_items:
+            r = cls._append_styled_row(
+                ws2,
+                r,
+                [
+                    (color_name, {'fill': fill, 'font': styles['font_header'], 'alignment': styles['align_center'], 'border': styles['border_thin']}),
+                    (desc, {'font': styles['font_regular'], 'alignment': styles['align_left']}),
+                ],
+                write_only,
+            )
+
+        r = cls._append_styled_row(ws2, r, [], write_only)
+        r = cls._append_styled_row(ws2, r, [("Regla de Nombres Automáticos:", {'font': styles['font_bold']})], write_only)
+        r = cls._append_styled_row(
+            ws2,
+            r,
+            [("Si un producto incluye 'diameter' y 'length', y su 'name' no contiene las medidas, el sistema genera automáticamente: {nombre} {diámetro} x {longitud}.", {'font': styles['font_regular']})],
+            write_only,
+        )
+        r = cls._append_styled_row(ws2, r, [], write_only)
+
+        guide_headers = ["Columna", "Obligatorio", "Tipo de Dato", "Regla de Negocio / Valor por Defecto"]
+        r = cls._append_styled_row(
+            ws2,
+            r,
+            [
+                (gh, {'font': styles['font_header'], 'fill': styles['fill_navy'], 'alignment': styles['align_center'], 'border': styles['border_thin']})
+                for gh in guide_headers
+            ],
+            write_only,
+            height=24,
+        )
+
+        for col_spec in cls.IMPORT_TEMPLATE_COLUMNS:
+            req_text = "SÍ (Obligatorio)" if col_spec['required'] else "Opcional"
+            req_style = {
+                'font': styles['font_bold'] if col_spec['required'] else styles['font_regular'],
+                'alignment': styles['align_center'],
+                'border': styles['border_thin'],
+            }
+            if col_spec['required']:
+                req_style['fill'] = styles['fill_light_gray']
+
+            r = cls._append_styled_row(
+                ws2,
+                r,
+                [
+                    (col_spec['name'], {'font': styles['font_bold'], 'alignment': styles['align_left'], 'border': styles['border_thin']}),
+                    (req_text, req_style),
+                    (col_spec['type_desc'], {'font': styles['font_regular'], 'alignment': styles['align_left'], 'border': styles['border_thin']}),
+                    (col_spec['rule'], {'font': styles['font_regular'], 'alignment': styles['align_left'], 'border': styles['border_thin']}),
+                ],
+                write_only,
+            )
+
+        r = cls._append_styled_row(ws2, r, [], write_only)
+        r = cls._append_styled_row(
+            ws2, r, [("EJEMPLOS PRÁCTICOS DE CARGA (3 CASOS REALES)", {'font': styles['font_title']})], write_only
+        )
+        r = cls._append_styled_row(
+            ws2, r, [("Puedes consultar y copiar estos ejemplos para familiarizarte con los formatos:", {'font': styles['font_subtitle']})], write_only
+        )
+        r = cls._append_styled_row(ws2, r, [], write_only)
+
+        r = cls._append_styled_row(
+            ws2,
+            r,
+            [
+                (col_spec['name'], {'font': styles['font_header'], 'fill': styles['fill_slate'], 'alignment': styles['align_center'], 'border': styles['border_thin']})
+                for col_spec in cls.IMPORT_TEMPLATE_COLUMNS
+            ],
+            write_only,
+            height=22,
+        )
+
+        for s_key in ('sample_1', 'sample_2', 'sample_3'):
+            r = cls._append_styled_row(
+                ws2,
+                r,
+                [
+                    (col_spec.get(s_key, ''), {'font': styles['font_regular'], 'alignment': styles['align_left'], 'border': styles['border_thin']})
+                    for col_spec in cls.IMPORT_TEMPLATE_COLUMNS
+                ],
+                write_only,
+            )
+
+        ws3 = wb.create_sheet(title="Guía de Imágenes")
+        ws3.views.sheetView[0].showGridLines = True
+        ws3.column_dimensions['A'].width = 30
+        ws3.column_dimensions['B'].width = 85
+
+        r3 = 1
+        r3 = cls._append_styled_row(ws3, r3, [("GUÍA DE CARGA Y GESTIÓN DE IMÁGENES", {'font': styles['font_title']})], write_only)
+        r3 = cls._append_styled_row(ws3, r3, [("Bulonera Alvear - Pipeline WebP y CDN", {'font': styles['font_subtitle']})], write_only)
+        r3 = cls._append_styled_row(ws3, r3, [], write_only)
+
+        img_rules = [
+            ("1. Directorio en el Servidor", "Las fotos deben subirse previamente a la carpeta:\nmedia/photos/products/original/\n(a través del panel de Media Bank o SSH/SFTP)."),
+            ("2. Formatos Soportados", "Se admiten formatos .jpg, .jpeg, .png y .webp. El servidor optimiza y genera automáticamente las variantes responsivas en WebP."),
+            ("3. Nombres de Archivo", "Usar nombres en minúsculas, sin espacios ni caracteres especiales (ej. 'tornillo-hexagonal-m8.jpg')."),
+            ("4. Imagen Principal ('images')", "Se especifica el nombre exacto de un único archivo (ej. 'bulon-g2-14112.jpg'). Si el producto ya existe y este campo se deja vacío, conserva la imagen actual."),
+            ("5. Galería Secundaria ('gallery')", "Múltiples imágenes separadas por comas SIN espacios (ej. 'foto1.jpg,foto2.jpg,foto3.jpg'). En actualizaciones, si se especifican fotos en este campo, reemplaza la galería anterior."),
+            ("6. Preguntas Frecuentes ('faq')", "Se cargan asociadas a la subcategoría en formato:\n\"¿Pregunta 1?\" Respuesta 1, \"¿Pregunta 2?\" Respuesta 2"),
+        ]
+        for title, desc in img_rules:
+            r3 = cls._append_styled_row(
+                ws3,
+                r3,
+                [
+                    (title, {'font': styles['font_bold'], 'alignment': Alignment(horizontal="left", vertical="top"), 'border': styles['border_thin']}),
+                    (desc, {'font': styles['font_regular'], 'alignment': styles['align_wrap'], 'border': styles['border_thin']}),
+                ],
+                write_only,
+            )
+
     @classmethod
     def generate_import_template_workbook(cls, mode: str = 'full') -> io.BytesIO:
         """
@@ -565,29 +897,7 @@ class ProductService:
         # Los ejemplos y guías residen en la Hoja 2 ('Guía y Ejemplos') y Hoja 3 ('Guía de Imágenes').
         """
         wb = openpyxl.Workbook()
-
-        fill_green = PatternFill(start_color="166534", end_color="166534", fill_type="solid")
-        fill_navy = PatternFill(start_color="1B3A5C", end_color="1B3A5C", fill_type="solid")
-        fill_slate = PatternFill(start_color="334155", end_color="334155", fill_type="solid")
-        fill_blue = PatternFill(start_color="1E40AF", end_color="1E40AF", fill_type="solid")
-        fill_light_gray = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
-
-        font_header = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-        font_title = Font(name="Calibri", size=14, bold=True, color="1B3A5C")
-        font_subtitle = Font(name="Calibri", size=11, italic=True, color="475569")
-        font_bold = Font(name="Calibri", size=11, bold=True, color="1E293B")
-        font_regular = Font(name="Calibri", size=11, color="334155")
-
-        align_center = Alignment(horizontal="center", vertical="center")
-        align_left = Alignment(horizontal="left", vertical="center")
-        align_wrap = Alignment(horizontal="left", vertical="top", wrap_text=True)
-
-        border_thin = Border(
-            left=Side(style='thin', color='CBD5E1'),
-            right=Side(style='thin', color='CBD5E1'),
-            top=Side(style='thin', color='CBD5E1'),
-            bottom=Side(style='thin', color='CBD5E1')
-        )
+        styles = cls._get_excel_styles()
 
         if mode == 'prices':
             ws1 = wb.active
@@ -599,10 +909,10 @@ class ProductService:
             headers = ['code', 'price']
             for col_idx, h in enumerate(headers, 1):
                 cell = ws1.cell(row=1, column=col_idx, value=h)
-                cell.font = font_header
-                cell.fill = fill_green
-                cell.alignment = align_center
-                cell.border = border_thin
+                cell.font = styles['font_header']
+                cell.fill = styles['fill_green']
+                cell.alignment = styles['align_center']
+                cell.border = styles['border_thin']
                 col_letter = get_column_letter(col_idx)
                 ws1.column_dimensions[col_letter].width = 20
                 if h == 'code':
@@ -611,9 +921,9 @@ class ProductService:
             ws2 = wb.create_sheet(title="Instrucciones")
             ws2.views.sheetView[0].showGridLines = True
             ws2.append(["INSTRUCCIONES PARA ACTUALIZACIÓN RÁPIDA DE PRECIOS"])
-            ws2.cell(row=1, column=1).font = font_title
+            ws2.cell(row=1, column=1).font = styles['font_title']
             ws2.append(["Bulonera Alvear - Gestión Administrativa"])
-            ws2.cell(row=2, column=1).font = font_subtitle
+            ws2.cell(row=2, column=1).font = styles['font_subtitle']
             ws2.append([])
 
             instrucciones = [
@@ -625,9 +935,9 @@ class ProductService:
             for title, desc in instrucciones:
                 r = ws2.max_row + 1
                 c1 = ws2.cell(row=r, column=1, value=title)
-                c1.font = font_bold
+                c1.font = styles['font_bold']
                 c2 = ws2.cell(row=r, column=2, value=desc)
-                c2.font = font_regular
+                c2.font = styles['font_regular']
 
             ws2.column_dimensions['A'].width = 25
             ws2.column_dimensions['B'].width = 85
@@ -635,188 +945,198 @@ class ProductService:
         else:
             ws1 = wb.active
             ws1.title = "Productos"
-            ws1.views.sheetView[0].showGridLines = True
-            ws1.freeze_panes = "A2"
-            ws1.row_dimensions[1].height = 28
-
-            for col_idx, col_spec in enumerate(cls.IMPORT_TEMPLATE_COLUMNS, 1):
-                h_name = col_spec['name']
-                cell = ws1.cell(row=1, column=col_idx, value=h_name)
-                cell.font = font_header
-                cell.alignment = align_center
-                cell.border = border_thin
-
-                grp = col_spec['group']
-                if grp == 'required':
-                    cell.fill = fill_green
-                elif grp == 'catalog':
-                    cell.fill = fill_navy
-                elif grp == 'tech':
-                    cell.fill = fill_slate
-                else:
-                    cell.fill = fill_blue
-
-                col_letter = get_column_letter(col_idx)
-                if col_spec.get('format') == '@':
-                    ws1.column_dimensions[col_letter].number_format = '@'
-                ws1.column_dimensions[col_letter].width = max(len(h_name) + 5, 14)
-
-            col_names = [c['name'] for c in cls.IMPORT_TEMPLATE_COLUMNS]
-
-            if 'condition' in col_names:
-                c_idx = col_names.index('condition') + 1
-                c_letter = get_column_letter(c_idx)
-                dv_cond = DataValidation(type="list", formula1='"new,used,refurbished"', allow_blank=True)
-                dv_cond.error = 'Selecciona un valor válido: new, used, refurbished'
-                dv_cond.errorTitle = 'Condición no válida'
-                ws1.add_data_validation(dv_cond)
-                dv_cond.add(f"{c_letter}2:{c_letter}2000")
-
-            if 'tax_rate' in col_names:
-                t_idx = col_names.index('tax_rate') + 1
-                t_letter = get_column_letter(t_idx)
-                dv_tax = DataValidation(type="list", formula1='"21.00,10.50,0.00"', allow_blank=True)
-                dv_tax.error = 'Selecciona una alícuota válida: 21.00, 10.50 o 0.00'
-                dv_tax.errorTitle = 'Alícuota IVA no válida'
-                ws1.add_data_validation(dv_tax)
-                dv_tax.add(f"{t_letter}2:{t_letter}2000")
-
-            ws2 = wb.create_sheet(title="Guía y Ejemplos")
-            ws2.views.sheetView[0].showGridLines = True
-
-            ws2.append(["GUÍA DE CAMPOS PARA IMPORTACIÓN MASIVA DE PRODUCTOS"])
-            ws2.cell(row=1, column=1).font = font_title
-            ws2.append(["Bulonera Alvear - Plantilla Oficial de Carga"])
-            ws2.cell(row=2, column=1).font = font_subtitle
-            ws2.append([])
-
-            ws2.append(["Explicación de Colores en la Hoja 'Productos':"])
-            ws2.cell(row=4, column=1).font = font_bold
-
-            legend_items = [
-                ("Verde", "Campos obligatorios requeridos para todo producto (code y price).", fill_green),
-                ("Azul Marino", "Datos del catálogo comercial e impositivos (categoría, stock, IVA Res. 4/2025, tags, imágenes).", fill_navy),
-                ("Acero / Gris", "Dimensiones y especificaciones técnicas para bulonería y ferretería (diámetro, largo, norma, grado).", fill_slate),
-                ("Azul Claro", "Identificadores universales EAN/MPN, categorización de Google, SEO y FAQs.", fill_blue),
-            ]
-            for color_name, desc, fill in legend_items:
-                r = ws2.max_row + 1
-                c1 = ws2.cell(row=r, column=1, value=color_name)
-                c1.fill = fill
-                c1.font = font_header
-                c1.alignment = align_center
-                c1.border = border_thin
-                c2 = ws2.cell(row=r, column=2, value=desc)
-                c2.font = font_regular
-                c2.alignment = align_left
-
-            ws2.append([])
-            ws2.append(["Regla de Nombres Automáticos:"])
-            ws2.cell(row=ws2.max_row, column=1).font = font_bold
-            ws2.append(["Si un producto incluye 'diameter' y 'length', y su 'name' no contiene las medidas, el sistema genera automáticamente: {nombre} {diámetro} x {longitud}."])
-            ws2.cell(row=ws2.max_row, column=1).font = font_regular
-            ws2.append([])
-
-            table_header_row = ws2.max_row + 1
-            guide_headers = ["Columna", "Obligatorio", "Tipo de Dato", "Regla de Negocio / Valor por Defecto"]
-            for c_idx, gh in enumerate(guide_headers, 1):
-                cell = ws2.cell(row=table_header_row, column=c_idx, value=gh)
-                cell.font = font_header
-                cell.fill = fill_navy
-                cell.alignment = align_center
-                cell.border = border_thin
-            ws2.row_dimensions[table_header_row].height = 24
-
-            for col_spec in cls.IMPORT_TEMPLATE_COLUMNS:
-                r = ws2.max_row + 1
-                c1 = ws2.cell(row=r, column=1, value=col_spec['name'])
-                c1.font = font_bold
-                c1.alignment = align_left
-                c1.border = border_thin
-
-                req_text = "SÍ (Obligatorio)" if col_spec['required'] else "Opcional"
-                c2 = ws2.cell(row=r, column=2, value=req_text)
-                c2.font = font_bold if col_spec['required'] else font_regular
-                c2.alignment = align_center
-                c2.border = border_thin
-                if col_spec['required']:
-                    c2.fill = fill_light_gray
-
-                c3 = ws2.cell(row=r, column=3, value=col_spec['type_desc'])
-                c3.font = font_regular
-                c3.alignment = align_left
-                c3.border = border_thin
-
-                c4 = ws2.cell(row=r, column=4, value=col_spec['rule'])
-                c4.font = font_regular
-                c4.alignment = align_left
-                c4.border = border_thin
-
-            ws2.append([])
-            ws2.append(["EJEMPLOS PRÁCTICOS DE CARGA (3 CASOS REALES)"])
-            ws2.cell(row=ws2.max_row, column=1).font = font_title
-            ws2.append(["Puedes consultar y copiar estos ejemplos para familiarizarte con los formatos:"])
-            ws2.cell(row=ws2.max_row, column=1).font = font_subtitle
-            ws2.append([])
-
-            ex_header_row = ws2.max_row + 1
-            for c_idx, col_spec in enumerate(cls.IMPORT_TEMPLATE_COLUMNS, 1):
-                cell = ws2.cell(row=ex_header_row, column=c_idx, value=col_spec['name'])
-                cell.font = font_header
-                cell.fill = fill_slate
-                cell.alignment = align_center
-                cell.border = border_thin
-            ws2.row_dimensions[ex_header_row].height = 22
-
-            sample_keys = ['sample_1', 'sample_2', 'sample_3']
-            for s_key in sample_keys:
-                r = ws2.max_row + 1
-                for c_idx, col_spec in enumerate(cls.IMPORT_TEMPLATE_COLUMNS, 1):
-                    val = col_spec.get(s_key, '')
-                    cell = ws2.cell(row=r, column=c_idx, value=val)
-                    cell.font = font_regular
-                    cell.alignment = align_left
-                    cell.border = border_thin
-
-            ws2.column_dimensions['A'].width = 18
-            ws2.column_dimensions['B'].width = 18
-            ws2.column_dimensions['C'].width = 24
-            ws2.column_dimensions['D'].width = 80
-
-            ws3 = wb.create_sheet(title="Guía de Imágenes")
-            ws3.views.sheetView[0].showGridLines = True
-            ws3.append(["GUÍA DE CARGA Y GESTIÓN DE IMÁGENES"])
-            ws3.cell(row=1, column=1).font = font_title
-            ws3.append(["Bulonera Alvear - Pipeline WebP y CDN"])
-            ws3.cell(row=2, column=1).font = font_subtitle
-            ws3.append([])
-
-            img_rules = [
-                ("1. Directorio en el Servidor", "Las fotos deben subirse previamente a la carpeta:\nmedia/photos/products/original/\n(a través del panel de Media Bank o SSH/SFTP)."),
-                ("2. Formatos Soportados", "Se admiten formatos .jpg, .jpeg, .png y .webp. El servidor optimiza y genera automáticamente las variantes responsivas en WebP."),
-                ("3. Nombres de Archivo", "Usar nombres en minúsculas, sin espacios ni caracteres especiales (ej. 'tornillo-hexagonal-m8.jpg')."),
-                ("4. Imagen Principal ('images')", "Se especifica el nombre exacto de un único archivo (ej. 'bulon-g2-14112.jpg'). Si el producto ya existe y este campo se deja vacío, conserva la imagen actual."),
-                ("5. Galería Secundaria ('gallery')", "Múltiples imágenes separadas por comas SIN espacios (ej. 'foto1.jpg,foto2.jpg,foto3.jpg'). En actualizaciones, si se especifican fotos en este campo, reemplaza la galería anterior."),
-                ("6. Preguntas Frecuentes ('faq')", "Se cargan asociadas a la subcategoría en formato:\n\"¿Pregunta 1?\" Respuesta 1, \"¿Pregunta 2?\" Respuesta 2"),
-            ]
-            for title, desc in img_rules:
-                r = ws3.max_row + 1
-                c1 = ws3.cell(row=r, column=1, value=title)
-                c1.font = font_bold
-                c1.alignment = Alignment(horizontal="left", vertical="top")
-                c1.border = border_thin
-                c2 = ws3.cell(row=r, column=2, value=desc)
-                c2.font = font_regular
-                c2.alignment = align_wrap
-                c2.border = border_thin
-
-            ws3.column_dimensions['A'].width = 30
-            ws3.column_dimensions['B'].width = 85
+            cls._configure_products_sheet(ws1, styles, write_only=False, validation_max_row=2000)
+            cls._populate_guide_sheets(wb, styles, write_only=False)
 
         buffer = io.BytesIO()
         wb.save(buffer)
         buffer.seek(0)
         return buffer
+
+    @classmethod
+    def export_products_workbook(
+        cls,
+        queryset: Optional[QuerySet] = None,
+        category_id: Optional[int] = None,
+        subcategory_id: Optional[int] = None,
+        only_available: bool = False,
+    ) -> tempfile.SpooledTemporaryFile:
+        """
+        Exporta el catálogo completo o filtrado de productos a un archivo Excel (.xlsx)
+        compatible 100% round-trip con el importador oficial.
+
+        # QUÉ:
+        # Genera un libro Excel de 3 hojas ('Productos', 'Guía y Ejemplos', 'Guía de Imágenes')
+        # con las 30 columnas canónicas definidas en IMPORT_TEMPLATE_COLUMNS.
+        #
+        # POR QUÉ:
+        # Un Workbook estándar o pandas.to_excel() en catálogos de +14.000 productos consume
+        # 180-320 MB de RAM y provoca reciclaje de workers uWSGI (reload-on-rss=256) o timeouts
+        # de 60s en OpenLiteSpeed (HTTP 500). Usar write_only=True, pre-carga relacional O(1),
+        # values().iterator(chunk_size=1000) y SpooledTemporaryFile mantiene la RAM plana (<20 MB).
+        #
+        # REGLA:
+        # Las columnas de formato texto '@' (code, diameter, length, gtin, mpn) se emiten como
+        # strings explícitos y todo texto que inicie con '=', '+', '-', '@' fuerza data_type='s'
+        # para prevenir Formula Injection y corrupción al abrir en Excel.
+        """
+        queryset_was_provided = queryset is not None
+        if queryset is None:
+            queryset = Product.objects.all()
+
+        if only_available:
+            queryset = queryset.filter(is_available=True)
+
+        if category_id is not None:
+            queryset = queryset.filter(category_id=category_id)
+
+        if subcategory_id is not None:
+            # Subconsulta sobre la tabla intermedia para filtrar sin duplicados ni DISTINCT costoso.
+            subcat_product_ids = Product.subcategories.through.objects.filter(
+                subcategory_id=subcategory_id
+            ).values('product_id')
+            queryset = queryset.filter(pk__in=subcat_product_ids)
+
+        queryset = queryset.order_by('id')
+
+        # 1. Pre-carga relacional en O(1) consultas planas para eliminar N+1 queries.
+        is_filtered = bool(queryset_was_provided or only_available or category_id is not None or subcategory_id is not None)
+
+        subcat_qs = Product.subcategories.through.objects.all()
+        tag_qs = Product.tags.through.objects.all()
+        gallery_qs = ProductGallery.objects.all().order_by('id')
+
+        if is_filtered:
+            product_id_subquery = queryset.values('pk')
+            subcat_qs = subcat_qs.filter(product_id__in=product_id_subquery)
+            tag_qs = tag_qs.filter(product_id__in=product_id_subquery)
+            gallery_qs = gallery_qs.filter(product_id__in=product_id_subquery)
+
+        subcats_by_product: Dict[int, List[str]] = defaultdict(list)
+        subcat_ids_by_product: Dict[int, List[int]] = defaultdict(list)
+        for pid, sc_id, sc_name in subcat_qs.values_list(
+            'product_id', 'subcategory_id', 'subcategory__subcategory_name'
+        ):
+            if sc_name:
+                subcats_by_product[pid].append(sc_name)
+            if sc_id:
+                subcat_ids_by_product[pid].append(sc_id)
+
+        tags_by_product: Dict[int, List[str]] = defaultdict(list)
+        for pid, tag_name in tag_qs.values_list('product_id', 'producttag__name'):
+            if tag_name:
+                tags_by_product[pid].append(tag_name)
+
+        gallery_by_product: Dict[int, List[str]] = defaultdict(list)
+        for pid, legacy_img, asset_file in gallery_qs.values_list('product_id', 'image', 'image_asset__file'):
+            img_path = asset_file or legacy_img
+            if img_path:
+                gallery_by_product[pid].append(os.path.basename(img_path))
+
+        faqs_by_subcat: Dict[int, List[str]] = defaultdict(list)
+        for sc_id, question, answer in (
+            FAQ.objects.filter(is_active=True, subcategory_id__isnull=False)
+            .order_by('order', 'id')
+            .values_list('subcategory_id', 'question', 'answer')
+        ):
+            q_clean = (question or '').strip()
+            a_clean = (answer or '').strip()
+            if q_clean and a_clean:
+                faqs_by_subcat[sc_id].append(f'"{q_clean}" {a_clean}')
+
+        # 2. Configurar libro write-only y hoja principal antes del primer append().
+        wb = openpyxl.Workbook(write_only=True)
+        styles = cls._get_excel_styles()
+
+        ws1 = wb.create_sheet(title="Productos")
+        cls._configure_products_sheet(ws1, styles, write_only=True, validation_max_row=50000)
+
+        text_format_cols = {
+            c['name'] for c in cls.IMPORT_TEMPLATE_COLUMNS if c.get('format') == '@'
+        }
+        col_order = [c['name'] for c in cls.IMPORT_TEMPLATE_COLUMNS]
+
+        # 3. Streaming de filas escalares desde base de datos en chunks de 1.000.
+        product_values = queryset.values(
+            'id', 'code', 'price', 'name', 'diameter', 'length',
+            'description', 'stock', 'category__category_name',
+            'tax_rate', 'brand', 'condition', 'images', 'image__file',
+            'norm', 'grade', 'material', 'colour', 'type', 'form',
+            'thread_formats', 'origin', 'gtin', 'mpn', 'google_category',
+            'meta_title', 'meta_description', 'meta_keywords',
+        ).iterator(chunk_size=1000)
+
+        for prod in product_values:
+            pid = prod['id']
+            main_img_path = prod.get('images') or prod.get('image__file') or ''
+            main_img_name = os.path.basename(main_img_path) if main_img_path else ''
+
+            raw_tax = prod.get('tax_rate')
+            tax_rate_str = f"{Decimal(str(raw_tax)):.2f}" if raw_tax is not None else '21.00'
+
+            faq_entries: List[str] = []
+            seen_faqs = set()
+            for sc_id in subcat_ids_by_product.get(pid, []):
+                for faq_item in faqs_by_subcat.get(sc_id, []):
+                    if faq_item not in seen_faqs:
+                        seen_faqs.add(faq_item)
+                        faq_entries.append(faq_item)
+
+            row_map = {
+                'code': prod.get('code') or '',
+                'price': prod.get('price') if prod.get('price') is not None else '',
+                'name': prod.get('name') or '',
+                'diameter': prod.get('diameter') or '',
+                'length': prod.get('length') or '',
+                'description': prod.get('description') or '',
+                'stock': prod.get('stock') if prod.get('stock') is not None else 0,
+                'category': prod.get('category__category_name') or '',
+                'subcategories': ', '.join(subcats_by_product.get(pid, [])),
+                'tags': ', '.join(tags_by_product.get(pid, [])),
+                'tax_rate': tax_rate_str,
+                'brand': prod.get('brand') or '',
+                'condition': prod.get('condition') or 'new',
+                'images': main_img_name,
+                'gallery': ','.join(gallery_by_product.get(pid, [])),
+                'norm': prod.get('norm') or '',
+                'grade': prod.get('grade') or '',
+                'material': prod.get('material') or '',
+                'colour': prod.get('colour') or '',
+                'type': prod.get('type') or '',
+                'form': prod.get('form') or '',
+                'thread_formats': prod.get('thread_formats') or '',
+                'origin': prod.get('origin') or '',
+                'gtin': prod.get('gtin') or '',
+                'mpn': prod.get('mpn') or '',
+                'google_category': prod.get('google_category') or '',
+                'faq': ', '.join(faq_entries),
+                'meta_title': prod.get('meta_title') or '',
+                'meta_description': prod.get('meta_description') or '',
+                'meta_keywords': prod.get('meta_keywords') or '',
+            }
+
+            row_cells = [
+                cls._sanitize_export_scalar(
+                    ws1,
+                    row_map[col_name],
+                    force_text=(col_name in text_format_cols),
+                )
+                for col_name in col_order
+            ]
+            ws1.append(row_cells)
+
+        # 4. Agregar hojas auxiliares de documentación idénticas a la plantilla oficial.
+        cls._populate_guide_sheets(wb, styles, write_only=True)
+
+        # 5. Volcar a archivo temporal con rollover automático a disco >10 MB (evita OOM).
+        tmp_file = tempfile.SpooledTemporaryFile(
+            max_size=10 * 1024 * 1024,
+            prefix='bulonera_export_',
+            suffix='.xlsx',
+        )
+        wb.save(tmp_file)
+        tmp_file.seek(0)
+        return tmp_file
     
     @staticmethod
     def import_from_file(file_or_path, dry_run: bool = False, update_prices: bool = False) -> ImportResult:

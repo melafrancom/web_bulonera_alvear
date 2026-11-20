@@ -2,6 +2,13 @@
 {% load i18n admin_urls %}
 
 {% block object-tools-items %}
+    {% if show_export_button %}
+    <li>
+        <a href="{% url 'admin:store_product_export' %}" class="button" style="background: #166534;">
+            {% trans "Exportar Productos Excel" %}
+        </a>
+    </li>
+    {% endif %}
     {% if show_template_download_button %}
     <li>
         <a href="{% url 'admin:store_product_download_import_template' %}" class="button" style="background: #1e3a8a;">
