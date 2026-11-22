@@ -1,4 +1,15 @@
+---
+type: app
+domain: checkout
+status: active
+updated: 2026-11-22
+summary: "Carrito unificado autenticado/anónimo, validación [1, 1000], precios netos Res. 4/2025 y CAPI AddToCart."
+tags: [obsidian/app, domain/checkout]
+---
+
 # 📦 Módulo Cart — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [store](../store/README.md) · [orders](../orders/README.md) · [account](../account/README.md) · [tracking](../tracking/README.md)
 
 ## 🎯 Propósito
 Este módulo implementa el carrito de compras del sitio. Gestiona la agregación, actualización y remoción de productos (y sus variaciones), unificando de manera transparente la lógica para visitantes anónimos (basado en sesión) y usuarios autenticados (guardado en BD).

@@ -1,4 +1,15 @@
+---
+type: ops
+domain: infra
+status: active
+updated: 2026-11-22
+summary: "Manual operativo canónico de seguridad AppSec/InfraSec, Docker, MariaDB, Redis, OLS, backups y hardening VPS."
+tags: [obsidian/ops, domain/infra]
+---
+
 # 🛡️ Manual de Seguridad y Operaciones — BULONERA WEB
+
+> **Mapa neuronal:** **Operación y módulos:** [scripts](scripts/README.md) · [web_bulonera](web_bulonera/README.md) · [account](account/README.md) · [media_bank](media_bank/README.md) · [logs](logs/README.md)
 
 > Documento central de referencia para la seguridad, diagnóstico, mantenimiento y operación de la aplicación web en producción.
 > Convive con el ERP en el mismo VPS (Hostinger Ubuntu 24.04). Para el manual del ERP, ver `SecurityChecklist.md` del proyecto ERP.

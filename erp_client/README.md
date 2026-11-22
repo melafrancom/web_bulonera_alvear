@@ -1,4 +1,15 @@
+---
+type: app
+domain: erp
+status: active
+updated: 2026-11-22
+summary: "Capa de transporte HTTP stateless hacia BULONERA_ERP (stub Fase 3A previo a sincronización Fase 3B/29)."
+tags: [obsidian/app, domain/erp]
+---
+
 # 📦 Módulo ERP Client — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [store](../store/README.md) · [orders](../orders/README.md) · [web_bulonera](../web_bulonera/README.md)
 
 ## 🎯 Propósito
 Este módulo encapsula el cliente HTTP de comunicación de bajo nivel con el ERP de la empresa. Funciona como una capa de transporte pura para intercambio de datos (productos, stock, categorías, autenticación JWT) libre de lógica de negocio.

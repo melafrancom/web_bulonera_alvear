@@ -1,4 +1,15 @@
+---
+type: app
+domain: catalog
+status: active
+updated: 2026-11-22
+summary: "Taxonomía Category/SubCategory/NavbarItem, sanitización nh3 contra XSS y caché Redis invalidada por signals."
+tags: [obsidian/app, domain/catalog]
+---
+
 # 📦 Módulo Category — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [store](../store/README.md) · [media_bank](../media_bank/README.md) · [web_bulonera](../web_bulonera/README.md)
 
 ## 🎯 Propósito
 Este módulo gestiona la jerarquía de categorización de los productos de la tienda online (Categorías y Subcategorías), su optimización SEO semántica y la configuración dinámica del menú de navegación.

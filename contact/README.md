@@ -1,4 +1,15 @@
+---
+type: app
+domain: lead
+status: active
+updated: 2026-11-22
+summary: "Formulario de contacto y proxy first-party whatsapp_lead_redirect con deduplicación Meta CAPI y anti-crawler."
+tags: [obsidian/app, domain/lead]
+---
+
 # 📦 Módulo Contact — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [tracking](../tracking/README.md) · [web_bulonera](../web_bulonera/README.md) · [store](../store/README.md)
 
 ## 🎯 Propósito
 Este módulo gestiona el formulario de contacto público del sitio, permitiendo a los usuarios enviar mensajes e iniciar solicitudes de comunicación mediante correo electrónico o WhatsApp.

@@ -1,4 +1,15 @@
+---
+type: app
+domain: checkout
+status: active
+updated: 2026-11-22
+summary: "Checkout CRO, Factura A/B con validador CUIT Módulo 11, concurrencia select_for_update() y pagos/WhatsApp."
+tags: [obsidian/app, domain/checkout]
+---
+
 # 📦 Módulo Orders — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [cart](../cart/README.md) · [store](../store/README.md) · [account](../account/README.md) · [tracking](../tracking/README.md)
 
 ## 🎯 Propósito
 Este módulo gestiona la creación de órdenes de compra, el procesamiento de pagos (tanto en pasarela digital como vía WhatsApp) y la deducción de inventarios en el momento de concretar la transacción.

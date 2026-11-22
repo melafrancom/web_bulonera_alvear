@@ -1,4 +1,15 @@
+---
+type: app
+domain: account
+status: active
+updated: 2026-11-22
+summary: "Autenticación de clientes, perfiles, direcciones y hardening contra Open Redirect y enumeración."
+tags: [obsidian/app, domain/account]
+---
+
 # 📦 Módulo Account — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [cart](../cart/README.md) · [orders](../orders/README.md) · [store](../store/README.md) · [SecurityChecklist](../SecurityChecklist.md)
 
 ## 🎯 Propósito
 Este módulo gestiona la autenticación de usuarios, registro, perfiles y recuperación de contraseñas de los clientes en la tienda. Extiende el modelo User de Django con una cuenta personalizada (`Account`) y un perfil asociado (`UserProfile`).

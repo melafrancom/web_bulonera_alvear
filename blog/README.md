@@ -1,4 +1,15 @@
+---
+type: app
+domain: content
+status: active
+updated: 2026-11-22
+summary: "Blog corporativo SEO multilingüe (es/en/pt), SocialMetadata, IndexNow y publicación programada."
+tags: [obsidian/app, domain/content]
+---
+
 # 📦 Módulo Blog — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [store](../store/README.md) · [media_bank](../media_bank/README.md) · [web_bulonera](../web_bulonera/README.md)
 
 ## 🎯 Propósito
 Este módulo implementa el blog corporativo de la tienda, optimizado para captación de tráfico mediante contenidos SEO y la integración de contenido de redes sociales (Instagram/Facebook/TikTok) a través de metadata social enriquecida.

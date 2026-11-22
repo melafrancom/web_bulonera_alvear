@@ -1,4 +1,15 @@
+---
+type: app
+domain: media
+status: active
+updated: 2026-11-22
+summary: "Banco centralizado de activos gráficos ImageAsset, pipeline WebP Celery on_commit y volumen compartido Web/ERP."
+tags: [obsidian/app, domain/media]
+---
+
 # 📦 Módulo Media Bank — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [store](../store/README.md) · [category](../category/README.md) · [SecurityChecklist](../SecurityChecklist.md)
 
 ## 🎯 Propósito
 Este módulo implementa el banco centralizado de imágenes del sitio, administrando la carga, clasificación y asignación de imágenes (`product`, `category`, `subcategory`, `carousel`, `banner`) con un pipeline de conversión WebP asíncrono y hardening integral de seguridad.

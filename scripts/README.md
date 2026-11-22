@@ -1,4 +1,15 @@
+---
+type: support
+domain: ops
+status: active
+updated: 2026-11-22
+summary: "Scripts operativos de deploy, backups cifrados, health checks, OLS config y verificación de Redis/MariaDB."
+tags: [obsidian/ops, domain/ops]
+---
+
 # 📜 Scripts de Deploy y Mantenimiento
+
+> **Mapa neuronal:** **Relacionados:** [SecurityChecklist](../SecurityChecklist.md) · [web_bulonera](../web_bulonera/README.md) · [logs](../logs/README.md)
 
 > Colección de scripts para facilitar el deploy y mantenimiento de Bulonera Web en producción.
 >

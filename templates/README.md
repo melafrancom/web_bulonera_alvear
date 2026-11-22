@@ -1,4 +1,15 @@
+---
+type: support
+domain: frontend
+status: active
+updated: 2026-11-22
+summary: "Plantillas HTML5 (TailwindCSS + Alpine.js + Lucide local), parciales del Home Builder y vistas de compra."
+tags: [obsidian/support, domain/frontend]
+---
+
 # 🎨 Directorio Templates — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [static](../static/README.md) · [store](../store/README.md) · [cart](../cart/README.md) · [orders](../orders/README.md) · [web_bulonera](../web_bulonera/README.md)
 
 ## 🎯 Propósito
 Este directorio centraliza las plantillas HTML5 semánticas de la aplicación web, estructuradas de forma modular e integradas con el framework de estilos TailwindCSS, la biblioteca Alpine.js para interactividad liviana en el cliente y Lucide Icons.

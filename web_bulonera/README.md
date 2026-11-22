@@ -1,4 +1,15 @@
+---
+type: app
+domain: core
+status: active
+updated: 2026-11-22
+summary: "Núcleo Django: settings multi-entorno, URLs planas /p/<slug>/, SiteTheme, BusinessHoursSetting y middlewares."
+tags: [obsidian/app, domain/core]
+---
+
 # 📦 Módulo web_bulonera — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [category](../category/README.md) · [store](../store/README.md) · [tracking](../tracking/README.md) · [SecurityChecklist](../SecurityChecklist.md)
 
 ## 🎯 Propósito
 Este módulo constituye el núcleo de configuración, ruteo general y orquestación del proyecto Django. Contiene los archivos de configuración (`settings/`), la configuración de tareas en segundo plano (`celery.py`), middlewares transversales, manejadores de errores y el modelo de tematización visual dinámica (`SiteTheme`).

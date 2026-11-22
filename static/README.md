@@ -1,4 +1,15 @@
+---
+type: support
+domain: frontend
+status: active
+updated: 2026-11-22
+summary: "Activos estáticos públicos: TailwindCSS compilado, ba_track.js, Service Worker, fuentes .woff2 y Lucide local."
+tags: [obsidian/support, domain/frontend]
+---
+
 # 📁 Directorio static — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [templates](../templates/README.md) · [media_bank](../media_bank/README.md) · [tracking](../tracking/README.md) · [web_bulonera](../web_bulonera/README.md)
 
 ## 🎯 Propósito
 Este directorio organiza los recursos estáticos públicos del frontend (hojas de estilo CSS, fuentes, librerías de JavaScript e imágenes estáticas del tema) antes de ser recopilados y consolidados para producción.

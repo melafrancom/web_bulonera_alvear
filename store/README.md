@@ -1,4 +1,15 @@
+---
+type: app
+domain: catalog
+status: active
+updated: 2026-11-22
+summary: "Catálogo B2B/B2C, Home Page Builder V2, Res. 4/2025, ProductTag, SearchQuery e Import/Export Excel streaming."
+tags: [obsidian/app, domain/catalog]
+---
+
 # 📦 Módulo Store — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [category](../category/README.md) · [media_bank](../media_bank/README.md) · [cart](../cart/README.md) · [orders](../orders/README.md) · [tracking](../tracking/README.md)
 
 ## 🎯 Propósito
 Este módulo constituye el núcleo de la tienda online: administra el catálogo completo de productos, las variaciones del catálogo (medidas, roscas, durezas), las opiniones y valoraciones de clientes (`reviews`), el centro de ayuda de preguntas frecuentes (`FAQs`), el motor de búsquedas semánticas y el generador dinámico de secciones de la página principal (`Home Page Builder V2`).

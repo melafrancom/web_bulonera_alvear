@@ -1,4 +1,15 @@
+---
+type: support
+domain: ops
+status: active
+updated: 2026-11-22
+summary: "Directorio de logs en tiempo de ejecución para uWSGI, Celery Worker y Celery Beat en producción."
+tags: [obsidian/ops, domain/ops]
+---
+
 # 📁 Directorio logs — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [web_bulonera](../web_bulonera/README.md) · [scripts](../scripts/README.md) · [SecurityChecklist](../SecurityChecklist.md)
 
 ## 🎯 Propósito
 Este directorio centraliza los archivos de logs de ejecución generados por los servicios del servidor web en producción y desarrollo (uWSGI, Django, Celery Workers, Celery Beat). En producción, Docker monta este directorio como un volumen local para permitir persistencia y auditoría de errores desde el host.

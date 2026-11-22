@@ -1,4 +1,15 @@
+---
+type: app
+domain: tracking
+status: active
+updated: 2026-11-22
+summary: "Medición híbrida browser/server (ADR-10): ConsentService (ba_consent), hashing SHA-256 PII y Meta CAPI Celery."
+tags: [obsidian/app, domain/tracking]
+---
+
 # 📦 Módulo Tracking — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [orders](../orders/README.md) · [cart](../cart/README.md) · [contact](../contact/README.md) · [store](../store/README.md) · [web_bulonera](../web_bulonera/README.md)
 
 ## 🎯 Propósito
 Este módulo centraliza la arquitectura de telemetría, privacidad y medición server-side (Meta Conversions API - CAPI) de BULONERA WEB (ADR-10). Es una aplicación Django sin modelos de base de datos cuyo único propósito es normalizar payloads, garantizar la protección de datos personales (PII) bajo estricto consentimiento y encolar eventos de conversión asíncronos hacia Meta Graph API.

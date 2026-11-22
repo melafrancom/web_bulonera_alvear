@@ -1,4 +1,15 @@
+---
+type: support
+domain: qa
+status: active
+updated: 2026-11-22
+summary: "Suite global E2E (test_purchase_flow, test_store_flow, test_blog_flow) y pruebas de carga Locust."
+tags: [obsidian/support, domain/qa]
+---
+
 # 🧪 Módulo Tests — Cerebro Local
+
+> **Mapa neuronal:** **Relacionados:** [store](../store/README.md) · [orders](../orders/README.md) · [cart](../cart/README.md) · [account](../account/README.md) · [blog](../blog/README.md)
 
 ## 🎯 Propósito
 Este directorio centraliza los tests de integración de extremo a extremo (E2E) y de flujos de negocio completos del sistema. Complementa a las suites de tests unitarios que posee cada aplicación individual en sus respectivas carpetas `{app_name}/tests/`.
