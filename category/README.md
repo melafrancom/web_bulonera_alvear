@@ -18,22 +18,24 @@ Este módulo gestiona la jerarquía de categorización de los productos de la ti
 
 *   **Entidades dependientes de este módulo:** 
     *   [store](../store/README.md) (Vincula productos a categorías y subcategorías)
-    *   [media_bank](../media_bank/README.md) (Recibe ImageAsset para asignación de imágenes)
-*   **Módulos requeridos por este módulo:** Ninguno (Módulo hoja, independiente).
+*   **Módulos requeridos por este módulo:** 
+    *   [media_bank](../media_bank/README.md) (`ImageAsset` mediante FK `image`/`image_asset` y utilidades seguras `overwrite_upload_path`, `create_clean_filename`, `validate_image_file` de `media_bank.upload_utils`)
 
 ```mermaid
 graph LR
     subgraph Imports / Services
         category[category]
+        media_bank[media_bank]
         store[store] -.->|Importa| category
+        category -->|ImageAsset y upload_utils| media_bank
     end
 ```
 
 ## 🛠️ Modelos Clave / Entidades (DB)
-- **Category** (Hereda de `models.Model`): Define las categorías principales. Incluye campos SEO (`meta_title`, `meta_description`, `rich_description`) y vinculación con banco de imágenes (`image` FK a `media_bank.ImageAsset`).
-- **SubCategory** (Hereda de `models.Model`): Subcategorías asociadas a una categoría padre con relación One-to-Many (`category`).
-- **FeaturedCategory** (Hereda de `models.Model`): Destaca categorías en la Home Page, permitiendo ordenarlas dinámicamente (`position`).
-- **NavbarItem** (Hereda de `models.Model`): Configuración dinámica de los elementos expuestos en la barra de navegación del sitio.
+- **Category** (Hereda de `models.Model`): Define las categorías principales. Incluye campos SEO (`meta_title`, `meta_description`, `rich_description`) y soporte dual de imagen: FK `image` a `media_bank.ImageAsset` más campo legacy `cat_image` validado (`FileExtensionValidator` + `validate_image_file`). Expone `get_seo_title()` (máx. 60 chars), `get_geo_summary()`, `get_voice_summary()`, `image_url` y `webp_url`.
+- **SubCategory** (Hereda de `models.Model`): Subcategorías asociadas a una categoría padre con relación Many-to-One (`category`, `related_name='subcategories'`), soporte dual de imagen (`image_asset` FK a `media_bank.ImageAsset` + legacy `image` validado), campos SEO y helpers `get_faqs()`, `get_seo_title()` (máx. 60 chars), `get_geo_summary()`, `get_voice_summary()` e `image_url`.
+- **FeaturedCategory** (Hereda de `models.Model`): Destaca categorías en la Home Page, permitiendo ordenarlas dinámicamente (`position`, `is_active`).
+- **NavbarItem** (Hereda de `models.Model`): Configuración dinámica de los elementos de navegación con `ITEM_TYPE_CHOICES` (`category`, `custom`, `mega_menu`), `icon` (Lucide), `open_new_tab`, `position`, `is_active`, `get_url()` y ejecución automática de `self.clean()` dentro de `save()`.
 
 ## ⚡ Servicios y Casos de Uso Críticos (services.py)
 - **CategoryService.get_all_categories**: Obtiene todas las categorías con sus subcategorías precargadas en memoria (`prefetch_related`) para evitar consultas N+1.

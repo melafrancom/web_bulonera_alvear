@@ -9,7 +9,7 @@ tags: [obsidian/app, domain/media]
 
 # 📦 Módulo Media Bank — Cerebro Local
 
-> **Mapa neuronal:** **Relacionados:** [store](../store/README.md) · [category](../category/README.md) · [SecurityChecklist](../SecurityChecklist.md)
+> **Mapa neuronal:** **Relacionados:** [store](../store/README.md) · [category](../category/README.md) · [blog](../blog/README.md) · [account](../account/README.md) · [SecurityChecklist](../SecurityChecklist.md)
 
 ## 🎯 Propósito
 Este módulo implementa el banco centralizado de imágenes del sitio, administrando la carga, clasificación y asignación de imágenes (`product`, `category`, `subcategory`, `carousel`, `banner`) con un pipeline de conversión WebP asíncrono y hardening integral de seguridad.
@@ -17,8 +17,10 @@ Este módulo implementa el banco centralizado de imágenes del sitio, administra
 ## 🕸️ Grafo de Dependencias (Codebase Graph)
 
 *   **Entidades dependientes de este módulo:** 
-    *   [store](../store/README.md) (Utiliza ImageAsset para galerías de productos, banners de Home y carruseles)
-    *   [category](../category/README.md) (Asocia categorías y subcategorías con ImageAsset)
+    *   [store](../store/README.md) (Utiliza ImageAsset para productos, galerías, `PromoBanner` y `CarouselImage`)
+    *   [category](../category/README.md) (Asocia `Category` y `SubCategory` con `ImageAsset` y reutiliza `media_bank.upload_utils`)
+    *   [blog](../blog/README.md) (`Post.featured_image` referencia a `ImageAsset`)
+    *   [account](../account/README.md) (`UserProfile.profile_picture` usa `media_bank.upload_utils`)
 *   **Módulos requeridos por este módulo:** Ninguno (Módulo de infraestructura core).
 
 ```mermaid
@@ -26,12 +28,14 @@ graph LR
     subgraph Imports / Services
         media_bank[media_bank]
         store[store] -.->|Importa ImageAsset| media_bank
-        category[category] -.->|Importa ImageAsset| media_bank
+        category[category] -.->|ImageAsset + upload_utils| media_bank
+        blog[blog] -.->|Importa ImageAsset| media_bank
+        account[account] -.->|Usa upload_utils| media_bank
     end
 ```
 
 ## 🛠️ Modelos Clave / Entidades (DB)
-- **ImageAsset** (Hereda de `models.Model`): Modela una imagen cargada en el banco. Almacena `image_type` (elección de tipo), el archivo físico (`file`), el `name` descriptivo, `alt_text` (SEO) y `uploaded_at`. Rutea el archivo mediante `image_asset_upload_path` según el tipo con confinamiento estricto de rutas.
+- **ImageAsset** (Hereda de `models.Model`): Modela una imagen cargada en el banco. Almacena `image_type`, el archivo físico (`file`), `name`, `alt_text` (ambos autocompletados en `save()` si están vacíos) y `uploaded_at`. Rutea el archivo vía `image_asset_upload_path` usando el mapa `UPLOAD_PATHS` por tipo con confinamiento estricto de rutas. Expone `get_webp_url()`, `get_seo_alt_text()`, `get_schema_data()`, `get_geo_summary()`, `get_voice_summary()`, `image_url` y `thumbnail_url`.
 - **ImageType** (Hereda de `models.TextChoices`): Define los tipos soportados: `product`, `category`, `subcategory`, `carousel` y `banner`.
 
 ## 🛡️ Seguridad y Robustez Implementada (Remediación Fase 1-3)

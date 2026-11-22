@@ -9,7 +9,7 @@ tags: [obsidian/app, domain/account]
 
 # 📦 Módulo Account — Cerebro Local
 
-> **Mapa neuronal:** **Relacionados:** [cart](../cart/README.md) · [orders](../orders/README.md) · [store](../store/README.md) · [SecurityChecklist](../SecurityChecklist.md)
+> **Mapa neuronal:** **Relacionados:** [cart](../cart/README.md) · [orders](../orders/README.md) · [store](../store/README.md) · [media_bank](../media_bank/README.md) · [SecurityChecklist](../SecurityChecklist.md)
 
 ## 🎯 Propósito
 Este módulo gestiona la autenticación de usuarios, registro, perfiles y recuperación de contraseñas de los clientes en la tienda. Extiende el modelo User de Django con una cuenta personalizada (`Account`) y un perfil asociado (`UserProfile`).
@@ -22,6 +22,7 @@ Este módulo gestiona la autenticación de usuarios, registro, perfiles y recupe
     *   [orders](../orders/README.md) (Vincula pedidos y facturación a cuentas de usuario)
 *   **Módulos requeridos por este módulo:** 
     *   [orders](../orders/README.md) (Para consolidar estadísticas en el Dashboard de usuario)
+    *   [media_bank](../media_bank/README.md) (Utilidades seguras `overwrite_upload_path`, `create_clean_filename` y `validate_image_file` en `media_bank.upload_utils` para foto de perfil)
 
 ```mermaid
 graph LR
@@ -39,8 +40,8 @@ graph LR
 ```
 
 ## 🛠️ Modelos Clave / Entidades (DB)
-- **Account** (Hereda de `AbstractBaseUser`): Reemplaza el modelo de autenticación por defecto de Django utilizando el `email` como identificador principal. Almacena nombres, teléfono, fecha de registro y flags de permisos (`is_admin`, `is_staff`, `is_active`).
-- **UserProfile** (Hereda de `models.Model`): Relación One-to-One con `Account`. Almacena datos adicionales como dirección de entrega, ciudad, estado, país y foto de perfil (`profile_picture`).
+- **Account** (Hereda de `AbstractBaseUser`, manager `MyAccountManager` con `create_user` y `create_superuser`): Reemplaza el modelo de autenticación por defecto de Django utilizando `email` como identificador principal. Almacena nombres, teléfono, fecha de registro, flags de permisos (`is_admin`, `is_staff`, `is_active`, `is_superadmin`) y evidencia legal de aceptación de Términos y Privacidad (`terms_accepted_at`, `terms_version='2026-10'`, migración `0005`, Ley 25.326 y Ley 24.240). Expone `full_name()`, `get_full_name()`, `get_geo_summary()` y `get_voice_summary()`.
+- **UserProfile** (Hereda de `models.Model`): Relación One-to-One con `Account`. Almacena dirección de entrega (`address_line_1`, `address_line_2`, `city`, `state`, `country`) y foto de perfil (`profile_picture`) subida mediante `profile_picture_path` (`overwrite_upload_path`) con validadores `FileExtensionValidator` y `validate_image_file`. Expone `full_address()` y `get_profile_picture_url()` (fallback `/static/admin/img/placeholder.png`).
 
 ## ⚡ Servicios y Casos de Uso Críticos (services.py)
 - **AccountRegistrationService**: Registra usuarios, crea su perfil base y despacha correos de verificación.

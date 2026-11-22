@@ -37,8 +37,8 @@ graph LR
 ```
 
 ## 🛠️ Modelos Clave / Entidades (DB)
-- **Cart** (Hereda de `models.Model`): Modela el carro de compras para usuarios anónimos a través de un `cart_id` ligado al identificador de la sesión de Django (`session_key`).
-- **CartItem** (Hereda de `models.Model`): Vincula los productos agregados al carro. Soporta ForeignKey a `Account` (usuario autenticado), ForeignKey a `Cart` (usuario anónimo), ForeignKey a `Product`, cantidad, variación elegida (`Variation` Many-to-Many) y el precio de compra en el momento de agregado (`purchase_price` como `DecimalField(max_digits=12, decimal_places=2)` congelado). Expone las propiedades `unit_price_without_taxes` y `sub_total_without_taxes` calculadas a través de `PricingService` para el desglose impositivo de la Resolución 4/2025.
+- **Cart** (Hereda de `models.Model`): Modela el carro de compras para usuarios anónimos a través de un `cart_id` ligado al identificador de la sesión de Django (`session_key`) y `date_added`. Expone `get_geo_summary()` y `get_voice_summary()`.
+- **CartItem** (Hereda de `models.Model`): Vincula los productos agregados al carro. Soporta ForeignKey a `Account` (usuario autenticado), ForeignKey a `Cart` (usuario anónimo), ForeignKey a `Product`, cantidad (`quantity`), estado (`is_active`), variación elegida (`Variation` Many-to-Many) y el precio de compra congelado en `save()` (`sale_price` si `is_on_sale` y `sale_price` están activos, o `price` en caso contrario, redondeado a 2 decimales en `purchase_price` como `DecimalField(max_digits=12, decimal_places=2)`). Expone la propiedad `sub_total` (`purchase_price * quantity`), las propiedades `unit_price_without_taxes` y `sub_total_without_taxes` calculadas vía `PricingService` (Resolución 4/2025) y los helpers `get_geo_summary()` / `get_voice_summary()`.
 
 ## ⚡ Servicios y Casos de Uso Críticos (services.py)
 - **CartService.get_or_create_cart_id**: Inicializa u obtiene de forma segura la sesión del visitante para identificar su carrito.

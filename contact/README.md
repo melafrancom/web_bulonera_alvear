@@ -30,7 +30,7 @@ graph LR
 ```
 
 ## 🛠️ Modelos Clave / Entidades (DB)
-- **ContactOption** (Hereda de `models.Model`): Modela un mensaje de contacto enviado por el usuario. Registra `name`, `email`, `contact_method` (correo o WhatsApp), `subject`, `message` y la fecha de creación.
+- **ContactOption** (Hereda de `models.Model`): Modela un mensaje de contacto enviado por el usuario. Registra `name`, `email`, `contact_method` (`CONTACT_CHOICES`: `whatsapp` / `email`), `subject`, `message` y `created_at`. Aplica el validador `validate_no_crlf` en `name` y `subject` para prevenir Email Header Injection y expone `get_geo_summary()` y `get_voice_summary()`.
 
 ## 🌐 Vistas Web y Controladores (web/views/views.py)
 - **`contact_view`**: Formulario web con rate-limiting por IP (Redis), trampa honeypot invisible anti-spam, persistencia y despacho del evento CAPI `Lead` (`lead_method="contact_form"`).

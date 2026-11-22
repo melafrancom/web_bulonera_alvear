@@ -51,10 +51,10 @@ graph TD
 ```
 
 ## 🛠️ Modelos Clave / Entidades (DB)
-- **SiteTheme** (Hereda de `models.Model`): Modelo tipo Singleton (máximo una sola instancia en BD) que permite a los administradores ajustar en tiempo real el diseño y los colores del sitio (gamas cromáticas en HEX para botones, navbars, opacidades y fondos) desde el Panel de Administración de Django sin necesidad de redeploy.
-- **BusinessHoursSetting** (Hereda de `models.Model`): Configuración centralizada tipo Singleton (método `BusinessHoursSetting.load()`) para los horarios comerciales de toda la plataforma. Fuente única de verdad consumida por vistas, templates y datos estructurados.
-- **BusinessHoursPeriod** (Hereda de `models.Model`): Intervalos semanales de atención por día de la semana (`day` 1..7, `opening_time`, `closing_time`), permitiendo jornadas corridas o turnos partidos (ej. mañana y tarde).
-- **BusinessHoursException** (Hereda de `models.Model`): Excepciones puntuales de calendario para feriados nacionales o jornadas especiales (`date`, `is_closed`, `opening_time`, `closing_time`, `reason`). Expone alertas del día actual y especificaciones `specialOpeningHoursSpecification` para Google / Schema.org.
+- **SiteTheme** (Hereda de `models.Model`): Modelo tipo Singleton (máximo una sola instancia en BD) que permite a los administradores ajustar en tiempo real el diseño y los colores del sitio (gamas cromáticas en HEX para botones, navbars, opacidades y fondos) desde el Panel de Administración de Django sin necesidad de redeploy. Expone propiedades auxiliares `*_rgb` y `*_opacity_dec`, e invalida la clave Redis `site_theme_active` en `save()`.
+- **BusinessHoursSetting** (Hereda de `models.Model`): Configuración centralizada tipo Singleton (método `BusinessHoursSetting.load()`) con `name`, `holiday_note` y `updated_at` para los horarios comerciales de toda la plataforma, invalidando `business_hours_active` en `save()`.
+- **BusinessHoursPeriod** (Hereda de `models.Model`): Intervalos semanales de atención por día de la semana (`day` `1..7`, `opening_time`, `closing_time`), permitiendo jornadas corridas o turnos partidos. Valida en `clean()` que `opening_time < closing_time`, ejecuta `full_clean()` en `save()` e invalida `business_hours_active` en `save()` y `delete()`.
+- **BusinessHoursException** (Hereda de `models.Model`): Excepciones puntuales de calendario para feriados nacionales o jornadas especiales (`date`, `is_closed`, `opening_time`, `closing_time`, `reason`). Valida en `clean()` apertura/cierre requeridos y coherentes si `not is_closed`, ejecuta `full_clean()` en `save()` e invalida `business_hours_active` en `save()` y `delete()`. Expone alertas del día actual y especificaciones `specialOpeningHoursSpecification` para Schema.org.
 
 ## ⚡ Componentes Críticos y Context Processors
 - **Settings Multi-Entorno (`settings/`)**:
