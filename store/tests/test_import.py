@@ -403,7 +403,7 @@ class TestImportTemplateGeneration:
     """Tests unitarios y de integración para la generación de plantillas Excel de importación"""
 
     def test_generate_full_template_structure_and_headers(self):
-        """Test: Genera la plantilla completa con 30 columnas canónicas y 3 hojas bien formateadas"""
+        """Test: Genera la plantilla completa con 33 columnas canónicas y 3 hojas bien formateadas"""
         import openpyxl
         from openpyxl.utils import get_column_letter
 
@@ -414,11 +414,14 @@ class TestImportTemplateGeneration:
         assert wb.sheetnames == ['Productos', 'Guía y Ejemplos', 'Guía de Imágenes']
         
         ws1 = wb['Productos']
-        # Fila 1 debe tener exactamente las 30 columnas canónicas
+        # Fila 1 debe tener exactamente las 33 columnas canónicas
         header_row = [cell.value for cell in ws1[1]]
         expected_columns = [col['name'] for col in ProductService.IMPORT_TEMPLATE_COLUMNS]
-        assert len(header_row) == 30
+        assert len(header_row) == 33
         assert header_row == expected_columns
+        assert 'related_subcategories' in header_row
+        assert 'diameter_relation' in header_row
+        assert 'thread_formats_relation' in header_row
         assert 'tax_rate' in header_row
         assert 'tags' in header_row
         assert 'code' in header_row
@@ -431,7 +434,7 @@ class TestImportTemplateGeneration:
         assert ws1.freeze_panes == 'A2'
 
         # Formato texto '@' en columnas sensibles
-        for col_name in ['code', 'diameter', 'length', 'gtin', 'mpn']:
+        for col_name in ['code', 'diameter', 'length', 'diameter_relation', 'gtin', 'mpn']:
             col_idx = header_row.index(col_name) + 1
             col_letter = get_column_letter(col_idx)
             assert ws1.column_dimensions[col_letter].number_format == '@'
@@ -966,7 +969,7 @@ class TestProductExport:
     """Tests unitarios y de integración para la exportación masiva de productos a Excel."""
 
     def test_export_products_workbook_structure_matches_import_template(self):
-        """Test: El Excel exportado conserva exactamente las 3 hojas y 30 columnas de la plantilla oficial."""
+        """Test: El Excel exportado conserva exactamente las 3 hojas y 33 columnas de la plantilla oficial."""
         import openpyxl
         from openpyxl.utils import get_column_letter
 
@@ -987,12 +990,12 @@ class TestProductExport:
         ws1 = wb['Productos']
         header_row = [cell.value for cell in ws1[1]]
         expected_columns = [col['name'] for col in ProductService.IMPORT_TEMPLATE_COLUMNS]
-        assert len(header_row) == 30
+        assert len(header_row) == 33
         assert header_row == expected_columns
         assert ws1.freeze_panes == 'A2'
         assert ws1.max_row == 2
 
-        for col_name in ['code', 'diameter', 'length', 'gtin', 'mpn']:
+        for col_name in ['code', 'diameter', 'length', 'diameter_relation', 'gtin', 'mpn']:
             col_idx = header_row.index(col_name) + 1
             col_letter = get_column_letter(col_idx)
             assert ws1.column_dimensions[col_letter].number_format == '@'
@@ -1156,8 +1159,8 @@ class TestProductExport:
             prod.subcategories.add(sub)
             prod.tags.add(tag)
 
-        # 5 queries planas: subcats + tags + gallery + faqs + products iterator
-        with django_assert_num_queries(5):
+        # 6 queries planas: subcats + related_subcats + tags + gallery + faqs + products iterator
+        with django_assert_num_queries(6):
             buf = ProductService.export_products_workbook()
         buf.close()
 
@@ -1243,3 +1246,114 @@ class TestProductExport:
         ws_sel = wb_sel['Productos']
         assert ws_sel.max_row == 2
         assert ws_sel.cell(row=2, column=1).value == 'ADM002'
+
+    def test_related_subcategories_roundtrip_preserve_clear_and_alias(self):
+        """Test: Round-trip de las 3 columnas de relación, alias ProductRelation, preservar con vacío y limpiar con '-'."""
+        import openpyxl
+
+        cat = Category.objects.create(category_name='Bulonería', slug='buloneria')
+        sub_bulon = SubCategory.objects.create(subcategory_name='bulon milimetrico', slug='bulon-milimetrico', category=cat)
+        sub_tuerca = SubCategory.objects.create(subcategory_name='Tuercas Hexagonales', slug='tuercas-hexagonales', category=cat)
+        sub_arandela = SubCategory.objects.create(subcategory_name='Arandelas', slug='arandelas', category=cat)
+
+        prod = Product.objects.create(
+            code='REL-001',
+            name='Bulón M6 x 100',
+            diameter='6 x P 1.0',
+            length='100',
+            thread_formats='MA (rosca gruesa)',
+            price=100.0,
+            stock=50,
+            category=cat,
+            diameter_relation='6 x P 1.0',
+            thread_formats_relation='MA (rosca gruesa)',
+        )
+        prod.subcategories.add(sub_bulon)
+        prod.related_subcategories.add(sub_tuerca, sub_arandela)
+
+        # 1. Exportar y verificar presencia de las 3 columnas
+        export_buf = ProductService.export_products_workbook()
+        wb = openpyxl.load_workbook(export_buf)
+        ws = wb['Productos']
+        headers = [c.value for c in ws[1]]
+        assert ws.cell(row=2, column=headers.index('related_subcategories') + 1).value in (
+            'Tuercas Hexagonales, Arandelas',
+            'Arandelas, Tuercas Hexagonales',
+        )
+        assert ws.cell(row=2, column=headers.index('diameter_relation') + 1).value == '6 x P 1.0'
+        assert ws.cell(row=2, column=headers.index('thread_formats_relation') + 1).value == 'MA (rosca gruesa)'
+
+        # 2. Importar con alias ProductRelation + subcategoría inexistente (NO debe crear fantasma)
+        alias_data = [{
+            'code': 'REL-002',
+            'name': 'Tirafondo 6 x 50',
+            'price': '80.00',
+            'category': 'Bulonería',
+            'ProductRelation': 'Arandelas, Subcat Fantasma Inexistente',
+            'diameter_relation': '8, 10',
+        }]
+        res_alias = ProductService.import_from_file(TestProductImport().create_test_excel(alias_data))
+        assert res_alias.errors == 0
+        assert res_alias.created == 1
+        assert not SubCategory.objects.filter(subcategory_name='Subcat Fantasma Inexistente').exists()
+        prod2 = Product.objects.get(code='REL-002')
+        assert list(prod2.related_subcategories.values_list('subcategory_name', flat=True)) == ['Arandelas']
+        assert prod2.diameter_relation == '8, 10'
+
+        # 3. Celda vacía o Excel legacy de 30 cols preserva relaciones existentes
+        preserve_data = [{
+            'code': 'REL-001',
+            'price': '120.00',
+            'related_subcategories': '',
+            'diameter_relation': '',
+            'thread_formats_relation': '',
+        }]
+        res_preserve = ProductService.import_from_file(TestProductImport().create_test_excel(preserve_data))
+        assert res_preserve.errors == 0
+        prod.refresh_from_db()
+        assert prod.related_subcategories.count() == 2
+        assert prod.diameter_relation == '6 x P 1.0'
+
+        # 4. Valor '-' limpia explícitamente relaciones y criterios
+        clear_data = [{
+            'code': 'REL-001',
+            'price': '120.00',
+            'related_subcategories': '-',
+            'diameter_relation': '-',
+            'thread_formats_relation': '-',
+        }]
+        res_clear = ProductService.import_from_file(TestProductImport().create_test_excel(clear_data))
+        assert res_clear.errors == 0
+        prod.refresh_from_db()
+        assert prod.related_subcategories.count() == 0
+        assert prod.diameter_relation == ''
+        assert prod.thread_formats_relation == ''
+
+    def test_bulk_upload_imports_relation_columns(self, admin_user):
+        """Test: Carga masiva por lotes (chunking) persiste las 3 columnas de relación."""
+        cat = Category.objects.create(category_name='Bulonería', slug='buloneria')
+        SubCategory.objects.create(subcategory_name='Arandelas', slug='arandelas', category=cat)
+
+        excel_data = [{
+            'code': 'BULK-REL-01',
+            'name': 'Bulón Bulk 1/4',
+            'price': '500.00',
+            'stock': '20',
+            'category': 'Bulonería',
+            'related_subcategories': 'Arandelas',
+            'diameter_relation': '1/4',
+            'thread_formats_relation': 'UNC',
+        }]
+        buf = TestProductImport().create_test_excel(excel_data)
+        start_res = ProductService.start_bulk_upload_session(buf, mode='import', user_id=admin_user.id)
+        assert start_res['success'] is True
+        chunk_res = ProductService.process_bulk_upload_chunk(
+            start_res['upload_id'], chunk_index=0, user_id=admin_user.id
+        )
+        assert chunk_res['success'] is True
+        assert chunk_res['created'] == 1
+
+        prod = Product.objects.get(code='BULK-REL-01')
+        assert list(prod.related_subcategories.values_list('subcategory_name', flat=True)) == ['Arandelas']
+        assert prod.diameter_relation == '1/4'
+        assert prod.thread_formats_relation == 'UNC'

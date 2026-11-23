@@ -12,6 +12,7 @@ CURRENCY = settings.CURRENCY
 from account.models import Account
 from category.models import Category, SubCategory
 from .utils import ImageProcessor
+from .relation_utils import parse_diameter_and_pitch, normalize_thread_format
 from django.core.validators import FileExtensionValidator
 import os
 from media_bank.upload_utils import overwrite_upload_path, create_clean_filename, validate_image_file
@@ -73,6 +74,13 @@ class Product(models.Model):
     stock = models.IntegerField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     subcategories = models.ManyToManyField(SubCategory, blank=True) # Relación ManyToMany con SubCategory
+    related_subcategories = models.ManyToManyField(
+        SubCategory,
+        blank=True,
+        related_name='recommended_for_products',
+        verbose_name='Subcategorías relacionadas',
+        help_text='Subcategorías complementarias para recomendar en la ficha de este producto.'
+    )
     tags = models.ManyToManyField(ProductTag, blank=True, related_name='products') # Fase 1
     is_available = models.BooleanField(default=True)
     created_date = models.DateTimeField(auto_now_add=True)#Útil para sitemap
@@ -124,6 +132,24 @@ class Product(models.Model):
     form = models.CharField("Forma", max_length=100, blank=True, null=True)
     thread_formats = models.CharField("Formatos de rosca", max_length=100, blank=True, null=True)
     origin = models.CharField("Origen", max_length=100, blank=True, null=True)
+    diameter_relation = models.CharField(
+        "Diámetro relacionado",
+        max_length=100,
+        blank=True,
+        default='',
+        help_text="Diámetro(s) a buscar en las subcategorías relacionadas (separados por coma). Vacío = Opción B."
+    )
+    thread_formats_relation = models.CharField(
+        "Rosca relacionada",
+        max_length=100,
+        blank=True,
+        default='',
+        help_text="Formato o paso de rosca a filtrar en productos relacionados con rosca."
+    )
+    # POR QUÉ: Campos normalizados indexados para evitar normalización en memoria sobre +14.000 SKUs.
+    diameter_nominal = models.CharField(max_length=50, blank=True, default='', db_index=True, editable=False)
+    thread_pitch = models.CharField(max_length=20, blank=True, default='', db_index=True, editable=False)
+    thread_normalized = models.CharField(max_length=50, blank=True, default='', db_index=True, editable=False)
     
     def _should_regenerate_slug(self):
         """
@@ -219,13 +245,25 @@ class Product(models.Model):
         # Auto-fill image_alt si está vacío (SEO)
         if not self.image_alt and self.name:
             self.image_alt = self.name[:255]
+
+        # Normalizar atributos técnicos indexados cuando cambien o en guardado completo.
+        update_fields = kwargs.get('update_fields')
+        if update_fields is None or 'diameter' in update_fields or 'thread_formats' in update_fields:
+            diam_nom, diam_pitch = parse_diameter_and_pitch(self.diameter)
+            thread_fam, thread_pitch_from_fmt = normalize_thread_format(self.thread_formats)
+            self.diameter_nominal = diam_nom
+            self.thread_pitch = diam_pitch or thread_pitch_from_fmt
+            self.thread_normalized = thread_fam
+            if update_fields is not None:
+                fields_set = set(update_fields)
+                fields_set.update({'diameter_nominal', 'thread_pitch', 'thread_normalized'})
+                kwargs['update_fields'] = list(fields_set)
             
         # Guardar primero para tener el ID si es nuevo
         super().save(*args, **kwargs)
         
         # PERF: Procesar imagen en Celery solo si no se solicitó omitirlo y si
         # la operación no es una actualización parcial de otros campos (ej. precio o stock).
-        update_fields = kwargs.get('update_fields')
         should_process_image = (
             self.images and
             not getattr(self, '_skip_image_task', False) and

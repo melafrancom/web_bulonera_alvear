@@ -1,0 +1,157 @@
+{% comment %}
+Tarjeta compacta de producto relacionado / complementario ("Completá tu compra").
+Uso: {% include 'store/partials/_related_product_card.html' with item=item CURRENCY=CURRENCY %}
+{% endcomment %}
+{% load static store_filters l10n %}
+{% with product=item.product %}
+<article x-data="{
+    adding: false,
+    async addQuickToCart() {
+        if (this.adding) return;
+        this.adding = true;
+        const url = '{% url "cart:add_cart" product.id %}';
+        const csrfToken = this.$el.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+            document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+            document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+
+        const formData = new FormData();
+        formData.append('quantity', '1');
+        if (csrfToken) {
+            formData.append('csrfmiddlewaretoken', csrfToken);
+        }
+        const eventId = 'atc_rel_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        formData.append('fb_event_id', eventId);
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken || ''
+                },
+                body: formData
+            });
+            const data = await response.json().catch(() => ({}));
+            if (response.ok && data.status === 'success') {
+                window.dispatchEvent(new CustomEvent('cart-updated'));
+                window.dispatchEvent(new CustomEvent('show-toast', {
+                    detail: { text: 'Producto agregado al carrito', type: 'success' }
+                }));
+
+                try {
+                    if (window.baTrack && window.baTrack.meta) {
+                        window.baTrack.meta('AddToCart', {
+                            content_type: 'product',
+                            content_ids: ['{{ product.code|escapejs }}'],
+                            content_name: '{{ product.name|escapejs }}',
+                            content_category: '{{ product.category.category_name|escapejs }}',
+                            value: {{ product.effective_price|default:"0.0"|unlocalize }},
+                            currency: '{{ CURRENCY|default:"ARS" }}'
+                        }, eventId);
+                    }
+                    if (window.baTrack && window.baTrack.ecommerce) {
+                        window.baTrack.ecommerce('add_to_cart', {
+                            currency: '{{ CURRENCY|default:"ARS" }}',
+                            value: {{ product.effective_price|default:"0.0"|unlocalize }},
+                            items: [{
+                                item_id: '{{ product.code|escapejs }}',
+                                item_name: '{{ product.name|escapejs }}',
+                                item_category: '{{ product.category.category_name|escapejs }}',
+                                price: {{ product.effective_price|default:"0.0"|unlocalize }},
+                                quantity: 1
+                            }]
+                        });
+                    }
+                } catch (trackError) {
+                    console.warn('Fallo no bloqueante en tracking de producto relacionado:', trackError);
+                }
+            } else {
+                const errorMsg = data.message || 'No se pudo agregar el producto al carrito.';
+                window.dispatchEvent(new CustomEvent('show-toast', {
+                    detail: { text: errorMsg, type: 'error' }
+                }));
+            }
+        } catch (err) {
+            window.dispatchEvent(new CustomEvent('show-toast', {
+                detail: { text: 'Error de conexión al agregar el producto.', type: 'error' }
+            }));
+        } finally {
+            this.adding = false;
+        }
+    }
+}"
+class="min-w-[230px] sm:min-w-0 snap-start flex flex-col justify-between bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl p-3 hover:shadow-md transition-shadow">
+    {% csrf_token %}
+
+    <div>
+        {% if item.badge %}
+        <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full mb-2 {% if item.match_level == 'technical' %}bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800{% else %}bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200{% endif %}">
+            {{ item.badge }}
+        </span>
+        {% endif %}
+
+        <a href="{{ product.get_url }}"
+           aria-label="{{ product.name }}"
+           class="block relative aspect-square mb-2.5 bg-white dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-100 dark:border-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] dark:focus-visible:ring-blue-400">
+            {% if product.is_on_sale and product.discount_percentage %}
+            <span class="absolute top-1.5 right-1.5 z-10 bg-red-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
+                -{{ product.discount_percentage }}%
+            </span>
+            {% endif %}
+            {% if product.image or product.images %}
+            <picture>
+                <source srcset="{{ product.webp_image_url }}" type="image/webp">
+                <img src="{{ product.image_url }}"
+                     alt="{{ product.name }}"
+                     class="w-full h-full object-contain p-1.5"
+                     loading="lazy"
+                     decoding="async"
+                     width="220"
+                     height="220">
+            </picture>
+            {% else %}
+            <img src="{% static 'images/placeholder.png' %}"
+                 alt="{{ product.name }}"
+                 class="w-full h-full object-contain p-1.5"
+                 loading="lazy"
+                 width="220"
+                 height="220">
+            {% endif %}
+        </a>
+
+        <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-100 line-clamp-2 min-h-[2.5rem] mb-2">
+            <a href="{{ product.get_url }}" class="hover:text-[#1B3A5C] dark:hover:text-blue-400 transition-colors">
+                {{ product.name }}
+            </a>
+        </h4>
+    </div>
+
+    <div class="pt-2 border-t border-slate-200 dark:border-slate-700/80">
+        {% if product.is_on_sale and product.sale_price %}
+        <div class="flex items-baseline gap-1.5">
+            <span class="text-base font-bold text-green-600 dark:text-green-400">
+                {{ product.sale_price|argentina_currency }}
+            </span>
+            <span class="text-xs text-slate-400 line-through">
+                {{ product.price|argentina_currency }}
+            </span>
+        </div>
+        {% else %}
+        <span class="text-base font-bold text-slate-900 dark:text-white block">
+            {{ product.price|argentina_currency }}
+        </span>
+        {% endif %}
+        <span class="text-[10px] text-slate-500 dark:text-slate-400 block leading-tight mt-0.5 mb-2.5">
+            PRECIO SIN IMPUESTOS NACIONALES: {{ product.effective_price_without_taxes|argentina_currency }}
+        </span>
+
+        <button type="button"
+                @click="addQuickToCart()"
+                :disabled="adding"
+                class="w-full py-2 px-3 rounded-lg bg-[#1B3A5C] hover:bg-[#4A6FA5] dark:bg-primary-700 dark:hover:bg-primary-600 text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed">
+            <i data-lucide="plus" class="w-3.5 h-3.5" x-show="!adding"></i>
+            <span x-text="adding ? 'Agregando...' : '+ Agregar'">+ Agregar</span>
+        </button>
+    </div>
+</article>
+{% endwith %}

@@ -77,6 +77,74 @@ class TestStoreViews:
         assert '"seller": {' in content
         assert '"name": "Bulonera Alvear"' in content
 
+    def test_product_detail_renders_related_products_after_description_with_legal_price(self, client, category):
+        """Verifica bloque 'Completá tu compra' al final de Descripción, Res. 4/2025, tracking y JSON-LD."""
+        from django.core.cache import cache
+        from category.models import SubCategory
+
+        cache.clear()
+        sub_tuerca = SubCategory.objects.create(
+            subcategory_name='Tuercas Hexagonales',
+            slug='tuercas-hexagonales',
+            category=category,
+        )
+        bulon = Product.objects.create(
+            code='BUL-WEB-6',
+            name='Bulón Hexagonal 6 x P 1.0 x 100',
+            slug='bulon-web-6',
+            description='Descripción técnica del bulón.',
+            diameter='6 x P 1.0',
+            thread_formats='MA (rosca gruesa)',
+            price=121.0,
+            stock=10,
+            category=category,
+            is_available=True,
+            diameter_relation='6 x P 1.0',
+            thread_formats_relation='MA (rosca gruesa)',
+        )
+        bulon.related_subcategories.add(sub_tuerca)
+
+        tuerca = Product.objects.create(
+            code='TUE-WEB-6',
+            name='Tuerca Hexagonal M6 Compatible',
+            slug='tuerca-web-6',
+            diameter='6 x P 1.0',
+            thread_formats='MA (rosca gruesa)',
+            price=121.0,
+            stock=25,
+            category=category,
+            is_available=True,
+        )
+        tuerca.subcategories.add(sub_tuerca)
+
+        response = client.get(reverse('store:product_detail', args=[bulon.slug]))
+        assert response.status_code == 200
+        content = response.content.decode('utf-8')
+
+        from django.utils.html import escapejs
+
+        assert 'Completá tu compra' in content
+        assert 'Tuerca Hexagonal M6 Compatible' in content
+        assert 'PRECIO SIN IMPUESTOS NACIONALES: $100,00' in content
+        assert f"content_ids: ['{escapejs('TUE-WEB-6')}']" in content
+        assert '"isRelatedTo"' in content
+
+        # Ubicación visual: después de Descripción y antes de Reseñas
+        desc_pos = content.index('Descripción técnica del bulón.')
+        rel_pos = content.index('id="productos-relacionados"')
+        rev_pos = content.index('Escribe tu reseña o comentario')
+        assert desc_pos < rel_pos < rev_pos
+
+    def test_product_detail_hides_related_section_when_empty(self, client, product):
+        """Verifica que la sección 'Completá tu compra' no se renderiza si no hay relacionados."""
+        from django.core.cache import cache
+
+        cache.clear()
+        response = client.get(reverse('store:product_detail', args=[product.slug]))
+        assert response.status_code == 200
+        content = response.content.decode('utf-8')
+        assert 'id="productos-relacionados"' not in content
+
     def test_product_detail_nonexistent_404(self, client):
         """Verifica que detalle de producto inexistente retorna 404."""
         # URL plana

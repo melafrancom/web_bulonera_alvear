@@ -25,7 +25,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
 import pandas as pd
-from django.db.models import Q, QuerySet, Avg, Count, Sum
+from django.db.models import Q, QuerySet, Avg, Count, Sum, Case, When, Value, IntegerField
 from django.core.paginator import Paginator
 from django.core.cache import cache
 from django.db import transaction
@@ -37,6 +37,11 @@ from itertools import chain
 from store.models import (
     Product, ReviewRating, ProductGallery, ProductSearch,
     CarouselImage, FAQ, FAQCategory, Variation
+)
+from store.relation_utils import (
+    COMPATIBLE_THREAD_FAMILIES,
+    normalize_thread_format,
+    parse_diameter_and_pitch,
 )
 from category.models import Category, SubCategory
 from account.models import Account
@@ -217,7 +222,7 @@ class ProductService:
     # MÉTODOS DE IMPORTACIÓN (Migrados desde admin.py)
     # ============================================================
 
-    # Especificación canónica de las 30 columnas del importador masivo
+    # Especificación canónica de las 33 columnas del importador masivo
     IMPORT_TEMPLATE_COLUMNS: List[Dict[str, any]] = [
         {
             'name': 'code',
@@ -317,6 +322,39 @@ class ProductService:
             'sample_1': 'Tornillos y Bulones, Hexagonales',
             'sample_2': 'Máquinas Eléctricas, Herramientas a Batería',
             'sample_3': 'Arandelas, Arandelas de Presión',
+        },
+        {
+            'name': 'related_subcategories',
+            'required': False,
+            'group': 'catalog',
+            'format': 'General',
+            'type_desc': 'Texto (separado por comas)',
+            'rule': 'Subcategorías relacionadas existentes separadas por comas (alias: ProductRelation). Vacío conserva; "-" limpia.',
+            'sample_1': 'Tuercas Hexagonales, Arandelas Planas',
+            'sample_2': 'Mechas Widia',
+            'sample_3': '',
+        },
+        {
+            'name': 'diameter_relation',
+            'required': False,
+            'group': 'tech',
+            'format': '@',
+            'type_desc': 'Texto',
+            'rule': 'Diámetro(s) a buscar en las subcategorías relacionadas (separados por coma, ej. 6 u 8, 10). Vacío aplica Opción B; "-" limpia.',
+            'sample_1': '1/4',
+            'sample_2': '',
+            'sample_3': '',
+        },
+        {
+            'name': 'thread_formats_relation',
+            'required': False,
+            'group': 'tech',
+            'format': 'General',
+            'type_desc': 'Texto',
+            'rule': 'Formato o paso de rosca a filtrar en complementos con rosca (ej. MA, UNC, P 1.0). No excluye arandelas. "-" limpia.',
+            'sample_1': 'UNC',
+            'sample_2': '',
+            'sample_3': '',
         },
         {
             'name': 'tags',
@@ -674,7 +712,7 @@ class ProductService:
     ) -> None:
         """
         Configura dimensiones, congelamiento de encabezado, validaciones desplegables y fila
-        de encabezados de las 30 columnas canónicas en la hoja 'Productos'.
+        de encabezados de las 33 columnas canónicas en la hoja 'Productos'.
         """
         ws.views.sheetView[0].showGridLines = True
         ws.freeze_panes = "A2"
@@ -886,7 +924,7 @@ class ProductService:
         para la carga masiva de productos o actualización rápida de precios.
 
         # POR QUÉ:
-        # Los operadores de Django Admin necesitan una plantilla con las 30 columnas
+        # Los operadores de Django Admin necesitan una plantilla con las 33 columnas
         # exactas soportadas por el importador, con formato texto '@' en códigos y
         # dimensiones para evitar que Excel transforme '1/4' en fechas o trunque ceros
         # iniciales, y con hojas de guía pedagógicas integradas.
@@ -967,7 +1005,7 @@ class ProductService:
 
         # QUÉ:
         # Genera un libro Excel de 3 hojas ('Productos', 'Guía y Ejemplos', 'Guía de Imágenes')
-        # con las 30 columnas canónicas definidas en IMPORT_TEMPLATE_COLUMNS.
+        # con las 33 columnas canónicas definidas en IMPORT_TEMPLATE_COLUMNS.
         #
         # POR QUÉ:
         # Un Workbook estándar o pandas.to_excel() en catálogos de +14.000 productos consume
@@ -1003,12 +1041,14 @@ class ProductService:
         is_filtered = bool(queryset_was_provided or only_available or category_id is not None or subcategory_id is not None)
 
         subcat_qs = Product.subcategories.through.objects.all()
+        rel_subcat_qs = Product.related_subcategories.through.objects.all()
         tag_qs = Product.tags.through.objects.all()
         gallery_qs = ProductGallery.objects.all().order_by('id')
 
         if is_filtered:
             product_id_subquery = queryset.values('pk')
             subcat_qs = subcat_qs.filter(product_id__in=product_id_subquery)
+            rel_subcat_qs = rel_subcat_qs.filter(product_id__in=product_id_subquery)
             tag_qs = tag_qs.filter(product_id__in=product_id_subquery)
             gallery_qs = gallery_qs.filter(product_id__in=product_id_subquery)
 
@@ -1021,6 +1061,11 @@ class ProductService:
                 subcats_by_product[pid].append(sc_name)
             if sc_id:
                 subcat_ids_by_product[pid].append(sc_id)
+
+        rel_subcats_by_product: Dict[int, List[str]] = defaultdict(list)
+        for pid, sc_name in rel_subcat_qs.values_list('product_id', 'subcategory__subcategory_name'):
+            if sc_name:
+                rel_subcats_by_product[pid].append(sc_name)
 
         tags_by_product: Dict[int, List[str]] = defaultdict(list)
         for pid, tag_name in tag_qs.values_list('product_id', 'producttag__name'):
@@ -1060,6 +1105,7 @@ class ProductService:
         product_values = queryset.values(
             'id', 'code', 'price', 'name', 'diameter', 'length',
             'description', 'stock', 'category__category_name',
+            'diameter_relation', 'thread_formats_relation',
             'tax_rate', 'brand', 'condition', 'images', 'image__file',
             'norm', 'grade', 'material', 'colour', 'type', 'form',
             'thread_formats', 'origin', 'gtin', 'mpn', 'google_category',
@@ -1092,6 +1138,9 @@ class ProductService:
                 'stock': prod.get('stock') if prod.get('stock') is not None else 0,
                 'category': prod.get('category__category_name') or '',
                 'subcategories': ', '.join(subcats_by_product.get(pid, [])),
+                'related_subcategories': ', '.join(rel_subcats_by_product.get(pid, [])),
+                'diameter_relation': prod.get('diameter_relation') or '',
+                'thread_formats_relation': prod.get('thread_formats_relation') or '',
                 'tags': ', '.join(tags_by_product.get(pid, [])),
                 'tax_rate': tax_rate_str,
                 'brand': prod.get('brand') or '',
@@ -1828,6 +1877,15 @@ class ProductService:
             if field in item and item[field] and not pd.isna(item[field]):
                 setattr(product, field, str(item[field]))
 
+        # Campos de relación técnica (vacío conserva; '-' limpia explícitamente)
+        for rel_field in ('diameter_relation', 'thread_formats_relation'):
+            if rel_field in item and item[rel_field] is not None and not pd.isna(item[rel_field]):
+                rel_val = str(item[rel_field]).strip()
+                if rel_val == '-':
+                    setattr(product, rel_field, '')
+                elif rel_val != '':
+                    setattr(product, rel_field, rel_val[:100])
+
         # Alícuota impositiva (Res. 4/2025)
         tax_col = None
         for col_name in ['tax_rate', 'iva', 'alicuota_iva', 'alicuota']:
@@ -1857,6 +1915,19 @@ class ProductService:
             ProductService._process_subcategories(
                 product, str(item['subcategories']), item, processed_subcategories
             )
+
+        # Procesar subcategorías relacionadas (soporta alias ProductRelation / productrelation tras lower())
+        raw_related_subcats = None
+        for rel_col in ('related_subcategories', 'productrelation', 'product_relation', 'ProductRelation'):
+            if rel_col in item and item[rel_col] is not None and not pd.isna(item[rel_col]):
+                candidate_str = str(item[rel_col]).strip()
+                if candidate_str:
+                    raw_related_subcats = candidate_str
+                    break
+        if raw_related_subcats == '-':
+            product.related_subcategories.clear()
+        elif raw_related_subcats:
+            ProductService._process_related_subcategories(product, raw_related_subcats)
         
         # Procesar tags
         if 'tags' in item and item['tags'] and not pd.isna(item['tags']):
@@ -1945,6 +2016,37 @@ class ProductService:
                 if not FAQ.objects.filter(subcategory=subcat).exists():
                     ProductService._process_faqs(subcat, str(item['faq']))
                 processed_subcategories.add(subcat.id)
+
+    @staticmethod
+    def _process_related_subcategories(product: Product, raw_str: str) -> None:
+        """
+        Vincula subcategorías relacionadas existentes sin crear subcategorías fantasma.
+
+        REGLA: A diferencia de _process_subcategories, no ejecuta get_or_create para evitar
+        crear subcategorías bajo una categoría padre equivocada o por errores de tipeo.
+        """
+        names = [s.strip() for s in raw_str.split(',') if s.strip()]
+        found_subcats: List[SubCategory] = []
+        seen_ids = set()
+
+        for name in names:
+            subcat = (
+                SubCategory.objects.filter(subcategory_name__iexact=name).first()
+                or SubCategory.objects.filter(slug=slugify(name)).first()
+            )
+            if not subcat:
+                logger.warning(
+                    "Subcategoría relacionada '%s' no encontrada para producto %s; se omite.",
+                    name,
+                    product.code,
+                )
+                continue
+            if subcat.id not in seen_ids:
+                seen_ids.add(subcat.id)
+                found_subcats.append(subcat)
+
+        if found_subcats:
+            product.related_subcategories.set(found_subcats)
 
     @staticmethod
     def _process_tags(product: Product, tags_str: str, result: ImportResult) -> None:
@@ -2533,6 +2635,267 @@ class HomeSectionService:
         return HomeSectionService._resolve_products(section)
 
 
+class RelatedProductService:
+    """
+    Motor de recomendación cruzada (cross-selling) para la ficha de producto.
+
+    # QUÉ:
+    # Resuelve productos complementarios a partir de `related_subcategories`,
+    # `diameter_relation` y `thread_formats_relation`, aplicando Opción C
+    # (match técnico indexado) o Opción B (subcategoría libre) según corresponda.
+    #
+    # POR QUÉ:
+    # Evita mantener relaciones manuales producto a producto en +14.000 SKUs,
+    # prescinde de `length` (que rompe cruces bulón->tuerca/arandela) y nunca
+    # degrada a medidas incompatibles cuando el operador definió medidas técnicas.
+    """
+
+    CACHE_KEY_PREFIX = 'store:related_products:v1'
+    CACHE_TTL = 900  # 15 minutos
+
+    @staticmethod
+    def parse_diameter_and_pitch(raw: Optional[str]) -> Tuple[str, str]:
+        return parse_diameter_and_pitch(raw)
+
+    @staticmethod
+    def normalize_thread_format(raw: Optional[str]) -> Tuple[str, str]:
+        return normalize_thread_format(raw)
+
+    @classmethod
+    def invalidate_cache(cls, product_id: Optional[int]) -> None:
+        """Elimina la entrada cacheada en Redis para un producto."""
+        if product_id:
+            cache.delete(f"{cls.CACHE_KEY_PREFIX}:{product_id}")
+
+    @staticmethod
+    def _build_valid_price_query() -> Q:
+        return Q(is_on_sale=True, sale_price__gt=0) | Q(is_on_sale=False, price__gt=0)
+
+    @classmethod
+    def _hydrate_cached_entries(cls, entries: List[Dict], limit: int) -> List[Dict]:
+        """
+        Hidrata IDs cacheados re-validando disponibilidad, stock y precio vigentes.
+
+        REGLA: Aunque el cálculo de recomendación esté cacheado 15 min en Redis,
+        si un producto se quedó sin stock o cambió de precio vía bulk_update se filtra
+        en esta única consulta fresca antes de renderizar.
+        """
+        if not entries:
+            return []
+
+        ids = [entry['id'] for entry in entries if 'id' in entry]
+        if not ids:
+            return []
+
+        products_map = {
+            p.id: p
+            for p in Product.objects.filter(
+                cls._build_valid_price_query(),
+                id__in=ids,
+                is_available=True,
+                stock__gt=0,
+            ).select_related('image', 'category')
+        }
+
+        hydrated = []
+        for entry in entries:
+            prod = products_map.get(entry.get('id'))
+            if prod is None:
+                continue
+            hydrated.append({
+                'product': prod,
+                'badge': entry.get('badge', ''),
+                'match_level': entry.get('match_level', 'subcategory'),
+            })
+            if len(hydrated) >= limit:
+                break
+        return hydrated
+
+    @staticmethod
+    def _parse_relation_criteria(product: Product) -> Tuple[List[str], Optional[str], List[str]]:
+        """Extrae diámetros nominales, familia de rosca y pasos esperados del producto."""
+        target_diameters: List[str] = []
+        target_pitches: List[str] = []
+
+        raw_diameters = getattr(product, 'diameter_relation', '') or ''
+        for token in raw_diameters.split(','):
+            token = token.strip()
+            if not token:
+                continue
+            diam_nom, diam_pitch = parse_diameter_and_pitch(token)
+            if diam_nom and diam_nom not in target_diameters:
+                target_diameters.append(diam_nom)
+            if diam_pitch and diam_pitch not in target_pitches:
+                target_pitches.append(diam_pitch)
+
+        raw_thread = getattr(product, 'thread_formats_relation', '') or ''
+        thread_family, thread_pitch = normalize_thread_format(raw_thread)
+        if thread_pitch and thread_pitch not in target_pitches:
+            target_pitches.append(thread_pitch)
+
+        return target_diameters, (thread_family or None), target_pitches
+
+    @staticmethod
+    def _build_technical_badge(
+        candidate: Product,
+        has_thread_criteria: bool,
+    ) -> str:
+        """Genera un badge técnico veraz según lo que efectivamente coincide."""
+        diam_label = (candidate.diameter_nominal or '').upper()
+        has_candidate_thread = bool(candidate.thread_normalized or candidate.thread_pitch)
+
+        if diam_label and has_thread_criteria and has_candidate_thread:
+            thread_label = candidate.thread_formats or (
+                f"P {candidate.thread_pitch}" if candidate.thread_pitch else candidate.thread_normalized.upper()
+            )
+            full_label = f"Compatible {diam_label} · {thread_label}"
+            if len(full_label) > 32:
+                short_thread = (
+                    f"P {candidate.thread_pitch}" if candidate.thread_pitch else candidate.thread_normalized.upper()
+                )
+                return f"Compatible {diam_label} · {short_thread}"[:32]
+            return full_label
+
+        if diam_label:
+            return f"Medida {diam_label}"[:32]
+
+        thread_label = candidate.thread_formats or candidate.thread_normalized.upper()
+        return f"Rosca {thread_label}"[:32] if thread_label else "Compatible"
+
+    @classmethod
+    def get_related_products(cls, product: Product, limit: int = 6) -> List[Dict]:
+        """
+        Retorna hasta `limit` productos complementarios para la ficha de `product`.
+
+        # CÓMO:
+        # 1. Consulta Redis; si hay hit, hidrata con stock/precio frescos.
+        # 2. Si no hay `related_subcategories`, cachea [] y retorna [].
+        # 3. Si `diameter_relation` o `thread_formats_relation` tienen valor, aplica Opción C
+        #    por subcategoría (omitiendo la subcategoría si no hay stock compatible).
+        # 4. Si ambos están vacíos, aplica Opción B (mejores con stock de la subcategoría).
+        # 5. Combina resultados en round-robin para garantizar variedad entre subcategorías.
+        """
+        if not product or not product.pk or limit <= 0:
+            return []
+
+        cache_key = f"{cls.CACHE_KEY_PREFIX}:{product.pk}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return cls._hydrate_cached_entries(cached, limit)
+
+        related_subcats = list(product.related_subcategories.all().order_by('id'))
+        if not related_subcats:
+            cache.set(cache_key, [], cls.CACHE_TTL)
+            return []
+
+        target_diameters, target_thread_family, target_pitches = cls._parse_relation_criteria(product)
+        is_technical_mode = bool(target_diameters or target_thread_family or target_pitches)
+        has_thread_criteria = bool(target_thread_family or target_pitches)
+
+        price_query = cls._build_valid_price_query()
+        has_img_expr = Case(
+            When(Q(image__isnull=False) | ~Q(images=''), then=Value(1)),
+            default=Value(0),
+            output_field=IntegerField(),
+        )
+
+        per_subcat_queues: List[List[Dict]] = []
+        source_material = (product.material or '').strip()
+
+        for subcat in related_subcats:
+            qs = (
+                Product.objects.filter(
+                    price_query,
+                    subcategories=subcat,
+                    is_available=True,
+                    stock__gt=0,
+                )
+                .exclude(id=product.pk)
+                .select_related('image', 'category')
+            )
+
+            if is_technical_mode:
+                if target_diameters:
+                    qs = qs.filter(diameter_nominal__in=target_diameters)
+                if target_thread_family:
+                    allowed_families = COMPATIBLE_THREAD_FAMILIES.get(
+                        target_thread_family, {target_thread_family}
+                    )
+                    # REGLA: Candidatos sin rosca (ej. Arandelas) nunca se excluyen por filtro de rosca.
+                    qs = qs.filter(
+                        Q(thread_normalized='', thread_pitch='')
+                        | Q(thread_normalized__in=allowed_families)
+                    )
+                if target_pitches:
+                    qs = qs.filter(
+                        Q(thread_pitch='') | Q(thread_pitch__in=target_pitches)
+                    )
+
+            qs = qs.annotate(has_img_priority=has_img_expr)
+            if source_material:
+                qs = qs.annotate(
+                    same_material=Case(
+                        When(material__iexact=source_material, then=Value(1)),
+                        default=Value(0),
+                        output_field=IntegerField(),
+                    )
+                ).order_by('-has_img_priority', '-same_material', '-sold_count', '-is_on_sale', 'id')
+            else:
+                qs = qs.order_by('-has_img_priority', '-sold_count', '-is_on_sale', 'id')
+
+            candidates = list(qs.distinct()[:limit])
+            if not candidates:
+                # REGLA: En Opción C, si no hay stock compatible se omite la subcategoría
+                # para no recomendar una medida incompatible.
+                continue
+
+            queue: List[Dict] = []
+            for cand in candidates:
+                badge = (
+                    cls._build_technical_badge(cand, has_thread_criteria)
+                    if is_technical_mode
+                    else subcat.subcategory_name
+                )
+                queue.append({
+                    'product': cand,
+                    'badge': badge,
+                    'match_level': 'technical' if is_technical_mode else 'subcategory',
+                })
+            per_subcat_queues.append(queue)
+
+        # Round-robin entre subcategorías para mostrar variedad (tuerca + arandela, etc.).
+        selected: List[Dict] = []
+        seen_ids = set()
+        idx = 0
+        while len(selected) < limit and per_subcat_queues:
+            progressed = False
+            for queue in per_subcat_queues:
+                while idx < len(queue) and queue[idx]['product'].id in seen_ids:
+                    # Avanzar dentro de esta cola si el producto ya fue agregado por otra subcat
+                    queue.pop(idx)
+                if idx < len(queue):
+                    item = queue[idx]
+                    seen_ids.add(item['product'].id)
+                    selected.append(item)
+                    progressed = True
+                    if len(selected) >= limit:
+                        break
+            if not progressed:
+                break
+            idx += 1
+
+        cache_payload = [
+            {
+                'id': item['product'].id,
+                'badge': item['badge'],
+                'match_level': item['match_level'],
+            }
+            for item in selected
+        ]
+        cache.set(cache_key, cache_payload, cls.CACHE_TTL)
+        return selected
+
+
 __all__ = [
     'ImportResult',
     'ProductService',
@@ -2543,4 +2906,5 @@ __all__ = [
     'FeedService',
     'GoogleReviewsService',
     'HomeSectionService',
+    'RelatedProductService',
 ]

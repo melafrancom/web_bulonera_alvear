@@ -16,7 +16,7 @@ from store.models import Product, ReviewRating, CarouselImage, ProductTag
 from store.web.forms import ReviewForm
 from store.services import (
     ProductService, SearchService, ReviewService,
-    FAQService, CarouselService, FeedService
+    FAQService, CarouselService, FeedService, RelatedProductService
 )
 from category.models import Category, SubCategory
 from cart.models import CartItem
@@ -195,7 +195,11 @@ def product_detail(request, product_slug):
     """
     try:
         # Obtener producto solo por slug (la categoría viene del FK)
-        single_product = Product.objects.get(slug=product_slug)
+        single_product = (
+            Product.objects.select_related('category', 'image')
+            .prefetch_related('subcategories', 'related_subcategories')
+            .get(slug=product_slug)
+        )
         
         if not single_product:
             context = {
@@ -264,8 +268,9 @@ def product_detail(request, product_slug):
         if single_product.is_on_sale and single_product.sale_price:
             meta_pixel_data['price'] = f"{single_product.sale_price:.2f}"
         
-        # Obtener FAQs del producto
+        # Obtener FAQs del producto y productos relacionados
         product_faqs = FAQService.get_product_faqs(single_product)
+        related_products = RelatedProductService.get_related_products(single_product, limit=6)
         
         # Construir breadcrumb_items usando categoria del producto (no del URL)
         breadcrumb_items = [
@@ -287,6 +292,7 @@ def product_detail(request, product_slug):
             'dimensions': dimensions,
             'dimension_variants_json': dimension_variants_json,
             'sale_products': sale_products,
+            'related_products': related_products,
             'product_faqs': product_faqs,
             'breadcrumb_items': breadcrumb_items,
             'canonical_url': f"{SITE_URL}{single_product.get_url()}",

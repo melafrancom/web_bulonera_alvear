@@ -57,7 +57,7 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ('code', 'name', 'description')
     readonly_fields = ['created_date', 'modified_date', 'image_preview_method']  # ⬅ evitamos modificar fechas manualmente
     list_filter = ('category', 'subcategories', 'tags', 'is_available', 'is_on_sale', 'brand', 'condition')
-    filter_horizontal = ('subcategories', 'tags')
+    filter_horizontal = ('subcategories', 'related_subcategories', 'tags')
     autocomplete_fields = ['image']
     actions = ['make_available', 'make_unavailable', 'export_selected_products_excel']
     # Agrega una url personalizada
