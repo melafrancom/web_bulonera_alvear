@@ -2,7 +2,7 @@
 type: app
 domain: catalog
 status: active
-updated: 2026-11-22
+updated: 2026-11-24
 summary: "Taxonomía Category/SubCategory/NavbarItem, sanitización nh3 contra XSS y caché Redis invalidada por signals."
 tags: [obsidian/app, domain/catalog]
 ---
@@ -17,7 +17,7 @@ Este módulo gestiona la jerarquía de categorización de los productos de la ti
 ## 🕸️ Grafo de Dependencias (Codebase Graph)
 
 *   **Entidades dependientes de este módulo:** 
-    *   [store](../store/README.md) (Vincula productos a categorías y subcategorías)
+    *   [store](../store/README.md) (Vincula productos a categorías, subcategorías y subcategorías relacionadas vía `Product.related_subcategories` con `related_name='recommended_for_products'`)
 *   **Módulos requeridos por este módulo:** 
     *   [media_bank](../media_bank/README.md) (`ImageAsset` mediante FK `image`/`image_asset` y utilidades seguras `overwrite_upload_path`, `create_clean_filename`, `validate_image_file` de `media_bank.upload_utils`)
 

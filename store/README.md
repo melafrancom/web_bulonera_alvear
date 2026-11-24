@@ -2,7 +2,7 @@
 type: app
 domain: catalog
 status: active
-updated: 2026-11-23
+updated: 2026-11-24
 summary: "Catálogo B2B/B2C, Home Page Builder V2, Productos Relacionados técnicos, Res. 4/2025, ProductTag, SearchQuery e Import/Export Excel streaming."
 tags: [obsidian/app, domain/catalog]
 ---
@@ -91,4 +91,9 @@ graph LR
   - **Optimización Anti N+1 (SEC-107)**: `ProductViewSet` y `SearchViewSet` anotan promedio y conteo de reseñas en DB, priorizados por serializers.
   - **Eficiencia de Memoria en Feeds (SEC-111 & SEC-112)**: Consumo con `.iterator(chunk_size=200)` y unificación a través de `FeedService`.
   - **Suite de Seguridad**: 9 tests específicos en `store/tests/test_security.py`.
+- **Productos Relacionados y Cross-Selling Técnico (Fase 1)**:
+  - **Campos en `Product`:** `related_subcategories` (`ManyToManyField` a `category.SubCategory`, `related_name='recommended_for_products'`), `diameter_relation`, `thread_formats_relation`, y campos indexados no editables `diameter_nominal`, `thread_pitch` y `thread_normalized` (migración de esquema `0023` + backfill en lotes con `bulk_update` en `0024` sin invocar `Product.save()`).
+  - **Normalizador Puro (`store/relation_utils.py`):** `parse_diameter_and_pitch`, `normalize_thread_format` y `COMPATIBLE_THREAD_FAMILIES`, calibrados sobre los 103 valores de `diameter` y 12 de `thread_formats` del catálogo (incluyendo pasos milimétricos `P`, TPI `H`, equivalencias en paréntesis y mangueras `AxB` sin separar).
+  - **Motor (`RelatedProductService.get_related_products`):** Aplica **Opción C** (match indexado por diámetro + familia/paso de rosca sin excluir candidatos sin rosca como arandelas, omitiendo la subcategoría ante falta de stock compatible) cuando hay criterios en `*_relation`, u **Opción B** (mejores disponibles de la subcategoría por material/ventas) cuando ambos están vacíos. Reparto round-robin, caché Redis `store:related_products:v1:<id>` (TTL 15 min) con hidratación fresca anti-stale e invalidación vía `store/signals.py` (`StoreConfig.ready()`).
+  - **Exposición UI y Tests:** Bloque **"Completá tu compra"** al pie de la sección Descripción en `templates/store/product_detail.html` (`partials/_related_product_card.html`), cumplimiento **Res. 4/2025**, botón rápido "+ Agregar" con tracking `code`/`effective_price`, JSON-LD `isRelatedTo` y suite `store/tests/test_related_products.py`.
 

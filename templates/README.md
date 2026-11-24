@@ -2,7 +2,7 @@
 type: support
 domain: frontend
 status: active
-updated: 2026-11-22
+updated: 2026-11-24
 summary: "Plantillas HTML5 (TailwindCSS + Alpine.js + Lucide local), parciales del Home Builder y vistas de compra."
 tags: [obsidian/support, domain/frontend]
 ---
@@ -68,3 +68,4 @@ Ejemplo de inyección de estilos embebidos en el header de `base.html`:
 ## 📝 Reglas de Diseño y Codificación (Alineación con skills)
 - **Alineación con `template-standardization` y `design-quality`**: Las plantillas deben evitar código de estilos raw. Toda variación se aplica mediante clases utilitarias de TailwindCSS o tokens CSS customizados.
 - **Micro-animaciones**: Se utiliza Alpine.js para la interactividad rápida de componentes del cliente (carruseles, modales de carrito lateral, colapsables) evitando sobrecargar el bundle de Javascript del navegador.
+- **Ficha de Producto y Cross-Selling (`templates/store/`)**: `store/product_detail.html` incorpora al final de la sección Descripción el bloque **"Completá tu compra"** usando el parcial reutilizable `store/partials/_related_product_card.html` (TailwindCSS, Alpine.js, Lucide local, precio neto obligatorio Res. 4/2025, imágenes WebP y tracking `window.baTrack` con `code` y `effective_price`), además de inyectar `isRelatedTo` en JSON-LD.
