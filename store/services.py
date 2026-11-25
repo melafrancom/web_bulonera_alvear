@@ -13,6 +13,7 @@ import json
 import tempfile
 from collections import defaultdict
 from dataclasses import dataclass, field
+from datetime import timedelta
 from typing import List, Dict, Optional, Tuple
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
@@ -25,10 +26,11 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
 import pandas as pd
-from django.db.models import Q, QuerySet, Avg, Count, Sum, Case, When, Value, IntegerField
+from django.db.models import Q, QuerySet, Avg, Count, Sum, Case, When, Value, IntegerField, F
+from django.db.models.functions import Coalesce
 from django.core.paginator import Paginator
 from django.core.cache import cache
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils.text import slugify
 from django.utils import timezone
 from django.conf import settings
@@ -36,7 +38,7 @@ from itertools import chain
 
 from store.models import (
     Product, ReviewRating, ProductGallery, ProductSearch,
-    CarouselImage, FAQ, FAQCategory, Variation
+    SearchQuery, SearchQueryDaily, CarouselImage, FAQ, FAQCategory, Variation
 )
 from store.relation_utils import (
     COMPATIBLE_THREAD_FAMILIES,
@@ -633,8 +635,11 @@ class ProductService:
 
         cell = WriteOnlyCell(ws, value=value)
         # REGLA: Forzar data_type='s' cuando el texto inicia con operadores interpretables como
-        # fórmula ('=', '+', '-', '@') para evitar corrupción de celdas y Formula Injection.
-        if isinstance(value, str) and value.startswith(('=', '+', '-', '@')):
+        # fórmula ('=', '+', '-', '@') o caracteres de control iniciales para prevenir Formula Injection (CWE-1236).
+        if isinstance(value, str) and (
+            value.startswith(('=', '+', '-', '@', '\t', '\r', '\n'))
+            or value.lstrip().startswith(('=', '+', '-', '@'))
+        ):
             cell.data_type = 's'
         if font is not None:
             cell.font = font
@@ -2098,8 +2103,11 @@ class ProductService:
 
 
 class SearchService:
-    """Servicio para búsqueda de productos y análisis de telemetría agregada"""
-    
+    """Servicio para búsqueda de productos, telemetría agregada y exportación Excel de consultas."""
+
+    DEFAULT_EXPORT_PERIOD_DAYS = 90
+    ALLOWED_PERIOD_DAYS = {'7': 7, '30': 30, '90': 90, 'all': None}
+
     # REGLA: Heurística de reducción de riesgo PII:
     # Detecta patrones comunes de datos personales (emails, teléfonos y documentos DNI/CUIT).
     # TRADE-OFF DOCUMENTADO: Códigos SKU comerciales puramente numéricos de 7 a 11 dígitos
@@ -2112,6 +2120,26 @@ class SearchService:
     _RE_DNI_FORMATTED = re.compile(r'\b\d{1,2}\.\d{3}\.\d{3}\b')
     _RE_PHONE_LOCAL = re.compile(r'\b\d{3,4}[-.\s]\d{4}\b')
     _RE_PHONE_NATIONAL = re.compile(r'(?:\+?54\s?9?)?\s?(?:0?[1-9]\d{1,3})[-.\s]?(?:15[-.\s]?)?\d{3,4}[-.\s]?\d{4}\b')
+    _RE_BOT_UA = re.compile(
+        r'(?:bot|crawl|spider|slurp|mediapartners|adsbot|bingpreview|facebookexternalhit|'
+        r'whatsapp|telegrambot|discordbot|linkedinbot|embedly|pinterest|applebot|yandex|'
+        r'baiduspider|duckduckbot|semrush|ahrefs|mj12bot|dotbot|petalbot|bytespider|'
+        r'gptbot|claudebot|perplexitybot|headlesschrome|lighthouse|pagespeed|'
+        r'python-requests|curl/|wget/|go-http-client)',
+        re.IGNORECASE,
+    )
+
+    @classmethod
+    def is_bot_user_agent(cls, user_agent: Optional[str]) -> bool:
+        """
+        Detecta User-Agents de crawlers, scrapers y previsualizadores de enlaces.
+
+        POR QUÉ: /store/search/ es accesible para buscadores (SearchAction JSON-LD); filtrar
+        bots en el servicio evita contaminar el ranking comercial sin bloquear robots.txt.
+        """
+        if not user_agent:
+            return False
+        return bool(cls._RE_BOT_UA.search(user_agent))
 
     @classmethod
     def contains_sensitive_pii(cls, text: str) -> bool:
@@ -2194,17 +2222,30 @@ class SearchService:
             SearchService.register_product_search(product, user, session_key)
 
     @classmethod
-    def record_unmatched_search(cls, keyword: str) -> None:
+    def record_search_query(
+        cls,
+        keyword: str,
+        results_count: int,
+        user_agent: Optional[str] = None,
+    ) -> None:
         """
-        Registra o incrementa el contador de un término de búsqueda que no arrojó resultados.
-        Normaliza el texto y opera de manera atómica sin almacenar IPs, usuarios ni sesiones.
-        Aplica filtro heurístico anti-PII por patrones sobre la entrada completa (evita que la truncación
-        oculte datos sensibles en el límite de longitud).
-        Unifica la normalización con search_products limitando a 100 caracteres.
-        Higiene estricta de logs: no interpola el término crudo ni en logs normales ni en logs de error.
-        search_count cuantifica volumen de solicitudes fallidas, no demandantes únicos.
+        Registra o actualiza métricas agregadas de una búsqueda (con o sin resultados).
+
+        QUÉ:
+        Normaliza el término buscado, descarta bots y PII, e incrementa contadores atómicos
+        en SearchQuery (totales históricos + última cobertura) y SearchQueryDaily (bucket diario).
+
+        POR QUÉ:
+        Unifica en una única fuente de verdad tanto la demanda oculta (0 resultados) como
+        las consultas con resultados para rankear demanda por ventana temporal (ej. 90 días)
+        sin almacenar IPs, usuarios ni sesiones.
+
+        REGLAS Y EFECTOS SECUNDARIOS:
+        - Evalúa contains_sensitive_pii() sobre la entrada completa antes de truncar a 100 chars.
+        - Nunca interpola el término crudo ni el mensaje de excepción en logs.
+        - Actualiza SearchQuery y SearchQueryDaily con F() + 1 y manejo de IntegrityError concurrente.
         """
-        if not keyword:
+        if not keyword or cls.is_bot_user_agent(user_agent):
             return
 
         # 1. Evaluar patrones PII sobre la entrada completa antes de truncar
@@ -2212,28 +2253,358 @@ class SearchService:
         if cls.contains_sensitive_pii(raw_trimmed):
             return
 
-        # 2. Normalización idéntica a search_products (límite estricto de 100 caracteres)
-        clean_keyword = raw_trimmed[:100].lower()
+        # 2. Normalizar espacios internos y acotar a 100 caracteres (mínimo 3)
+        clean_keyword = re.sub(r'\s+', ' ', raw_trimmed)[:100].lower()
         if len(clean_keyword) < 3:
             return
 
-        try:
-            from store.models import SearchQuery
-            from django.db.models import F
-            from django.utils import timezone
+        safe_results = max(0, int(results_count))
+        is_matched = safe_results > 0
+        matched_delta = 1 if is_matched else 0
+        unmatched_delta = 0 if is_matched else 1
+        now = timezone.now()
+        today = timezone.localdate()
 
-            query_obj, created = SearchQuery.objects.get_or_create(
-                query_text=clean_keyword,
-                defaults={'search_count': 1}
-            )
+        try:
+            # 3. Upsert atómico en SearchQuery
+            try:
+                query_obj, created = SearchQuery.objects.get_or_create(
+                    query_text=clean_keyword,
+                    defaults={
+                        'search_count': 1,
+                        'matched_count': matched_delta,
+                        'unmatched_count': unmatched_delta,
+                        'last_results_count': safe_results,
+                    },
+                )
+            except IntegrityError:
+                query_obj = SearchQuery.objects.get(query_text=clean_keyword)
+                created = False
+
             if not created:
                 SearchQuery.objects.filter(pk=query_obj.pk).update(
                     search_count=F('search_count') + 1,
-                    last_searched_at=timezone.now()
+                    matched_count=F('matched_count') + matched_delta,
+                    unmatched_count=F('unmatched_count') + unmatched_delta,
+                    last_results_count=safe_results,
+                    last_searched_at=now,
                 )
-            logger.info("Demanda oculta registrada de forma agregada (longitud: %d caracteres)", len(clean_keyword))
+
+            # 4. Upsert atómico en SearchQueryDaily para ranking por ventana temporal
+            try:
+                daily_obj, daily_created = SearchQueryDaily.objects.get_or_create(
+                    search_query=query_obj,
+                    date=today,
+                    defaults={
+                        'matched_count': matched_delta,
+                        'unmatched_count': unmatched_delta,
+                        'last_results_count': safe_results,
+                    },
+                )
+            except IntegrityError:
+                daily_obj = SearchQueryDaily.objects.get(search_query=query_obj, date=today)
+                daily_created = False
+
+            if not daily_created:
+                SearchQueryDaily.objects.filter(pk=daily_obj.pk).update(
+                    matched_count=F('matched_count') + matched_delta,
+                    unmatched_count=F('unmatched_count') + unmatched_delta,
+                    last_results_count=safe_results,
+                )
+
+            logger.info(
+                "Consulta de búsqueda registrada de forma agregada (longitud: %d, con_resultados: %s)",
+                len(clean_keyword),
+                is_matched,
+            )
         except Exception as e:
-            logger.error("Error al registrar búsqueda sin resultado (tipo de error: %s)", type(e).__name__)
+            logger.error("Error al registrar consulta de búsqueda (tipo de error: %s)", type(e).__name__)
+
+    @classmethod
+    def record_unmatched_search(cls, keyword: str, user_agent: Optional[str] = None) -> None:
+        """Wrapper retrocompatible para registrar búsquedas sin resultados."""
+        cls.record_search_query(keyword, results_count=0, user_agent=user_agent)
+
+    @classmethod
+    def resolve_period_days(cls, raw_period: Optional[str]) -> Optional[int]:
+        """Normaliza el parámetro de ventana temporal; por defecto retorna 90 días."""
+        if raw_period is None:
+            return cls.DEFAULT_EXPORT_PERIOD_DAYS
+        normalized = str(raw_period).strip().lower()
+        if normalized in cls.ALLOWED_PERIOD_DAYS:
+            return cls.ALLOWED_PERIOD_DAYS[normalized]
+        return cls.DEFAULT_EXPORT_PERIOD_DAYS
+
+    @classmethod
+    def apply_period_ranking(
+        cls,
+        queryset: QuerySet,
+        period_days: Optional[int] = DEFAULT_EXPORT_PERIOD_DAYS,
+    ) -> QuerySet:
+        """
+        Anota el queryset de SearchQuery con los conteos del período seleccionado.
+
+        # POR QUÉ:
+        # Filtrar únicamente por daily_stats__date__gte sin otros JOINs M2M permite que
+        # el GROUP BY sobre SearchQuery.id sume cada día del rango sin producto cartesiano.
+        """
+        if period_days is not None:
+            cutoff_date = timezone.localdate() - timedelta(days=period_days)
+            return (
+                queryset.filter(daily_stats__date__gte=cutoff_date)
+                .annotate(
+                    period_matched=Coalesce(Sum('daily_stats__matched_count'), Value(0), output_field=IntegerField()),
+                    period_unmatched=Coalesce(Sum('daily_stats__unmatched_count'), Value(0), output_field=IntegerField()),
+                )
+                .annotate(
+                    period_total=F('period_matched') + F('period_unmatched'),
+                )
+            )
+
+        return queryset.annotate(
+            period_matched=F('matched_count'),
+            period_unmatched=F('unmatched_count'),
+            period_total=F('search_count'),
+        )
+
+    @staticmethod
+    def _classify_suggested_action(last_results_count: int, period_total: int) -> str:
+        """Heurística simple para orientar decisiones de Compras o SEO en el Excel."""
+        if last_results_count == 0:
+            if period_total >= 5:
+                return "Incorporar producto / sinónimo prioritario"
+            return "Evaluar demanda oculta"
+        if last_results_count <= 3:
+            return "Ampliar surtido / revisar ficha"
+        return "Posicionar SEO / destacar en catálogo"
+
+    @classmethod
+    def export_search_queries_workbook(
+        cls,
+        queryset: Optional[QuerySet] = None,
+        period_days: Optional[int] = DEFAULT_EXPORT_PERIOD_DAYS,
+        status_filter: str = 'all',
+        search_term: str = '',
+    ) -> tempfile.SpooledTemporaryFile:
+        """
+        Exporta el ranking de consultas de búsqueda (con y sin resultados) a Excel (.xlsx) en streaming.
+
+        QUÉ:
+        Genera un archivo Excel de 2 hojas ('Ranking' con autofiltro y 'Resumen' con KPIs)
+        ordenado por volumen del período elegido (90 días por defecto).
+
+        POR QUÉ:
+        Usa openpyxl en modo write_only + .values().iterator(chunk_size=1000) + SpooledTemporaryFile
+        para mantener consumo plano de RAM, preservando medidas técnicas ('1/4', '3/8') como
+        texto '@' y neutralizando Formula Injection (CWE-1236).
+        """
+        if queryset is None:
+            qs = SearchQuery.objects.all()
+            if status_filter == 'unmatched':
+                qs = qs.filter(last_results_count=0)
+            elif status_filter == 'matched':
+                qs = qs.filter(last_results_count__gt=0)
+            if search_term and search_term.strip():
+                qs = qs.filter(query_text__icontains=search_term.strip())
+            qs = cls.apply_period_ranking(qs, period_days=period_days)
+        else:
+            qs = queryset
+            if 'period_total' not in qs.query.annotations:
+                qs = cls.apply_period_ranking(qs, period_days=period_days)
+
+        qs = qs.order_by('-period_total', '-last_searched_at')
+
+        wb = openpyxl.Workbook(write_only=True)
+        styles = ProductService._get_excel_styles()
+
+        # Hoja 1: Ranking
+        ws1 = wb.create_sheet(title="Ranking")
+        ws1.views.sheetView[0].showGridLines = True
+        ws1.freeze_panes = "A2"
+        ws1.auto_filter.ref = "A1:K1"
+        ws1.row_dimensions[1].height = 26
+
+        columns = [
+            ('ranking', 10),
+            ('termino_buscado', 38),
+            ('estado_actual', 18),
+            ('busquedas_periodo', 18),
+            ('sin_resultado_periodo', 22),
+            ('con_resultado_periodo', 22),
+            ('tasa_sin_resultado', 20),
+            ('resultados_actuales', 20),
+            ('total_historico', 18),
+            ('accion_sugerida', 38),
+            ('ultima_busqueda', 20),
+        ]
+        for col_idx, (_, width) in enumerate(columns, 1):
+            col_letter = get_column_letter(col_idx)
+            ws1.column_dimensions[col_letter].width = width
+        ws1.column_dimensions['B'].number_format = '@'
+
+        ProductService._append_styled_row(
+            ws1,
+            1,
+            [
+                (
+                    col_name,
+                    {
+                        'font': styles['font_header'],
+                        'fill': styles['fill_navy'],
+                        'alignment': styles['align_center'],
+                        'border': styles['border_thin'],
+                    },
+                )
+                for col_name, _ in columns
+            ],
+            write_only=True,
+            height=26,
+        )
+
+        # Incluir 'id' en .values() para compatibilidad con ONLY_FULL_GROUP_BY en MariaDB 11.
+        rows_iter = qs.values(
+            'id',
+            'query_text',
+            'last_results_count',
+            'search_count',
+            'last_searched_at',
+            'period_total',
+            'period_unmatched',
+            'period_matched',
+        ).iterator(chunk_size=1000)
+
+        total_terms = 0
+        total_searches = 0
+        total_matched = 0
+        total_unmatched = 0
+        terms_without_results = 0
+        terms_with_results = 0
+
+        for idx, row in enumerate(rows_iter, 1):
+            period_total = int(row.get('period_total') or 0)
+            period_unmatched = int(row.get('period_unmatched') or 0)
+            period_matched = int(row.get('period_matched') or 0)
+            last_results = int(row.get('last_results_count') or 0)
+            total_hist = int(row.get('search_count') or 0)
+
+            total_terms += 1
+            total_searches += period_total
+            total_matched += period_matched
+            total_unmatched += period_unmatched
+            if last_results > 0:
+                terms_with_results += 1
+                estado_label = "Con resultados"
+            else:
+                terms_without_results += 1
+                estado_label = "Sin resultados"
+
+            unmatched_rate = round(period_unmatched / period_total, 4) if period_total > 0 else 0.0
+            last_dt = row.get('last_searched_at')
+            if last_dt is not None:
+                if timezone.is_aware(last_dt):
+                    last_dt = timezone.localtime(last_dt)
+                last_dt_str = last_dt.strftime('%Y-%m-%d %H:%M')
+            else:
+                last_dt_str = ''
+
+            term_cell = ProductService._create_write_only_cell(
+                ws1,
+                row.get('query_text') or '',
+                number_format='@',
+            )
+            term_cell.data_type = 's'
+
+            ws1.append([
+                ProductService._create_write_only_cell(ws1, idx, alignment=styles['align_center']),
+                term_cell,
+                estado_label,
+                ProductService._create_write_only_cell(ws1, period_total, number_format='#,##0'),
+                ProductService._create_write_only_cell(ws1, period_unmatched, number_format='#,##0'),
+                ProductService._create_write_only_cell(ws1, period_matched, number_format='#,##0'),
+                ProductService._create_write_only_cell(ws1, unmatched_rate, number_format='0.0%'),
+                ProductService._create_write_only_cell(ws1, last_results, number_format='#,##0'),
+                ProductService._create_write_only_cell(ws1, total_hist, number_format='#,##0'),
+                cls._classify_suggested_action(last_results, period_total),
+                last_dt_str,
+            ])
+
+        # Hoja 2: Resumen Ejecutivo
+        ws2 = wb.create_sheet(title="Resumen")
+        ws2.views.sheetView[0].showGridLines = True
+        ws2.column_dimensions['A'].width = 36
+        ws2.column_dimensions['B'].width = 48
+
+        period_label = f"Últimos {period_days} días" if period_days is not None else "Todo el histórico"
+        status_labels = {
+            'unmatched': "Solo sin resultados (0 productos)",
+            'matched': "Solo con resultados (>= 1 producto)",
+            'all': "Todos (con y sin resultados)",
+        }
+        status_label = status_labels.get(status_filter or 'all', "Todos (con y sin resultados)")
+        zero_rate = (total_unmatched / total_searches * 100.0) if total_searches > 0 else 0.0
+        clean_search_term = (search_term or '').strip()
+
+        r = 1
+        r = ProductService._append_styled_row(
+            ws2, r, [("RESUMEN DE CONSULTAS DE BÚSQUEDA", {'font': styles['font_title']})], write_only=True
+        )
+        r = ProductService._append_styled_row(
+            ws2, r, [("Bulonera Alvear — Analítica de Demanda y Posicionamiento SEO", {'font': styles['font_subtitle']})], write_only=True
+        )
+        r = ProductService._append_styled_row(ws2, r, [], write_only=True)
+
+        summary_rows = [
+            ("Fecha de exportación", timezone.localtime(timezone.now()).strftime('%Y-%m-%d %H:%M')),
+            ("Ventana analizada", period_label),
+            ("Filtro de cobertura", status_label),
+            ("Filtro de texto", clean_search_term if clean_search_term else "Ninguno"),
+            ("Términos únicos exportados", total_terms),
+            ("Búsquedas totales del período", total_searches),
+            ("Búsquedas con resultado", total_matched),
+            ("Búsquedas sin resultado", total_unmatched),
+            ("Tasa sin resultado (Zero-Result Rate)", f"{zero_rate:.1f}%"),
+            ("Términos actualmente sin cobertura", terms_without_results),
+            ("Términos actualmente con cobertura", terms_with_results),
+        ]
+        for label, val in summary_rows:
+            r = ProductService._append_styled_row(
+                ws2,
+                r,
+                [
+                    (label, {'font': styles['font_bold'], 'fill': styles['fill_light_gray'], 'border': styles['border_thin']}),
+                    (val, {'font': styles['font_regular'], 'border': styles['border_thin']}),
+                ],
+                write_only=True,
+            )
+
+        r = ProductService._append_styled_row(ws2, r, [], write_only=True)
+        r = ProductService._append_styled_row(
+            ws2, r, [("Guía rápida de acción", {'font': styles['font_bold']})], write_only=True
+        )
+        guide_rows = [
+            ("Compras / Carga de catálogo", "Filtrar 'estado_actual = Sin resultados' en la hoja Ranking y priorizar términos con mayor 'busquedas_periodo'."),
+            ("SEO / Posicionamiento", "Filtrar 'estado_actual = Con resultados' y cruzar los términos líderes con Google Search Console para mejorar títulos, fichas y Home."),
+            ("Baja cobertura (1 a 3 SKUs)", "Revisar sinónimos o ampliar medidas disponibles en subcategorías con demanda recurrente."),
+        ]
+        for topic, guide in guide_rows:
+            r = ProductService._append_styled_row(
+                ws2,
+                r,
+                [
+                    (topic, {'font': styles['font_bold'], 'border': styles['border_thin']}),
+                    (guide, {'font': styles['font_regular'], 'alignment': styles['align_wrap'], 'border': styles['border_thin']}),
+                ],
+                write_only=True,
+            )
+
+        tmp_file = tempfile.SpooledTemporaryFile(
+            max_size=10 * 1024 * 1024,
+            prefix='bulonera_search_queries_',
+            suffix='.xlsx',
+        )
+        wb.save(tmp_file)
+        tmp_file.seek(0)
+        return tmp_file
 
 
 class ReviewService:

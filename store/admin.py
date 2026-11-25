@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.admin.views.main import ChangeList, ORDER_VAR
 import admin_thumbnails
 from django.shortcuts import render, redirect
 from django.urls import path
@@ -459,12 +460,194 @@ class ProductSearchAdmin(admin.ModelAdmin):
 admin.site.register(ProductSearch, ProductSearchAdmin)
 
 
+class PeriodListFilter(admin.SimpleListFilter):
+    """Filtro de ventana temporal en SearchQueryAdmin con 90 días como valor por defecto."""
+    title = "período de búsquedas"
+    parameter_name = 'period'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('90', "Últimos 90 días (por defecto)"),
+            ('30', "Últimos 30 días"),
+            ('7', "Últimos 7 días"),
+            ('all', "Todo el histórico"),
+        )
+
+    def choices(self, changelist):
+        active_value = self.value() or '90'
+        for lookup, title in self.lookup_choices:
+            yield {
+                'selected': active_value == str(lookup),
+                'query_string': changelist.get_query_string({self.parameter_name: lookup}),
+                'display': title,
+            }
+
+    def queryset(self, request, queryset):
+        from store.services import SearchService
+        period_days = SearchService.resolve_period_days(self.value())
+        return SearchService.apply_period_ranking(queryset, period_days=period_days)
+
+
+class ResultStatusListFilter(admin.SimpleListFilter):
+    """Filtro por cobertura actual del término (con vs. sin resultados en catálogo)."""
+    title = "estado actual en catálogo"
+    parameter_name = 'status'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('unmatched', "Sin resultados (0 productos)"),
+            ('matched', "Con resultados (>= 1 producto)"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'unmatched':
+            return queryset.filter(last_results_count=0)
+        if self.value() == 'matched':
+            return queryset.filter(last_results_count__gt=0)
+        return queryset
+
+
+class SearchQueryChangeList(ChangeList):
+    """Ordena el listado por volumen del período activo cuando no hay orden manual (?o=)."""
+
+    def get_ordering(self, request, queryset):
+        ordering = super().get_ordering(request, queryset)
+        if ORDER_VAR not in self.params and 'period_total' in queryset.query.annotations:
+            return ['-period_total', '-last_searched_at', f'-{self.lookup_opts.pk.attname}']
+        return ordering
+
+
 class SearchQueryAdmin(admin.ModelAdmin):
-    list_display = ('query_text', 'search_count', 'last_searched_at', 'created_at')
-    list_filter = ('last_searched_at', 'created_at')
+    change_list_template = 'admin/store/searchquery/change_list.html'
+    list_display = (
+        'query_text',
+        'status_badge',
+        'period_total_col',
+        'period_unmatched_col',
+        'period_matched_col',
+        'last_results_count',
+        'search_count',
+        'last_searched_at',
+    )
+    list_filter = (PeriodListFilter, ResultStatusListFilter)
     search_fields = ('query_text',)
-    readonly_fields = ('query_text', 'search_count', 'last_searched_at', 'created_at')
-    ordering = ('-search_count', '-last_searched_at')
+    readonly_fields = (
+        'query_text',
+        'search_count',
+        'matched_count',
+        'unmatched_count',
+        'last_results_count',
+        'last_searched_at',
+        'created_at',
+    )
+    actions = ['export_selected_queries_excel']
+
+    def get_changelist(self, request, **kwargs):
+        return SearchQueryChangeList
+
+    @admin.display(description="Estado actual", ordering='last_results_count')
+    def status_badge(self, obj):
+        if obj.last_results_count > 0:
+            return format_html(
+                '<span style="display:inline-block;padding:2px 8px;border-radius:9999px;'
+                'font-size:11px;font-weight:600;background:#dcfce7;color:#166534;">Con resultados</span>'
+            )
+        return format_html(
+            '<span style="display:inline-block;padding:2px 8px;border-radius:9999px;'
+            'font-size:11px;font-weight:600;background:#fee2e2;color:#991b1b;">Sin resultados</span>'
+        )
+
+    @admin.display(description="Búsquedas (período)", ordering='period_total')
+    def period_total_col(self, obj):
+        return getattr(obj, 'period_total', obj.search_count)
+
+    @admin.display(description="Sin resultado (período)", ordering='period_unmatched')
+    def period_unmatched_col(self, obj):
+        return getattr(obj, 'period_unmatched', obj.unmatched_count)
+
+    @admin.display(description="Con resultado (período)", ordering='period_matched')
+    def period_matched_col(self, obj):
+        return getattr(obj, 'period_matched', obj.matched_count)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                'export-excel/',
+                self.admin_site.admin_view(self.export_queries_excel),
+                name='store_searchquery_export_excel',
+            ),
+        ]
+        return custom_urls + urls
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['show_export_button'] = (
+            self.has_view_permission(request) or self.has_change_permission(request)
+        )
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def export_queries_excel(self, request):
+        """Descarga en streaming el ranking de búsquedas respetando los filtros activos del Admin."""
+        if request.method != 'GET':
+            return HttpResponseNotAllowed(['GET'])
+
+        if not (self.has_view_permission(request) or self.has_change_permission(request)):
+            raise PermissionDenied
+
+        from store.services import SearchService
+
+        cl = self.get_changelist_instance(request)
+        queryset = cl.get_queryset(request)
+        period_days = SearchService.resolve_period_days(request.GET.get('period'))
+        status_filter = request.GET.get('status', 'all')
+        search_term = request.GET.get('q', '')
+
+        buffer = SearchService.export_search_queries_workbook(
+            queryset=queryset,
+            period_days=period_days,
+            status_filter=status_filter,
+            search_term=search_term,
+        )
+
+        date_str = timezone.localdate().strftime('%Y-%m-%d')
+        period_slug = 'historico' if period_days is None else f"{period_days}d"
+        filename = f"ranking_busquedas_bulonera_{period_slug}_{date_str}.xlsx"
+
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=filename,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+
+    def export_selected_queries_excel(self, request, queryset):
+        """Acción masiva para exportar las consultas seleccionadas respetando el período activo."""
+        from store.services import SearchService
+
+        period_days = SearchService.resolve_period_days(request.GET.get('period'))
+        status_filter = request.GET.get('status', 'all')
+        search_term = request.GET.get('q', '')
+
+        buffer = SearchService.export_search_queries_workbook(
+            queryset=queryset,
+            period_days=period_days,
+            status_filter=status_filter,
+            search_term=search_term,
+        )
+
+        date_str = timezone.localdate().strftime('%Y-%m-%d')
+        period_slug = 'historico' if period_days is None else f"{period_days}d"
+        filename = f"ranking_busquedas_seleccionadas_bulonera_{period_slug}_{date_str}.xlsx"
+
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=filename,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+    export_selected_queries_excel.allowed_permissions = ('view',)
+    export_selected_queries_excel.short_description = "📥 Exportar consultas seleccionadas a Excel (.xlsx)"
 
     def has_add_permission(self, request):
         return False

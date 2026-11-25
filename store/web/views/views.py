@@ -324,27 +324,31 @@ def search(request):
     # Soportar parámetro estándar 'q' además de 'keyword' (retrocompatibilidad)
     keyword = request.GET.get('q', request.GET.get('keyword', ''))
     products = SearchService.search_products(keyword)
-    
-    # Registrar búsquedas
-    if keyword and len(keyword) > 2:
-        if products.exists():
+    product_count = products.count()
+    user_agent = request.META.get('HTTP_USER_AGENT', '')
+
+    # Registrar búsquedas válidas (con y sin resultados) descartando bots en el servicio
+    if keyword and len(keyword.strip()) >= 3:
+        SearchService.record_search_query(
+            keyword,
+            results_count=product_count,
+            user_agent=user_agent,
+        )
+        if product_count > 0 and not SearchService.is_bot_user_agent(user_agent):
             user = request.user if request.user.is_authenticated else None
             session_key = request.session.session_key
             if not session_key:
                 request.session.create()
                 session_key = request.session.session_key
-            
+
             SearchService.register_search_results(products, keyword, user, session_key)
-        else:
-            # Telemetría agregada de demanda oculta (sin PII)
-            SearchService.record_unmatched_search(keyword)
-    
+
     context = {
         'products': products,
-        'product_count': products.count(),
+        'product_count': product_count,
         'keyword': keyword,
     }
-    
+
     return render(request, 'store/store.html', context)
 
 

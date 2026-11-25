@@ -845,28 +845,71 @@ class ProductSearch(models.Model):
 
 class SearchQuery(models.Model):
     """
-    Registra términos de búsqueda agregados que no arrojaron resultados (demanda oculta).
-    
+    Registra términos de búsqueda agregados (con y sin resultados) para analytics de demanda y SEO.
+
     Privacidad y Reducción de Riesgo:
     - No almacena direcciones IP, identificadores de usuario ni claves de sesión.
     - Aplica un filtro heurístico por patrones (emails, teléfonos y documentos DNI/CUIT)
-      para reducir el riesgo de almacenar datos personales comunes, sin constituir una
-      garantía absoluta frente a nombres o datos personales en texto libre no estructurado.
-    - search_count cuantifica el volumen acumulado de solicitudes de búsqueda fallidas,
-      no la cantidad de usuarios únicos o demandantes individuales.
+      y un guard de User-Agent contra bots/crawlers para reducir ruido y riesgo PII,
+      sin constituir una garantía absoluta frente a texto libre no estructurado.
+    - search_count, matched_count y unmatched_count cuantifican volumen acumulado de
+      solicitudes de búsqueda, no usuarios únicos.
     """
     query_text = models.CharField(max_length=150, unique=True, db_index=True)
     search_count = models.PositiveIntegerField(default=1)
-    last_searched_at = models.DateTimeField(auto_now=True)
+    matched_count = models.PositiveIntegerField(default=0)
+    unmatched_count = models.PositiveIntegerField(default=0)
+    last_results_count = models.PositiveIntegerField(default=0, db_index=True)
+    last_searched_at = models.DateTimeField(auto_now=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "Demanda Oculta (Búsqueda Sin Resultado)"
-        verbose_name_plural = "Demandas Ocultas (Búsquedas Sin Resultados)"
+        verbose_name = "Consulta de Búsqueda"
+        verbose_name_plural = "Consultas de Búsqueda (Analytics)"
         ordering = ['-search_count', '-last_searched_at']
+
+    @property
+    def has_results(self) -> bool:
+        return self.last_results_count > 0
 
     def __str__(self):
         return f"{self.query_text} ({self.search_count} búsquedas)"
+
+
+class SearchQueryDaily(models.Model):
+    """
+    Agrega diariamente las búsquedas por término para habilitar rankings por ventana temporal
+    (ej. últimos 7, 30 o 90 días) sin almacenar un log evento-por-evento sin cota.
+    """
+    search_query = models.ForeignKey(
+        SearchQuery,
+        on_delete=models.CASCADE,
+        related_name='daily_stats',
+    )
+    date = models.DateField(db_index=True)
+    matched_count = models.PositiveIntegerField(default=0)
+    unmatched_count = models.PositiveIntegerField(default=0)
+    last_results_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Métrica Diaria de Búsqueda"
+        verbose_name_plural = "Métricas Diarias de Búsqueda"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['search_query', 'date'],
+                name='unique_search_query_daily_date',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['date', 'search_query'], name='idx_sqdaily_date_query'),
+        ]
+        ordering = ['-date']
+
+    def __str__(self):
+        return (
+            f"{self.search_query.query_text} [{self.date}] "
+            f"(con={self.matched_count}, sin={self.unmatched_count})"
+        )
 
 #NO HACE A LAS FUNCIONALIDADES PRINCIPALES DE LA PÁGINA:
 #Creamos un modelo para FAQ (Preguntas Frecuentes)
