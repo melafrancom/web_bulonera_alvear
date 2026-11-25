@@ -9,13 +9,18 @@ Cubre:
 5. Exportación Excel en streaming (2 hojas, ranking, formato '@' en medidas, anti Formula Injection CWE-1236, queryset vacío).
 6. Django Admin: descarga segura, filtros, acción masiva, permisos 403/405, detalle >90d sin 404 e inmutabilidad.
 """
+import importlib
 import io
 from datetime import timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
 import openpyxl
 import pytest
+from django.apps import apps
 from django.contrib.admin.sites import AdminSite
+from django.core.cache import cache
+from django.http import QueryDict
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
@@ -23,8 +28,17 @@ from django.utils import timezone
 from account.models import Account
 from category.models import Category, SubCategory
 from store.admin import SearchQueryAdmin
-from store.models import Product, SearchQuery, SearchQueryDaily
-from store.services import SearchService
+from store.models import Product, ProductSearch, SearchQuery, SearchQueryDaily
+from store.services import ProductService, SearchService
+from store.templatetags.store_filters import query_with_page
+
+
+@pytest.fixture(autouse=True)
+def clear_search_cache():
+    """Aísla contadores de rate-limiting en caché entre tests."""
+    cache.clear()
+    yield
+    cache.clear()
 
 
 @pytest.fixture
@@ -572,3 +586,323 @@ class TestSearchQueryAdminPermissionsAndExport:
         response = staff_viewer_client.get(change_url)
         assert response.status_code == 200
         assert 'electrodo 6013 2.5mm' in response.content.decode('utf-8')
+
+    def test_admin_export_excel_malformed_params_fallback_safely(self, staff_viewer_client):
+        today = timezone.localdate()
+        sq = SearchQuery.objects.create(query_text='mecha widia 8mm', search_count=4, matched_count=4, last_results_count=2)
+        SearchQueryDaily.objects.create(search_query=sq, date=today, matched_count=4, last_results_count=2)
+
+        url = reverse('admin:store_searchquery_export_excel')
+        response = staff_viewer_client.get(url, {'period': 'bogus', 'status': 'unknown'})
+        assert response.status_code == 200
+        assert response['Content-Type'] == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+        wb = openpyxl.load_workbook(io.BytesIO(b''.join(response.streaming_content)))
+        ws_summary = wb['Resumen']
+        summary = {
+            ws_summary.cell(row=r, column=1).value: ws_summary.cell(row=r, column=2).value
+            for r in range(1, ws_summary.max_row + 1)
+            if ws_summary.cell(row=r, column=1).value
+        }
+        assert summary['Ventana analizada'] == 'Últimos 90 días'
+        assert summary['Filtro de cobertura'] == 'Todos (con y sin resultados)'
+
+
+class TestSearchPaginationAndSorting:
+    """Pruebas de paginación en store:search, preservación de parámetros y sort_by."""
+
+    def test_search_view_paginates_to_30_and_skips_telemetry_on_page_2_and_out_of_range(
+        self, client, catalog_setup
+    ):
+        cat = catalog_setup['category']
+        for i in range(33):
+            Product.objects.create(
+                name=f'Bulon Industrial Serie {i:02d}',
+                slug=f'bulon-industrial-serie-{i:02d}',
+                code=f'BUL-PAG-{i:02d}',
+                price=Decimal('100.00') + i,
+                stock=10,
+                is_available=True,
+                category=cat,
+            )
+
+        url = reverse('store:search')
+        resp_p1 = client.get(url, {'q': 'Bulon'})
+        assert resp_p1.status_code == 200
+        assert len(resp_p1.context['products']) == 30
+        assert resp_p1.context['product_count'] == 35
+
+        sq = SearchQuery.objects.get(query_text='bulon')
+        assert sq.search_count == 1
+        ps_count_after_p1 = ProductSearch.objects.count()
+        assert ps_count_after_p1 == 8
+
+        # Página 2: entrega los 5 restantes sin inflar métricas
+        resp_p2 = client.get(url, {'q': 'Bulon', 'page': '2'})
+        assert resp_p2.status_code == 200
+        assert len(resp_p2.context['products']) == 5
+        content_p2 = resp_p2.content.decode('utf-8')
+        assert 'rel="prev"' in content_p2
+        assert content_p2.count('page=1') >= 1
+        assert 'page=2&amp;page=1' not in content_p2
+
+        sq.refresh_from_db()
+        assert sq.search_count == 1
+        assert ProductSearch.objects.count() == ps_count_after_p1
+
+        # Página fuera de rango: no infla métricas
+        resp_p999 = client.get(url, {'q': 'Bulon', 'page': '999'})
+        assert resp_p999.status_code == 200
+        sq.refresh_from_db()
+        assert sq.search_count == 1
+
+    def test_search_view_sort_by_preserves_q_and_avoids_double_count(self, client, catalog_setup):
+        url = reverse('store:search')
+        resp = client.get(url, {'q': 'Bulonería', 'sort_by': 'price_asc'})
+        assert resp.status_code == 200
+
+        prices = [p.price for p in resp.context['products']]
+        assert prices == [Decimal('250.00'), Decimal('450.00')]
+        content = resp.content.decode('utf-8')
+        assert '<input type="hidden" name="q" value="Bulonería">' in content
+        assert SearchQuery.objects.count() == 0
+
+    def test_get_paginated_products_uses_sql_count_and_limit(
+        self, catalog_setup, django_assert_num_queries
+    ):
+        cat = catalog_setup['category']
+        for i in range(3):
+            Product.objects.create(
+                name=f'Bulon SQL {i}',
+                slug=f'bulon-sql-{i}',
+                code=f'BUL-SQL-{i}',
+                price=Decimal('150.00'),
+                stock=5,
+                is_available=True,
+                category=cat,
+            )
+
+        qs = Product.objects.filter(is_available=True).order_by('id')
+        with django_assert_num_queries(2):
+            paged, total = ProductService.get_paginated_products(qs, page=1, per_page=2)
+            items = list(paged)
+
+        assert total == 5
+        assert len(items) == 2
+
+    def test_query_with_page_preserves_multivalue_and_encodes_fractions(self):
+        qd = QueryDict('q=1/4 x 2&tags=inoxidable&tags=oferta&page=3')
+        encoded = query_with_page(qd, 2)
+
+        assert 'page=2' in encoded
+        assert 'page=3' not in encoded
+        assert 'tags=inoxidable' in encoded
+        assert 'tags=oferta' in encoded
+        assert 'q=1%2F4+x+2' in encoded
+
+
+class TestSearchTelemetryRateLimit:
+    """Pruebas de rate-limiting Redis anti-flood (SEC-SQ-001) y privacidad."""
+
+    def test_extract_telemetry_client_ip_uses_rightmost_xff_hop(self, rf):
+        req = rf.get(
+            '/store/search/',
+            HTTP_X_FORWARDED_FOR='1.1.1.1, 203.0.113.50',
+            REMOTE_ADDR='127.0.0.1',
+        )
+        assert SearchService.extract_telemetry_client_ip(req) == '203.0.113.50'
+
+    def test_rate_limit_tier1_blocks_excess_writes_and_protects_product_search(
+        self, client, catalog_setup, settings
+    ):
+        settings.SEARCH_TELEMETRY_MAX_WRITES_PER_MIN = 3
+        url = reverse('store:search')
+
+        for _ in range(5):
+            resp = client.get(url, {'q': 'Bulonería'}, REMOTE_ADDR='203.0.113.10')
+            assert resp.status_code == 200
+
+        sq = SearchQuery.objects.get(query_text='bulonería')
+        assert sq.search_count == 3
+        total_ps = sum(ProductSearch.objects.values_list('search_count', flat=True))
+        assert total_ps == 6  # 3 búsquedas válidas × 2 productos
+
+        # Otra IP distinta sí puede registrar normalmente
+        resp_other = client.get(url, {'q': 'Bulonería'}, REMOTE_ADDR='203.0.113.11')
+        assert resp_other.status_code == 200
+        sq.refresh_from_db()
+        assert sq.search_count == 4
+
+    def test_rate_limit_tier2_blocks_new_terms_but_allows_existing_terms(self, settings, db):
+        settings.SEARCH_TELEMETRY_MAX_NEW_TERMS_PER_10M = 2
+        settings.SEARCH_TELEMETRY_MAX_WRITES_PER_MIN = 20
+
+        assert SearchService.record_search_query('termino nuevo uno', 0, client_ip='203.0.113.20') is True
+        assert SearchService.record_search_query('termino nuevo dos', 0, client_ip='203.0.113.20') is True
+        # El tercer término nuevo de la misma IP se descarta
+        assert SearchService.record_search_query('termino nuevo tres', 0, client_ip='203.0.113.20') is False
+        assert SearchQuery.objects.count() == 2
+
+        # Un término ya existente sigue actualizando mientras no supere Nivel 1
+        assert SearchService.record_search_query('termino nuevo uno', 0, client_ip='203.0.113.20') is True
+        assert SearchQuery.objects.get(query_text='termino nuevo uno').search_count == 2
+
+    def test_global_circuit_breaker_blocks_multi_ip_new_term_flood(self, settings, db):
+        settings.SEARCH_TELEMETRY_GLOBAL_MAX_NEW_TERMS_PER_10M = 3
+        settings.SEARCH_TELEMETRY_MAX_NEW_TERMS_PER_10M = 10
+
+        assert SearchService.record_search_query('termino global 1', 0, client_ip='203.0.113.31') is True
+        assert SearchService.record_search_query('termino global 2', 0, client_ip='203.0.113.32') is True
+        assert SearchService.record_search_query('termino global 3', 0, client_ip='203.0.113.33') is True
+        assert SearchService.record_search_query('termino global 4', 0, client_ip='203.0.113.34') is False
+        assert SearchQuery.objects.count() == 3
+
+    def test_cache_keys_never_store_raw_client_ip(self, db):
+        raw_ip = '203.0.113.99'
+        SearchService.record_search_query('tuerca autofrenante', 0, client_ip=raw_ip)
+        keys = list(getattr(cache, '_cache', {}).keys())
+        assert len(keys) >= 1
+        assert all(raw_ip not in str(k) for k in keys)
+
+    def test_cache_failure_fails_closed_for_writes_and_open_for_store(self, client, db):
+        url = reverse('store:search')
+        with patch('store.services.cache.incr', side_effect=ConnectionError('redis down')):
+            resp = client.get(url, {'q': 'herramienta electrica'}, REMOTE_ADDR='203.0.113.44')
+
+        assert resp.status_code == 200
+        assert SearchQuery.objects.count() == 0
+
+
+class TestSearchQueryMigrationBackfill:
+    """Prueba directa de la función de backfill de migración 0026."""
+
+    def test_backfill_migration_0026_migrates_legacy_unmatched_records(self, db):
+        mig_module = importlib.import_module('store.migrations.0026_backfill_searchquery_daily')
+        legacy_sq = SearchQuery.objects.create(
+            query_text='amoladora legacy',
+            search_count=7,
+            matched_count=0,
+            unmatched_count=0,
+            last_results_count=0,
+        )
+
+        mig_module.backfill_search_queries(apps, None)
+
+        legacy_sq.refresh_from_db()
+        assert legacy_sq.unmatched_count == 7
+        assert legacy_sq.last_results_count == 0
+        daily = SearchQueryDaily.objects.get(search_query=legacy_sq)
+        assert daily.unmatched_count == 7
+        assert daily.matched_count == 0
+
+
+class TestSearchQueryAppSecHardening:
+    """Pruebas adversariales de seguridad (XSS, fórmula Excel, CRLF, XFF, RO y PII)."""
+
+    def test_admin_escapes_xss_payload_in_changelist_and_change_view(self, staff_viewer_client):
+        # Arrange
+        payload = '<script>alert(1)</script>'
+        SearchService.record_search_query(payload, results_count=0)
+        sq = SearchQuery.objects.get(query_text=payload)
+
+        # Act
+        changelist_resp = staff_viewer_client.get(reverse('admin:store_searchquery_changelist'))
+        change_resp = staff_viewer_client.get(reverse('admin:store_searchquery_change', args=[sq.pk]))
+
+        # Assert
+        assert changelist_resp.status_code == 200
+        assert change_resp.status_code == 200
+        assert b'<script>alert(1)</script>' not in changelist_resp.content
+        assert b'<script>alert(1)</script>' not in change_resp.content
+        assert b'&lt;script&gt;alert(1)&lt;/script&gt;' in changelist_resp.content
+        assert b'&lt;script&gt;alert(1)&lt;/script&gt;' in change_resp.content
+
+    def test_admin_export_neutralizes_formula_injection_in_summary_search_filter(self, staff_viewer_client):
+        # Arrange
+        export_url = reverse('admin:store_searchquery_export_excel')
+
+        # Act
+        response = staff_viewer_client.get(export_url, {'q': '=1+1'})
+
+        # Assert
+        assert response.status_code == 200
+        workbook = openpyxl.load_workbook(io.BytesIO(b''.join(response.streaming_content)))
+        summary_ws = workbook['Resumen']
+        filter_cell = None
+        for row in summary_ws.iter_rows(min_row=1, max_col=2):
+            if row[0].value == 'Filtro de texto':
+                filter_cell = row[1]
+                break
+        assert filter_cell is not None
+        assert filter_cell.data_type == 's'
+        assert filter_cell.value == '=1+1'
+
+    def test_admin_export_prevents_header_injection_via_period_param(self, staff_viewer_client):
+        # Arrange
+        export_url = reverse('admin:store_searchquery_export_excel')
+
+        # Act
+        response = staff_viewer_client.get(export_url, {'period': '90\r\nX-Injected: evil'})
+
+        # Assert
+        assert response.status_code == 200
+        assert 'X-Injected' not in response.headers
+        assert 'ranking_busquedas_bulonera_90d_' in response.headers.get('Content-Disposition', '')
+
+    def test_xff_spoofing_first_hop_cannot_bypass_rate_limit(self, catalog_setup, settings):
+        # Arrange
+        settings.SEARCH_TELEMETRY_MAX_WRITES_PER_MIN = 3
+        search_url = reverse('store:search')
+        client = Client()
+        browser_ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0'
+
+        # Act
+        for hop in range(1, 6):
+            response = client.get(
+                search_url,
+                {'q': 'bulon'},
+                HTTP_USER_AGENT=browser_ua,
+                HTTP_X_FORWARDED_FOR=f'{hop}.{hop}.{hop}.{hop}, 203.0.113.77',
+            )
+            assert response.status_code == 200
+
+        # Assert
+        sq = SearchQuery.objects.get(query_text='bulon')
+        assert sq.search_count == 3
+
+    def test_admin_readonly_post_cannot_mutate_search_query(self, staff_viewer_client):
+        # Arrange
+        sq = SearchQuery.objects.create(
+            query_text='tuerca m8',
+            search_count=4,
+            matched_count=4,
+            unmatched_count=0,
+            last_results_count=2,
+        )
+        change_url = reverse('admin:store_searchquery_change', args=[sq.pk])
+
+        # Act
+        staff_viewer_client.post(change_url, {'query_text': 'hacked', 'search_count': 999})
+
+        # Assert
+        sq.refresh_from_db()
+        assert sq.query_text == 'tuerca m8'
+        assert sq.search_count == 4
+
+    def test_logs_never_leak_raw_query_or_client_ip(self, db, caplog):
+        # Arrange
+        import logging
+
+        secret_query = 'termino_confidencial_xyz'
+        secret_ip = '203.0.113.88'
+
+        # Act
+        with caplog.at_level(logging.INFO, logger='store.services'):
+            SearchService.record_search_query(secret_query, 0, client_ip=secret_ip)
+            with patch.object(SearchQuery.objects, 'get_or_create', side_effect=RuntimeError('db down')):
+                SearchService.record_search_query(secret_query, 0, client_ip=secret_ip)
+
+        # Assert
+        assert secret_query not in caplog.text
+        assert secret_ip not in caplog.text
+

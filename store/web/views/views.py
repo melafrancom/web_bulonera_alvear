@@ -320,33 +320,49 @@ def product_detail(request, product_slug):
 
 
 def search(request):
-    """Vista de búsqueda de productos"""
+    """Vista de búsqueda de productos con paginación y telemetría protegida."""
     # Soportar parámetro estándar 'q' además de 'keyword' (retrocompatibilidad)
     keyword = request.GET.get('q', request.GET.get('keyword', ''))
+    sort_by = request.GET.get('sort_by', 'id')
+    raw_page = request.GET.get('page', '1')
+
     products = SearchService.search_products(keyword)
-    product_count = products.count()
-    user_agent = request.META.get('HTTP_USER_AGENT', '')
+    if sort_by == 'price_asc':
+        products = products.order_by('price')
+    elif sort_by == 'price_desc':
+        products = products.order_by('-price')
 
-    # Registrar búsquedas válidas (con y sin resultados) descartando bots en el servicio
-    if keyword and len(keyword.strip()) >= 3:
-        SearchService.record_search_query(
-            keyword,
-            results_count=product_count,
-            user_agent=user_agent,
-        )
-        if product_count > 0 and not SearchService.is_bot_user_agent(user_agent):
-            user = request.user if request.user.is_authenticated else None
-            session_key = request.session.session_key
-            if not session_key:
-                request.session.create()
-                session_key = request.session.session_key
+    paged_products, product_count = ProductService.get_paginated_products(products, page=raw_page)
+    is_first_page = str(raw_page).strip() in ('', '1') and paged_products.number == 1
+    is_sorting = bool(request.GET.get('sort_by'))
 
-            SearchService.register_search_results(products, keyword, user, session_key)
+    # Registrar telemetría solo en página 1 inicial (evita inflar métricas al paginar u ordenar)
+    if is_first_page and not is_sorting and keyword and len(keyword.strip()) >= 3:
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        if not SearchService.is_bot_user_agent(user_agent):
+            client_ip = SearchService.extract_telemetry_client_ip(request)
+            if not SearchService.is_write_rate_limited(client_ip):
+                SearchService.record_search_query(
+                    keyword,
+                    results_count=product_count,
+                    user_agent=user_agent,
+                    client_ip=client_ip,
+                    _skip_write_rate_limit=True,
+                )
+                if product_count > 0:
+                    user = request.user if request.user.is_authenticated else None
+                    session_key = request.session.session_key
+                    if not session_key:
+                        request.session.create()
+                        session_key = request.session.session_key
+
+                    SearchService.register_search_results(products, keyword, user, session_key)
 
     context = {
-        'products': products,
+        'products': paged_products,
         'product_count': product_count,
         'keyword': keyword,
+        'sort_by': sort_by,
     }
 
     return render(request, 'store/store.html', context)

@@ -42,10 +42,10 @@
 
     <!-- Pagination rel tags -->
     {% if products.has_previous %}
-    <link rel="prev" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ products.previous_page_number }}">
+    <link rel="prev" href="?{% query_with_page request.GET products.previous_page_number %}">
     {% endif %}
     {% if products.has_next %}
-    <link rel="next" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ products.next_page_number }}">
+    <link rel="next" href="?{% query_with_page request.GET products.next_page_number %}">
     {% endif %}
 
     <!-- CollectionPage Schema (Sprint 3: Tarea 3.5) -->
@@ -460,6 +460,7 @@
                     </div>
                     
                     <form method="GET" class="flex items-center gap-2">
+                        {% if keyword %}<input type="hidden" name="q" value="{{ keyword }}">{% endif %}
                         {% if min_price %}<input type="hidden" name="min_price" value="{{ min_price }}">{% endif %}
                         {% if max_price %}<input type="hidden" name="max_price" value="{{ max_price }}">{% endif %}
                         {% if category_slug %}<input type="hidden" name="category" value="{{ category_slug }}">{% endif %}

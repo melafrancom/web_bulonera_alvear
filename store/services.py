@@ -3,6 +3,7 @@ Store App Services
 
 Contiene la lógica de negocio pura para gestión de productos, búsqueda, reviews y FAQs.
 """
+import hashlib
 import logging
 import os
 import io
@@ -191,10 +192,10 @@ class ProductService:
     
     @staticmethod
     def get_paginated_products(products: QuerySet, page: int = 1, per_page: int = 30) -> Tuple:
-        """Pagina productos"""
+        """Pagina productos usando paginator.count para evitar materializar QuerySets completos."""
         paginator = Paginator(products, per_page)
         paged_products = paginator.get_page(page)
-        return paged_products, len(products)
+        return paged_products, paginator.count
     
     @staticmethod
     def get_available_brands() -> List[str]:
@@ -2107,6 +2108,11 @@ class SearchService:
 
     DEFAULT_EXPORT_PERIOD_DAYS = 90
     ALLOWED_PERIOD_DAYS = {'7': 7, '30': 30, '90': 90, 'all': None}
+    SEARCH_TELEMETRY_MAX_WRITES_PER_MIN = 30
+    SEARCH_TELEMETRY_WRITES_WINDOW_SEC = 60
+    SEARCH_TELEMETRY_MAX_NEW_TERMS_PER_10M = 15
+    SEARCH_TELEMETRY_NEW_TERMS_WINDOW_SEC = 600
+    SEARCH_TELEMETRY_GLOBAL_MAX_NEW_TERMS_PER_10M = 120
 
     # REGLA: Heurística de reducción de riesgo PII:
     # Detecta patrones comunes de datos personales (emails, teléfonos y documentos DNI/CUIT).
@@ -2221,42 +2227,98 @@ class SearchService:
         for product in products[:limit]:
             SearchService.register_product_search(product, user, session_key)
 
+    @staticmethod
+    def extract_telemetry_client_ip(request) -> str:
+        """
+        Extrae la IP del cliente para rate limiting de telemetría mitigando spoofing.
+
+        POR QUÉ: OpenLiteSpeed es el único proxy reverso delante de Django y anexa la IP real
+        al final de X-Forwarded-For; leer el último salto evita que un atacante falsifique
+        el primer valor de la cabecera para evadir límites por IP.
+        """
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
+        if x_forwarded_for:
+            hops = [part.strip() for part in x_forwarded_for.split(',') if part.strip()]
+            if hops:
+                return hops[-1]
+        return (request.META.get('REMOTE_ADDR') or '').strip()
+
+    @staticmethod
+    def _hash_client_ip(client_ip: str) -> str:
+        """Hashea la IP con SECRET_KEY para claves de caché sin almacenar IP en claro."""
+        digest = hashlib.sha256(f"sq_rl:{settings.SECRET_KEY}:{client_ip}".encode("utf-8")).hexdigest()
+        return digest[:16]
+
+    @classmethod
+    def _is_rate_limited(cls, cache_key: str, limit: int, timeout: int, scope: str) -> bool:
+        """Evalúa umbral en Redis con degradación fail-closed para escrituras de telemetría."""
+        try:
+            cache.add(cache_key, 0, timeout=timeout)
+            count = cache.incr(cache_key)
+        except Exception:
+            logger.warning("Rate limit telemetría omitido por fallo de caché (scope=%s)", scope)
+            return True
+        if count > limit:
+            logger.warning("Rate limit de telemetría superado (scope=%s, count=%s, limit=%s)", scope, count, limit)
+            return True
+        return False
+
+    @classmethod
+    def is_write_rate_limited(cls, client_ip: Optional[str]) -> bool:
+        """Verifica el límite Nivel 1 de escrituras por minuto para la IP dada."""
+        if not client_ip:
+            return False
+        ip_hash = cls._hash_client_ip(client_ip)
+        limit = getattr(settings, 'SEARCH_TELEMETRY_MAX_WRITES_PER_MIN', cls.SEARCH_TELEMETRY_MAX_WRITES_PER_MIN)
+        return cls._is_rate_limited(
+            f"store:sq_rl:writes:{ip_hash}",
+            limit,
+            cls.SEARCH_TELEMETRY_WRITES_WINDOW_SEC,
+            "writes",
+        )
+
     @classmethod
     def record_search_query(
         cls,
         keyword: str,
         results_count: int,
         user_agent: Optional[str] = None,
-    ) -> None:
+        client_ip: Optional[str] = None,
+        _skip_write_rate_limit: bool = False,
+    ) -> bool:
         """
         Registra o actualiza métricas agregadas de una búsqueda (con o sin resultados).
 
         QUÉ:
-        Normaliza el término buscado, descarta bots y PII, e incrementa contadores atómicos
-        en SearchQuery (totales históricos + última cobertura) y SearchQueryDaily (bucket diario).
+        Normaliza el término buscado, descarta bots, PII y tráfico que supere el rate-limit
+        en Redis (por IP hasheada y circuit-breaker global), e incrementa contadores atómicos
+        en SearchQuery y SearchQueryDaily.
 
         POR QUÉ:
-        Unifica en una única fuente de verdad tanto la demanda oculta (0 resultados) como
-        las consultas con resultados para rankear demanda por ventana temporal (ej. 90 días)
-        sin almacenar IPs, usuarios ni sesiones.
+        Unifica demanda oculta y consultas con cobertura para rankear por ventana temporal (90d)
+        sin almacenar IPs, usuarios ni sesiones, acotando el crecimiento ante flood/scrapers.
 
         REGLAS Y EFECTOS SECUNDARIOS:
         - Evalúa contains_sensitive_pii() sobre la entrada completa antes de truncar a 100 chars.
-        - Nunca interpola el término crudo ni el mensaje de excepción en logs.
-        - Actualiza SearchQuery y SearchQueryDaily con F() + 1 y manejo de IntegrityError concurrente.
+        - Nunca interpola el término crudo, IP ni mensaje de excepción en logs.
+        - Degradación fail-closed en Redis: si la caché falla, omite la escritura en BD.
         """
         if not keyword or cls.is_bot_user_agent(user_agent):
-            return
+            return False
 
         # 1. Evaluar patrones PII sobre la entrada completa antes de truncar
         raw_trimmed = keyword.strip()
         if cls.contains_sensitive_pii(raw_trimmed):
-            return
+            return False
 
         # 2. Normalizar espacios internos y acotar a 100 caracteres (mínimo 3)
         clean_keyword = re.sub(r'\s+', ' ', raw_trimmed)[:100].lower()
         if len(clean_keyword) < 3:
-            return
+            return False
+
+        # 3. Rate limit Nivel 1 por IP hasheada (escrituras totales/min)
+        if client_ip and not _skip_write_rate_limit and cls.is_write_rate_limited(client_ip):
+            return False
 
         safe_results = max(0, int(results_count))
         is_matched = safe_results > 0
@@ -2266,22 +2328,10 @@ class SearchService:
         today = timezone.localdate()
 
         try:
-            # 3. Upsert atómico en SearchQuery
-            try:
-                query_obj, created = SearchQuery.objects.get_or_create(
-                    query_text=clean_keyword,
-                    defaults={
-                        'search_count': 1,
-                        'matched_count': matched_delta,
-                        'unmatched_count': unmatched_delta,
-                        'last_results_count': safe_results,
-                    },
-                )
-            except IntegrityError:
-                query_obj = SearchQuery.objects.get(query_text=clean_keyword)
-                created = False
-
-            if not created:
+            # 4. Lookup directo sin SELECT redundante: si ya existe, actualizar directamente
+            existing_obj = SearchQuery.objects.filter(query_text=clean_keyword).only('id').first()
+            if existing_obj is not None:
+                query_obj = existing_obj
                 SearchQuery.objects.filter(pk=query_obj.pk).update(
                     search_count=F('search_count') + 1,
                     matched_count=F('matched_count') + matched_delta,
@@ -2289,8 +2339,60 @@ class SearchService:
                     last_results_count=safe_results,
                     last_searched_at=now,
                 )
+            else:
+                # Nivel 2 (términos nuevos por IP) + circuit-breaker global ante rotación multi-IP
+                if client_ip:
+                    ip_hash = cls._hash_client_ip(client_ip)
+                    new_ip_limit = getattr(
+                        settings,
+                        'SEARCH_TELEMETRY_MAX_NEW_TERMS_PER_10M',
+                        cls.SEARCH_TELEMETRY_MAX_NEW_TERMS_PER_10M,
+                    )
+                    if cls._is_rate_limited(
+                        f"store:sq_rl:new_terms:{ip_hash}",
+                        new_ip_limit,
+                        cls.SEARCH_TELEMETRY_NEW_TERMS_WINDOW_SEC,
+                        "new_terms",
+                    ):
+                        return False
 
-            # 4. Upsert atómico en SearchQueryDaily para ranking por ventana temporal
+                    global_limit = getattr(
+                        settings,
+                        'SEARCH_TELEMETRY_GLOBAL_MAX_NEW_TERMS_PER_10M',
+                        cls.SEARCH_TELEMETRY_GLOBAL_MAX_NEW_TERMS_PER_10M,
+                    )
+                    if cls._is_rate_limited(
+                        "store:sq_rl:global_new_terms",
+                        global_limit,
+                        cls.SEARCH_TELEMETRY_NEW_TERMS_WINDOW_SEC,
+                        "global_new_terms",
+                    ):
+                        return False
+
+                try:
+                    query_obj, created = SearchQuery.objects.get_or_create(
+                        query_text=clean_keyword,
+                        defaults={
+                            'search_count': 1,
+                            'matched_count': matched_delta,
+                            'unmatched_count': unmatched_delta,
+                            'last_results_count': safe_results,
+                        },
+                    )
+                except IntegrityError:
+                    query_obj = SearchQuery.objects.get(query_text=clean_keyword)
+                    created = False
+
+                if not created:
+                    SearchQuery.objects.filter(pk=query_obj.pk).update(
+                        search_count=F('search_count') + 1,
+                        matched_count=F('matched_count') + matched_delta,
+                        unmatched_count=F('unmatched_count') + unmatched_delta,
+                        last_results_count=safe_results,
+                        last_searched_at=now,
+                    )
+
+            # 5. Upsert atómico en SearchQueryDaily para ranking por ventana temporal
             try:
                 daily_obj, daily_created = SearchQueryDaily.objects.get_or_create(
                     search_query=query_obj,
@@ -2317,13 +2419,25 @@ class SearchService:
                 len(clean_keyword),
                 is_matched,
             )
+            return True
         except Exception as e:
             logger.error("Error al registrar consulta de búsqueda (tipo de error: %s)", type(e).__name__)
+            return False
 
     @classmethod
-    def record_unmatched_search(cls, keyword: str, user_agent: Optional[str] = None) -> None:
+    def record_unmatched_search(
+        cls,
+        keyword: str,
+        user_agent: Optional[str] = None,
+        client_ip: Optional[str] = None,
+    ) -> bool:
         """Wrapper retrocompatible para registrar búsquedas sin resultados."""
-        cls.record_search_query(keyword, results_count=0, user_agent=user_agent)
+        return cls.record_search_query(
+            keyword,
+            results_count=0,
+            user_agent=user_agent,
+            client_ip=client_ip,
+        )
 
     @classmethod
     def resolve_period_days(cls, raw_period: Optional[str]) -> Optional[int]:

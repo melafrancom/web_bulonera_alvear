@@ -1,7 +1,30 @@
 from django import template
+from django.http import QueryDict
 import os
 
 register = template.Library()
+
+
+@register.simple_tag
+def query_with_page(query_params, page_number):
+    """
+    Construye la query string preservando parámetros multi-valor (ej. ?tags=a&tags=b)
+    y reemplazando 'page' sin duplicarlo ni perder codificación URL.
+    """
+    if isinstance(query_params, QueryDict):
+        params = query_params.copy()
+    elif isinstance(query_params, dict):
+        params = QueryDict(mutable=True)
+        for key, value in query_params.items():
+            if isinstance(value, (list, tuple)):
+                params.setlist(key, [str(v) for v in value])
+            elif value is not None:
+                params[key] = str(value)
+    else:
+        params = QueryDict(mutable=True)
+
+    params['page'] = str(page_number)
+    return params.urlencode()
 
 @register.filter
 def basename(value):

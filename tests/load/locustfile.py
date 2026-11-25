@@ -6,11 +6,13 @@ REGLA: Este script se ejecuta dentro del contenedor oficial 'locustio/locust:2.3
 POR QUÉ: Evita dependencias en el host y permite monitorear el consumo de CPU del generador vía Docker.
 """
 
+import itertools
 import json
 import logging
 import os
 import random
 import re
+import threading
 from locust import HttpUser, task, between
 
 logger = logging.getLogger(__name__)
@@ -121,10 +123,27 @@ class CatalogUser(HttpUser):
 class SearchUser(HttpUser):
     """
     Simula usuarios realizando búsquedas con palabras clave.
-    POR QUÉ: SearchService.register_search_results inserta hasta 8 registros
-    en ProductSearch por búsqueda. Se aísla para medir el impacto de estas escrituras en MariaDB.
+    POR QUÉ: SearchService.register_search_results y record_search_query persisten
+    métricas en MariaDB; se asigna User-Agent de navegador e IP RFC 5737 por VU para
+    ejercitar escrituras reales sin ser filtrado como bot ni colisionar en Redis.
     """
     wait_time = between(4, 7)
+    _vu_counter = itertools.count(1)
+    _vu_lock = threading.Lock()
+
+    def on_start(self):
+        with self._vu_lock:
+            vu_id = next(self._vu_counter)
+        third_octet = 100 if (vu_id // 250) % 2 == 0 else 113
+        prefix = "198.51" if third_octet == 100 else "203.0"
+        fourth_octet = ((vu_id - 1) % 250) + 1
+        self.browser_headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+            ),
+            "X-Forwarded-For": f"{prefix}.{third_octet}.{fourth_octet}",
+        }
 
     @task(100)
     def search_keyword(self):
@@ -132,8 +151,9 @@ class SearchUser(HttpUser):
         terms = TEST_DATA.get("search_terms", ["tornillo", "bulon"])
         term = random.choice(terms)
         self.client.get(
-            f"/store/search/?keyword={term}",
-            name="/store/search/?keyword=[term]"
+            f"/store/search/?q={term}",
+            headers=self.browser_headers,
+            name="/store/search/?q=[term]"
         )
 
 

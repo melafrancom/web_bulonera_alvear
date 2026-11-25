@@ -2,7 +2,7 @@
 type: support
 domain: qa
 status: active
-updated: 2026-11-22
+updated: 2026-11-25
 summary: "Suite global E2E (test_purchase_flow, test_store_flow, test_blog_flow) y pruebas de carga Locust."
 tags: [obsidian/support, domain/qa]
 ---
@@ -22,6 +22,12 @@ tests/
 ├── pytest.ini              ← Parámetros globales de ejecución (en la raíz)
 │
 ├── test_api_phase2.py      ← Tests globales de la API REST (Fase 2)
+│
+├── load/                   ← Pruebas de carga con Locust en staging aislado
+│   ├── locustfile.py       ← CatalogUser, SearchUser (UA navegador + IP RFC 5737) y CartUser
+│   ├── check_isolation.py  ← Gate 0 de aislamiento (credenciales vacías y DB local)
+│   ├── monitor.py          ← Telemetría MariaDB / Redis
+│   └── record_stats.py     ← Métricas de CPU y RAM de contenedores
 │
 └── e2e/                    ← Pruebas de integración E2E por flujos
     ├── test_store_flow.py  ← Flujo de visualización de catálogo y búsqueda
