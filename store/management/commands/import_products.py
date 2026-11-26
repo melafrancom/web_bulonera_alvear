@@ -25,11 +25,17 @@ class Command(BaseCommand):
             action='store_true',
             help='Solo actualiza precios de productos existentes'
         )
+        parser.add_argument(
+            '--preserve-stock',
+            action='store_true',
+            help='Conserva el stock actual en productos ya existentes ignorando la columna stock'
+        )
     
     def handle(self, *args, **options):
         filepath = options['filepath']
         dry_run = options['dry_run']
         update_prices = options['update_prices']
+        preserve_stock = options['preserve_stock']
         
         # Validar que el archivo existe
         if not os.path.exists(filepath):
@@ -53,7 +59,8 @@ class Command(BaseCommand):
                 result = ProductService.import_from_file(
                     filepath,
                     dry_run=dry_run,
-                    update_prices=False
+                    update_prices=False,
+                    preserve_existing_stock=preserve_stock,
                 )
             
             # Mostrar resultados

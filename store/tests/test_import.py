@@ -369,6 +369,149 @@ class TestProductImport:
         product = Product.objects.get(code='TAGPROD3')
         assert product.tags.count() == 0
 
+    def test_import_existing_product_without_stock_column_preserves_stock(self):
+        """Test: Planilla sin columna stock actualiza datos y conserva stock existente."""
+        category = Category.objects.create(category_name='Bulonería', slug='buloneria-no-stock')
+        product = Product.objects.create(
+            code='STK001',
+            name='Bulón Original',
+            price=100.00,
+            stock=25,
+            category=category,
+        )
+
+        excel_file = self.create_test_excel([
+            {'code': 'STK001', 'name': 'Bulón Curado', 'price': 180.00}
+        ])
+        result = ProductService.import_from_file(excel_file)
+
+        assert result.updated == 1
+        assert result.errors == 0
+        product.refresh_from_db()
+        assert product.name == 'Bulón Curado'
+        assert product.price == 180.00
+        assert product.stock == 25
+
+    def test_import_existing_product_with_blank_or_whitespace_stock_preserves_stock(self):
+        """Test: Celdas stock vacías o con espacios conservan stock; valores válidos sí actualizan."""
+        category = Category.objects.create(category_name='Tuercas', slug='tuercas-blank-stock')
+        p1 = Product.objects.create(code='STK002', name='Tuerca 1', price=50.0, stock=25, category=category)
+        p2 = Product.objects.create(code='STK003', name='Tuerca 2', price=60.0, stock=15, category=category)
+        p3 = Product.objects.create(code='STK004', name='Tuerca 3', price=70.0, stock=10, category=category)
+
+        excel_file = self.create_test_excel([
+            {'code': 'STK002', 'price': 55.0, 'stock': None},
+            {'code': 'STK003', 'price': 65.0, 'stock': '   '},
+            {'code': 'STK004', 'price': 75.0, 'stock': 40},
+        ])
+        result = ProductService.import_from_file(excel_file)
+
+        assert result.updated == 3
+        assert result.errors == 0
+        p1.refresh_from_db()
+        p2.refresh_from_db()
+        p3.refresh_from_db()
+        assert p1.stock == 25
+        assert p2.stock == 15
+        assert p3.stock == 40
+
+    def test_import_new_product_without_stock_defaults_to_zero(self):
+        """Test: Producto nuevo sin columna stock o con celda vacía se crea con stock=0."""
+        excel_no_col = self.create_test_excel([
+            {'code': 'NEWSTK1', 'name': 'Producto Nuevo 1', 'price': 120.0, 'category': 'Cat Nueva'}
+        ])
+        res1 = ProductService.import_from_file(excel_no_col)
+        assert res1.created == 1
+        assert Product.objects.get(code='NEWSTK1').stock == 0
+
+        excel_empty = self.create_test_excel([
+            {'code': 'NEWSTK2', 'name': 'Producto Nuevo 2', 'price': 130.0, 'category': 'Cat Nueva', 'stock': ''}
+        ])
+        res2 = ProductService.import_from_file(excel_empty)
+        assert res2.created == 1
+        assert Product.objects.get(code='NEWSTK2').stock == 0
+
+    def test_sanitize_stock_accepts_zero_decimals_and_rejects_thousands_or_invalid(self):
+        """Test: _sanitize_stock acepta enteros/.0/,00 y rechaza miles ambiguos o basura con rollback."""
+        assert ProductService._sanitize_stock('0') == 0
+        assert ProductService._sanitize_stock('50') == 50
+        assert ProductService._sanitize_stock('50.0') == 50
+        assert ProductService._sanitize_stock('50.00') == 50
+        assert ProductService._sanitize_stock('50,0') == 50
+        assert ProductService._sanitize_stock('50,00') == 50
+        assert ProductService._sanitize_stock('  20  ') == 20
+        assert ProductService._sanitize_stock(15) == 15
+
+        for invalid in ('1.000', '1,000', '10,5', '-3', 'S/D', '-', True):
+            with pytest.raises(ValueError):
+                ProductService._sanitize_stock(invalid)
+
+        category = Category.objects.create(category_name='Arandelas', slug='arandelas-invalid-stk')
+        product = Product.objects.create(
+            code='BADSTK1',
+            name='Bulón Intacto',
+            price=100.0,
+            stock=25,
+            category=category,
+        )
+        excel_invalid = self.create_test_excel([
+            {'code': 'BADSTK1', 'price': 250.0, 'stock': '1.000'}
+        ])
+        result = ProductService.import_from_file(excel_invalid)
+
+        assert result.errors == 1
+        assert result.updated == 0
+        product.refresh_from_db()
+        assert product.stock == 25
+        assert product.price == 100.0
+
+    def test_import_preserve_existing_stock_flag_ignores_explicit_zero_on_existing(self):
+        """Test: preserve_existing_stock=True ignora stock=0 en existentes pero respeta altas nuevas."""
+        category = Category.objects.create(category_name='Tornillos', slug='tornillos-preserve')
+        existing = Product.objects.create(
+            code='PRES01',
+            name='Existente',
+            price=100.0,
+            stock=30,
+            category=category,
+        )
+
+        excel_file = self.create_test_excel([
+            {'code': 'PRES01', 'name': 'Existente Editado', 'price': 220.0, 'stock': 0, 'category': 'Tornillos'},
+            {'code': 'PRES02', 'name': 'Nuevo Producto', 'price': 300.0, 'stock': 0, 'category': 'Tornillos'},
+        ])
+        result = ProductService.import_from_file(excel_file, preserve_existing_stock=True)
+
+        assert result.updated == 1
+        assert result.created == 1
+        assert result.errors == 0
+        existing.refresh_from_db()
+        assert existing.name == 'Existente Editado'
+        assert existing.price == 220.0
+        assert existing.stock == 30
+        new_prod = Product.objects.get(code='PRES02')
+        assert new_prod.stock == 0
+
+    def test_import_from_file_with_update_prices_true_preserves_stock(self):
+        """Test: import_from_file(..., update_prices=True) delega a actualización de precios sin tocar stock."""
+        category = Category.objects.create(category_name='Precios', slug='precios-delegate')
+        product = Product.objects.create(
+            code='UPDP01',
+            name='Producto Precio',
+            price=100.0,
+            stock=18,
+            category=category,
+        )
+
+        excel_file = self.create_test_excel([{'code': 'UPDP01', 'price': 175.50}])
+        result = ProductService.import_from_file(excel_file, update_prices=True)
+
+        assert result.updated == 1
+        assert result.errors == 0
+        product.refresh_from_db()
+        assert product.price == 175.50
+        assert product.stock == 18
+
 
 @pytest.mark.django_db
 class TestERPClient:
@@ -962,6 +1105,61 @@ class TestAdminBulkChunkedUploadViews:
             assert resp.status_code == 200
             content = resp.content.decode('utf-8')
             assert "formData.append('file', file" in content
+
+    def test_admin_bulk_upload_propagates_preserve_existing_stock(self, client, admin_user):
+        """Test: Admin import_products y bulk_upload propagan preserve_existing_stock sin pisar stock"""
+        import json
+        from django.urls import reverse
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        client.force_login(admin_user)
+
+        # Verificar que el checkbox existe en la UI y está desmarcado por defecto
+        import_resp = client.get(reverse('admin:import_products'))
+        assert import_resp.status_code == 200
+        html = import_resp.content.decode('utf-8')
+        assert 'id="id_preserve_existing_stock"' in html
+        assert 'id="id_preserve_existing_stock" value="1" checked' not in html
+
+        cat = Category.objects.create(category_name='Bulonería Bulk', slug='buloneria-bulk-pres')
+        Product.objects.create(
+            code='BULK_PRES_01',
+            name='Producto Bulk',
+            price=100.0,
+            stock=45,
+            category=cat,
+        )
+
+        df = pd.DataFrame([{'code': 'BULK_PRES_01', 'price': '250.00', 'stock': '0'}])
+        buf = BytesIO()
+        df.to_excel(buf, index=False)
+        buf.seek(0)
+        uploaded_file = SimpleUploadedFile(
+            'preserve_bulk.xlsx',
+            buf.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+
+        resp_start = client.post(
+            reverse('admin:store_product_bulk_upload_start'),
+            {'file': uploaded_file, 'mode': 'import', 'preserve_existing_stock': '1'},
+        )
+        assert resp_start.status_code == 200
+        upload_id = resp_start.json()['upload_id']
+
+        resp_chunk = client.post(
+            reverse('admin:store_product_bulk_upload_chunk'),
+            data=json.dumps({'upload_id': upload_id, 'chunk_index': 0}),
+            content_type='application/json',
+        )
+        assert resp_chunk.status_code == 200
+        data_chunk = resp_chunk.json()
+        assert data_chunk['updated'] == 1
+        assert data_chunk['errors'] == 0
+
+        prod = Product.objects.get(code='BULK_PRES_01')
+        assert prod.price == 250.0
+        assert prod.stock == 45
 
 
 @pytest.mark.django_db

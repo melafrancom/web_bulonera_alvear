@@ -1194,7 +1194,12 @@ class ProductService:
         return tmp_file
     
     @staticmethod
-    def import_from_file(file_or_path, dry_run: bool = False, update_prices: bool = False) -> ImportResult:
+    def import_from_file(
+        file_or_path,
+        dry_run: bool = False,
+        update_prices: bool = False,
+        preserve_existing_stock: bool = False,
+    ) -> ImportResult:
         """
         Importa/actualiza productos desde Excel o CSV.
         Migrado desde ProductAdmin.process_import().
@@ -1204,11 +1209,16 @@ class ProductService:
             file_or_path: Archivo o ruta al archivo Excel/CSV
             dry_run: Si es True, simula la importación sin guardar
             update_prices: Si es True, solo actualiza precios
+            preserve_existing_stock: Si es True, ignora la columna stock en productos existentes
         
         Returns:
             ImportResult con estadísticas de la importación
         """
         try:
+            # POR QUÉ: Evita que llamadas programáticas con update_prices=True ejecuten _process_row completo.
+            if update_prices and not dry_run:
+                return ProductService.update_prices_from_file(file_or_path)
+
             data = ProductService._parse_file(file_or_path)
             result = ImportResult()
             processed_subcategories = set()
@@ -1225,7 +1235,8 @@ class ProductService:
                     else:
                         with transaction.atomic():
                             created = ProductService._process_row(
-                                item, dry_run, update_prices, result, processed_subcategories
+                                item, dry_run, update_prices, result, processed_subcategories,
+                                preserve_existing_stock=preserve_existing_stock,
                             )
                             
                             if created:
@@ -1315,7 +1326,13 @@ class ProductService:
     # ============================================================
 
     @classmethod
-    def start_bulk_upload_session(cls, file_or_path, mode: str, user_id: int) -> dict:
+    def start_bulk_upload_session(
+        cls,
+        file_or_path,
+        mode: str,
+        user_id: int,
+        preserve_existing_stock: bool = False,
+    ) -> dict:
         """
         Inicia una sesión de carga masiva fraccionada en lotes HTTP.
 
@@ -1357,6 +1374,7 @@ class ProductService:
             'upload_id': upload_id,
             'mode': mode,
             'user_id': user_id,
+            'preserve_existing_stock': bool(preserve_existing_stock),
             'total_rows': len(data),
             'total_chunks': total_chunks,
             'chunk_size': chunk_size,
@@ -1375,7 +1393,8 @@ class ProductService:
         cache.set(meta_key, meta, timeout=cls.BULK_UPLOAD_CACHE_TIMEOUT)
 
         logger.info(
-            f"Iniciada sesión de carga masiva {upload_id} (modo={mode}, filas={len(data)}, lotes={total_chunks}, usuario={user_id})"
+            f"Iniciada sesión de carga masiva {upload_id} (modo={mode}, filas={len(data)}, "
+            f"lotes={total_chunks}, usuario={user_id}, preserve_existing_stock={bool(preserve_existing_stock)})"
         )
 
         return {
@@ -1460,7 +1479,11 @@ class ProductService:
         if meta['mode'] == 'prices':
             chunk_result = cls._process_price_chunk(rows, chunk_offset)
         else:
-            chunk_result = cls._process_import_chunk(rows, chunk_offset)
+            chunk_result = cls._process_import_chunk(
+                rows,
+                chunk_offset,
+                preserve_existing_stock=bool(meta.get('preserve_existing_stock', False)),
+            )
 
         # Actualizar acumuladores en meta
         meta['processed_rows'] += len(rows)
@@ -1592,7 +1615,12 @@ class ProductService:
         return result
 
     @classmethod
-    def _process_import_chunk(cls, rows: list, chunk_offset: int) -> dict:
+    def _process_import_chunk(
+        cls,
+        rows: list,
+        chunk_offset: int,
+        preserve_existing_stock: bool = False,
+    ) -> dict:
         """
         Procesa un lote de importación completa de productos con aislamiento transaccional por fila.
         """
@@ -1605,7 +1633,8 @@ class ProductService:
                 with transaction.atomic():
                     created = cls._process_row(
                         item, dry_run=False, update_prices=False,
-                        result=result, processed_subcategories=processed_subcategories
+                        result=result, processed_subcategories=processed_subcategories,
+                        preserve_existing_stock=preserve_existing_stock,
                     )
                     if created:
                         result.created += 1
@@ -1699,6 +1728,41 @@ class ProductService:
             return result
         except ValueError:
             raise ValueError(f"No se pudo parsear el precio: '{price_value}' → '{price_str}'")
+
+    @staticmethod
+    def _sanitize_stock(stock_value) -> int:
+        """
+        Valida y convierte un valor de stock a entero no negativo.
+
+        # REGLA: Acepta enteros ('0', '50') y decimales exactos en cero exportados por Excel
+        # ('50.0', '50.00', '50,0', '50,00'). Rechaza explícitamente separadores de miles ('1.000'),
+        # fracciones ('10,5'), negativos o texto para impedir conversiones silenciosas a 0 o 1.
+        """
+        if isinstance(stock_value, bool):
+            raise ValueError(f"Valor booleano no permitido para stock: '{stock_value}'")
+        if stock_value is None or (isinstance(stock_value, float) and pd.isna(stock_value)):
+            raise ValueError("Stock vacío o nulo")
+
+        if isinstance(stock_value, int):
+            if stock_value < 0:
+                raise ValueError(f"Stock negativo no permitido: {stock_value}")
+            return stock_value
+
+        if isinstance(stock_value, float):
+            if stock_value < 0 or not stock_value.is_integer():
+                raise ValueError(f"El stock debe ser un entero no negativo: '{stock_value}'")
+            return int(stock_value)
+
+        raw_str = str(stock_value).strip()
+        # CUIDADO: Usar {1,2} y NO 0+ para rechazar '1.000' (3 dígitos tras punto = miles ambiguo).
+        if not re.fullmatch(r'\d+(?:[.,]0{1,2})?', raw_str):
+            raise ValueError(
+                f"Formato de stock inválido o ambiguo: '{stock_value}' "
+                f"(use un número entero sin separador de miles)"
+            )
+
+        int_part = re.split(r'[.,]', raw_str, maxsplit=1)[0]
+        return int(int_part)
     
     @staticmethod
     def _parse_file(file_or_path) -> list:
@@ -1789,8 +1853,14 @@ class ProductService:
         return not product_exists
     
     @staticmethod
-    def _process_row(item: dict, dry_run: bool, update_prices: bool, 
-                    result: ImportResult, processed_subcategories: set) -> bool:
+    def _process_row(
+        item: dict,
+        dry_run: bool,
+        update_prices: bool,
+        result: ImportResult,
+        processed_subcategories: set,
+        preserve_existing_stock: bool = False,
+    ) -> bool:
         """
         Procesa una fila del archivo de importación.
         Migrado desde ProductAdmin.process_import().
@@ -1850,13 +1920,25 @@ class ProductService:
             product.description = str(item['description'])
         
         # Stock
-        if 'stock' in item and item['stock'] and not pd.isna(item['stock']):
-            try:
-                product.stock = int(float(item['stock']))
-            except (ValueError, TypeError):
+        # REGLA: Celdas vacías o columna ausente conservan el stock actual en productos existentes
+        # (solo inicializan en 0 en altas nuevas). Si preserve_existing_stock=True, se ignora la
+        # columna stock en productos existentes para no pisar stock web con ceros antiguos/ERP.
+        raw_stock = item.get('stock')
+        has_stock_value = (
+            raw_stock is not None
+            and not (isinstance(raw_stock, float) and pd.isna(raw_stock))
+            and str(raw_stock).strip() != ''
+        )
+        if not has_stock_value:
+            if created:
                 product.stock = 0
+        elif not created and preserve_existing_stock:
+            pass
         else:
-            product.stock = 0
+            try:
+                product.stock = ProductService._sanitize_stock(raw_stock)
+            except ValueError as e:
+                raise ValueError(f"Stock inválido para código {code}: {str(e)}")
         
         # Categoría
         if 'category' in item and item['category'] and not pd.isna(item['category']):

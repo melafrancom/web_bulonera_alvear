@@ -414,7 +414,7 @@
                 <i data-lucide="refresh-cw" style="width: 16px; height: 16px; color: #64748b; flex-shrink: 0; margin-top: 2px;"></i>
                 <div>
                     <span class="label">{% trans 'Comportamiento:' %}</span>
-                    <span class="value">Si el código existe, se actualiza. Si no existe, se crea un nuevo producto en el catálogo.</span>
+                    <span class="value">Si el código existe, se actualiza (las celdas <code>stock</code> vacías conservan el stock actual). Si no existe, se crea un nuevo producto (con <code>stock = 0</code> si se omite).</span>
                 </div>
             </li>
         </ul>
@@ -481,6 +481,18 @@
             <div class="form-group">
                 {{ form.as_p }}
             </div>
+
+            <div class="form-group" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px;">
+                <label for="id_preserve_existing_stock" style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 0; cursor: pointer;">
+                    <input type="checkbox" name="preserve_existing_stock" id="id_preserve_existing_stock" value="1" style="margin-top: 3px; width: 16px; height: 16px; cursor: pointer;">
+                    <span>
+                        <strong style="display: block; color: #1e293b; font-size: 14px;">{% trans 'Conservar el stock actual en productos ya existentes' %}</strong>
+                        <span style="display: block; color: #64748b; font-size: 13px; font-weight: 400; margin-top: 2px;">
+                            {% trans 'Ignora la columna stock en códigos ya existentes (útil al completar datos de una subcategoría desde una planilla que trae stock en 0). Las celdas de stock vacías siempre conservan el stock del servidor.' %}
+                        </span>
+                    </span>
+                </label>
+            </div>
             
             <div class="submit-row">
                 <input type="submit" value="{% trans 'Importar Productos' %}" class="default" name="_import">
@@ -501,6 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const submitBtn = form.querySelector('input[type="submit"]');
     const fileInput = form.querySelector('input[type="file"]');
+    const preserveStockInput = document.getElementById('id_preserve_existing_stock');
     const progressCard = document.getElementById('progress-card');
     const progressSpinner = document.getElementById('progress-spinner');
     const progressTitle = document.getElementById('progress-status-title');
@@ -580,6 +593,9 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('csrfmiddlewaretoken', csrfToken);
         formData.append('file', file, file.name);
         formData.append('mode', 'import');
+        if (preserveStockInput && preserveStockInput.checked) {
+            formData.append('preserve_existing_stock', '1');
+        }
 
         isUploading = true;
         isCancelled = false;
@@ -587,6 +603,7 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.style.opacity = '0.6';
         submitBtn.style.cursor = 'not-allowed';
         fileInput.disabled = true;
+        if (preserveStockInput) preserveStockInput.disabled = true;
 
         clearDoneActions();
         progressCard.style.display = 'block';
@@ -707,6 +724,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.style.opacity = '1';
                 submitBtn.style.cursor = 'pointer';
                 fileInput.disabled = false;
+                if (preserveStockInput) preserveStockInput.disabled = false;
             } else {
                 progressTitle.textContent = "{% trans '¡Carga masiva completada con éxito!' %}";
                 progressBarFill.style.width = '100%';
@@ -741,6 +759,7 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.style.opacity = '1';
             submitBtn.style.cursor = 'pointer';
             fileInput.disabled = false;
+            if (preserveStockInput) preserveStockInput.disabled = false;
 
             progressTitle.textContent = "{% trans 'Error durante la carga masiva' %}";
             progressTitle.style.color = '#dc2626';

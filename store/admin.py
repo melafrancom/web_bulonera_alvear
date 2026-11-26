@@ -94,9 +94,13 @@ class ProductAdmin(admin.ModelAdmin):
             form = ProductImportForm(request.POST, request.FILES)
             if form.is_valid():
                 file = request.FILES['file']
+                preserve_existing_stock = request.POST.get('preserve_existing_stock') in ('1', 'true', 'on')
                 try:
                     from store.services import ProductService
-                    import_result = ProductService.import_from_file(file)
+                    import_result = ProductService.import_from_file(
+                        file,
+                        preserve_existing_stock=preserve_existing_stock,
+                    )
                     self._report_import_result(request, import_result)
                     return redirect('admin:store_product_changelist')
                 except Exception as e:
@@ -283,9 +287,15 @@ class ProductAdmin(admin.ModelAdmin):
         mode = request.POST.get('mode', 'import')
         if mode not in ('import', 'prices'):
             mode = 'import'
+        preserve_existing_stock = request.POST.get('preserve_existing_stock') in ('1', 'true', 'on')
 
         from store.services import ProductService
-        result = ProductService.start_bulk_upload_session(file, mode=mode, user_id=request.user.id)
+        result = ProductService.start_bulk_upload_session(
+            file,
+            mode=mode,
+            user_id=request.user.id,
+            preserve_existing_stock=preserve_existing_stock,
+        )
         if not result.get('success'):
             return JsonResponse(result, status=400)
 
